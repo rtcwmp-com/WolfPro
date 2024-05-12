@@ -3,8 +3,9 @@
 #------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.10.3 FATAL_ERROR)
 
-project(RTCW-MP C CXX)
-
+set(CMAKE_ASM_NASM_OBJECT_FORMAT elf)
+set(CMAKE_ASM_FLAGS "-m32 -DELF -x assembler-with-cpp")
+project(RTCW-MP C CXX ASM_NASM ASM)
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.21")
     cmake_policy(SET CMP0121 NEW)
 endif()

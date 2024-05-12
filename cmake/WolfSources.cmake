@@ -15,7 +15,7 @@ FILE(GLOB QCOMMON
 
 FILE(GLOB COMMON_SRC_REMOVE
 	"src/qcommon/i18n_*"
-	"src/qcommon/auth.c"
+	"src/qcommon/vm_x86.c"
 )
 
 LIST(REMOVE_ITEM COMMON_SRC ${COMMON_SRC_REMOVE})
@@ -25,6 +25,10 @@ if(UNIX)
 	LIST(APPEND PLATFORM_SHARED_SRC "src/unix/unix_main.c")
 	LIST(APPEND PLATFORM_SHARED_SRC "src/unix/unix_net.c")
 	LIST(APPEND PLATFORM_SHARED_SRC "src/unix/unix_shared.c")
+	LIST(APPEND PLATFORM_SHARED_SRC "src/unix/linux_common.c")
+	LIST(APPEND PLATFORM_SHARED_SRC "src/unix/linux_signals.c")
+	LIST(APPEND PLATFORM_SHARED_SRC "src/unix/snapvector.nasm")
+	LIST(APPEND PLATFORM_SHARED_SRC "src/unix/matha.s")
 elseif(WIN32)
 	LIST(APPEND PLATFORM_SHARED_SRC "src/win32/win_syscon.c")
 	LIST(APPEND PLATFORM_SHARED_SRC "src/win32/win_shared.c")
