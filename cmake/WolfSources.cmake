@@ -13,10 +13,11 @@ FILE(GLOB QCOMMON
 	"src/game/q_math.c"
 )
 
-FILE(GLOB COMMON_SRC_REMOVE
-	"src/qcommon/i18n_*"
-	"src/qcommon/vm_x86.c"
-)
+if(UNIX)
+	FILE(GLOB COMMON_SRC_REMOVE
+		"src/qcommon/vm_x86.c"
+	)
+endif()
 
 LIST(REMOVE_ITEM COMMON_SRC ${COMMON_SRC_REMOVE})
 
