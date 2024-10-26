@@ -832,14 +832,13 @@ int CL_CgameSystemCalls( int *args ) {
 		return 0;
 
 	case CG_LOADCAMERA:
-		return loadCamera( args[1], VMA( 2 ) );
+		return 0;
 
 	case CG_STARTCAMERA:
-		startCamera( args[1], args[2] );
 		return 0;
 
 	case CG_GETCAMERAINFO:
-		return getCameraInfo( args[1], args[2], VMA( 3 ), VMA( 4 ), VMA( 5 ) );
+		return 0;
 
 	case CG_GET_ENTITY_TOKEN:
 		return re.GetEntityToken( VMA( 1 ), args[2] );

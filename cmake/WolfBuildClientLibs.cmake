@@ -14,14 +14,6 @@ endif()
 target_link_libraries(client_libraries INTERFACE renderer)
 
 #-----------------------------------------------------------------
-# Build Splines
-#-----------------------------------------------------------------
-
-add_library(splines STATIC ${SPLINES_FILES})
-target_link_libraries(client_libraries INTERFACE splines)
-target_include_directories(splines PRIVATE src/splines)
-
-#-----------------------------------------------------------------
 # Build JPEG
 #-----------------------------------------------------------------
 
