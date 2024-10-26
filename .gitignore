@@ -1,6 +1,9 @@
 # Created by https://www.toptal.com/developers/gitignore/api/c,linux,windows,cmake,c++
 # Edit at https://www.toptal.com/developers/gitignore?templates=c,linux,windows,cmake,c++
 
+deps/*
+src/.vs
+
 ### C ###
 # Prerequisites
 *.d
@@ -88,6 +91,8 @@ CTestTestfile.cmake
 _deps
 build/*
 .vscode/*
+.vs/*
+out/*
 
 ### CMake Patch ###
 # External projects

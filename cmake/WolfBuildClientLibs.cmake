@@ -25,6 +25,14 @@ target_include_directories(splines PRIVATE src/splines)
 # Build JPEG
 #-----------------------------------------------------------------
 
-add_library(jpeg6 STATIC ${JPEG_FILES})
-target_link_libraries(client_libraries INTERFACE jpeg6)
-target_include_directories(jpeg6 PRIVATE src/jpeg-6)
+find_package(JPEGTURBO)
+if(JPEGTURBO_FOUND)
+	target_link_libraries(renderer_libraries INTERFACE ${JPEG_LIBRARIES})
+	target_include_directories(renderer_libraries INTERFACE ${JPEG_INCLUDE_DIR})
+	# Check for libjpeg-turbo v1.3
+	include(CheckFunctionExists)
+	set(CMAKE_REQUIRED_INCLUDES ${JPEG_INCLUDE_DIR})
+	set(CMAKE_REQUIRED_LIBRARIES ${JPEG_LIBRARY})
+	# FIXME: function is checked, but HAVE_JPEG_MEM_SRC is empty. Why?
+	check_function_exists("jpeg_mem_src" HAVE_JPEG_MEM_SRC)
+endif()
