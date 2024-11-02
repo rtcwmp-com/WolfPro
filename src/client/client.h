@@ -27,6 +27,8 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 // client.h -- primary header for client
+#ifndef __CLIENT_H
+#define __CLIENT_H
 
 #include "../game/q_shared.h"
 #include "../qcommon/qcommon.h"
@@ -630,3 +632,5 @@ void LAN_SaveServersToCache();
 void CL_Netchan_Transmit( netchan_t *chan, msg_t* msg ); //int length, const byte *data );
 void CL_Netchan_TransmitNextFragment( netchan_t *chan );
 qboolean CL_Netchan_Process( netchan_t *chan, msg_t *msg );
+
+#endif

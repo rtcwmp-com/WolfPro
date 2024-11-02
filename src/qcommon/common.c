@@ -323,15 +323,24 @@ Both client and server can use this, and it will
 do the apropriate things.
 =============
 */
-void Com_Quit_f( void ) {
+
+void Com_Quit(int status)
+{
 	// don't try to shutdown if we are in a recursive error
 	if ( !com_errorEntered ) {
-		SV_Shutdown( "Server quit\n" );
+		SV_Shutdown("Server quit");
+#ifndef DEDICATED
 		CL_Shutdown();
+#endif
 		Com_Shutdown();
 		FS_Shutdown( qtrue );
 	}
-	Sys_Quit();
+
+	Sys_Quit(status);
+}
+
+void Com_Quit_f( void ) {
+	Com_Quit(0);
 }
 
 

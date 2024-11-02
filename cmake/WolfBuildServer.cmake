@@ -2,7 +2,12 @@
 # Build Server
 #-----------------------------------------------------------------
 
-add_executable(wolfded WIN32 ${COMMON_SRC} ${SERVER_SRC} ${PLATFORM_SHARED_SRC} ${PLATFORM_SERVER_SRC})
+if(WIN32)
+	add_executable(wolfded WIN32 ${COMMON_SRC} ${SERVER_SRC} ${PLATFORM_SHARED_SRC} ${PLATFORM_SERVER_SRC})
+else()
+	add_executable(wolfded ${COMMON_SRC} ${SERVER_SRC} ${PLATFORM_SHARED_SRC} ${PLATFORM_SERVER_SRC})
+	target_link_options(wolfded PRIVATE "LINKER:-melf_i386")
+endif()
 target_link_libraries(wolfded
 	server_libraries
 	engine_libraries
@@ -11,7 +16,7 @@ target_link_libraries(wolfded
 
 if(UNIX)
 	set_target_properties(wolfded
-		PROPERTIES COMPILE_DEFINITIONS "DEDICATED;BOTLIB;DLL_ONLY"
+		PROPERTIES COMPILE_DEFINITIONS "DEDICATED;BOTLIB;DLL_ONLY;__i386__"
 		RUNTIME_OUTPUT_DIRECTORY ""
 		RUNTIME_OUTPUT_DIRECTORY_DEBUG ""
 		RUNTIME_OUTPUT_DIRECTORY_RELEASE ""

@@ -21,7 +21,7 @@ target_link_libraries(wolfmp
 if(FEATURE_WINDOWS_CONSOLE AND WIN32)
 	set(WOLF_COMPILE_DEF "USE_ICON;USE_WINDOWS_CONSOLE;BOTLIB")
 else()
-	set(WOLF_COMPILE_DEF "USE_ICON")
+	set(WOLF_COMPILE_DEF "USE_ICON;BOTLIB;__i386__;DLL_ONLY")
 endif()
 
 set_target_properties(wolfmp PROPERTIES

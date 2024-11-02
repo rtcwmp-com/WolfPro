@@ -7,19 +7,21 @@
 # also defined, but not for general use are
 #  JPEG_LIBRARY, where to find the libjpeg-turbo library.
 
-find_path(JPEG_INCLUDE_DIR turbojpeg.h
-  ${PROJECT_SOURCE_DIR}/deps/libjpeg-turbo
+find_path(JPEG_INCLUDE_DIR jconfig.h
+	${PROJECT_SOURCE_DIR}/deps/libjpeg-turbo/build
+    ${PROJECT_SOURCE_DIR}/deps/libjpeg-turbo
 	/usr/include
 	/usr/local/include
 	/sw/include
 	/opt/local/include
-	DOC "The directory where turbojpeg.h resides"
+	DOC "The directory where jconfig.hresides"
 )
 
 find_library(JPEG_LIBRARY
 	NAMES ${JPEG_NAMES} jpeg
 	PATHS
-  ${PROJECT_SOURCE_DIR}/deps/bin
+    ${PROJECT_SOURCE_DIR}/deps/bin
+    ${PROJECT_SOURCE_DIR}/deps/libjpeg-turbo/build
 	/usr/lib64
 	/usr/lib
 	/usr/local/lib64

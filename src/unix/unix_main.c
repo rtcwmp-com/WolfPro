@@ -64,7 +64,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "linux_local.h" // bk001204
 
 // Structure containing functions exported from refresh DLL
-refexport_t re;
+//refexport_t re;
 
 unsigned sys_frame_time;
 
@@ -287,10 +287,10 @@ void Sys_Exit( int ex ) {
 }
 
 
-void Sys_Quit( void ) {
+void Sys_Quit( int status ) {
 	CL_Shutdown();
 	fcntl( 0, F_SETFL, fcntl( 0, F_GETFL, 0 ) & ~FNDELAY );
-	Sys_Exit( 0 );
+	Sys_Exit( status );
 }
 
 void Sys_Init( void ) {
@@ -436,7 +436,7 @@ void Sys_ConsoleInputInit() {
 				  characters  EOF,  EOL,  EOL2, ERASE, KILL, REPRINT,
 				  STATUS, and WERASE, and buffers by lines.
 		 ISIG: when any of the characters  INTR,  QUIT,  SUSP,  or
-				  DSUSP are received, generate the corresponding sig­
+				  DSUSP are received, generate the corresponding sigï¿½
 				  nal
 		*/
 		tc.c_lflag &= ~( ECHO | ICANON );
@@ -741,79 +741,41 @@ void *Sys_LoadDll( const char *name, char *fqpath,
 	basepath = Cvar_VariableString( "fs_basepath" );
 	gamedir = Cvar_VariableString( "fs_game" );
 
+	// homepath
+	fn = FS_BuildOSPath( homepath, gamedir, fname );
+
 	// this is relevant to client only
 	// this code is in for full client hosting a game, but it's not affected by it
 #if !defined( DEDICATED )
-	// do a first scan to identify what we are going to dlopen
-	// we need to pass this to FS_ExtractFromPakFile so that it checksums the right file
-	// NOTE: if something fails (not found, or file operation failed), we will ERR_FATAL (in the checksum itself, we only ERR_DROP)
-#ifndef NDEBUG
-	fn = FS_BuildOSPath( pwdpath, gamedir, fname );
-	if ( access( fn, R_OK ) == -1 ) {
-#endif
-	fn = FS_BuildOSPath( homepath, gamedir, fname );
+
 	if ( access( fn, R_OK ) == 0 ) {
-		// there is a .so in fs_homepath, but is it a valid one version-wise?
-		// we use a persistent variable in config.cfg to make sure
-		// this is set in FS_CL_ExtractFromPakFile when the file is extracted
-		cvar_t *lastVersion;
-		cvar_name = va( "cl_lastVersion%s", name );
-		lastVersion = Cvar_Get( cvar_name, "(uninitialized)", CVAR_ARCHIVE );
-		if ( Q_stricmp( Cvar_VariableString( "version" ), lastVersion->string ) ) {
-			Com_DPrintf( "clearing non matching version of %s .so: %s\n", name, fn );
-			if ( remove( fn ) == -1 ) {
-				Com_Error( ERR_FATAL, "failed to remove outdated '%s' file:\n\"%s\"\n", fn, strerror( errno ) );
-			}
-			// we cancelled fs_homepath, go work on basepath now
-			fn = FS_BuildOSPath( basepath, gamedir, fname );
-			if ( access( fn, R_OK ) == -1 ) {
-				// we may be dealing with a media-only mod, check wether we can find 'reference' DLLs and copy them over
-				if ( !CopyDLLForMod( &fn, gamedir, pwdpath, homepath, basepath, fname ) ) {
-					Com_Error( ERR_FATAL, "Sys_LoadDll(%s) failed, no corresponding .so file found in fs_homepath or fs_basepath\n", name );
-				}
-			}
-		}
-		// the .so in fs_homepath is valid version-wise .. FS_CL_ExtractFromPakFile will have to decide wether it's valid pk3-wise later
-	} else {
-		fn = FS_BuildOSPath( basepath, gamedir, fname );
-		if ( access( fn, R_OK ) == -1 ) {
-			// we may be dealing with a media-only mod, check wether we can find 'reference' DLLs and copy them over
-			if ( !CopyDLLForMod( &fn, gamedir, pwdpath, homepath, basepath, fname ) ) {
-				Com_Error( ERR_FATAL, "Sys_LoadDll(%s) failed, no corresponding .so file found in fs_homepath or fs_basepath\n", name );
-			}
+		Com_DPrintf( "Removing existing  %s .so: %s\n", name, fn );
+		if ( remove( fn ) == -1 ) {
+			Com_Error( ERR_FATAL, "failed to remove outdated '%s' file:\n\"%s\"\n", fn, strerror( errno ) );
 		}
 	}
-#ifndef NDEBUG
-}
-#endif
 
-	// NERVE - SMF - extract dlls from pak file for security
-	// we have to handle the game dll a little differently
-	// NOTE #2: we may have found a file in fs_basepath, and if the checksum is wrong, FS_Extract will write in fs_homepath
-	//   won't be a problem since we start a brand new scan next
-	if ( cl_connectedToPureServer && Q_strncmp( name, "qagame", 6 ) ) {
-		if ( !FS_CL_ExtractFromPakFile( fn, gamedir, fname, cvar_name ) ) {
-			Com_Error( ERR_DROP, "Game code(%s) failed Pure Server check", fname );
-		}
+	fileHandle_t fileHandle;
+	int fileLen = FS_FOpenFileRead(fname, &fileHandle, qtrue);
+	if (fileLen < 1) {
+		Com_Error( ERR_FATAL, "failed to find '%s' in paks\n", fname);
+	}
+
+	byte* buffer = Hunk_AllocateTempMemory(fileLen);
+	FS_Read(buffer, fileLen, fileHandle);
+	FS_WriteFile(fname,buffer,fileLen);
+	Hunk_FreeTempMemory(buffer);
+	
+	if ( access( fn, R_OK ) != 0 ) {
+		Com_Error( ERR_FATAL, "failed to extract '%s' file:\n\"%s\"\n", fn, strerror( errno ) );
 	}
 #endif
 
-#ifndef NDEBUG
-	// current directory
-	// NOTE: only for debug build, see Sys_LoadDll discussion
-	fn = FS_BuildOSPath( pwdpath, gamedir, fname );
+	
+	
 	Com_Printf( "Sys_LoadDll(%s)... ", fn );
 	libHandle = dlopen( fn, Q_RTLD );
-
-	if ( !libHandle ) {
-		Com_Printf( "\nSys_LoadDll(%s) failed:\n\"%s\"\n", fn, dlerror() );
-#endif
-
-	// homepath
-	fn = FS_BuildOSPath( homepath, gamedir, fname );
-	Com_Printf( "Sys_LoadDll(%s)... ", fn );
-	libHandle = dlopen( fn, Q_RTLD );
-
+	
 	if ( !libHandle ) {
 		Com_Printf( "\nSys_LoadDll(%s) failed:\n\"%s\"\n", fn, dlerror() );
 
@@ -830,11 +792,7 @@ void *Sys_LoadDll( const char *name, char *fqpath,
 
 		// not found, bail
 		if ( !libHandle ) {
-#ifndef NDEBUG // in debug abort on failure
-			Com_Error( ERR_FATAL, "Sys_LoadDll(%s) failed dlopen() completely!\n", name  );
-#else
 			Com_Printf( "Sys_LoadDll(%s) failed dlopen() completely!\n", name );
-#endif
 			return NULL;
 		}
 
@@ -842,23 +800,13 @@ void *Sys_LoadDll( const char *name, char *fqpath,
 		Com_Printf( "ok\n" );
 	}
 
-#ifndef NDEBUG
-} else {
-	Com_Printf( "ok\n" );
-}
-#endif
-
 	Q_strncpyz( fqpath, fn, MAX_QPATH ) ;           // added 2/15/02 by T.Ray
 
 	dllEntry = dlsym( libHandle, "dllEntry" );
 	*entryPoint = dlsym( libHandle, "vmMain" );
 	if ( !*entryPoint || !dllEntry ) {
 		err = dlerror();
-#ifndef NDEBUG // in debug abort on failure
-		Com_Error( ERR_FATAL, "Sys_LoadDll(%s) failed dlsym(vmMain):\n\"%s\" !\n", name, err );
-#else
 		Com_Printf( "Sys_LoadDll(%s) failed dlsym(vmMain):\n\"%s\" !\n", name, err );
-#endif
 		dlclose( libHandle );
 		err = dlerror();
 		if ( err != NULL ) {
@@ -1141,9 +1089,9 @@ sysEvent_t Sys_GetEvent( void ) {
 		return eventQue[ ( eventTail - 1 ) & MASK_QUED_EVENTS ];
 	}
 
-	// pump the message loop
-	// in vga this calls KBD_Update, under X, it calls GetEvent
-	Sys_SendKeyEvents();
+#ifndef DEDICATED
+	sdl_PollEvents();
+#endif
 
 	// check for console commands
 	s = Sys_ConsoleInput();
@@ -1156,9 +1104,6 @@ sysEvent_t Sys_GetEvent( void ) {
 		strcpy( b, s );
 		Sys_QueEvent( 0, SE_CONSOLE, 0, 0, len, b );
 	}
-
-	// check for other input devices
-	IN_Frame();
 
 	// check for network packets
 	MSG_Init( &netmsg, sys_packetReceived, sizeof( sys_packetReceived ) );
@@ -1394,6 +1339,12 @@ void Sys_ParseArgs( int argc, char* argv[] ) {
 extern clientStatic_t cls;
 
 int main( int argc, char* argv[] ) {
+
+#ifndef DEDICATED
+	if (!sdl_Init())
+		return 1;
+#endif
+
 	// int  oldtime, newtime; // bk001204 - unused
 	int len, i;
 	char  *cmdline;
@@ -1439,8 +1390,8 @@ int main( int argc, char* argv[] ) {
 
 	while ( 1 )
 	{
-#ifdef __linux__
-		Sys_ConfigureFPU();
+#ifndef DEDICATED
+		sdl_Frame();
 #endif
 		Com_Frame();
 	}

@@ -766,6 +766,7 @@ void        Com_EndRedirect( void );
 void QDECL Com_Printf( const char *fmt, ... );
 void QDECL Com_DPrintf( const char *fmt, ... );
 void QDECL Com_Error( int code, const char *fmt, ... );
+void		Com_Quit(int status);
 void        Com_Quit_f( void );
 int         Com_EventLoop( void );
 int         Com_Milliseconds( void );   // will be journaled properly
@@ -1038,7 +1039,7 @@ void    *Sys_GetBotLibAPI( void *parms );
 char    *Sys_GetCurrentUser( void );
 
 void QDECL Sys_Error( const char *error, ... );
-void    Sys_Quit( void );
+void    Sys_Quit( int status );
 char    *Sys_GetClipboardData( void );  // note that this isn't journaled...
 
 void    Sys_Print( const char *msg );

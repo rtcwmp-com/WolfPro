@@ -17,6 +17,9 @@ if(UNIX)
 	FILE(GLOB COMMON_SRC_REMOVE
 		"src/qcommon/vm_x86.c"
 	)
+	FILE(GLOB SDL_SRC
+		"src/unix/sdl_*.c"
+	)
 endif()
 
 LIST(REMOVE_ITEM COMMON_SRC ${COMMON_SRC_REMOVE})
@@ -30,6 +33,8 @@ if(UNIX)
 	LIST(APPEND PLATFORM_SHARED_SRC "src/unix/linux_signals.c")
 	LIST(APPEND PLATFORM_SHARED_SRC "src/unix/snapvector.nasm")
 	LIST(APPEND PLATFORM_SHARED_SRC "src/unix/matha.s")
+	LIST(APPEND PLATFORM_CLIENT_SRC ${SDL_SRC})
+	LIST(APPEND PLATFORM_CLIENT_SRC "src/unix/linux_qgl.c")
 elseif(WIN32)
 	LIST(APPEND PLATFORM_SHARED_SRC "src/win32/win_syscon.c")
 	LIST(APPEND PLATFORM_SHARED_SRC "src/win32/win_shared.c")

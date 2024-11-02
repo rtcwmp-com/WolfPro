@@ -26,6 +26,11 @@ if(BUILD_CLIENT)
 
 	target_link_libraries(renderer_gl1_libraries INTERFACE opengl_renderer_libs)
 
+	if(UNIX)
+		find_package(SDL2 REQUIRED)
+		target_link_libraries(client_libraries INTERFACE  SDL2::SDL2)
+	endif()
+
 endif()
 
 

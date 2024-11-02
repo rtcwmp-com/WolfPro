@@ -276,6 +276,7 @@ static inline float idSqrt( float x ) {
 typedef unsigned char byte;
 
 typedef enum {qfalse, qtrue}    qboolean;
+typedef qboolean qbool;
 
 typedef int qhandle_t;
 typedef int sfxHandle_t;

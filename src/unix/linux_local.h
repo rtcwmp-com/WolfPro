@@ -27,6 +27,12 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 // linux_local.h: Linux-specific Quake3 header file
+#include "../game/q_shared.h"
+#include "../qcommon/qcommon.h"
+#ifndef DEDICATED
+#include "../client/client.h"
+#endif
+
 
 void Sys_QueEvent( int time, sysEventType_t type, int value, int value2, int ptrLength, void *ptr );
 qboolean Sys_GetPacket( netadr_t *net_from, msg_t *net_message );
@@ -51,3 +57,8 @@ char *strlwr( char *s );
 
 // signals.c
 void InitSig( void );
+
+//SDL implementation
+void sdl_Frame();
+void sdl_PollEvents();
+qboolean sdl_Init();
