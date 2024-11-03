@@ -8,8 +8,9 @@
 #  JPEG_LIBRARY, where to find the libjpeg-turbo library.
 
 find_path(JPEG_INCLUDE_DIR jconfig.h
+	${PROJECT_SOURCE_DIR}/deps/libjpeg-turbo	
 	${PROJECT_SOURCE_DIR}/deps/libjpeg-turbo/build
-    ${PROJECT_SOURCE_DIR}/deps/libjpeg-turbo
+	${PROJECT_SOURCE_DIR}/deps/libjpeg-turbo/build-win
 	/usr/include
 	/usr/local/include
 	/sw/include
@@ -17,11 +18,13 @@ find_path(JPEG_INCLUDE_DIR jconfig.h
 	DOC "The directory where jconfig.hresides"
 )
 
+if(CMAKE_CROSSCOMPILING)
 find_library(JPEG_LIBRARY
-	NAMES ${JPEG_NAMES} jpeg
+	NAMES ${JPEG_NAMES} libjpeg-62
 	PATHS
     ${PROJECT_SOURCE_DIR}/deps/bin
     ${PROJECT_SOURCE_DIR}/deps/libjpeg-turbo/build
+	${PROJECT_SOURCE_DIR}/deps/libjpeg-turbo/build-win
 	/usr/lib64
 	/usr/lib
 	/usr/local/lib64
@@ -30,7 +33,22 @@ find_library(JPEG_LIBRARY
 	/opt/local/lib
 	DOC "The JPEG library"
 )
-
+else()
+find_library(JPEG_LIBRARY
+	NAMES ${JPEG_NAMES} jpeg
+	PATHS
+    ${PROJECT_SOURCE_DIR}/deps/bin
+    ${PROJECT_SOURCE_DIR}/deps/libjpeg-turbo/build
+	${PROJECT_SOURCE_DIR}/deps/libjpeg-turbo/build-win
+	/usr/lib64
+	/usr/lib
+	/usr/local/lib64
+	/usr/local/lib
+	/sw/lib
+	/opt/local/lib
+	DOC "The JPEG library"
+)
+endif()
 # Determine libjpeg-turbo version
 if(JPEG_INCLUDE_DIR AND EXISTS "${JPEG_INCLUDE_DIR}/jconfig.h")
 	file(STRINGS "${JPEG_INCLUDE_DIR}/jconfig.h" jpegturbo_version_str REGEX "^#define LIBJPEG_TURBO_VERSION[ ]+[0-9].[0-9].[0-9]")

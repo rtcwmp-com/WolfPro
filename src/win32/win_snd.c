@@ -68,8 +68,6 @@ HWAVEOUT hWaveOut;
 
 WAVEOUTCAPS wavecaps;
 
-DWORD gSndBufSize;
-
 MMTIME mmstarttime;
 
 HANDLE hData;

@@ -80,14 +80,14 @@ elseif(WIN32)
 		target_compile_definitions(shared_libraries INTERFACE C_ONLY)
 	endif()
 
-	target_link_libraries(os_libraries INTERFACE wsock32 ws2_32 psapi winmm)
+	target_link_libraries(os_libraries INTERFACE wsock32 ws2_32 psapi winmm user32 gdi32 advapi32 shell32)
 
 	if(BUNDLED_SDL)
 		# Libraries for Win32 native and MinGW required by static SDL2 build
 		target_link_libraries(os_libraries INTERFACE user32 gdi32 imm32 ole32 oleaut32 version uuid hid setupapi)
 	endif()
 	set(LIB_SUFFIX "_mp_")
-	if(MSVC)
+	if(WIN32)
 
 		message(STATUS "MSVC version: ${MSVC_VERSION}")
 
@@ -106,7 +106,7 @@ elseif(WIN32)
 		# enable the full path with /FC (we use our own WOLF_FILENAME to cut the path to project relative path)
 		target_compile_options(shared_libraries INTERFACE /FC)
 
-		if(FORCE_STATIC_VCRT)
+	
 			set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /EHsc /O2")
 			set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /EHa /W3")
 
@@ -125,43 +125,13 @@ elseif(WIN32)
 
 			set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:MSVCRT.lib /NODEFAULTLIB:MSVCRTD.lib")
 			set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /NODEFAULTLIB:MSVCRT.lib /NODEFAULTLIB:MSVCRTD.lib")
-		endif()
+
 
 		# Should we always use this?
 		# add_definitions(-DC_ONLY)
 		add_definitions(-D_CRT_SECURE_NO_WARNINGS) # Do not show CRT warnings
-	endif(MSVC)
+	endif(WIN32)
 
-	if(MINGW)
-
-		# This is not yet supported, but most likely will happen in the future.
-		if(ENABLE_ASAN)
-			include (CheckCCompilerFlag)
-			include (CheckCXXCompilerFlag)
-			set(CMAKE_REQUIRED_FLAGS "-fsanitize=address")
-			CHECK_C_COMPILER_FLAG("-fsanitize=address" HAVE_FLAG_SANITIZE_ADDRESS_C)
-			CHECK_CXX_COMPILER_FLAG("-fsanitize=address" HAVE_FLAG_SANITIZE_ADDRESS_CXX)
-
-			if(HAVE_FLAG_SANITIZE_ADDRESS_C AND HAVE_FLAG_SANITIZE_ADDRESS_CXX)
-				message(STATUS "Enabling AddressSanitizer for this configuration")
-				add_compile_options(-fsanitize=address -fno-omit-frame-pointer -g)
-			else()
-				message(FATAL_ERROR "AddressSanitizer enabled but compiler doesn't support it - cannot continue.")
-			endif()
-		endif()
-
-		if(NOT DEBUG_BUILD)
-			set(CMAKE_C_LINK_EXECUTABLE "${CMAKE_C_LINK_EXECUTABLE} -static-libgcc")
-			set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -static-libgcc -static-libstdc++")
-			set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc")
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
-			set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-libgcc -static-libstdc++ -s")
-			set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "${CMAKE_SHARED_LIBRARY_LINK_C_FLAGS} -static-libgcc -liconv -s")
-			set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "${CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS} -static-libgcc -static-libstdc++ -liconv -s")
-			add_definitions(-D_WIN32_IE=0x0501)
-		endif()
-
-	endif()
 endif()
 
 # Get the system architecture

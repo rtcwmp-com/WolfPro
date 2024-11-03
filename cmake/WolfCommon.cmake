@@ -1,12 +1,9 @@
 #-----------------------------------------------------------------
 # Common
 #-----------------------------------------------------------------
-
-IF(NOT CMAKE_BUILD_TYPE)
 	#SET(CMAKE_BUILD_TYPE "Debug")
 	SET(CMAKE_BUILD_TYPE "Release")
 	MESSAGE("No CMAKE_BUILD_TYPE specified, defaulting to ${CMAKE_BUILD_TYPE}")
-ENDIF()
 
 string(LENGTH "${CMAKE_SOURCE_DIR}/" SOURCE_PATH_SIZE)
 add_definitions("-DSOURCE_PATH_SIZE=${SOURCE_PATH_SIZE}")

@@ -5,10 +5,12 @@
 # find libm where it exists and link game modules against it
 include(CheckLibraryExists)
 check_library_exists(m pow "" LIBM)
-if(LIBM)
-    target_link_libraries(cgame_libraries INTERFACE m)
-    target_link_libraries(ui_libraries INTERFACE m)
-endif()
+if(UNIX)
+	if(LIBM)
+		target_link_libraries(cgame_libraries INTERFACE m)
+		target_link_libraries(ui_libraries INTERFACE m)
+	endif()
+endif(UNIX)
 
 #
 # cgame

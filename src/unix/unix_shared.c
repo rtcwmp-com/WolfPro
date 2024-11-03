@@ -362,11 +362,6 @@ char *Sys_DefaultHomePath( void ) {
 
 //============================================
 
-int Sys_GetProcessorId( void ) {
-	// TODO TTimo add better CPU identification?
-	// see Sys_GetHighQualityCPU
-	return CPUID_GENERIC;
-}
 
 int Sys_GetHighQualityCPU() {
 	// TODO TTimo see win_shared.c IsP3 || IsAthlon
