@@ -1,5 +1,10 @@
 #------------------------------------------------------------------------
 # Return to Castle Wolfenstein
+# 
+# Build Linux native:
+# CFLAGS=-m32 CXXFLAGS=-m32 LDFLAGS=-m32 cmake -G Ninja -DCMAKE_LIBRARY_PATH=/usr/lib/i386-linux-gnu -DCMAKE_PREFIX_PATH=/usr/lib/i386-linux-gnu/cmake/ ..
+# Build Windows cross-compile on Linux:
+# cmake .. -G Ninja -DCMAKE_TOOLCHAIN_FILE="../cmake/clang-cl-msvc.cmake" -DHOST_ARCH=x86 -DLLVM_NATIVE_TOOLCHAIN=/usr/ -DMSVC_BASE=../deps/xwin/crt -DWINSDK_BASE=../deps/xwin/sdk
 #------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.10.3 FATAL_ERROR)
 

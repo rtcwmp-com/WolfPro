@@ -21,12 +21,12 @@ target_link_libraries(wolfmp
 if(FEATURE_WINDOWS_CONSOLE AND WIN32)
 	set(WOLF_COMPILE_DEF "USE_ICON;USE_WINDOWS_CONSOLE;BOTLIB;WIN32")
 	message("FEATURE_WINDOWS_CONSOLE AND WIN32")
-else()
-	if(CMAKE_CROSSCOMPILE)
-		set(CMAKE_RC_FLAGS "/I ${CMAKE_SOURCE_DIR}/deps/xwin/sdk/include/um /I ${CMAKE_SOURCE_DIR}/deps/xwin/sdk/include/shared")
-		message("CMAKE_CROSSCOMPILE")
-	endif()
+elseif(CMAKE_CROSSCOMPILE)
+	set(CMAKE_RC_FLAGS "/I ${CMAKE_SOURCE_DIR}/deps/xwin/sdk/include/um /I ${CMAKE_SOURCE_DIR}/deps/xwin/sdk/include/shared")
+	message("CMAKE_CROSSCOMPILE")
 	set(WOLF_COMPILE_DEF "USE_ICON;BOTLIB;__i386__")
+else()
+	set(WOLF_COMPILE_DEF "USE_ICON;BOTLIB;__i386__;DLL_ONLY")
 endif()
 
 set_target_properties(wolfmp PROPERTIES
