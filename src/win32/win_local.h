@@ -46,7 +46,6 @@ If you have questions concerning this license or the applicable additional terms
 #endif  ///// (SA) DOOMSOUND
 
 #include <winsock.h>
-#include <wsipx.h>
 
 #ifdef DOOMSOUND    ///// (SA)DOOMSOUND
 #ifdef __cplusplus

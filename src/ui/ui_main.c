@@ -130,7 +130,6 @@ static const int numSortKeys = sizeof( sortKeys ) / sizeof( const char* );
 static char* netnames[] = {
 	"???",
 	"UDP",
-	"IPX",
 	NULL
 };
 

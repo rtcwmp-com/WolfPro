@@ -403,12 +403,6 @@ qboolean    NET_CompareBaseAdr( netadr_t a, netadr_t b ) {
 		return qfalse;
 	}
 
-	if ( a.type == NA_IPX ) {
-		if ( ( memcmp( a.ipx, b.ipx, 10 ) == 0 ) ) {
-			return qtrue;
-		}
-		return qfalse;
-	}
 
 
 	Com_Printf( "NET_CompareBaseAdr: bad address type\n" );
@@ -425,10 +419,6 @@ const char  *NET_AdrToString( netadr_t a ) {
 	} else if ( a.type == NA_IP ) {
 		Com_sprintf( s, sizeof( s ), "%i.%i.%i.%i:%hu",
 					 a.ip[0], a.ip[1], a.ip[2], a.ip[3], BigShort( a.port ) );
-	} else {
-		Com_sprintf( s, sizeof( s ), "%02x%02x%02x%02x.%02x%02x%02x%02x%02x%02x:%hu",
-					 a.ipx[0], a.ipx[1], a.ipx[2], a.ipx[3], a.ipx[4], a.ipx[5], a.ipx[6], a.ipx[7], a.ipx[8], a.ipx[9],
-					 BigShort( a.port ) );
 	}
 
 	return s;
@@ -451,12 +441,6 @@ qboolean    NET_CompareAdr( netadr_t a, netadr_t b ) {
 		return qfalse;
 	}
 
-	if ( a.type == NA_IPX ) {
-		if ( ( memcmp( a.ipx, b.ipx, 10 ) == 0 ) && a.port == b.port ) {
-			return qtrue;
-		}
-		return qfalse;
-	}
 
 	Com_Printf( "NET_CompareAdr: bad address type\n" );
 	return qfalse;
