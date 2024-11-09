@@ -46,7 +46,7 @@ option(FORCE_DEBUG				"Force enable debug macros"								OFF)
 option(ENABLE_ASAN				"Enable AddressSanitizer on clang"						OFF)
 option(ENABLE_MULTI_BUILD		"Enable binary names to include arch"					ON)
 
-cmake_dependent_option(FEATURE_WINDOWS_CONSOLE	"Build win32 executables with Windows console"	ON "WIN32" OFF)
+cmake_dependent_option(FEATURE_WINDOWS_CONSOLE	"Build win32 executables with Windows console"	OFF "WIN32" OFF)
 
 #-----------------------------------------------------------------
 # Setup

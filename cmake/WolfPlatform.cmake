@@ -14,7 +14,7 @@ set(WOLF_ARCH_COUNT 1)
 add_library(os_libraries INTERFACE)
 
 # Color diagnostics for build systems other than make
-if(UNIX)
+if(UNIX OR CMAKE_CROSSCOMPILING)
 	if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdiagnostics-color=always")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color=always")

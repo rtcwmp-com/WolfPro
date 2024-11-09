@@ -166,6 +166,7 @@ endfunction()
 set(CMAKE_SYSTEM_NAME Windows)
 set(CMAKE_SYSTEM_VERSION 10.0)
 set(CMAKE_SYSTEM_PROCESSOR AMD64)
+set(CMAKE_CROSSCOMPILE ON CACHE BOOL "is crosscompiled" FORCE)
 
 init_user_prop(HOST_ARCH)
 init_user_prop(LLVM_NATIVE_TOOLCHAIN)
