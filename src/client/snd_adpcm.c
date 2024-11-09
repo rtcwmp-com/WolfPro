@@ -90,7 +90,7 @@ void S_AdpcmGetSamples( sndBuffer *chunk, short *to ) {
 
 	out = (byte *)chunk->sndChunk;
 	// get samples
-	S_AdpcmDecode( out, to, SND_CHUNK_SIZE_BYTE * 2, &state );
+	S_AdpcmDecode( (char*)out, to, SND_CHUNK_SIZE_BYTE * 2, &state );
 }
 
 
@@ -134,7 +134,7 @@ void S_AdpcmEncodeSound( sfx_t *sfx, short *samples ) {
 		out = (byte *)chunk->sndChunk;
 
 		// encode the samples
-		S_AdpcmEncode( samples + inOffset, out, n, &state );
+		S_AdpcmEncode( samples + inOffset, (char*)out, n, &state );
 
 		inOffset += n;
 		count -= n;

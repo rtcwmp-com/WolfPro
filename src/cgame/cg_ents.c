@@ -177,7 +177,7 @@ void CG_AddLightstyle( centity_t *cent ) {
 	int otime;
 	int lastch, nextch;
 
-	if ( !cent->dl_stylestring ) {
+	if ( !cent ) {
 		return;
 	}
 
@@ -1367,7 +1367,7 @@ static void CG_Efx( centity_t *cent ) {
 
 		for ( i = 0; i < MAX_TESLA_BOLTS; i++ ) {
 
-			if ( cent->boltCrawlDirs[0] || cent->boltCrawlDirs[1] || cent->boltCrawlDirs[2] ) {
+			if ( cent->boltCrawlDirs[i] ) {
 				VectorMA( cent->boltLocs[i], cent->boltTimes[i] - cg.time, cent->boltCrawlDirs[i], perpvec );
 			} else {
 				VectorCopy( cent->boltLocs[i], perpvec );

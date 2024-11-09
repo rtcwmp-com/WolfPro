@@ -98,7 +98,8 @@ CL_Netchan_Decode
 */
 static void CL_Netchan_Decode( msg_t *msg ) {
 	long reliableAcknowledge, i, index;
-	byte key, *string;
+	byte key;
+	char *string;
 	int srdc, sbit, soob;
 
 	srdc = msg->readcount;

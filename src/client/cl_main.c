@@ -1426,7 +1426,7 @@ void CL_DownloadsComplete( void ) {
 	// DHM - Nerve :: Auto-update (not finished yet)
 	if ( autoupdateStarted ) {
 
-		if ( autoupdateFilename && ( strlen( autoupdateFilename ) > 4 ) ) {
+		if ( strlen( autoupdateFilename ) > 4 ) {
 #ifdef _WIN32
 			// win32's Sys_StartProcess prepends the current dir
 			fn = va( "%s/%s", FS_ShiftStr( AUTOUPDATE_DIR, AUTOUPDATE_DIR_SHIFT ), autoupdateFilename );
@@ -1677,7 +1677,7 @@ void CL_CheckForResend( void ) {
 		data[9 + i] = '\"';     // NERVE - SMF - spaces in name bugfix
 		data[10 + i] = 0;
 
-		NET_OutOfBandData( NS_CLIENT, clc.serverAddress, &data[0], i + 10 );
+		NET_OutOfBandData( NS_CLIENT, clc.serverAddress, (byte*)&data[0], i + 10 );
 		// the most current userinfo has been sent, so watch for any
 		// newer changes to userinfo variables
 		cvar_modifiedFlags &= ~CVAR_USERINFO;
@@ -3225,7 +3225,7 @@ void CL_ServerInfoPacket( netadr_t from, msg_t *msg ) {
 	Q_strncpyz( info, MSG_ReadString( msg ), MAX_INFO_STRING );
 	if ( strlen( info ) ) {
 		if ( info[strlen( info ) - 1] != '\n' ) {
-			strncat( info, "\n", sizeof( info ) );
+			strncat( info, "\n", sizeof( info ) - strlen( info ) - 1);
 		}
 		Com_Printf( "%s: %s", NET_AdrToString( from ), info );
 	}
@@ -4120,10 +4120,6 @@ static trans_t* LookupTrans( char *original, char *translated[MAX_LANGUAGES], qb
 		Com_Printf( "Missing translation: \'%s\'\n", original );
 	}
 
-	// see if we want to save out the translation table everytime a string is added
-	if ( cl_debugTranslation->integer == 2 && !isLoading ) {
-		CL_SaveTransTable();
-	}
 
 	return newt;
 }

@@ -197,7 +197,7 @@ float BotGetTime( bot_match_t *match ) {
 		//match it to find out if the time is in seconds or minutes
 		if ( trap_BotFindMatch( timestring, &timematch, MTCONTEXT_TIME ) ) {
 			if ( timematch.type == MSG_FOREVER ) {
-				t = 99999999;
+				t = 99999999.0f;
 			} else {
 				trap_BotMatchVariable( &timematch, TIME, timestring, MAX_MESSAGE_SIZE );
 				if ( timematch.type == MSG_MINUTES ) {
@@ -1066,7 +1066,7 @@ void BotMatch_StartTeamLeaderShip( bot_state_t *bs, bot_match_t *match ) {
 		//get the team mate that will be the team leader
 		trap_BotMatchVariable( match, NETNAME, teammate, sizeof( teammate ) );
 		strncpy( bs->teamleader, teammate, sizeof( bs->teamleader ) );
-		bs->teamleader[sizeof( bs->teamleader )] = '\0';
+		bs->teamleader[sizeof( bs->teamleader ) - 1] = '\0';
 	}
 	//chats for someone else
 	else {

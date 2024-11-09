@@ -2406,7 +2406,7 @@ static qboolean CG_DrawFollow( void ) {
 		color[1] = 0.0;
 		color[2] = 0.0;
 		if ( cg.snap->ps.persistant[PERS_RESPAWNS_LEFT] == 0 ) {
-			sprintf( deploytime, CG_TranslateString( "No more deployments this round" ) );
+			sprintf( deploytime, "%s", CG_TranslateString( "No more deployments this round" ) );
 		} else if ( cgs.clientinfo[cg.snap->ps.clientNum].team == TEAM_RED ) {
 			sprintf( deploytime, CG_TranslateString( "Deploying in %d seconds" ),
 					 (int)( 1 + (float)( cg_redlimbotime.integer - ( cg.time % cg_redlimbotime.integer ) ) * 0.001f ) );

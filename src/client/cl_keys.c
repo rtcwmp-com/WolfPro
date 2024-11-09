@@ -188,6 +188,9 @@ keyname_t keynames[] =
 	{NULL,0}
 };
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Winvalid-source-encoding"
+
 keyname_t keynames_d[] =    //deutsch
 {
 	{"TAB", K_TAB},
@@ -682,6 +685,8 @@ keyname_t keynames_i[] =  //Italian
 
 	{NULL,0}
 };
+
+#pragma clang diagnostic pop
 
 /*
 =============================================================================

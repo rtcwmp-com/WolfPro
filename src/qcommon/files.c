@@ -1341,20 +1341,21 @@ qboolean FS_CL_ExtractFromPakFile( const char *fullpath, const char *gamedir, co
 		if ( destLength > 0 ) {
 			destData = (unsigned char*)Z_Malloc( destLength );
 
-			fread( destData, 1, destLength, destHandle );
+			if( fread( destData, 1, destLength, destHandle ) == destLength ) {
+				// compare files
+				if ( destLength == srcLength ) {
+					int i;
 
-			// compare files
-			if ( destLength == srcLength ) {
-				int i;
-
-				for ( i = 0; i < destLength; i++ ) {
-					if ( destData[i] != srcData[i] ) {
-						break;
+					for ( i = 0; i < destLength; i++ ) {
+						if ( destData[i] != srcData[i] ) {
+							break;
+						}
 					}
-				}
 
-				if ( i == destLength ) {
-					needToCopy = qfalse;
+					if ( i == destLength ) {
+						needToCopy = qfalse;
+					}
+				
 				}
 			}
 

@@ -479,7 +479,7 @@ qboolean CG_CheckForExistingModelInfo( clientInfo_t *ci, char *modelName, animMo
 	} else {
 		*modelInfo = firstFree;
 		// clear the structure out ready for use
-		memset( *modelInfo, 0, sizeof( *modelInfo ) );
+		memset( *modelInfo, 0, sizeof( animModelInfo_t ) );
 	}
 	// qfalse signifies that we need to parse the information from the script files
 	return qfalse;

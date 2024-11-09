@@ -221,7 +221,7 @@ qboolean Sys_GetPacket( netadr_t *net_from, msg_t *net_message ) {
 
 		fromlen = sizeof( from );
 		recvfromCount++;        // performance check
-		ret = recvfrom( net_socket, net_message->data, net_message->maxsize, 0, (struct sockaddr *)&from, &fromlen );
+		ret = recvfrom( net_socket, (char *)net_message->data, net_message->maxsize, 0, (struct sockaddr *)&from, &fromlen );
 		if ( ret == SOCKET_ERROR ) {
 			err = WSAGetLastError();
 
@@ -413,7 +413,7 @@ NET_IPSocket
 int NET_IPSocket( char *net_interface, int port ) {
 	SOCKET newsocket;
 	struct sockaddr_in address;
-	qboolean _true = qtrue;
+	unsigned long _true = qtrue;
 	int i = 1;
 	int err;
 
@@ -478,7 +478,7 @@ void NET_OpenSocks( int port ) {
 	struct hostent      *h;
 	int len;
 	qboolean rfc1929;
-	unsigned char buf[64];
+	char buf[64];
 
 	usingSocks = qfalse;
 

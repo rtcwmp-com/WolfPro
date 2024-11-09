@@ -1134,9 +1134,10 @@ static int unzlocal_getShort (FILE* fin, uLong *pX)
 {
 	short	v;
 
-	fread( &v, sizeof(v), 1, fin );
+	if(fread( &v, sizeof(v), 1, fin ) == 1){
+    *pX = LittleShort( v);
+  }
 
-	*pX = LittleShort( v);
 	return UNZ_OK;
 
 /*
@@ -1163,9 +1164,10 @@ static int unzlocal_getLong (FILE *fin, uLong *pX)
 {
 	int		v;
 
-	fread( &v, sizeof(v), 1, fin );
+	if(fread( &v, sizeof(v), 1, fin ) == 1){
+    *pX = LittleLong( v);
+  }
 
-	*pX = LittleLong( v);
 	return UNZ_OK;
 
 /*
@@ -2002,7 +2004,7 @@ extern int unzReadCurrentFile  (unzFile file, void *buf, unsigned len)
 		return UNZ_PARAMERROR;
 
 
-	if ((pfile_in_zip_read_info->read_buffer == NULL))
+	if (pfile_in_zip_read_info->read_buffer == NULL)
 		return UNZ_END_OF_LIST_OF_FILE;
 	if (len==0)
 		return 0;

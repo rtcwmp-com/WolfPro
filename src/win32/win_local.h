@@ -33,6 +33,7 @@ If you have questions concerning this license or the applicable additional terms
 #pragma warning( push )
 #endif
 #include <windows.h>
+#include <VersionHelpers.h>
 #if defined ( _MSC_VER ) && ( _MSC_VER >= 1200 )
 #pragma warning( pop )
 #endif

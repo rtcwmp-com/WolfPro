@@ -158,7 +158,7 @@ qboolean AICast_ScriptAction_GotoMarker( cast_state_t *cs, char *params ) {
 						}
 						if ( fire ) {
 							for ( i = 0; i < 2; i++ ) {
-								diff = abs( AngleDifference( cs->bs->viewangles[i], cs->bs->ideal_viewangles[i] ) );
+								diff = fabsf( AngleDifference( cs->bs->viewangles[i], cs->bs->ideal_viewangles[i] ) );
 								if ( diff < 20 ) {
 									// force fire
 									trap_EA_Attack( cs->bs->client );
@@ -326,7 +326,7 @@ qboolean AICast_ScriptAction_GotoCast( cast_state_t *cs, char *params ) {
 						}
 						if ( fire ) {
 							for ( i = 0; i < 2; i++ ) {
-								diff = abs( AngleDifference( cs->bs->viewangles[i], cs->bs->ideal_viewangles[i] ) );
+								diff = fabsf( AngleDifference( cs->bs->viewangles[i], cs->bs->ideal_viewangles[i] ) );
 								if ( diff < 20 ) {
 									// force fire
 									trap_EA_Attack( cs->bs->client );
@@ -350,6 +350,7 @@ qboolean AICast_ScriptAction_GotoCast( cast_state_t *cs, char *params ) {
 	ent = AICast_FindEntityForName( token );
 	if ( !ent ) {
 		G_Error( "AI Scripting: can't find AI cast with \"ainame\" = \"%s\"\n", token );
+		return qfalse;
 	}
 
 	if ( Distance( cs->bs->origin, ent->r.currentOrigin ) < SCRIPT_REACHCAST_DIST ) { // we made it
@@ -1181,14 +1182,6 @@ qboolean AICast_ScriptAction_TakeWeapon( cast_state_t *cs, char *params ) {
 
 	}
 
-	if ( !g_entities[cs->entityNum].client->ps.weapons ) {
-		if ( cs->bs ) {
-			cs->bs->weaponnum = WP_NONE;
-		} else {
-			g_entities[cs->entityNum].client->ps.weapon = WP_NONE;
-		}
-	}
-
 	return qtrue;
 };
 
@@ -1393,7 +1386,7 @@ qboolean AICast_ScriptAction_FireAtTarget( cast_state_t *cs, char *params ) {
 	VectorNormalize( vec );
 	vectoangles( vec, cs->bs->ideal_viewangles );
 	for ( i = 0; i < 2; i++ ) {
-		diff = abs( AngleDifference( cs->bs->cur_ps.viewangles[i], cs->bs->ideal_viewangles[i] ) );
+		diff = fabsf( AngleDifference( cs->bs->cur_ps.viewangles[i], cs->bs->ideal_viewangles[i] ) );
 		if ( VectorCompare( vec3_origin, ent->s.pos.trDelta ) ) {
 			if ( diff ) {
 				return qfalse;  // not facing yet

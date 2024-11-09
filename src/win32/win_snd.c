@@ -591,8 +591,8 @@ void SNDDMA_BeginPainting( void ) {
 	reps = 0;
 	dma.buffer = NULL;
 
-	while ( ( hresult = pDSBuf->lpVtbl->Lock( pDSBuf, 0, gSndBufSize, &pbuf, &locksize,
-											  &pbuf2, &dwSize2, 0 ) ) != DS_OK )
+	while ( ( hresult = pDSBuf->lpVtbl->Lock( pDSBuf, 0, gSndBufSize, (LPVOID*)&pbuf, &locksize,
+											  (LPVOID*)&pbuf2, &dwSize2, 0 ) ) != DS_OK )
 	{
 		if ( hresult != DSERR_BUFFERLOST ) {
 			Com_Printf( "SNDDMA_BeginPainting: Lock failed with error '%s'\n", DSoundError( hresult ) );

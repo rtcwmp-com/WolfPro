@@ -1874,7 +1874,7 @@ void S_StartStreamingSound( const char *intro, const char *loop, int entnum, int
 		return;
 	}
 
-	if ( ss->loop && loop ) {
+	if ( loop ) {
 		Q_strncpyz( ss->loop, loop, sizeof( ss->loop ) - 4 );
 	} else {
 		ss->loop[0] = 0;
@@ -2118,7 +2118,7 @@ void S_UpdateStreamingSounds( void ) {
 
 			if ( !ss->samples ) {
 
-				if ( ss->loop && ss->loop[0] ) {
+				if ( ss->loop[0] ) {
 					// loop
 					if ( looped ) {
 						// already looped once

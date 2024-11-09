@@ -482,7 +482,7 @@ void    SV_LoadGame_f( void ) {
 	FS_ReadFile( filename, (void **)&buffer );
 
 	// read the mapname, if it is the same as the current map, then do a fast load
-	Com_sprintf( mapname, sizeof( mapname ), buffer + sizeof( int ) );
+	Com_sprintf( mapname, sizeof( mapname ), (char*)buffer + sizeof( int ) );
 
 	if ( com_sv_running->integer && ( com_frameTime != sv.serverId ) ) {
 		// check mapname

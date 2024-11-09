@@ -2346,8 +2346,8 @@ int AAS_Reachability_Ladder( int area1num, int area2num ) {
 		VectorMA( area1point, -32, dir, area1point );
 		VectorMA( area2point, 32, dir, area2point );
 		//
-		ladderface1vertical = abs( DotProduct( plane1->normal, up ) ) < 0.1;
-		ladderface2vertical = abs( DotProduct( plane2->normal, up ) ) < 0.1;
+		ladderface1vertical = fabsf( DotProduct( plane1->normal, up ) ) < 0.1;
+		ladderface2vertical = fabsf( DotProduct( plane2->normal, up ) ) < 0.1;
 		//there's only reachability between vertical ladder faces
 		if ( !ladderface1vertical && !ladderface2vertical ) {
 			return qfalse;
@@ -2357,7 +2357,7 @@ int AAS_Reachability_Ladder( int area1num, int area2num ) {
 			 //and the ladder faces do not make a sharp corner
 			 && DotProduct( plane1->normal, plane2->normal ) > 0.7
 			 //and the shared edge is not too vertical
-			 && abs( DotProduct( sharededgevec, up ) ) < 0.7 ) {
+			 && fabsf( DotProduct( sharededgevec, up ) ) < 0.7 ) {
 			//create a new reachability link
 			lreach = AAS_AllocReachability();
 			if ( !lreach ) {
@@ -2484,7 +2484,7 @@ int AAS_Reachability_Ladder( int area1num, int area2num ) {
 				//
 				if ( face2->faceflags & FACE_LADDER ) {
 					plane2 = &( *aasworld ).planes[face2->planenum];
-					if ( abs( DotProduct( plane2->normal, up ) ) < 0.1 ) {
+					if ( fabsf( DotProduct( plane2->normal, up ) ) < 0.1 ) {
 						break;
 					}
 				} //end if
@@ -3407,7 +3407,7 @@ void AAS_Reachability_JumpPad( void ) {
 #ifdef REACHDEBUG
 		botimport.Print( PRT_MESSAGE, "absmins = %f %f %f\n", absmins[0], absmins[1], absmins[2] );
 		botimport.Print( PRT_MESSAGE, "absmaxs = %f %f %f\n", absmaxs[0], absmaxs[1], absmaxs[2] );
-#endif REACHDEBUG
+#endif //REACHDEBUG
 		VectorAdd( absmins, absmaxs, origin );
 		VectorScale( origin, 0.5, origin );
 

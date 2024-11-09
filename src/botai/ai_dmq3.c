@@ -2124,10 +2124,7 @@ int BotEntityToActivate( int entitynum ) {
 		return 0;
 	}
 	trap_AAS_ValueForBSPEpairKey( ent, "classname", classname, sizeof( classname ) );
-	if ( !classname ) {
-		BotAI_Print( PRT_ERROR, "BotEntityToActivate: entity with model %s has no classname\n", model );
-		return 0;
-	}
+
 	//if it is a door
 	if ( !strcmp( classname, "func_door" ) ) {
 		if ( trap_AAS_FloatForBSPEpairKey( ent, "health", &health ) ) {

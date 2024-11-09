@@ -152,13 +152,12 @@ void tty_FlushIn() {
 //   so for now, in any case we send "\b \b" .. yeah well ..
 //   (there may be a way to find out if '\b' alone would work though)
 void tty_Back() {
-	char key;
-	key = '\b';
-	write( 1, &key, 1 );
-	key = ' ';
-	write( 1, &key, 1 );
-	key = '\b';
-	write( 1, &key, 1 );
+	char key[3] = "\b \b";
+	for(int i = 0; i < 3; i++){
+		if(write(1, &key[i], 1) == -1){
+			break;
+		}
+	}
 }
 
 // clear the display of the line currently edited
@@ -190,7 +189,9 @@ void tty_Show() {
 		if ( tty_con.cursor ) {
 			for ( i = 0; i < tty_con.cursor; i++ )
 			{
-				write( 1, tty_con.buffer + i, 1 );
+				if(write( 1, tty_con.buffer + i, 1 ) == -1) {
+					break;
+				}
 			}
 		}
 	}
@@ -484,8 +485,11 @@ char *Sys_ConsoleInput( void ) {
 					strcpy( text, tty_con.buffer );
 					Field_Clear( &tty_con );
 					key = '\n';
-					write( 1, &key, 1 );
-					return text;
+					if(write( 1, &key, 1 ) != -1){
+						return text;
+					} else {
+						return NULL;
+					}
 				}
 				if ( key == '\t' ) {
 					tty_Hide();
@@ -553,7 +557,9 @@ char *Sys_ConsoleInput( void ) {
 			tty_con.buffer[tty_con.cursor] = key;
 			tty_con.cursor++;
 			// print the current line (this is differential)
-			write( 1, &key, 1 );
+			if( write( 1, &key, 1 ) == -1 ){
+				return NULL;
+			}
 		}
 		return NULL;
 	} else
@@ -1241,7 +1247,8 @@ void Sys_DoStartProcess( char *cmdline ) {
 		break;
 	case 0:
 		if ( strchr( cmdline, ' ' ) ) {
-			system( cmdline );
+			int rc = system( cmdline );
+			printf( "%s returned %d\n", cmdline, rc);
 		} else
 		{
 			execl( cmdline, cmdline, NULL );
@@ -1352,7 +1359,9 @@ int main( int argc, char* argv[] ) {
 
 	// go back to real user for config loads
 	saved_euid = geteuid();
-	seteuid( getuid() );
+	if( seteuid( getuid() ) != 0 ) {
+		printf( "seteuid failed: %s\n", strerror( errno ) );
+	}
 
 	Sys_ParseArgs( argc, argv ); // bk010104 - added this for support
 

@@ -565,7 +565,7 @@ int AAS_FreeOldestCache( void ) {
 	aas_routingcache_t *cache, *bestcache;
 
 	freed = qfalse;
-	besttime = 999999999;
+	besttime = 999999999.0f;
 	bestcache = NULL;
 	bestcluster = 0;
 	bestarea = 0;
@@ -601,7 +601,7 @@ int AAS_FreeOldestCache( void ) {
 		AAS_FreeRoutingCache( cache );
 		freed = qtrue;
 	} //end if
-	besttime = 999999999;
+	besttime = 999999999.0f;
 	bestcache = NULL;
 	bestarea = 0;
 	for ( i = 0; i < ( *aasworld ).numareas; i++ )
