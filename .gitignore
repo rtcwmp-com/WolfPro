@@ -3,6 +3,8 @@
 
 deps/*
 src/.vs
+build/*
+docker/dockerfiles/build/*
 
 ### C ###
 # Prerequisites

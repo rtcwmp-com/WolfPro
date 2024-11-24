@@ -107,7 +107,8 @@ endif()
 
 #
 # mod pk3
-
+# Full cross-compile build needs this OFF to update the pk3 with the 2nd build's files
+# 
 if(BUILD_MOD_PK3)
 	# main
 	file(GLOB MAIN_FILES "${CMAKE_CURRENT_SOURCE_DIR}/MAIN/*")
