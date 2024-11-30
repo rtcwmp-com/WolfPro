@@ -2487,3 +2487,7 @@ const char* WM_TimeToString(float msec);
 #define Pri( x ) CG_Printf( "[cgnotify]%s", CG_LocalizeServerCommand( x ) )
 #define CPri( x ) CG_CenterPrint( CG_LocalizeServerCommand( x ), SCREEN_HEIGHT - ( SCREEN_HEIGHT * 0.2 ), SMALLCHAR_WIDTH );
 #define CPriP( x ) CG_PriorityCenterPrint(CG_LocalizeServerCommand( x ), SCREEN_HEIGHT - ( SCREEN_HEIGHT * 0.2 ), SMALLCHAR_WIDTH, -1 );
+
+//Blood damage
+extern vmCvar_t cg_bloodDamageBlend;
+extern vmCvar_t cg_bloodFlash;

@@ -1030,6 +1030,10 @@ static void CG_DamageBlendBlob( void ) {
 		ent.shaderRGBA[1] = 255;
 		ent.shaderRGBA[2] = 255;
 		ent.shaderRGBA[3] = 255;
+		
+		// OSPx - Blood Damage Blend
+		ent.shaderRGBA[3] = 255 * (	(cg_bloodDamageBlend.value > 1.0f) ? 1.0f :
+									(cg_bloodDamageBlend.value < 0.0f) ? 0.0f : cg_bloodDamageBlend.value);
 		trap_R_AddRefEntityToScene( &ent );
 
 		redFlash += ent.radius;
