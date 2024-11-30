@@ -1726,7 +1726,8 @@ void ClientBegin( int clientNum ) {
 
 	// DHM - Nerve :: Start players in limbo mode if they change teams during the match
 	if ( g_gametype.integer >= GT_WOLF && client->sess.sessionTeam != TEAM_SPECTATOR
-		 && ( level.time - client->pers.connectTime ) > 60000 ) {
+		 && (((g_tournament.integer) && ( level.time - client->pers.connectTime ) > 1000)
+         || ( level.time - client->pers.connectTime ) > 6000)) {
 		ent->client->ps.pm_type = PM_DEAD;
 		ent->r.contents = CONTENTS_CORPSE;
 		ent->health = 0;
@@ -2154,6 +2155,14 @@ void ClientDisconnect( int clientNum ) {
 		 && !level.warmupTime && level.sortedClients[1] == clientNum ) {
 		level.clients[ level.sortedClients[0] ].sess.wins++;
 		ClientUserinfoChanged( level.sortedClients[0] );
+	}
+
+	// if a player disconnects during warmup make sure the team's ready status doesn't start the match
+	if (g_tournament.integer
+		&& (g_gamestate.integer == GS_WARMUP || g_gamestate.integer == GS_WARMUP_COUNTDOWN)
+		&& (ent->client->sess.sessionTeam == TEAM_BLUE || ent->client->sess.sessionTeam == TEAM_RED))
+	{
+		G_readyResetOnPlayerLeave(ent->client->sess.sessionTeam);
 	}
 
 	trap_UnlinkEntity( ent );

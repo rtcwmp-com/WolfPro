@@ -510,9 +510,6 @@ void Cmd_Kill_f( gentity_t *ent ) {
 	if ( ent->client->sess.sessionTeam == TEAM_SPECTATOR ) {
 		return;
 	}
-	if ( g_gamestate.integer != GS_PLAYING ) {
-		return;
-	}
 	if ( g_gametype.integer >= GT_WOLF && ent->client->ps.pm_flags & PMF_LIMBO ) {
 		return;
 	}
@@ -629,15 +626,6 @@ void SetTeam( gentity_t *ent, char *s ) {
 		return; // ignore the request
 	}
 
-	// DHM - Nerve :: Force players to wait 30 seconds before they can join a new team.
-	if ( g_gametype.integer >= GT_WOLF && team != oldTeam && level.warmupTime == 0 && !client->pers.initialSpawn
-		 && ( ( level.time - client->pers.connectTime ) > 10000 ) && ( ( level.time - client->pers.enterTime ) < 30000 ) ) {
-		trap_SendServerCommand( ent - g_entities,
-								va( "cp \"^3You must wait %i seconds before joining ^3a new team.\n\" 3", (int)( 30 - ( ( level.time - client->pers.enterTime ) / 1000 ) ) ) );
-		return;
-	}
-	// dhm
-
 	//
 	// execute the team change
 	//
@@ -660,6 +648,11 @@ void SetTeam( gentity_t *ent, char *s ) {
 	// they go to the end of the line for tournements
 	if ( team == TEAM_SPECTATOR ) {
 		client->sess.spectatorTime = level.time;
+	}
+
+	// if a player changes teams (not from spectator) make sure round does not start
+	if (oldTeam != TEAM_SPECTATOR && g_tournament.integer) {
+		G_readyResetOnPlayerLeave(oldTeam);
 	}
 
 	client->sess.sessionTeam = team;
@@ -1545,8 +1538,15 @@ void Cmd_Vote_f( gentity_t *ent ) {
 	int num;
 
 	// DHM - Nerve :: Complaints supercede voting (and share command)
-	if ( ent->client->pers.complaintEndTime > level.time ) {
+	if ( ent->client->pers.complaintEndTime > level.time && g_gamestate.integer == GS_PLAYING) {
 
+		// exit out for comp settings
+		if (g_tournament.integer == 1 || g_complaintlimit.integer == 0)
+		{
+			trap_SendServerCommand(ent - g_entities, "complaint -2");
+			return;
+		}
+		
 		gclient_t *cl = g_entities[ ent->client->pers.complaintClient ].client;
 		if ( !cl ) {
 			return;
@@ -2422,6 +2422,9 @@ void ClientCommand( int clientNum ) {
 		Cmd_Team_f( ent );
 		return;
 	}
+
+	// L0 - Player commands
+	if(playerCmds(ent, cmd)) return;
 
 	// ignore all other commands when at intermission
 	if ( level.intermissiontime ) {

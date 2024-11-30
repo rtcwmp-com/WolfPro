@@ -1306,23 +1306,26 @@ void SpectatorClientEndFrame( gentity_t *ent ) {
 	if ( ( ent->client->sess.spectatorState == SPECTATOR_FOLLOW ) || ( ent->client->ps.pm_flags & PMF_LIMBO ) ) { // JPW NERVE for limbo
 		int clientNum;
 
-		if ( ent->client->sess.sessionTeam == TEAM_RED ) {
-			testtime = level.time % g_redlimbotime.integer;
+		// Players can respawn quickly in warmup
+		if (g_gamestate.integer != GS_PLAYING && ent->client->respawnTime <= level.timeCurrent &&
+		    ent->client->sess.sessionTeam != TEAM_SPECTATOR)
+		{
+			do_respawn = 1;
+		} else if ( ent->client->sess.sessionTeam == TEAM_RED ) {
+			testtime = (level.dwRedReinfOffset + level.timeCurrent - level.startTime) % g_redlimbotime.integer;
 			if ( testtime < ent->client->pers.lastReinforceTime ) {
 				do_respawn = 1;
 			}
 			ent->client->pers.lastReinforceTime = testtime;
 		} else if ( ent->client->sess.sessionTeam == TEAM_BLUE )     {
-			testtime = level.time % g_bluelimbotime.integer;
+			testtime = (level.dwBlueReinfOffset + level.timeCurrent - level.startTime) % g_bluelimbotime.integer;
 			if ( testtime < ent->client->pers.lastReinforceTime ) {
 				do_respawn = 1;
 			}
 			ent->client->pers.lastReinforceTime = testtime;
 		}
 
-		if ( ( g_maxlives.integer > 0 || g_alliedmaxlives.integer > 0 || g_axismaxlives.integer > 0 ) && ent->client->ps.persistant[PERS_RESPAWNS_LEFT] == 0 ) {
-			do_respawn = 0;
-		}
+		
 
 		if ( do_respawn ) {
 			reinforce( ent );
@@ -1558,7 +1561,7 @@ void ClientEndFrame( gentity_t *ent ) {
 		// turn off any expired powerups
 		for ( i = 0 ; i < MAX_POWERUPS ; i++ ) {
 
-			if ( i == PW_FIRE ||             // these aren't dependant on level.time
+			if ( //i == PW_FIRE ||             // these aren't dependant on level.time
 				 i == PW_ELECTRIC ||
 				 i == PW_BREATHER ||
 				 i == PW_NOFATIGUE ) {

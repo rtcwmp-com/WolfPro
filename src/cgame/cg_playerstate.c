@@ -488,6 +488,9 @@ void CG_CheckLocalSounds( playerState_t *ps, playerState_t *ops ) {
 	if ( cgs.timelimit > 0 ) {
 		int msec;
 
+		if (cgs.gamestate != GS_PLAYING)
+			return;
+
 		msec = cg.time - cgs.levelStartTime;
 
 		if ( cgs.timelimit > 2 && !( cg.timelimitWarnings & 1 ) && ( msec > ( cgs.timelimit - 2 ) * 60 * 1000 ) &&

@@ -1591,6 +1591,10 @@ typedef struct {
 	int complaintClient;        // DHM - Nerve
 	int complaintEndTime;       // DHM - Nerve
 	float smokeWindDir; // JPW NERVE for smoke puffs & wind (arty, airstrikes, bullet impacts)
+
+	int readyState;		// Ready
+	int playersReady;   // number of players ready so far
+	int playerCount;	// number of players
 } cgs_t;
 
 //==============================================================================
@@ -2467,3 +2471,19 @@ void        CG_StartCamera( const char *name, qboolean startBlack );
 int         CG_LoadCamera( const char *name );
 void        CG_FreeCamera( int camNum );
 //----(SA)	end
+
+// Ready
+#define CREADY_NONE		0x00	// Countdown, playing..
+#define CREADY_AWAITING	0x01	// Awaiting all to ready up..
+#define CREADY_PENDING	0x02	// Awaiting but can start once treshold (minclients) is reached..
+
+// Ready
+void CG_ParseReady(const char* pState);
+const char* CG_LocalizeServerCommand( const char *buf ); // L0 - So it's more accessible
+int is_ready( int clientNum );
+const char* WM_TimeToString(float msec);
+
+// OSP's macro's
+#define Pri( x ) CG_Printf( "[cgnotify]%s", CG_LocalizeServerCommand( x ) )
+#define CPri( x ) CG_CenterPrint( CG_LocalizeServerCommand( x ), SCREEN_HEIGHT - ( SCREEN_HEIGHT * 0.2 ), SMALLCHAR_WIDTH );
+#define CPriP( x ) CG_PriorityCenterPrint(CG_LocalizeServerCommand( x ), SCREEN_HEIGHT - ( SCREEN_HEIGHT * 0.2 ), SMALLCHAR_WIDTH, -1 );

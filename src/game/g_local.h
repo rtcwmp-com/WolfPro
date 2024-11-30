@@ -468,6 +468,7 @@ typedef struct {
 	int latchPlayerWeapon;          // DHM - Nerve :: for GT_WOLF not archived
 	int latchPlayerItem;            // DHM - Nerve :: for GT_WOLF not archived
 	int latchPlayerSkin;            // DHM - Nerve :: for GT_WOLF not archived
+	int spec_invite, specInvited, specLocked;
 } clientSession_t;
 
 //
@@ -509,6 +510,9 @@ typedef struct {
 	qboolean teamInfo;              // send team overlay updates?
 
 	qboolean bAutoReloadAux; // TTimo - auxiliary storage for pmoveExt_t::bAutoReload, to achieve persistance
+
+	//Competition
+	qboolean ready;
 } clientPersistant_t;
 
 typedef struct {
@@ -641,6 +645,8 @@ typedef struct {
 	int num_entities;               // current number, <= MAX_GENTITIES
 
 	int warmupTime;                 // restart match at this time
+	qboolean warmupSwap;			// Swap teams in SW with g_tournament enabled
+
 
 	fileHandle_t logFile;
 
@@ -757,6 +763,33 @@ typedef struct {
 	int numOidTriggers;                 // DHM - Nerve
 
 	qboolean latchGametype;             // DHM - Nerve
+
+	// Ready
+	qboolean ref_allready;                  // Referee forced match start
+	qboolean readyAll;
+	qboolean readyPrint;
+	qboolean readyTeam[TEAM_NUM_TEAMS];
+
+	// Pause
+	int paused;
+	int timeCurrent;	// Real game clock
+	int timeDelta;
+	int axisTimeouts;
+	int alliedTimeouts;
+	qboolean axisCalledTimeout;
+	qboolean autoPaused;
+
+	int	axisPlayers;		// For auto lock and auto team balance
+	int alliedPlayers;		// For auto lock and auto team balance
+
+	// Countdown
+	qboolean	cnStarted;
+	int			cnPush;
+	int			cnNum;
+
+	int dwBlueReinfOffset;	// Reinforcements offset
+	int dwRedReinfOffset;	// Reinforcements offset
+
 } level_locals_t;
 
 extern qboolean reloading;                  // loading up a savegame
@@ -1450,3 +1483,54 @@ typedef enum
 void G_StoreClientPosition( gentity_t* ent );
 void G_HistoricalTrace( gentity_t* ent, trace_t *results, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int passEntityNum, int contentmask );
 void G_ResetMarkers( gentity_t* ent );
+
+
+// Pause
+#define PAUSE_NONE		0x00	// Match is not paused..
+#define PAUSE_UNPAUSING 0x02    // Pause is about to expire
+// Ready
+#define READY_NONE		0x00	// Countdown, playing..
+#define READY_AWAITING	0x01	// Awaiting all to ready up..
+#define READY_PENDING	0x02	// Awaiting but can start once treshold (minclients) is reached..
+
+typedef struct {
+	qboolean spec_lock;
+	qboolean team_lock;
+	char team_name[24];
+	int timeouts;
+} team_info;
+
+extern char *aTeams[TEAM_NUM_TEAMS];
+extern team_info teamInfo[TEAM_NUM_TEAMS];
+
+//Match cvars
+extern vmCvar_t g_tournament;
+extern vmCvar_t team_nocontrols;
+extern vmCvar_t match_timeoutcount;
+extern vmCvar_t match_minplayers;
+extern vmCvar_t match_readypercent;
+extern vmCvar_t match_latejoin;
+extern vmCvar_t match_warmupDamage;
+
+qboolean G_playersReady( void );
+void G_readyReset( qboolean aForced );
+void G_readyResetOnPlayerLeave(int team);
+void G_readyStart( void );
+void G_readyTeamLock( void );
+void G_ClientSwap( gclient_t *client );
+void G_matchPrintInfo(char *msg, qboolean printTime);
+void G_teamReset(int, qboolean, qboolean);
+qboolean playerCmds (gentity_t *ent, char *cmd );
+void Svcmd_ResetMatch_f(qboolean fDoReset, qboolean fDoRestart);
+void G_swapTeams( void );
+
+// Macros
+//
+#define AP( x ) trap_SendServerCommand( -1, x )                 // Print to all
+#define CP( x ) trap_SendServerCommand( ent - g_entities, x )	// Print to an ent
+#define CPx( x, y ) trap_SendServerCommand( x, y )				// Print to id = x
+#define TP( x, y ) G_TeamCommand( x, y)							// Sends team command
+#define APS(x)		APSound(x)									// Global sound
+#define AAPS(x)		AAPSound(x)									// Global sound but hooked under cg_announcer..
+#define APRS(x, y)	APRSound(x, y)								// Global sound with limited (radius) range
+#define CPS(x, y)	CPSound(x, y)								// Client sound only

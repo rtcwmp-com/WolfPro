@@ -1059,6 +1059,23 @@ void CheckTeamStatus( void ) {
 	}
 }
 
+void CheckReady( void ) {
+	int i;
+	gentity_t *ent;
+	// RTCWPro - update ready status
+	if (g_gamestate.integer == GS_WARMUP || g_gamestate.integer == GS_WAITING_FOR_PLAYERS){
+		for ( i = 0; i < g_maxclients.integer; i++ ) {
+			ent = g_entities + i;
+			if ( ent->inuse &&
+					( ent->client->sess.sessionTeam == TEAM_RED ||
+					ent->client->sess.sessionTeam == TEAM_BLUE ) ) {
+					//ent->client->ps.powerups[PW_READY] = (player_ready_status[ent->client->ps.clientNum].isReady == 1) ? INT_MAX : 0;
+					ent->client->ps.powerups[PW_READY] = (level.clients[ent->client->ps.clientNum].pers.ready == 1) ? INT_MAX : 0;
+			}
+		}
+	}
+}
+
 /*-----------------------------------------------------------------*/
 
 void Use_Team_InitialSpawnpoint( gentity_t *ent, gentity_t *other, gentity_t *activator ) {
@@ -1586,4 +1603,173 @@ void SP_team_WOLF_checkpoint( gentity_t *ent ) {
 // jpw
 
 	trap_LinkEntity( ent );
+}
+
+/*
+=============
+Tardo -- Ready/Not Ready
+
+L0 - Rewrote and simplifed this
+=============
+*/
+// Determine if the "ready" player threshold has been reached.
+qboolean G_playersReady( void ) {
+	int i, ready = 0, notReady = match_minplayers.integer;
+	gclient_t *cl;
+
+
+	if ( 0 == g_tournament.integer ) {
+		return( qtrue );
+	}
+
+	// Ensure we have enough real players
+	if ( level.numNonSpectatorClients >= match_minplayers.integer ){ //&& level.voteInfo.numVotingClients > 0 ) {
+		// Step through all active clients
+		notReady = 0;
+		for ( i = 0; i < level.numConnectedClients; i++ ) {
+			cl = level.clients + level.sortedClients[i];
+
+			if ( cl->pers.connected != CON_CONNECTED || cl->sess.sessionTeam == TEAM_SPECTATOR ) {
+				continue;
+			} else if ( cl->pers.ready || level.ref_allready || ( g_entities[level.sortedClients[i]].r.svFlags & SVF_BOT ) ) {
+				ready++;
+			} else { notReady++;}
+		}
+	}
+
+	notReady = ( notReady > 0 || ready > 0 ) ? notReady : match_minplayers.integer;
+	if ( g_minGameClients.integer != notReady ) {
+		trap_Cvar_Set( "g_minGameClients", va( "%d", notReady ) );
+	}
+
+	// Do we have enough "ready" players?
+	return(level.ref_allready || ((ready + notReady > 0) && 100 * ready / (ready + notReady) >= match_readypercent.integer));
+
+	//state = ((ready >= level.numPlayingClients) ? -2 : level.numPlayingClients - ready);  // force threshold to be everybody playing
+	//return state;
+}
+
+void G_readyReset( qboolean aForced ) {
+	if ( g_gamestate.integer == GS_WARMUP_COUNTDOWN && !aForced ) {
+		AP( "print \"*** ^zINFO: ^nCountdown aborted! Going back to warmup..\n\"2" );
+	}
+	level.ref_allready = qfalse;
+	level.lastRestartTime = level.time;
+	level.readyPrint = qfalse;
+	trap_SendConsoleCommand( EXEC_APPEND, va( "map_restart 0 %i\n", GS_WARMUP ) );
+	trap_SetConfigstring( CS_READY, va( "%i", (g_noTeamSwitching.integer ? READY_PENDING : READY_AWAITING) ));
+}
+
+// if a player leaves a team (disconnect to change teams) reset the team's ready status by setting one player to not ready
+void G_readyResetOnPlayerLeave( int team ) {
+	if (g_gamestate.integer == GS_WARMUP && g_tournament.integer) {
+
+		trap_Cvar_Set("g_swapteams", "0"); // make sure we don't swap teams with our fubar swap teams logic
+
+		int i, randomPlayer = -1;
+		qboolean resetStatus = qfalse;
+
+		for (i = 0; i < level.maxclients; i++) {
+			if (level.clients[i].pers.connected == CON_DISCONNECTED) {
+				continue;
+			}
+			if (level.clients[i].sess.sessionTeam != team) {
+				continue;
+			}
+			if (level.clients[i].pers.ready) {
+				resetStatus = qtrue;
+				randomPlayer = i;
+				break;
+			}
+		}
+
+		if (resetStatus && randomPlayer > 0) {
+			level.clients[randomPlayer].pers.ready = qfalse;
+			//player_ready_status[randomPlayer].isReady = qfalse;
+			CPx(randomPlayer, "print \"^3Team count changed. Please READY your self once more.\n\"");
+		}
+	}
+}
+
+void G_readyStart( void ) {
+	level.ref_allready = qtrue;
+	level.cnNum = 0; // Resets countdown
+	trap_SetConfigstring( CS_READY, va( "%i", READY_NONE ));
+
+	// Prevents joining once countdown starts..
+	if (g_tournament.integer) // == 2 xmod has a value of 2 but we do not
+		G_readyTeamLock();
+}
+
+void G_readyTeamLock( void ) {
+	teamInfo[TEAM_RED].team_lock = qtrue;
+	teamInfo[TEAM_BLUE].team_lock = qtrue;
+	//trap_Cvar_Set("g_gamelocked", "3");
+}
+
+/*
+===========
+OSPx - G_teamReset (et port)
+
+Resets a team's settings
+===========
+*/
+void G_teamReset(int team_num, qboolean fClearSpecLock, qboolean bothTeams) {
+
+	if (bothTeams)
+	{
+		int i = 0;
+		for (i = TEAM_RED; i <= TEAM_BLUE; i++)
+		{
+			teamInfo[i].team_lock = (match_latejoin.integer == 0 && g_gamestate.integer == GS_PLAYING);
+			teamInfo[i].team_name[0] = 0;
+			teamInfo[i].timeouts = match_timeoutcount.integer;
+
+			if (fClearSpecLock) {
+				teamInfo[i].spec_lock = qfalse;
+			}
+		}
+	}
+	else
+	{
+		teamInfo[team_num].team_lock = (match_latejoin.integer == 0 && g_gamestate.integer == GS_PLAYING);
+		teamInfo[team_num].team_name[0] = 0;
+		teamInfo[team_num].timeouts = match_timeoutcount.integer;
+
+		if (fClearSpecLock) {
+			teamInfo[team_num].spec_lock = qfalse;
+		}
+	}
+}
+
+// Swap team speclocks
+void G_swapTeamLocks( void ) {
+	qboolean fLock = teamInfo[TEAM_RED].spec_lock;
+	teamInfo[TEAM_RED].spec_lock = teamInfo[TEAM_BLUE].spec_lock;
+	teamInfo[TEAM_BLUE].spec_lock = fLock;
+}
+
+// Swaps active players on teams
+void G_swapTeams( void ) {
+	int i;
+	gclient_t *cl;
+
+	G_swapTeamLocks();
+	G_teamReset(0, qfalse, qtrue); // both teams
+
+	for ( i = 0; i < level.numConnectedClients; i++ ) {
+		cl = level.clients + level.sortedClients[i];
+
+		if ( cl->sess.sessionTeam == TEAM_RED ) {
+			cl->sess.sessionTeam = TEAM_BLUE;
+		} else if ( cl->sess.sessionTeam == TEAM_BLUE ) {
+			cl->sess.sessionTeam = TEAM_RED;
+		} else { continue;}
+
+		//G_UpdateCharacter( cl );
+		ClientUserinfoChanged( level.sortedClients[i] );
+		ClientBegin( level.sortedClients[i] );
+	}
+
+	AP( "cp \"^1Teams have been swapped!\n\"" );
 }

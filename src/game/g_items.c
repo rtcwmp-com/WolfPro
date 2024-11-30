@@ -229,7 +229,7 @@ void UseHoldableItem( gentity_t *ent, int item ) {
 		break;
 
 	case HI_FIRE:           // protection from fire attacks - absorbs 500 points of fire damage
-		ent->client->ps.powerups[PW_FIRE] = 500;
+		//ent->client->ps.powerups[PW_FIRE] = 500; //taking this for PW_READY
 		break;
 
 	case HI_STAMINA:        // restores fatigue bar and sets "nofatigue" for a time period (currently forced to 60 sec)
@@ -727,6 +727,16 @@ void Touch_Item( gentity_t *ent, gentity_t *other, trace_t *trace ) {
 		return;     // dead people can't pickup
 
 	}
+
+	// OSPx - Don't let them pickup winning stuff in warmup
+	if (g_gamestate.integer != GS_PLAYING) {
+		if (ent->item->giType != IT_WEAPON &&
+			ent->item->giType != IT_AMMO &&
+			ent->item->giType != IT_HEALTH) {
+			return;
+		}
+	}
+	
 	// the same pickup rules are used for client side and server side
 	if ( !BG_CanItemBeGrabbed( &ent->s, &other->client->ps ) ) {
 		return;

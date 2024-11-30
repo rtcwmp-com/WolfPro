@@ -178,12 +178,23 @@ NERVE - SMF
 */
 void CG_ParseWolfinfo( void ) {
 	const char  *info;
+	int        old_gs = cgs.gamestate;
 
 	info = CG_ConfigString( CS_WOLFINFO );
 
 	cgs.currentRound = atoi( Info_ValueForKey( info, "g_currentRound" ) );
 	cgs.nextTimeLimit = atof( Info_ValueForKey( info, "g_nextTimeLimit" ) );
 	cgs.gamestate = atoi( Info_ValueForKey( info, "gamestate" ) );
+
+	// Announce game in progress if we are really playing
+	if (old_gs != GS_PLAYING && cgs.gamestate == GS_PLAYING)
+	{
+		//trap_S_StartLocalSound(cgs.media.announceFight, CHAN_ANNOUNCER);
+
+		CG_Printf("[skipnotify]^1FIGHT!\n");
+		CPriP(CG_TranslateString("^1FIGHT!\n"));
+	}
+
 	if ( !cgs.localServer ) {
 		trap_Cvar_Set( "gamestate", va( "%i", cgs.gamestate ) );
 	}
@@ -297,6 +308,7 @@ void CG_SetConfigValues( void ) {
 	}
 #endif
 	cg.warmup = atoi( CG_ConfigString( CS_WARMUP ) );
+	CG_ParseReady(CG_ConfigString(CS_READY) );
 }
 
 /*
@@ -431,6 +443,9 @@ static void CG_ConfigStringModified( void ) {
 //----(SA)
 	} else if ( num == CS_SHADERSTATE )   {
 		CG_ShaderStateChanged();
+	} // Ready
+	else if ( num == CS_READY ) {
+		CG_ParseReady( str );
 	}
 }
 
@@ -1620,4 +1635,15 @@ void CG_ExecuteNewServerCommands( int latestSequence ) {
 			CG_ServerCommand();
 		}
 	}
+}
+
+/*
+================
+L0 - Ready
+
+Parse Ready state
+================
+*/
+void CG_ParseReady(const char* pState) {
+	cgs.readyState = atoi(pState);
 }

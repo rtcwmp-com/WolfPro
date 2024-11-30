@@ -677,4 +677,9 @@ void CG_InitConsoleCommands( void ) {
 	trap_AddCommand( "reset_match" );
 	trap_AddCommand( "swap_teams" );
 	// -NERVE - SMF
+	
+	// Ready
+	trap_AddCommand("readyteam");
+	trap_AddCommand("ready");
+	trap_AddCommand("notready");
 }

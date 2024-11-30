@@ -162,6 +162,15 @@ vmCvar_t url;
 
 vmCvar_t g_dbgRevive;
 
+//Comp cvars
+vmCvar_t g_tournament;	// Ready-unready system
+vmCvar_t team_nocontrols;
+vmCvar_t match_timeoutcount;
+vmCvar_t match_minplayers;
+vmCvar_t match_readypercent;
+vmCvar_t match_latejoin;
+vmCvar_t match_warmupDamage;
+
 cvarTable_t gameCvarTable[] = {
 	// don't override the cheat state set by the system
 	{ &g_cheats, "sv_cheats", "", 0, qfalse },
@@ -294,7 +303,16 @@ cvarTable_t gameCvarTable[] = {
 
 	{&g_antilag, "g_antilag", "0", CVAR_SERVERINFO | CVAR_ARCHIVE, 0, qfalse},
 
-	{&g_dbgRevive, "g_dbgRevive", "0", 0, 0, qfalse}
+	{&g_dbgRevive, "g_dbgRevive", "0", 0, 0, qfalse},
+
+	//Match
+	{ &g_tournament, "g_tournament", "0", CVAR_ARCHIVE | CVAR_LATCH | CVAR_SERVERINFO, 0, qtrue },
+	{ &team_nocontrols, "team_nocontrols", "1", CVAR_ARCHIVE, 0, qfalse },
+	{ &match_minplayers, "match_minplayers", "2", 0, 0, qfalse, qfalse },
+	{ &match_timeoutcount, "match_timeoutcount", "3", 0, 0, qfalse, qtrue },
+	{ &match_readypercent, "match_readypercent", "100", 0, 0, qfalse, qtrue },
+	{ &match_latejoin, "match_latejoin", "1", 0, 0, qfalse, qfalse },
+	{ &match_warmupDamage, "match_warmupDamage", "1", 0, 0, qfalse }
 };
 
 // bk001129 - made static to avoid aliasing
@@ -1135,7 +1153,13 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 	// NERVE - SMF - intialize gamestate
 	if ( g_gamestate.integer == GS_INITIALIZE ) {
 		if ( g_noTeamSwitching.integer ) {
-			trap_Cvar_Set( "gamestate", va( "%i", GS_WAITING_FOR_PLAYERS ) );
+			if (g_tournament.integer) {// L0 - Ready
+				trap_Cvar_Set( "gamestate", va( "%i", GS_WARMUP ) );
+				trap_SetConfigstring( CS_READY, va( "%i", READY_PENDING ) );
+				level.ref_allready = qfalse;
+			} else {
+				trap_Cvar_Set( "gamestate", va( "%i", GS_WAITING_FOR_PLAYERS ) );
+			}
 		} else {
 			trap_Cvar_Set( "gamestate", va( "%i", GS_WARMUP ) );
 		}
@@ -1248,6 +1272,15 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 	}
 
 	G_RemapTeamShaders();
+
+	if (g_tournament.integer && g_gamestate.integer == GS_PLAYING)
+	{
+		teamInfo[TEAM_RED].timeouts = match_timeoutcount.integer;
+		teamInfo[TEAM_RED].team_lock = qtrue;
+
+		teamInfo[TEAM_BLUE].timeouts = match_timeoutcount.integer;
+		teamInfo[TEAM_BLUE].team_lock = qtrue;
+	}
 }
 
 
@@ -2338,15 +2371,22 @@ void CheckGameState() {
 		return;
 	}
 
-	if ( g_noTeamSwitching.integer && !trap_Cvar_VariableIntegerValue( "sv_serverRestarting" ) ) {
-		if ( current_gs != GS_WAITING_FOR_PLAYERS && level.numPlayingClients <= 1 && level.lastRestartTime + 1000 < level.time ) {
+	if ( g_tournament.integer && !trap_Cvar_VariableIntegerValue( "sv_serverRestarting" ) ) {
+		if ( current_gs != GS_WAITING_FOR_PLAYERS && g_minGameClients.integer > 1 && level.numPlayingClients <= 1 && level.lastRestartTime + 1000 < level.time ) {
 			level.lastRestartTime = level.time;
-			trap_SendConsoleCommand( EXEC_APPEND, va( "map_restart 0 %i\n", GS_WAITING_FOR_PLAYERS ) );
+
+			if (g_tournament.integer) {
+				trap_SetConfigstring( CS_READY, va( "%i", READY_PENDING ) );
+				trap_SendConsoleCommand( EXEC_APPEND, va( "map_restart 0 %i\n", GS_WARMUP ) );
+			} else {
+				trap_SendConsoleCommand( EXEC_APPEND, va( "map_restart 0 %i\n", GS_WAITING_FOR_PLAYERS ) );
+			}
 		}
 	}
 
 	if ( current_gs == GS_WAITING_FOR_PLAYERS && g_minGameClients.integer > 1 &&
-		 level.numPlayingClients >= g_minGameClients.integer && level.lastRestartTime + 1000 < level.time ) {
+		 level.numPlayingClients >= g_minGameClients.integer && level.lastRestartTime + 1000 < level.time
+		 && !g_tournament.integer ) {
 
 		level.lastRestartTime = level.time;
 		trap_SendConsoleCommand( EXEC_APPEND, va( "map_restart 0 %i\n", GS_WARMUP ) );
@@ -2360,17 +2400,54 @@ void CheckGameState() {
 
 	// check warmup latch
 	if ( current_gs == GS_WARMUP ) {
-		int delay = g_warmup.integer + 1;
 
-		if ( delay < 6 ) {
-			trap_Cvar_Set( "g_warmup", "5" );
-			delay = 7;
+		// L0 - Tourny..
+		if (g_tournament.integer) {
+
+			if (G_playersReady() || level.readyAll) {
+				level.warmupSwap = qfalse;
+				level.warmupTime = level.time + 11000;
+				trap_SetConfigstring( CS_READY, va( "%i", READY_NONE ));
+				trap_SetConfigstring( CS_WARMUP, va( "%i", level.warmupTime ) );
+				trap_Cvar_Set( "gamestate", va( "%i", GS_WARMUP_COUNTDOWN ) );
+				// Prevents joining once countdown starts..
+				//if (g_tournament.integer == 2) // xmod has a value of 2 but we do not
+				G_readyTeamLock();
+
+				if (!level.readyPrint) {
+					// show all players ready for both right now - need to fix pause for noteamswitching = 1
+					AP(va("cp \"%s\n\"2", (g_noTeamSwitching.integer ? "^3All players are now ready!" : "^3All players are now ready!"))); //"Ready threshold reached!") ));
+					level.readyPrint = qtrue;
+				}
+			} else {
+
+				level.warmupSwap = qtrue;
+				trap_SetConfigstring( CS_READY, va( "%i", (g_noTeamSwitching.integer ? READY_PENDING : READY_AWAITING) ));
+			}
+
+		} else { // Tourny is off..act casual
+			int delay = g_warmup.integer + 1;
+			trap_SetConfigstring( CS_READY, va( "%i", READY_NONE ));
+
+			if ( delay < 6 ) {
+				trap_Cvar_Set( "g_warmup", "5" );
+				delay = 11;
+			}
+
+			level.warmupTime = level.time + ( delay * 1000 );
+			trap_SetConfigstring( CS_WARMUP, va( "%i", level.warmupTime ) );
+			trap_Cvar_Set( "gamestate", va( "%i", GS_WARMUP_COUNTDOWN ) );
 		}
-
-		level.warmupTime = level.time + ( delay * 1000 );
-		trap_SetConfigstring( CS_WARMUP, va( "%i", level.warmupTime ) );
-		trap_Cvar_Set( "gamestate", va( "%i", GS_WARMUP_COUNTDOWN ) );
 	}
+
+	// L0 - Reset countdown if ready goes off (eg. player enters, leaves..)
+	if ( current_gs == GS_WARMUP_COUNTDOWN ) {
+		if (g_tournament.integer) {
+			if (!G_playersReady()) // && !level.readyAll )
+				G_readyReset(qfalse);
+		}
+	}
+
 }
 
 /*
@@ -2574,7 +2651,18 @@ void G_RunFrame( int levelTime ) {
 		return;
 	}
 
-	level.frameTime = trap_Milliseconds();
+	// L0 - Pause
+	// OSP Handling of pause offsets
+	if (level.paused == PAUSE_NONE) {
+		level.timeCurrent = levelTime - level.timeDelta;
+	}
+	else {
+		level.timeDelta = levelTime - level.timeCurrent;
+		if ((level.time % 500) == 0) {
+			// Respawn and time issuses
+			trap_SetConfigstring(CS_LEVEL_START_TIME, va("%i", level.startTime + level.timeDelta));
+		}
+	} // End
 
 	level.framenum++;
 	level.previousTime = level.time;
@@ -2744,6 +2832,8 @@ void G_RunFrame( int levelTime ) {
 	// cancel vote if timed out
 	CheckVote();
 
+	CheckReady();
+
 	// check team votes
 //	CheckTeamVote( TEAM_RED );
 //	CheckTeamVote( TEAM_BLUE );
@@ -2765,4 +2855,34 @@ void G_RunFrame( int levelTime ) {
 
 	// Ridah, check if we are reloading, and times have expired
 	CheckReloadStatus();
+}
+
+
+/*
+================
+OSPx - check for team stuff..
+================
+*/
+void HandleEmptyTeams(void) {
+
+	// if there is a live Tournament Stopwatch round going do not reset the match if the other team rage quits
+	if (g_gamestate.integer == GS_PLAYING && g_tournament.integer == 1 && g_gametype.integer == GT_WOLF_STOPWATCH)
+		return;
+
+	if (g_gamestate.integer != GS_INTERMISSION) {
+		if (!level.axisPlayers && match_minplayers.integer > 1) {
+			G_teamReset(TEAM_RED, qtrue, qfalse);
+
+			// Reset match if not paused with an empty team
+			if (level.paused == PAUSE_NONE && g_gamestate.integer == GS_PLAYING)
+				Svcmd_ResetMatch_f(qtrue, qtrue);
+		}
+		else if (!level.alliedPlayers && match_minplayers.integer > 1) {
+			G_teamReset(TEAM_BLUE, qtrue, qfalse);
+
+			// Reset match if not paused with an empty team
+			if (level.paused == PAUSE_NONE && g_gamestate.integer == GS_PLAYING)
+				Svcmd_ResetMatch_f(qtrue, qtrue);
+		}
+	}
 }

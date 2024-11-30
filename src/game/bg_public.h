@@ -172,6 +172,10 @@ typedef enum {
 
 #define CS_WOLFINFO             36      // NERVE - SMF
 
+//Competition config strings
+#define CS_PAUSED				40
+#define CS_READY				41
+
 #define CS_MODELS               64
 #define CS_SOUNDS               ( CS_MODELS + MAX_MODELS )
 #define CS_PLAYERS              ( CS_SOUNDS + MAX_SOUNDS )
@@ -439,14 +443,17 @@ typedef enum {
 
 	// (SA) for Wolf
 	PW_INVULNERABLE,
-	PW_FIRE,            //----(SA)
+	//PW_FIRE,            //----(SA)
 	PW_ELECTRIC,        //----(SA)
 	PW_BREATHER,        //----(SA)
 	PW_NOFATIGUE,       //----(SA)
 
 	PW_REDFLAG,
 	PW_BLUEFLAG,
-	PW_BALL,
+	
+	PW_CAPPEDOBJ,		// PlayerCappedDocuments
+	PW_READY,			// Ready
+	PW_BLACKOUT,		// Speclock
 
 	PW_NUM_POWERUPS
 } powerup_t;

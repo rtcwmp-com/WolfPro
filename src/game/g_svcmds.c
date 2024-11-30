@@ -562,17 +562,30 @@ NERVE - SMF - this has three behaviors
 - if in stopwatch mode, reset back to first round
 ============
 */
-void Svcmd_ResetMatch_f() {
-	if ( g_gametype.integer == GT_WOLF_STOPWATCH ) {
+void Svcmd_ResetMatch_f(qboolean fDoReset, qboolean fDoRestart) {
+	int i;
+	gclient_t *cl;
+	for (i = 0; i < level.numConnectedClients; i++) {
+		g_entities[level.sortedClients[i]].client->pers.ready = qfalse;
+		//g_entities[level.sortedClients[i]].client->ps.persistant[PERS_RESTRICTEDWEAPON] = WP_NONE; // reset weapon restrictions on restart
+	}
+
+	if (fDoReset && g_gametype.integer == GT_WOLF_STOPWATCH ) {
 		trap_Cvar_Set( "g_currentRound", "0" );
 		trap_Cvar_Set( "g_nextTimeLimit", "0" );
 	}
 
-	if ( !g_noTeamSwitching.integer || ( g_minGameClients.integer > 1 && level.numPlayingClients >= g_minGameClients.integer ) ) {
+	if (fDoRestart && !g_noTeamSwitching.integer || ( g_minGameClients.integer > 1 && level.numPlayingClients >= g_minGameClients.integer ) ) {
 		trap_SendConsoleCommand( EXEC_APPEND, va( "map_restart 0 %i\n", GS_WARMUP ) );
 		return;
 	} else {
-		trap_SendConsoleCommand( EXEC_APPEND, va( "map_restart 0 %i\n", GS_WAITING_FOR_PLAYERS ) );
+		if (g_tournament.integer) {
+			trap_SendConsoleCommand(EXEC_APPEND, va("map_restart 0 %i\n", GS_WARMUP));
+			trap_SetConfigstring(CS_READY, va("%i", READY_PENDING));
+		}
+		else {
+			trap_SendConsoleCommand(EXEC_APPEND, va("map_restart 0 %i\n", GS_WAITING_FOR_PLAYERS));
+		}
 		return;
 	}
 }
@@ -585,11 +598,12 @@ NERVE - SMF - swaps all clients to opposite team
 ============
 */
 void Svcmd_SwapTeams_f() {
-//  if ( g_gamestate.integer != GS_PLAYING ) {
-	if ( ( g_gamestate.integer == GS_INITIALIZE ) || // JPW NERVE -- so teams can swap between checkpoint rounds
-		 ( g_gamestate.integer == GS_WAITING_FOR_PLAYERS ) ||
-		 ( g_gamestate.integer == GS_RESET ) ) {
-		trap_SendServerCommand( -1, va( "print \"Match must be in progress to swap teams.\n\"" ) );
+	if ((g_gamestate.integer == GS_INITIALIZE) ||
+	    (g_gamestate.integer == GS_WARMUP) ||
+	    ( g_gamestate.integer == GS_WAITING_FOR_PLAYERS ) ||
+	    (g_gamestate.integer == GS_RESET))
+	{
+		G_swapTeams();
 		return;
 	}
 
@@ -665,7 +679,7 @@ qboolean    ConsoleCommand( void ) {
 	}
 
 	if ( Q_stricmp( cmd, "reset_match" ) == 0 ) {
-		Svcmd_ResetMatch_f();
+		Svcmd_ResetMatch_f(qtrue, qtrue);
 		return qtrue;
 	}
 

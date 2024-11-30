@@ -2123,6 +2123,12 @@ static void CG_DrawVote( void ) {
 
 	if ( cgs.complaintEndTime > cg.time ) {
 
+		// RtcwPro exit complaint dialog if g_tournament is 1
+		const char* info = CG_ConfigString(CS_SERVERINFO);
+		char* isTournament = Info_ValueForKey(info, "g_tournament");
+		if (isTournament != NULL && !Q_stricmp(isTournament, "1"))
+			return;
+
 		if ( cgs.complaintClient == -1 ) {
 			s = "Your complaint has been filed";
 			CG_DrawStringExt( 8, 200, CG_TranslateString( s ), color, qtrue, qfalse, TINYCHAR_WIDTH, TINYCHAR_HEIGHT, 80 );
@@ -2392,6 +2398,7 @@ static qboolean CG_DrawFollow( void ) {
 	vec4_t color;
 	const char  *name;
 	char deploytime[128];        // JPW NERVE
+	float y;
 
 	if ( !( cg.snap->ps.pm_flags & PMF_FOLLOW ) ) {
 		return qfalse;
@@ -2424,11 +2431,12 @@ static qboolean CG_DrawFollow( void ) {
 		}
 	} else {
 		// jpw
-		CG_DrawSmallString( INFOTEXT_STARTX, 68, CG_TranslateString( "following" ), 1.0F );
+		if (cgs.gamestate != GS_PLAYING && cgs.currentRound) { y = 63; } else { y = 83; }
+		CG_DrawSmallString( INFOTEXT_STARTX, y, CG_TranslateString( "following" ), 1.0F ); // below respawn timer
 
 		name = cgs.clientinfo[ cg.snap->ps.clientNum ].name;
 
-		CG_DrawStringExt( 120, 68, name, color, qtrue, qtrue, BIGCHAR_WIDTH, BIGCHAR_HEIGHT, 0 );
+		CG_DrawStringExt( 120, y, name, color, qtrue, qtrue, BIGCHAR_WIDTH, BIGCHAR_HEIGHT, 0 );
 	} // JPW NERVE
 	return qtrue;
 }
@@ -2442,33 +2450,78 @@ CG_DrawWarmup
 static void CG_DrawWarmup( void ) {
 	int w;
 	int sec;
-	int cw;
-	const char  *s, *s1, *s2;
+	int cw = 10;
+	const char  *s, *s1, *s2, *configString = NULL;
+	const char* t;
 
 	if ( cgs.gametype == GT_SINGLE_PLAYER ) {
 		return;     // (SA) don't bother with this stuff in sp
 	}
 
+	// L0 - Ready
+	if (cgs.gamestate == GS_WARMUP && cgs.readyState != CREADY_NONE) {
+
+		if (cgs.currentRound) {
+			t = va(CG_TranslateString("Clock is now set to %s!"), WM_TimeToString(cgs.nextTimeLimit * 60.f * 1000.f));
+			w = CG_DrawStrlen(t);
+			CG_DrawStringExt(320 - w * cw / 2, 100, t, colorWhite, qfalse, qtrue, cw, (int)(cw * 1.5), 0);
+
+			if (configString != NULL) {
+				w = CG_DrawStrlen(configString);
+				CG_DrawStringExt(320 - w * cw / 2, 80, configString, colorWhite,
+					qfalse, qtrue, cw, (int)(cw * 1.5), 0);
+			}
+		}
+		else {
+			if (configString != NULL) {
+				w = CG_DrawStrlen(configString);
+				CG_DrawStringExt(320 - w * cw / 2, 100, configString, colorWhite,
+					qfalse, qtrue, cw, (int)(cw * 1.5), 0);
+			}
+		}
+
+		// No need to bother with count..scoreboard gives info..
+		s = va(CG_TranslateString("^3WARMUP:^7 Waiting on ^2%i ^7%s"), cgs.minclients, cgs.minclients == 1 ? "player" : "players");
+		w = CG_DrawStrlen( s );
+		CG_DrawStringExt( 320 - w * 6, 120, s, colorWhite, qfalse, qtrue, 12, 18, 0 );
+
+		if ( !cg.demoPlayback && cg.snap->ps.persistant[PERS_TEAM] != TEAM_SPECTATOR &&
+			( !( cg.snap->ps.pm_flags & PMF_FOLLOW ) || ( cg.snap->ps.pm_flags & PMF_LIMBO ) ) ) {
+			s1 = (cg.snap->ps.powerups[PW_READY]) ? "^3You are ready" : CG_TranslateString("Type ^3\\ready ^7in the console to start");
+			w = CG_DrawStrlen( s1 );
+			CG_DrawStringExt( 320 - w * cw / 2, 140, s1, colorWhite,
+								qfalse, qtrue, cw, (int)( cw * 1.5 ), 0 );
+		}
+
+		return;
+	}
+
 	sec = cg.warmup;
 	if ( !sec ) {
 		if ( cgs.gamestate == GS_WAITING_FOR_PLAYERS ) {
-			cw = 10;
 
-			s = CG_TranslateString( "Game Stopped - Waiting for more players" );
+			if (configString != NULL)
+			{
+				w = CG_DrawStrlen(configString);
+				CG_DrawStringExt(320 - w * cw / 2, 100, configString, colorWhite,
+					qfalse, qtrue, cw, (int)(cw * 1.5), 0);
+			}
+
+			s = CG_TranslateString( "^3WARMUP:^7 Waiting for more players" );
 
 			w = CG_DrawStrlen( s );
 			CG_DrawStringExt( 320 - w * 6, 120, s, colorWhite, qfalse, qtrue, 12, 18, 0 );
 
 
-			s1 = va( CG_TranslateString( "Waiting for %i players" ), cgs.minclients );
+			s1 = va( CG_TranslateString( "Waiting for ^3%i ^7players" ), cgs.minclients );
 			s2 = CG_TranslateString( "or call a vote to start match" );
 
 			w = CG_DrawStrlen( s1 );
-			CG_DrawStringExt( 320 - w * cw / 2, 160, s1, colorWhite,
+			CG_DrawStringExt( 320 - w * cw / 2, 140, s1, colorWhite,
 							  qfalse, qtrue, cw, (int)( cw * 1.5 ), 0 );
 
 			w = CG_DrawStrlen( s2 );
-			CG_DrawStringExt( 320 - w * cw / 2, 180, s2, colorWhite,
+			CG_DrawStringExt( 320 - w * cw / 2, 160, s2, colorWhite,
 							  qfalse, qtrue, cw, (int)( cw * 1.5 ), 0 );
 
 			return;
@@ -2482,11 +2535,7 @@ static void CG_DrawWarmup( void ) {
 		sec = 0;
 	}
 
-	if ( cgs.gametype == GT_WOLF_STOPWATCH ) {
-		s = va( "%s %i", CG_TranslateString( "(WARMUP) Match begins in:" ), sec + 1 );
-	} else {
-		s = va( "%s %i", CG_TranslateString( "(WARMUP) Match begins in:" ), sec + 1 );
-	}
+	s = va( "%s %i", CG_TranslateString( "^3(WARMUP) Match begins in: ^1" ), sec + 1 );
 
 	w = CG_DrawStrlen( s );
 	CG_DrawStringExt( 320 - w * 6, 120, s, colorWhite, qfalse, qtrue, 12, 18, 0 );
@@ -2548,16 +2597,16 @@ static void CG_DrawWarmup( void ) {
 
 		cw = 10;
 
-		w = CG_DrawStrlen( s );
-		CG_DrawStringExt( 320 - w * cw / 2, 140, s, colorWhite,
+		w = CG_DrawStrlen( s ); // OSPx - Pushed all lower for 20
+		CG_DrawStringExt( 320 - w * cw / 2, 160, s, colorWhite,
 						  qfalse, qtrue, cw, (int)( cw * 1.5 ), 0 );
 
 		w = CG_DrawStrlen( s1 );
-		CG_DrawStringExt( 320 - w * cw / 2, 160, s1, colorWhite,
+		CG_DrawStringExt( 320 - w * cw / 2, 180, s1, colorWhite,
 						  qfalse, qtrue, cw, (int)( cw * 1.5 ), 0 );
 
 		w = CG_DrawStrlen( s2 );
-		CG_DrawStringExt( 320 - w * cw / 2, 180, s2, colorWhite,
+		CG_DrawStringExt( 320 - w * cw / 2, 200, s2, colorWhite,
 						  qfalse, qtrue, cw, (int)( cw * 1.5 ), 0 );
 	}
 }
@@ -3001,7 +3050,12 @@ void CG_DrawObjectiveIcons() {
 	seconds -= mins * 60;
 	tens = seconds / 10;
 	seconds -= tens * 10;
-	if ( msec < 0 ) {
+	// OSPx - Print fancy warmup in corner..
+	if (cgs.gamestate != GS_PLAYING) {
+		fade = Q_fabs(sin(cg.time * 0.002)) * cg_hudAlpha.value;
+		s = va("^3Warmup");
+	}
+	else if ( msec < 0 ) {
 		fade = fabs( sin( cg.time * 0.002 ) ) * cg_hudAlpha.value;
 		s = va( "0:00" );
 	} else {

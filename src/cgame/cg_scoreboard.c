@@ -290,13 +290,19 @@ int WM_DrawObjectives( int x, int y, int width, float fade ) {
 		tens = seconds / 10;
 		seconds -= tens * 10;
 
-		if ( msec < 0 ) {
+		if ( msec < 0 && cgs.gamestate != GS_WARMUP) { // don't show sudden death during warmup
 			s = va( "%s %s", CG_TranslateString( "Mission time:" ),  CG_TranslateString( "Sudden Death" ) );
+			CG_DrawSmallString(x, y, s, fade);
 		} else {
-			s = va( "%s   %2.0f:%i%i", CG_TranslateString( "Mission time:" ), (float)mins, tens, seconds ); // float cast to line up with reinforce time
-
+			if (cgs.gamestate == GS_PLAYING) {
+				s = va("%s   %2.0f:%i%i", CG_TranslateString("Mission time:"), (float)mins, tens, seconds); // float cast to line up with reinforce time
+				CG_DrawSmallString(x, y, s, fade);
+			}
+			else if (cgs.gamestate == GS_WARMUP) {
+				s = va("%s %s", CG_TranslateString("Mission time:"), CG_TranslateString("WARMUP"));
+				CG_DrawSmallString(x, y, s, fade);
+			}
 		}
-		CG_DrawSmallString( x,y,s,fade );
 
 		if ( cgs.clientinfo[cg.snap->ps.clientNum].team == TEAM_RED ) {
 			msec = cg_redlimbotime.integer - ( cg.time % cg_redlimbotime.integer );
@@ -436,6 +442,14 @@ static void WM_DrawClientScore( int x, int y, score_t *score, float *color, floa
 			tempx += 18;
 			maxchars -= 2;
 		}
+	}
+
+	// L0 - Ready
+	if ((cgs.gamestate == GS_WARMUP || cgs.gamestate == GS_WARMUP_COUNTDOWN) && cgs.readyState) {
+		char *rdy = ( ( is_ready(ci->clientNum) ) ? "^2!" : "^1?");
+
+		if (ci->team != TEAM_SPECTATOR)
+			CG_DrawSmallString( tempx-11, y, va( "%s", rdy ), fade );
 	}
 
 	// draw name
@@ -893,3 +907,20 @@ void CG_DrawTourneyScoreboard( void ) {
 	}
 }
 
+/*
+=================
+L0 - Ready state
+=================
+*/
+int is_ready( int clientNum ) {
+	int i, rdy=0;
+
+	for ( i = 0 ; i < cgs.maxclients ; i++ ) {
+		if (cgs.clientinfo[i].team != TEAM_SPECTATOR && cgs.clientinfo[i].clientNum == clientNum) {
+			rdy = (cgs.clientinfo[clientNum].powerups & (1 << PW_READY)) ? 1 : 0;
+			return rdy;
+		}
+	}
+
+return rdy;
+}

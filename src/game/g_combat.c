@@ -48,7 +48,7 @@ void AddScore( gentity_t *ent, int score ) {
 		return;
 	}
 	// no scoring during pre-match warmup
-	if ( level.warmupTime ) {
+	if (g_gamestate.integer != GS_PLAYING) {
 		return;
 	}
 
@@ -286,6 +286,7 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 	gitem_t     *item = NULL; // JPW NERVE for flag drop
 	vec3_t launchvel,launchspot;      // JPW NERVE
 	gentity_t   *flag; // JPW NERVE
+	int prevPowerups = 0;
 
 	if ( self->client->ps.pm_type == PM_DEAD ) {
 		return;
@@ -476,6 +477,7 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 	self->takedamage = qtrue;   // can still be gibbed
 	self->r.contents = CONTENTS_CORPSE;
 
+	prevPowerups = self->s.powerups;
 	self->s.powerups = 0;
 // JPW NERVE -- only corpse in SP; in MP, need CONTENTS_BODY so medic can operate
 	if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
@@ -502,6 +504,15 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 
 	// remove powerups
 	memset( self->client->ps.powerups, 0, sizeof( self->client->ps.powerups ) );
+
+	// RTCWPro - update ready status
+	if (g_gamestate.integer == GS_WARMUP || g_gamestate.integer == GS_WAITING_FOR_PLAYERS){ // only do this during warmup
+		self->client->ps.powerups[PW_READY] = (level.clients[self->client->ps.clientNum].pers.ready == 1) ? INT_MAX : 0;
+		if(prevPowerups & (1 << PW_READY)){
+			self->s.powerups = prevPowerups;
+		}
+	}
+
 
 	// never gib in a nodrop
 	if ( self->health <= GIB_HEALTH && !( contents & CONTENTS_NODROP ) ) {
@@ -887,7 +898,7 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 
 	// the intermission has allready been qualified for, so don't
 	// allow any extra scoring
-	if ( level.intermissionQueued || g_gamestate.integer != GS_PLAYING ) {
+	if ( level.intermissionQueued || (g_gamestate.integer != GS_PLAYING && match_warmupDamage.integer == 0) ) {
 		return;
 	}
 
@@ -1023,7 +1034,7 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 		// if TF_NO_FRIENDLY_FIRE is set, don't do damage to the target
 		// if the attacker was on the same team
 		if ( targ != attacker && OnSameTeam( targ, attacker )  ) {
-			if ( !g_friendlyFire.integer ) {
+			if ( ( g_gamestate.integer != GS_PLAYING && match_warmupDamage.integer == 0 ) ) {
 				return;
 			}
 		}

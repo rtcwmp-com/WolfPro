@@ -113,22 +113,17 @@ void G_ReadSessionData( gclient_t *client ) {
 		test = g_currentRound.integer == 1;
 	}
 
-	if ( g_gametype.integer == GT_WOLF_STOPWATCH && level.warmupTime > 0 && test ) {
-		if ( client->sess.sessionTeam == TEAM_RED ) {
-			client->sess.sessionTeam = TEAM_BLUE;
-		} else if ( client->sess.sessionTeam == TEAM_BLUE )   {
-			client->sess.sessionTeam = TEAM_RED;
+	if (g_gametype.integer == GT_WOLF_STOPWATCH && test) {
+		if (g_tournament.integer && level.warmupSwap ||
+			!g_tournament.integer && level.warmupTime > 0
+		) {
+		    G_ClientSwap( client );
 		}
 	}
 
 	if ( g_swapteams.integer ) {
 		trap_Cvar_Set( "g_swapteams", "0" );
-
-		if ( client->sess.sessionTeam == TEAM_RED ) {
-			client->sess.sessionTeam = TEAM_BLUE;
-		} else if ( client->sess.sessionTeam == TEAM_BLUE )   {
-			client->sess.sessionTeam = TEAM_RED;
-		}
+		G_ClientSwap( client );
 	}
 }
 
@@ -232,4 +227,43 @@ void G_WriteSessionData( void ) {
 			G_WriteClientSessionData( &level.clients[i] );
 		}
 	}
+}
+
+/*
+================
+G_ClientSwap
+Client swap handling
+================
+*/
+void G_ClientSwap( gclient_t *client ) {
+	int flags = 0;
+
+	if ( client->sess.sessionTeam == TEAM_RED ) {
+		client->sess.sessionTeam = TEAM_BLUE;
+	} else if ( client->sess.sessionTeam == TEAM_BLUE )   {
+		client->sess.sessionTeam = TEAM_RED;
+	}
+	// Swap spec invites as well
+	if ( client->sess.specInvited & TEAM_RED ) {
+		flags |= TEAM_BLUE;
+
+	}
+	if ( client->sess.specInvited & TEAM_BLUE ) {
+		flags |= TEAM_RED;
+
+	}
+
+	client->sess.specInvited = flags;
+
+	flags = 0;
+	// Swap spec follows as well
+	if ( client->sess.specLocked & TEAM_RED ) {
+		flags |= TEAM_BLUE;
+	}
+	if ( client->sess.specLocked & TEAM_BLUE ) {
+		flags |= TEAM_RED;
+	}
+
+	client->sess.specLocked = flags;
+
 }
