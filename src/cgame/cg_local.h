@@ -2491,3 +2491,14 @@ const char* WM_TimeToString(float msec);
 //Blood damage
 extern vmCvar_t cg_bloodDamageBlend;
 extern vmCvar_t cg_bloodFlash;
+
+extern vmCvar_t cg_customCrosshair;
+extern vmCvar_t cg_customCrosshairHeight;
+extern vmCvar_t cg_customCrosshairThickness;
+extern vmCvar_t cg_customCrosshairThicknessAlt;
+extern vmCvar_t cg_customCrosshairWidth;
+extern vmCvar_t cg_customCrosshairXOffset;
+extern vmCvar_t cg_customCrosshairYOffset;
+extern vmCvar_t cg_customCrosshairColor;
+extern vmCvar_t cg_customCrosshairColorAlt;
+extern vmCvar_t cg_customCrosshairVMirror;
