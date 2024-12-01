@@ -2499,6 +2499,8 @@ extern vmCvar_t cg_customCrosshairThicknessAlt;
 extern vmCvar_t cg_customCrosshairWidth;
 extern vmCvar_t cg_customCrosshairXOffset;
 extern vmCvar_t cg_customCrosshairYOffset;
+extern vmCvar_t cg_customCrosshairXGap;
+extern vmCvar_t cg_customCrosshairYGap;
 extern vmCvar_t cg_customCrosshairColor;
 extern vmCvar_t cg_customCrosshairColorAlt;
 extern vmCvar_t cg_customCrosshairVMirror;
