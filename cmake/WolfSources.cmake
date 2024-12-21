@@ -157,3 +157,8 @@ FILE(GLOB RENDERER_FILES
 	"src/renderer/*.h"
 )
 
+FILE(GLOB RENDERER_VK_FILES
+	"src/renderer_vk/*.c"
+	"src/renderer_vk/*.h"
+)
+

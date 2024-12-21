@@ -16,6 +16,7 @@ add_library(engine_libraries INTERFACE)
 add_library(renderer_libraries INTERFACE)
 
 add_library(renderer_gl1_libraries INTERFACE)
+add_library(renderer_vk_libraries INTERFACE)
 
 # Mod shared libraries
 add_library(mod_libraries INTERFACE)

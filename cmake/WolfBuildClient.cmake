@@ -26,7 +26,7 @@ elseif(CMAKE_CROSSCOMPILE)
 	message("CMAKE_CROSSCOMPILE")
 	set(WOLF_COMPILE_DEF "USE_ICON;BOTLIB;__i386__")
 else()
-	set(WOLF_COMPILE_DEF "USE_ICON;BOTLIB;__i386__;DLL_ONLY")
+	set(WOLF_COMPILE_DEF "USE_ICON;BOTLIB;__i386__")
 endif()
 
 set_target_properties(wolfmp PROPERTIES

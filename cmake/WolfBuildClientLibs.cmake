@@ -1,17 +1,34 @@
 #-----------------------------------------------------------------
 # Build Renderer
 #-----------------------------------------------------------------
+if(FEATURE_RENDERER_GL1)
+	add_library(renderer STATIC ${RENDERER_FILES} ${RENDERER_COMMON})
 
-add_library(renderer STATIC ${RENDERER_FILES} ${RENDERER_COMMON})
+	target_link_libraries(renderer renderer_gl1_libraries renderer_libraries)
+	target_include_directories(renderer PRIVATE src/renderer)
 
-target_link_libraries(renderer renderer_gl1_libraries renderer_libraries)
-target_include_directories(renderer PRIVATE src/renderer)
+	if(NOT MSVC)
+		target_link_libraries(renderer m)
+	endif()
 
-if(NOT MSVC)
-	target_link_libraries(renderer m)
+	target_link_libraries(client_libraries INTERFACE renderer)
 endif()
 
-target_link_libraries(client_libraries INTERFACE renderer)
+#-----------------------------------------------------------------
+# Build Vulkan Renderer
+#-----------------------------------------------------------------
+if(FEATURE_RENDERER_VULKAN)
+	add_library(renderer_vk STATIC ${RENDERER_FILES} ${RENDERER_VK_FILES} ${RENDERER_COMMON})
+
+	target_link_libraries(renderer_vk renderer_vk_libraries renderer_libraries)
+	target_include_directories(renderer_vk PRIVATE src/renderer_vk)
+
+	if(NOT MSVC)
+		target_link_libraries(renderer_vk m)
+	endif()
+
+	target_link_libraries(client_libraries INTERFACE renderer_vk)
+endif()
 
 #-----------------------------------------------------------------
 # Build JPEG
