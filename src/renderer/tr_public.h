@@ -114,6 +114,9 @@ typedef struct {
 	void ( *RemapShader )( const char *oldShader, const char *newShader, const char *offsetTime );
 
 	qboolean ( *GetEntityToken )( char *buffer, int size );
+
+	// sets up glConfig etc. based on r_fullscreen, r_mode, r_width, r_height
+	void	(*ConfigureVideoMode)( int desktopWidth, int desktopHeight );
 } refexport_t;
 
 //

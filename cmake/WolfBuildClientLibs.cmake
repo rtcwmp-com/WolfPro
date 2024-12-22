@@ -1,7 +1,7 @@
 #-----------------------------------------------------------------
 # Build Renderer
 #-----------------------------------------------------------------
-if(FEATURE_RENDERER_GL1)
+#if(FEATURE_RENDERER_GL1)
 	add_library(renderer STATIC ${RENDERER_FILES} ${RENDERER_COMMON})
 
 	target_link_libraries(renderer renderer_gl1_libraries renderer_libraries)
@@ -12,7 +12,7 @@ if(FEATURE_RENDERER_GL1)
 	endif()
 
 	target_link_libraries(client_libraries INTERFACE renderer)
-endif()
+#endif()
 
 #-----------------------------------------------------------------
 # Build Vulkan Renderer

@@ -33,6 +33,8 @@ If you have questions concerning this license or the applicable additional terms
 
 WinVars_t g_wv;
 
+WinVars_t vk_wv;
+
 #ifndef WM_MOUSEWHEEL
 #define WM_MOUSEWHEEL ( WM_MOUSELAST + 1 )  // message that will be supported by the OS
 #endif

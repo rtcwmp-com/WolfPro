@@ -35,7 +35,7 @@ If you have questions concerning this license or the applicable additional terms
 //#define	PRE_RELEASE_DEMO
 
 //============================================================================
-
+#define CLIENT_WINDOW_TITLE "Wolfenstein"
 //
 // msg.c
 //

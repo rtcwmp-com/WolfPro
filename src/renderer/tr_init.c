@@ -317,6 +317,10 @@ static void InitOpenGL( void ) {
 	GL_SetDefaultState();
 }
 
+static void InitVulkan( void ) {
+	VKimp_Init();
+}
+
 /*
 ==================
 GL_CheckErrors
@@ -1199,6 +1203,8 @@ void R_Init( void ) {
 
 	InitOpenGL();
 
+	InitVulkan();
+
 	R_InitImages();
 
 	R_InitShaders();
@@ -1366,6 +1372,7 @@ refexport_t *GetRefAPI( int apiVersion, refimport_t *rimp ) {
 	re.RegisterFont     = RE_RegisterFont;
 	re.RemapShader      = R_RemapShader;
 	re.GetEntityToken   = R_GetEntityToken;
+	re.ConfigureVideoMode = RE_ConfigureVideoMode;
 
 	return &re;
 }
@@ -1376,7 +1383,7 @@ refexport_t *GetRefAPI( int apiVersion, refimport_t *rimp ) {
 #define VIDEOMODE_CHANGE		2	// mode change - only makes sense for CRT users
 #define VIDEOMODE_MAX			2
 
-void R_ConfigureVideoMode( int desktopWidth, int desktopHeight )
+void RE_ConfigureVideoMode( int desktopWidth, int desktopHeight )
 {
 	glInfo.winFullscreen = !!r_fullscreen->integer;
 	glInfo.vidFullscreen = r_fullscreen->integer && r_mode->integer == VIDEOMODE_CHANGE;

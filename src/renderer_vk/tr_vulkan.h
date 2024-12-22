@@ -1,0 +1,139 @@
+#ifndef TR_VULKAN
+#define TR_VULKAN
+
+#include <vulkan/vulkan.h>
+#include "../renderer/tr_local.h"
+#include "tr_local_gal.h"
+
+
+
+
+#define MAX_LAYERS 16
+#define MAX_EXTENSIONS 16
+#define MAX_SWAP_CHAIN_IMAGES 16
+#define MAX_SAMPLER_DESCRIPTORS (MAX_DRAWIMAGES + 64)
+#define MAX_TEXTURES (MAX_DRAWIMAGES + 256) // needs space for render targets too
+#define MAX_DURATION_QUERIES 64
+
+#define MAX_TEXTURE_SIZE 2048
+
+#define TEXTURE_FORMAT_RGBA VK_FORMAT_R8G8B8A8_UNORM
+
+// nuke these two - set some preferred format list and use what's available
+// option #1: preferred
+// CS     VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+// FORMAT VK_FORMAT_B8G8R8A8_UNORM
+// option #2:
+// CS     VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+// FORMAT VK_FORMAT_B8G8R8A8_SRGB
+#define SURFACE_FORMAT_RGBA VK_FORMAT_B8G8R8A8_UNORM
+#define GAL_SURFACE_FORMAT  galTextureFormat::B8G8R8A8_UNorm
+
+// Nvidia Nsight Systems 2020.2 is supposed to support Vulkan 1.2
+// on my PC, it only captures with Vulkan 1.1 :-(
+#define MINIMUM_VULKAN_API_VERSION (VK_MAKE_API_VERSION(1, 3, 0, 0))
+
+#define BIT_MASK(BitCount) ((1 << BitCount) - 1)
+
+#define VK(call) Check((call), #call)
+
+
+#define VULKAN_SUCCESS_CODES(N) \
+	N(VK_SUCCESS, "Command successfully completed") \
+	N(VK_NOT_READY, "A fence or query has not yet completed") \
+	N(VK_TIMEOUT, "A wait operation has not completed in the specified time") \
+	N(VK_EVENT_SET, "An event is signaled") \
+	N(VK_EVENT_RESET, "An event is unsignaled") \
+	N(VK_INCOMPLETE, "A return array was too small for the result") \
+	N(VK_SUBOPTIMAL_KHR, "A swapchain no longer matches the surface properties exactly, but can still be used to present to the surface successfully.") \
+	N(VK_THREAD_IDLE_KHR, "A deferred operation is not complete but there is currently no work for this thread to do at the time of this call.") \
+	N(VK_THREAD_DONE_KHR, "A deferred operation is not complete but there is no work remaining to assign to additional threads.") \
+	N(VK_OPERATION_DEFERRED_KHR, "A deferred operation was requested and at least some of the work was deferred.") \
+	N(VK_OPERATION_NOT_DEFERRED_KHR, "A deferred operation was requested and no operations were deferred.") \
+	N(VK_PIPELINE_COMPILE_REQUIRED_EXT, "A requested pipeline creation would have required compilation, but the application requested compilation to not be performed.")
+
+#define VULKAN_ERROR_CODES(N) \
+	N(VK_ERROR_OUT_OF_HOST_MEMORY, "A host memory allocation has failed.") \
+	N(VK_ERROR_OUT_OF_DEVICE_MEMORY, "A device memory allocation has failed.") \
+	N(VK_ERROR_INITIALIZATION_FAILED, "Initialization of an object could not be completed for implementation-specific reasons.") \
+	N(VK_ERROR_DEVICE_LOST, "The logical or physical device has been lost. See Lost Device") \
+	N(VK_ERROR_MEMORY_MAP_FAILED, "Mapping of a memory object has failed.") \
+	N(VK_ERROR_LAYER_NOT_PRESENT, "A requested layer is not present or could not be loaded.") \
+	N(VK_ERROR_EXTENSION_NOT_PRESENT, "A requested extension is not supported.") \
+	N(VK_ERROR_FEATURE_NOT_PRESENT, "A requested feature is not supported.") \
+	N(VK_ERROR_INCOMPATIBLE_DRIVER, "The requested version of Vulkan is not supported by the driver or is otherwise incompatible for implementation-specific reasons.") \
+	N(VK_ERROR_TOO_MANY_OBJECTS, "Too many objects of the type have already been created.") \
+	N(VK_ERROR_FORMAT_NOT_SUPPORTED, "A requested format is not supported on this device.") \
+	N(VK_ERROR_FRAGMENTED_POOL, "A pool allocation has failed due to fragmentation of the pool's memory. This must only be returned if no attempt to allocate host or device memory was made to accommodate the new allocation. This should be returned in preference to VK_ERROR_OUT_OF_POOL_MEMORY, but only if the implementation is certain that the pool allocation failure was due to fragmentation.") \
+	N(VK_ERROR_SURFACE_LOST_KHR, "A surface is no longer available.") \
+	N(VK_ERROR_NATIVE_WINDOW_IN_USE_KHR, "The requested window is already in use by Vulkan or another API in a manner which prevents it from being used again.") \
+	N(VK_ERROR_OUT_OF_DATE_KHR, "A surface has changed in such a way that it is no longer compatible with the swapchain, and further presentation requests using the swapchain will fail. Applications must query the new surface properties and recreate their swapchain if they wish to continue presenting to the surface.") \
+	N(VK_ERROR_INCOMPATIBLE_DISPLAY_KHR, "The display used by a swapchain does not use the same presentable image layout, or is incompatible in a way that prevents sharing an image.") \
+	N(VK_ERROR_INVALID_SHADER_NV, "One or more shaders failed to compile or link. More details are reported back to the application via VK_EXT_debug_report if enabled.") \
+	N(VK_ERROR_OUT_OF_POOL_MEMORY, "A pool memory allocation has failed. This must only be returned if no attempt to allocate host or device memory was made to accommodate the new allocation. If the failure was definitely due to fragmentation of the pool, VK_ERROR_FRAGMENTED_POOL should be returned instead.") \
+	N(VK_ERROR_INVALID_EXTERNAL_HANDLE, "An external handle is not a valid handle of the specified type.") \
+	N(VK_ERROR_FRAGMENTATION, "A descriptor pool creation has failed due to fragmentation.") \
+	N(VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS, "A buffer creation or memory allocation failed because the requested address is not available. A shader group handle assignment failed because the requested shader group handle information is no longer valid.") \
+	N(VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT, "An operation on a swapchain created with VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT failed as it did not have exlusive full-screen access. This may occur due to implementation - dependent reasons, outside of the application�s control.") \
+	N(VK_ERROR_UNKNOWN, "An unknown error has occurred; either the application has provided invalid input, or an implementation failure has occurred.") \
+	N(VK_ERROR_VALIDATION_FAILED_EXT, "A validation error has occurred.")
+
+
+#define MAX_LAYERS 16
+#define MAX_EXTENSIONS 16
+
+typedef struct 
+{
+	// graphics is graphics *and* compute
+	// present is presentation and *can* be the same as graphics
+	VkQueue graphics;
+	VkQueue present;
+	uint32_t graphicsFamily;
+	uint32_t presentFamily;
+} Queues;
+
+typedef struct 
+{
+    //
+	// init state
+	//
+
+	qbool initialized;
+	int width;
+	int height;
+
+	//
+	// core
+	// 
+	int layerCount;
+	int extensionCount;
+	const char* layers[MAX_LAYERS];
+	const char* extensions[MAX_LAYERS];
+
+	VkInstance instance;
+	VkSurfaceKHR surface;
+
+	Queues queues;
+	VkPhysicalDevice physicalDevice;
+	VkPhysicalDeviceProperties deviceProperties;
+	VkPhysicalDeviceFeatures deviceFeatures;
+
+	VkDevice device;
+
+
+	//
+	// extensions
+	// 
+	struct Extensions
+	{
+		qbool EXT_validation_features;
+		qbool EXT_debug_utils;
+		VkDebugUtilsMessengerEXT debugMessenger; // EXT_debug_utils
+	} ext;
+} Vulkan;
+
+extern Vulkan vk;
+
+
+
+#endif

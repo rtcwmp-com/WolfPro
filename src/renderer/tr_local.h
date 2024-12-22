@@ -1349,6 +1349,7 @@ IMPLEMENTATION SPECIFIC FUNCTIONS
 */
 
 void        GLimp_Init( void );
+void        VKimp_Init( void );
 void        GLimp_Shutdown( void );
 void        GLimp_EndFrame( void );
 
@@ -1846,6 +1847,6 @@ typedef struct glinfo_s {
 
 extern glinfo_t glInfo;
 
-void	R_ConfigureVideoMode( int desktopWidth, int desktopHeight );	// writes to glConfig and glInfo
+void	RE_ConfigureVideoMode( int desktopWidth, int desktopHeight );	// writes to glConfig and glInfo
 
 #endif //TR_LOCAL_H (THIS MUST BE LAST!!)
