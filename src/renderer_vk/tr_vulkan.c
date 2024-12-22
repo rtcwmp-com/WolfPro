@@ -328,6 +328,15 @@ void CreateInstance()
 	/*vk.extensions[0] = "VK_KHR_win32_surface";
 	vk.extensionCount = 1;*/
 
+	VkDebugUtilsMessengerCreateInfoEXT messengerCreateInfo = {};
+	messengerCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+	messengerCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+	messengerCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+	messengerCreateInfo.pfnUserCallback = &DebugCallback;
+	messengerCreateInfo.pUserData = NULL;
+	messengerCreateInfo.pNext = NULL;
+	messengerCreateInfo.flags = 0;
+
 
 	VkApplicationInfo appInfo = {};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -341,6 +350,7 @@ void CreateInstance()
 	VkInstanceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pApplicationInfo = &appInfo;
+	createInfo.pNext = &messengerCreateInfo;
 	if (vk.extensionCount > 0) {
 		createInfo.enabledExtensionCount = vk.extensionCount;
 		createInfo.ppEnabledExtensionNames = vk.extensions;
@@ -350,10 +360,18 @@ void CreateInstance()
 		createInfo.enabledLayerCount = vk.layerCount;
 		createInfo.ppEnabledLayerNames = vk.layers;
 	}
-	
 
 	VK(vkCreateInstance(&createInfo, NULL, &vk.instance));
 
+
+	if (vk.ext.EXT_debug_utils)
+	{
+		if (CreateDebugUtilsMessengerEXT(vk.instance, &messengerCreateInfo, NULL, &vk.ext.debugMessenger) != VK_SUCCESS)
+		{
+			ri.Printf(PRINT_WARNING, "Failed to register Vulkan debug messenger\n");
+			
+		}
+	}
 }
 
 
