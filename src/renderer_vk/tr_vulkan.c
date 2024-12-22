@@ -325,6 +325,10 @@ void CreateInstance()
 		}
 	}
 	#endif
+	/*vk.extensions[0] = "VK_KHR_win32_surface";
+	vk.extensionCount = 1;*/
+
+
 	VkApplicationInfo appInfo = {};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	appInfo.apiVersion = MINIMUM_VULKAN_API_VERSION;
@@ -337,6 +341,16 @@ void CreateInstance()
 	VkInstanceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pApplicationInfo = &appInfo;
+	if (vk.extensionCount > 0) {
+		createInfo.enabledExtensionCount = vk.extensionCount;
+		createInfo.ppEnabledExtensionNames = vk.extensions;
+	}
+	
+	if (vk.layerCount > 0) {
+		createInfo.enabledLayerCount = vk.layerCount;
+		createInfo.ppEnabledLayerNames = vk.layers;
+	}
+	
 
 	VK(vkCreateInstance(&createInfo, NULL, &vk.instance));
 
@@ -541,7 +555,7 @@ void VKimp_Init( void ) {
 	ri.Printf( PRINT_ALL, "Initializing Vulkan subsystem\n" );
 
 	vk.instance = VK_NULL_HANDLE;
-    //BuildLayerAndExtensionLists();
+    BuildLayerAndExtensionLists();
 	CreateInstance();
 	vk.surface = (VkSurfaceKHR)Sys_Vulkan_Init(vk.instance);
 	PickPhysicalDevice();

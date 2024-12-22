@@ -31,7 +31,7 @@
 
 // Nvidia Nsight Systems 2020.2 is supposed to support Vulkan 1.2
 // on my PC, it only captures with Vulkan 1.1 :-(
-#define MINIMUM_VULKAN_API_VERSION (VK_MAKE_API_VERSION(1, 3, 0, 0))
+#define MINIMUM_VULKAN_API_VERSION (VK_MAKE_API_VERSION(0, 1, 3, 0))
 
 #define BIT_MASK(BitCount) ((1 << BitCount) - 1)
 
