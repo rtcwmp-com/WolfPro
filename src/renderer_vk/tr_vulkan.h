@@ -6,7 +6,8 @@
 #include "tr_local_gal.h"
 
 
-
+//TODO only in debug builds
+#define ENABLE_VALIDATION
 
 #define MAX_LAYERS 16
 #define MAX_EXTENSIONS 16

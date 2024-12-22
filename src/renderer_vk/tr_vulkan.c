@@ -156,7 +156,7 @@ static void BuildLayerAndExtensionLists()
 	if(UseValidationLayer())
 	{
 		wantedLayers[wantedLayerCount++] = "VK_LAYER_KHRONOS_validation"; // full validation
-		wantedExtensions[wantedExtensionCount++] = "VK_EXT_validation_features"; // best practices
+		//wantedExtensions[wantedExtensionCount++] = "VK_EXT_validation_features"; // update to non-deprecated
 	}
 	neededExtensions[neededExtensionCount++] = "VK_KHR_surface"; // swap chain
 #if defined(_WIN32)
