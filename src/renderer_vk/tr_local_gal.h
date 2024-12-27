@@ -10,6 +10,86 @@
 // - filling up the right glconfig fields (see glconfig_t definition)
 // returns the surface handle
 uint64_t Sys_Vulkan_Init(void* vkInstance);
+
+typedef uint32_t galHandle;
+
+#define GAL_HANDLE_TYPE(TypeName) typedef struct { galHandle v; }  TypeName;
+
+GAL_HANDLE_TYPE(galFence) //sync cpu and gpu, allows you to wait on a queue on CPU for the GPU to finish work
+GAL_HANDLE_TYPE(galTexture) //1d,2d,3d data that can be filtered when read (render target when writing from graphics pipeline operation)
+GAL_HANDLE_TYPE(galCommandPool) //memory region for allocating command buffers, once in init
+GAL_HANDLE_TYPE(galCommandBuffer) //list of commands to be executed on the gpu
+								//allocated from cmd pool in init, submitted to a queue
+								//clear command buffer every frame
+								//submit to gpu every frame
+
+#define GAL_FRAMES_IN_FLIGHT			2
+#define GAL_BIT(x)						(1 << x)
+
+
+typedef struct 
+{
+	qbool presentQueue;
+	qbool transient;
+} galCommandPoolDesc;
+
+typedef enum 
+{
+	galResourceStateFlagUndefined = 0,
+	VertexBufferBit = GAL_BIT(0),
+	IndexBufferBit = GAL_BIT(1),
+	RenderTargetBit = GAL_BIT(2),
+	PresentBit = GAL_BIT(3),
+	ShaderInputBit = GAL_BIT(4),
+	CopySourceBit = GAL_BIT(5),
+	CopyDestinationBit = GAL_BIT(6),
+	DepthWriteBit = GAL_BIT(7),
+	UnorderedAccessBit = GAL_BIT(8),
+	CommonBit = GAL_BIT(9),
+	IndirectCommandBit = GAL_BIT(10),
+	galResourceStateUniformBufferBit = GAL_BIT(11),
+	galResourceStateStorageBufferBit = GAL_BIT(12),
+	DepthReadBit = GAL_BIT(13)
+} galResourceStateFlags;
+
+
+typedef enum
+{
+	galDescriptorTypeFlagUndefined,
+	SamplerBit = GAL_BIT(1),
+	CombinedImageSamplerBit = GAL_BIT(2),
+	SampledImageBit = GAL_BIT(3),
+	galDescriptorTypeUniformBufferBit = GAL_BIT(4),
+	galDescriptorTypeStorageBufferBit = GAL_BIT(5),
+	InputAttachmentBit = GAL_BIT(6),
+	ReadWriteImageBit = GAL_BIT(7)
+} galDescriptorTypeFlags;
+
+typedef enum
+{
+	R8G8B8A8_UNorm,
+	B8G8R8A8_UNorm,
+	B8G8R8A8_sRGB,
+	D16_UNorm,
+	D32_SFloat,
+	//D24_UNorm_S8_UInt, // this is not well supported (:wave: AMD)
+	R32_UInt,
+	Count
+} galTextureFormatId;
+
+typedef struct 
+{
+	uint64_t nativeImage;
+	const char* name;
+	uint32_t width;
+	uint32_t height;
+	uint32_t mipCount;
+	uint32_t sampleCount;
+	galResourceStateFlags initialState;
+	galDescriptorTypeFlags descriptorType;
+	galTextureFormatId format;
+} galTextureDesc;
+
 #if 0
 
 

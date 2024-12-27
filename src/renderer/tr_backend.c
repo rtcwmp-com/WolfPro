@@ -1154,6 +1154,7 @@ RB_DrawBuffer
 =============
 */
 const void  *RB_DrawBuffer( const void *data ) {
+	//RHI_BeginFrame();
 	const drawBufferCommand_t   *cmd;
 
 	cmd = (const drawBufferCommand_t *)data;
@@ -1239,6 +1240,7 @@ RB_SwapBuffers
 =============
 */
 const void  *RB_SwapBuffers( const void *data ) {
+	
 	const swapBuffersCommand_t  *cmd;
 
 	// finish any 2D drawing if needed
@@ -1277,7 +1279,7 @@ const void  *RB_SwapBuffers( const void *data ) {
 	}
 
 	GLimp_LogComment( "***************** RB_SwapBuffers *****************\n\n\n" );
-
+	//RHI_EndFrame();
 	GLimp_EndFrame();
 
 	backEnd.projection2D = qfalse;
@@ -1323,9 +1325,16 @@ void RB_ExecuteRenderCommands( const void *data ) {
 			break;
 		case RC_DRAW_BUFFER:
 			data = RB_DrawBuffer( data );
+			//wait for swap chain acquire
+			//start recording command buffer
+			//N frames in flight n command buffers 
+
 			break;
 		case RC_SWAP_BUFFERS:
 			data = RB_SwapBuffers( data );
+			//stop recording to command buffer
+			//submit to graphics queue
+			//submit to present queue
 			break;
 
 		case RC_END_OF_LIST:

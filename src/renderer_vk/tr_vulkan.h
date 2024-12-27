@@ -4,6 +4,7 @@
 #include <vulkan/vulkan.h>
 #include "../renderer/tr_local.h"
 #include "tr_local_gal.h"
+#include <vma/vk_mem_alloc.h>
 
 
 //TODO only in debug builds
@@ -93,6 +94,47 @@ typedef struct
 	uint32_t presentFamily;
 } Queues;
 
+typedef struct
+{
+	VkFence fence;
+	qbool submitted;
+} Fence;
+
+typedef struct Semaphore
+{
+	VkSemaphore semaphore;
+	qbool signaled;
+} Semaphore;
+
+typedef struct 
+{
+	VkCommandPool commandPool;
+} CommandPool;
+
+typedef struct 
+{
+	VkCommandBuffer commandBuffer;
+	VkCommandPool commandPool; // the owner of this command
+} CommandBuffer;
+
+typedef struct 
+{
+	VkImage image;
+	VkImageView view;
+	VmaAllocation allocation;
+	galTextureDesc desc;
+	VkFormat format;
+	qbool ownsImage;
+
+	// this gets set by resource barriers and texture updates
+	// when qfalse, we know the layout is still undefined and
+	// we can lazily do layout transitions on the user's behalf
+	qbool definedLayout;
+
+	// every render target creation use a new unique id
+	uint32_t uniqueRenderTargetId;
+} Texture;
+
 typedef struct 
 {
     //
@@ -120,6 +162,23 @@ typedef struct
 	VkPhysicalDeviceFeatures deviceFeatures;
 
 	VkDevice device;
+
+	VmaAllocator allocator;
+
+	VkSwapchainKHR swapChain;
+	VkSurfaceFormatKHR swapChainFormat;
+	uint32_t swapChainImageCount;
+	VkImage swapChainImages[MAX_SWAP_CHAIN_IMAGES];
+	galTexture swapChainRenderTargets[MAX_SWAP_CHAIN_IMAGES];
+
+	galCommandPool tempCommandPool;
+	galCommandBuffer tempCommandBuffer;
+
+	CommandPool commandPool;
+	CommandBuffer commandBuffer[GAL_FRAMES_IN_FLIGHT];
+
+	Semaphore semaphore[GAL_FRAMES_IN_FLIGHT];
+
 
 
 	//

@@ -163,3 +163,7 @@ FILE(GLOB RENDERER_VK_FILES
 	"src/renderer_vk/*.h"
 )
 
+FILE(GLOB RENDERER_VK_VMA_FILES
+	"src/renderer_vk/vk_vma_alloc.cpp"
+)
+

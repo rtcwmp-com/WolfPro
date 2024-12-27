@@ -19,9 +19,12 @@
 #-----------------------------------------------------------------
 if(FEATURE_RENDERER_VULKAN)
 	add_library(renderer_vk STATIC ${RENDERER_FILES} ${RENDERER_VK_FILES} ${RENDERER_COMMON})
+	add_library(vk_vma_alloc STATIC ${RENDERER_VK_VMA_FILES})
+	target_include_directories(vk_vma_alloc PRIVATE ${Vulkan_INCLUDE_DIR})
 
-	target_link_libraries(renderer_vk renderer_vk_libraries renderer_libraries)
+	target_link_libraries(renderer_vk renderer_vk_libraries renderer_libraries vk_vma_alloc)
 	target_include_directories(renderer_vk PRIVATE src/renderer_vk)
+
 
 	if(NOT MSVC)
 		target_link_libraries(renderer_vk m)
