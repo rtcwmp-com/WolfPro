@@ -175,9 +175,13 @@ typedef struct
 	galCommandBuffer tempCommandBuffer;
 
 	CommandPool commandPool;
-	CommandBuffer commandBuffer[GAL_FRAMES_IN_FLIGHT];
+	CommandBuffer commandBuffer[RHI_FRAMES_IN_FLIGHT];
 
-	Semaphore semaphore[GAL_FRAMES_IN_FLIGHT];
+	Semaphore renderComplete;
+	Semaphore imageAcquired;
+	Fence inFlightFence;
+
+	uint32_t currentFrameIndex;
 
 
 

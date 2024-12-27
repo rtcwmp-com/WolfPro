@@ -1849,4 +1849,7 @@ extern glinfo_t glInfo;
 
 void	RE_ConfigureVideoMode( int desktopWidth, int desktopHeight );	// writes to glConfig and glInfo
 
+void RHI_BeginFrame();
+void RHI_EndFrame();
+
 #endif //TR_LOCAL_H (THIS MUST BE LAST!!)

@@ -23,7 +23,7 @@ GAL_HANDLE_TYPE(galCommandBuffer) //list of commands to be executed on the gpu
 								//clear command buffer every frame
 								//submit to gpu every frame
 
-#define GAL_FRAMES_IN_FLIGHT			2
+#define RHI_FRAMES_IN_FLIGHT			2
 #define GAL_BIT(x)						(1 << x)
 
 

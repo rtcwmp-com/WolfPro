@@ -1154,7 +1154,7 @@ RB_DrawBuffer
 =============
 */
 const void  *RB_DrawBuffer( const void *data ) {
-	//RHI_BeginFrame();
+	RHI_BeginFrame();
 	const drawBufferCommand_t   *cmd;
 
 	cmd = (const drawBufferCommand_t *)data;
@@ -1279,7 +1279,7 @@ const void  *RB_SwapBuffers( const void *data ) {
 	}
 
 	GLimp_LogComment( "***************** RB_SwapBuffers *****************\n\n\n" );
-	//RHI_EndFrame();
+	RHI_EndFrame();
 	GLimp_EndFrame();
 
 	backEnd.projection2D = qfalse;
