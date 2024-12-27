@@ -1004,28 +1004,53 @@ static void RecordCommandBuffer()
     for (uint32_t i = 0 ; i < GAL_FRAMES_IN_FLIGHT ; i++) {             
         VK(vkBeginCommandBuffer(vk.commandBuffer[i].commandBuffer, &beginInfo));
 
-		VkImageMemoryBarrier2 barrier = {};
-		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-		barrier.image = vk.swapChainImages[i];
-		barrier.srcAccessMask = VK_ACCESS_2_NONE;
-		barrier.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
-		barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
-		barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-		barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		barrier.subresourceRange.baseArrayLayer = 0;
-		barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-		barrier.subresourceRange.baseMipLevel = 0;
-		barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+		{
+			VkImageMemoryBarrier2 barrier = {};
+			barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+			barrier.image = vk.swapChainImages[i];
+			barrier.srcAccessMask = VK_ACCESS_2_NONE;
+			barrier.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
+			barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
+			barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+			barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+			barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+			barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			barrier.subresourceRange.baseArrayLayer = 0;
+			barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+			barrier.subresourceRange.baseMipLevel = 0;
+			barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
 
-		VkDependencyInfo dep = {};
-		dep.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-		dep.imageMemoryBarrierCount = 1;
-		dep.pImageMemoryBarriers = &barrier;
-		vkCmdPipelineBarrier2(vk.commandBuffer[i].commandBuffer, &dep);
+			VkDependencyInfo dep = {};
+			dep.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+			dep.imageMemoryBarrierCount = 1;
+			dep.pImageMemoryBarriers = &barrier;
+			vkCmdPipelineBarrier2(vk.commandBuffer[i].commandBuffer, &dep);
+		}
 
         vkCmdClearColorImage(vk.commandBuffer[i].commandBuffer, vk.swapChainImages[i], VK_IMAGE_LAYOUT_GENERAL, &clearColor, 1, &imageRange);                
+
+		{
+			VkImageMemoryBarrier2 barrier = {};
+			barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+			barrier.image = vk.swapChainImages[i];
+			barrier.srcAccessMask = VK_ACCESS_2_NONE;
+			barrier.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
+			barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
+			barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+			barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+			barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+			barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			barrier.subresourceRange.baseArrayLayer = 0;
+			barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+			barrier.subresourceRange.baseMipLevel = 0;
+			barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+
+			VkDependencyInfo dep = {};
+			dep.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+			dep.imageMemoryBarrierCount = 1;
+			dep.pImageMemoryBarriers = &barrier;
+			vkCmdPipelineBarrier2(vk.commandBuffer[i].commandBuffer, &dep);
+		}
 
 		VK(vkEndCommandBuffer(vk.commandBuffer[i].commandBuffer));
     }
@@ -1049,45 +1074,69 @@ void GAL_CreateSemaphore(galSemaphore* semaphoreHandle, const char* name)
 
 static void RenderScene()
 {
-	Semaphore semaphore;
+	Semaphore imageAcquired;
+	{
 	VkSemaphoreCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-	VK(vkCreateSemaphore(vk.device, &createInfo, NULL, &semaphore.semaphore));
-	semaphore.signaled = qfalse;
-	vk.semaphore[0] = semaphore;
+	VK(vkCreateSemaphore(vk.device, &createInfo, NULL, &imageAcquired.semaphore));
+	imageAcquired.signaled = qfalse;
+	vk.semaphore[0] = imageAcquired;
 
-	SetObjectName(VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)semaphore.semaphore, "semaphore 1");
+	SetObjectName(VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)imageAcquired.semaphore, "imageAcquired semaphore");
+	}
+	
+	Semaphore renderComplete;
+	{
+	VkSemaphoreCreateInfo createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	VK(vkCreateSemaphore(vk.device, &createInfo, NULL, &renderComplete.semaphore));
+	renderComplete.signaled = qfalse;
+	vk.semaphore[1] = renderComplete;
 
+	SetObjectName(VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)renderComplete.semaphore, "renderComplete semaphore");
+	}
 	RecordCommandBuffer();
 	uint32_t ImageIndex = 0;
 
 	//Semaphore semaphore = vk.semaphore[0];
     
-    const VkResult r = vkAcquireNextImageKHR(vk.device, vk.swapChain, UINT64_MAX, semaphore.semaphore, VK_NULL_HANDLE, &ImageIndex);
+    const VkResult r = vkAcquireNextImageKHR(vk.device, vk.swapChain, UINT64_MAX, imageAcquired.semaphore, VK_NULL_HANDLE, &ImageIndex);
  
 	// @TODO: when r is VK_ERROR_OUT_OF_DATE_KHR, recreate the swap chain
 	if(r == VK_SUCCESS || r == VK_SUBOPTIMAL_KHR)
 	{
-		semaphore.signaled = qtrue;
+		imageAcquired.signaled = qtrue;
 	}
 	else
 	{
 		Check(r, "vkAcquireNextImageKHR");
-		semaphore.signaled = qfalse;
+		imageAcquired.signaled = qfalse;
 	}
 
     VkSubmitInfo submitInfo = {};
     submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount   = 1;
     submitInfo.pCommandBuffers      = &vk.commandBuffer[ImageIndex].commandBuffer;
+	submitInfo.waitSemaphoreCount   = 1;
+    submitInfo.pWaitSemaphores      = &imageAcquired.semaphore;
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores    =  &renderComplete.semaphore;
+	const VkPipelineStageFlags flags = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+	submitInfo.pWaitDstStageMask = &flags;
+
     
     VK(vkQueueSubmit(vk.queues.present, 1, &submitInfo, VK_NULL_HANDLE));    
     
+
+	
     VkPresentInfoKHR presentInfo = {};
     presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.swapchainCount     = 1;
     presentInfo.pSwapchains        = &vk.swapChain;
     presentInfo.pImageIndices      = &ImageIndex;
+	presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores    = &renderComplete.semaphore;
+	
     
     VK(vkQueuePresentKHR(vk.queues.present, &presentInfo));    
 }
