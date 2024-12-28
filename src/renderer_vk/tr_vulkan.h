@@ -137,6 +137,29 @@ typedef struct
 
 typedef struct 
 {
+	VkPipeline pipeline;
+	qbool compute;
+} Pipeline;
+
+typedef struct 
+{
+	VkPipelineLayout pipelineLayout;
+	PushConstantsRange constantRanges[galShaderTypeIdCount];
+ } PipelineLayout;
+
+typedef struct 
+{
+	VkShaderModule module;
+	galShaderTypeId type;
+} Shader;
+
+typedef struct 
+{
+	VkDescriptorSetLayout layout;
+} DescriptorSetLayout;
+
+typedef struct 
+{
     //
 	// init state
 	//
@@ -183,6 +206,11 @@ typedef struct
 
 	uint32_t currentFrameIndex;
 
+	Pipeline pipeline;
+	PipelineLayout pipelineLayout; 
+
+	Shader vertexShader;
+	Shader fragmentShader;
 
 
 	//

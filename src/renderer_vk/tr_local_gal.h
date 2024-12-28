@@ -19,9 +19,25 @@ GAL_HANDLE_TYPE(galFence) //sync cpu and gpu, allows you to wait on a queue on C
 GAL_HANDLE_TYPE(galTexture) //1d,2d,3d data that can be filtered when read (render target when writing from graphics pipeline operation)
 GAL_HANDLE_TYPE(galCommandPool) //memory region for allocating command buffers, once in init
 GAL_HANDLE_TYPE(galCommandBuffer) //list of commands to be executed on the gpu
-								//allocated from cmd pool in init, submitted to a queue
-								//clear command buffer every frame
-								//submit to gpu every frame
+									//allocated from cmd pool in init, submitted to a queue
+									//clear command buffer every frame
+									//submit to gpu every frame
+GAL_HANDLE_TYPE(galDescriptorSetLayout) //descriptor is any resource you use from a shader (buffers/textures/samplers can be descriptors)
+										//layout describes which range in the set has which type of resource
+										//ex: read only textures, read-write, samplers, RO/RW/WO buffers
+GAL_HANDLE_TYPE(galPipeline) //pipeline state object (PSO) all of the state of the graphics pipeline 
+							// (what is expensive to change on the GPU)
+							// describes what state the pipeline needs to be in
+							// viewport, scissor rect, cull mode (*?) are not in the pipeline state
+							// viewport related to the projection matrix
+							// scissor rect is where you are allowed to write (outside of this does not get written to render target)
+GAL_HANDLE_TYPE(galShader) //programmable logic to run on the gpu (vertex/fragment shading) multiple fragments can contribute to a pixel (MSAA)
+GAL_HANDLE_TYPE(galPipelineLayout) // push constant's byte count for both shader stages; which descriptor set layouts you have
+								   // push constant - constant data (up to 128 bytes) in the command stream, for the entire draw call
+								   // ex: matrices in vertex shader, texture/sampler indices for bindless rendering in frag shader
+
+
+
 
 #define RHI_FRAMES_IN_FLIGHT			2
 #define GAL_BIT(x)						(1 << x)
@@ -89,6 +105,93 @@ typedef struct
 	galDescriptorTypeFlags descriptorType;
 	galTextureFormatId format;
 } galTextureDesc;
+
+typedef struct 
+{
+	uint32_t byteOffset;
+	uint32_t byteCount;
+} PushConstantsRange; 
+
+typedef enum
+{
+	galShaderTypeIdVertex,
+	galShaderTypeIdPixel,
+	galShaderTypeIdCompute,
+	galShaderTypeIdCount
+} galShaderTypeId;
+
+typedef struct 
+{
+	PushConstantsRange pushConstantsPerStage[galShaderTypeIdCount];
+	const char* name;
+	const galDescriptorSetLayout* descriptorSetLayouts;
+	uint32_t descriptorSetLayoutCount;
+} galPipelineLayoutDesc;
+
+typedef enum 
+{
+	Float32,
+	UNorm8,
+	UInt32,
+	galDataTypeIdCount
+} galDataTypeId;
+
+typedef struct 
+{
+	uint32_t binding;
+	uint32_t location;
+	galDataTypeId dataType;
+	uint32_t vectorLength;
+	uint32_t byteOffset;
+} galVertexAttribDesc;
+
+typedef struct 
+{
+	uint32_t binding;
+	uint32_t stride;
+} galVertexBindingDesc;
+
+typedef struct 
+{
+	const galVertexAttribDesc* attribs;
+	const galVertexBindingDesc* bindings;
+	uint32_t attribCount;
+	uint32_t bindingCount;
+} VertexLayout;
+
+typedef struct 
+{
+	uint32_t constandId;
+	uint32_t byteOffset;
+	uint32_t byteCount;
+} galSpecializationEntry;
+
+typedef struct 
+{
+	const galSpecializationEntry* entries;
+	const void* data;
+	uint32_t entryCount;
+	uint32_t byteCount;
+} galSpecialization;
+
+typedef struct 
+{
+	const char* name;
+	
+	VertexLayout vertexLayout;
+	galShader vertexShader;
+	galShader fragmentShader;
+	galSpecialization vertexSpec;
+	galSpecialization fragmentSpec;
+	galPipelineLayout pipelineLayout;
+	uint32_t cullType; // cullType_t
+	uint32_t srcBlend; // stateBits & GLS_SRCBLEND_BITS
+	uint32_t dstBlend; // stateBits & GLS_DSTBLEND_BITS
+	uint32_t depthTest; // depthTest_t
+	qbool enableDepthWrite;
+	qbool enableDepthTest;
+} galGraphicsPipelineDesc;
+
 
 #if 0
 

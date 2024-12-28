@@ -336,7 +336,8 @@ struct shaderCommands_s;
 typedef enum {
 	CT_FRONT_SIDED,
 	CT_BACK_SIDED,
-	CT_TWO_SIDED
+	CT_TWO_SIDED,
+	CT_COUNT
 } cullType_t;
 
 typedef enum {

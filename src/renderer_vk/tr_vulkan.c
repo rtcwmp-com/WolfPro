@@ -710,6 +710,21 @@ static VkFormat GetVkFormat(galTextureFormatId format)
     }
 }
 
+static VkFormat GetVkFormatCnt(galDataTypeId type, uint32_t count)
+{
+	assert((unsigned int)type < galDataTypeIdCount);
+	assert(count >= 1 && count <= 4);
+
+	const VkFormat formats[galDataTypeIdCount][4] =
+	{
+		{ VK_FORMAT_R32_SFLOAT, VK_FORMAT_R32G32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32A32_SFLOAT },
+		{ VK_FORMAT_R8_UNORM, VK_FORMAT_R8G8_UNORM, VK_FORMAT_R8G8B8_UNORM, VK_FORMAT_R8G8B8A8_UNORM },
+		{ VK_FORMAT_R32_UINT, VK_FORMAT_R32G32_UINT, VK_FORMAT_R32G32B32_UINT, VK_FORMAT_R32G32B32A32_UINT }
+	};
+
+	return formats[type][count - 1];
+}
+
 static VkImageAspectFlags GetVkImageAspectFlags(VkFormat format)
 {
     switch(format)
@@ -1101,18 +1116,25 @@ static void InitSwapChainImages()
         }
 
         VK(vkEndCommandBuffer(vk.commandBuffer[i].commandBuffer));
+        VK(vkWaitForFences(vk.device, 1, &vk.inFlightFence.fence, VK_TRUE, UINT64_MAX));
+        VK(vkResetFences(vk.device, 1, &vk.inFlightFence.fence));
         AcquireSubmitPresent();
     }
     
 }
-
+int n = 0;
 static void BuildCommandBuffer()
 {
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+
+    n += 1;
+    if (n == 2500)
+        n = 0;
+    double sine = sin(2 * M_PI * 8.4e-3 * n);
     
-    VkClearColorValue clearColor = { 0.0f, 1.0f, 1.0f, 0.0f };
+    VkClearColorValue clearColor = { 0.0f, (float)sine*0.5+0.5, 1.0f, 0.0f };
     VkClearValue clearValue = {};
     clearValue.color = clearColor;
     
@@ -1250,6 +1272,429 @@ void RHI_EndFrame() {
     AcquireSubmitPresent();
 }
 
+static VkShaderStageFlags GetVkShaderStageFlags(galShaderTypeId shaderType)
+{
+	assert((unsigned int)shaderType < galShaderTypeIdCount);
+
+	typedef struct 
+	{
+		galShaderTypeId inValue;
+		VkShaderStageFlags outValue;
+	} Pair;
+	const Pair pairs[] =
+	{
+		{ galShaderTypeIdVertex, VK_SHADER_STAGE_VERTEX_BIT },
+		{ galShaderTypeIdPixel, VK_SHADER_STAGE_FRAGMENT_BIT },
+		{ galShaderTypeIdCompute, VK_SHADER_STAGE_COMPUTE_BIT }
+	};
+
+	for(int p = 0; p < ARRAY_LEN(pairs); ++p)
+	{
+		if(shaderType == pairs[p].inValue)
+		{
+			return pairs[p].outValue;
+		}
+	}
+
+	assert(0); // means pairs is incomplete!
+	return 0;
+}
+
+#if 0
+void GAL_CreatePipelineLayout(galPipelineLayout* layoutHandle, const galPipelineLayoutDesc* desc)
+{
+    
+	assert(layoutHandle);
+	assert(desc);
+	assert(desc->name);
+
+	VkDescriptorSetLayout layouts[16];
+	assert(desc->descriptorSetLayoutCount <= ARRAY_LEN(layouts));
+
+	for(uint32_t l = 0; l < desc->descriptorSetLayoutCount; ++l)
+	{
+		const DescriptorSetLayout descSetLayout = vk.descriptorSetLayoutPool.Get(desc->descriptorSetLayouts[l]);
+		layouts[l] = descSetLayout.layout;
+	}
+
+	// @TODO: check that vertex and pixel shader ranges don't overlap?
+
+	VkPushConstantRange pushConstantRanges[galShaderTypeIdCount];
+	uint32_t pushConstantsByteCount = 0;
+	uint32_t pushConstantsRangeCount = 0;
+	for(int s = 0; s < galShaderTypeIdCount; ++s)
+	{
+		const uint32_t byteOffset = desc->pushConstantsPerStage[s].byteOffset;
+		const uint32_t byteCount = desc->pushConstantsPerStage[s].byteCount;
+		assert(byteOffset + byteCount <= 128);
+
+		if(byteCount > 0)
+		{
+			pushConstantsByteCount += byteCount;
+			pushConstantRanges[pushConstantsRangeCount].offset = byteOffset;
+			pushConstantRanges[pushConstantsRangeCount].size = byteCount;
+			pushConstantRanges[pushConstantsRangeCount].stageFlags = GetVkShaderStageFlags((galShaderTypeId)s);
+			++pushConstantsRangeCount;
+		}
+	}
+	assert(pushConstantsByteCount <= 128);
+
+	PipelineLayout layout = {};
+	memcpy(layout.constantRanges, desc->pushConstantsPerStage, sizeof(layout.constantRanges));
+	VkPipelineLayoutCreateInfo createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	createInfo.setLayoutCount = desc->descriptorSetLayoutCount;
+	createInfo.pSetLayouts = layouts;
+	createInfo.pushConstantRangeCount = pushConstantsRangeCount;
+	createInfo.pPushConstantRanges = pushConstantRanges;
+	VK(vkCreatePipelineLayout(vk.device, &createInfo, NULL, &layout.pipelineLayout));
+	//*layoutHandle = vk.pipelineLayoutPool.Add(layout);
+    vk.pipelineLayout = layout;
+
+	SetObjectName(VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)layout.pipelineLayout, desc->name);
+}
+
+
+void GAL_CreateDescriptorSetLayout(galDescriptorSetLayout* layoutHandle, const galDescriptorSetLayoutDesc* desc)
+{
+	assert(layoutHandle);
+	assert(desc);
+	assert(desc->name);
+	assert(desc->bindingCount > 0);
+	assert(desc->bindings);
+
+	VkSampler immutableSamplers[64];
+	uint32_t immutableSamplerCount = 0;
+
+	TempArray<VkDescriptorSetLayoutBinding> bindings(desc->bindingCount + 1);
+	TempArray<VkDescriptorBindingFlags> bindingFlags(desc->bindingCount + 1);
+	for(uint32_t b = 0; b < desc->bindingCount; ++b)
+	{
+		const galDescriptorSetLayoutBinding& src = desc->bindings[b];
+		VkDescriptorSetLayoutBinding& dst = bindings[b];
+		dst.binding = src.bindingSlot;
+		dst.stageFlags = GetVkShaderStageFlags(src.stageFlags);
+		dst.descriptorType = GetVkDescriptorType(src.descriptorType);
+		dst.descriptorCount = src.descriptorCount;
+		dst.pImmutableSamplers = NULL;
+		if(src.immutableSamplers != NULL)
+		{
+			const uint32_t count = src.descriptorCount;
+			const uint32_t base = immutableSamplerCount;
+			if(base + count > ARRAY_LEN(immutableSamplers))
+			{
+				ri.Error(ERR_FATAL, "Too many immutable samplers specified\n");
+			}
+			for(uint32_t d = 0; d < count; ++d)
+			{
+				immutableSamplers[base + d] = vk.samplerPool.Get(src.immutableSamplers[d]).sampler;
+			}
+			dst.pImmutableSamplers = &immutableSamplers[base];
+			immutableSamplerCount += count;
+		}
+		bindingFlags[b] = src.canUpdateUnusedWhilePending ? VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT : 0;
+	}
+
+	VkDescriptorSetLayoutBindingFlagsCreateInfo descSetFlagsCreateInfo {};
+	descSetFlagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+	descSetFlagsCreateInfo.bindingCount = desc->bindingCount;
+	descSetFlagsCreateInfo.pBindingFlags = bindingFlags;
+
+	DescriptorSetLayout layout {};
+	VkDescriptorSetLayoutCreateInfo descSetCreateInfo {};
+	descSetCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	descSetCreateInfo.bindingCount = desc->bindingCount;
+	descSetCreateInfo.pBindings = bindings;
+	descSetCreateInfo.pNext = &descSetFlagsCreateInfo;
+	VK(vkCreateDescriptorSetLayout(vk.device, &descSetCreateInfo, NULL, &layout.layout));
+	*layoutHandle = vk.descriptorSetLayoutPool.Add(layout);
+
+	SetObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)layout.layout, desc->name);
+}
+#endif
+
+static void CreateTrianglePipelineLayout()
+{
+
+    VkDescriptorBindingFlags bindingFlags = 0;
+    
+
+    VkDescriptorSetLayoutBindingFlagsCreateInfo descSetFlagsCreateInfo = {};
+	descSetFlagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+	// descSetFlagsCreateInfo.bindingCount = 1;
+	// descSetFlagsCreateInfo.pBindingFlags = &bindingFlags;
+
+
+    // VkDescriptorSetLayoutBinding binding = {};
+
+    // binding.binding = 0;
+    // binding.stageFlags = GetVkShaderStageFlags(src.stageFlags);
+    // binding.descriptorType = GetVkDescriptorType(src.descriptorType);
+    // binding.descriptorCount = src.descriptorCount;
+    // binding.pImmutableSamplers = NULL;
+
+    
+	DescriptorSetLayout descLayout = {};
+	VkDescriptorSetLayoutCreateInfo descSetCreateInfo = {};
+	descSetCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	descSetCreateInfo.bindingCount = 0;
+	descSetCreateInfo.pBindings = NULL;
+	descSetCreateInfo.pNext = &descSetFlagsCreateInfo;
+	VK(vkCreateDescriptorSetLayout(vk.device, &descSetCreateInfo, NULL, &descLayout.layout));
+	//*layoutHandle = vk.descriptorSetLayoutPool.Add(layout);
+
+	SetObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)descLayout.layout, "Desc Layout");
+
+    PipelineLayout layout = {};
+	//memcpy(layout.constantRanges, desc->pushConstantsPerStage, sizeof(layout.constantRanges));
+	VkPipelineLayoutCreateInfo createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	//createInfo.setLayoutCount = desc->descriptorSetLayoutCount;
+	// createInfo.pSetLayouts = layouts;
+	//createInfo.pushConstantRangeCount = pushConstantsRangeCount;
+	//createInfo.pPushConstantRanges = pushConstantRanges;
+	VK(vkCreatePipelineLayout(vk.device, &createInfo, NULL, &layout.pipelineLayout));
+	//*layoutHandle = vk.pipelineLayoutPool.Add(layout);
+    vk.pipelineLayout = layout;
+
+	SetObjectName(VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)layout.pipelineLayout, "Pipeline Layout");
+}
+
+static void BuildSpecializationDesc(const VkSpecializationInfo** outPtr, VkSpecializationInfo* out,
+									size_t maxEntries, VkSpecializationMapEntry* entries,
+									const galSpecialization* input)
+{
+	if(input->entryCount == 0)
+	{
+		*outPtr = VK_NULL_HANDLE;
+		return;
+	}
+
+	assert(input->entryCount <= maxEntries);
+
+	out->mapEntryCount = input->entryCount;
+	out->pMapEntries = entries;
+	out->dataSize = input->byteCount;
+	out->pData = input->data;
+
+	for(uint32_t c = 0; c < input->entryCount; ++c)
+	{
+		entries[c].constantID = input->entries[c].constandId;
+		entries[c].offset = input->entries[c].byteOffset;
+		entries[c].size = input->entries[c].byteCount;
+	}
+
+	*outPtr = out;
+}
+
+static VkBlendFactor GetSourceColorBlendFactor(unsigned int bits)
+{
+	switch(bits)
+	{
+		case GLS_SRCBLEND_ZERO: return VK_BLEND_FACTOR_ZERO;
+		case GLS_SRCBLEND_ONE: return VK_BLEND_FACTOR_ONE;
+		case GLS_SRCBLEND_DST_COLOR: return VK_BLEND_FACTOR_DST_COLOR;
+		case GLS_SRCBLEND_ONE_MINUS_DST_COLOR: return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+		case GLS_SRCBLEND_SRC_ALPHA: return VK_BLEND_FACTOR_SRC_ALPHA;
+		case GLS_SRCBLEND_ONE_MINUS_SRC_ALPHA: return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+		case GLS_SRCBLEND_DST_ALPHA: return VK_BLEND_FACTOR_DST_ALPHA;
+		case GLS_SRCBLEND_ONE_MINUS_DST_ALPHA: return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+		case GLS_SRCBLEND_ALPHA_SATURATE: return VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
+		default: return VK_BLEND_FACTOR_ONE;
+	}
+}
+
+static VkBlendFactor GetDestinationColorBlendFactor(unsigned int bits)
+{
+	switch(bits)
+	{
+		case GLS_DSTBLEND_ZERO: return VK_BLEND_FACTOR_ZERO;
+		case GLS_DSTBLEND_ONE: return VK_BLEND_FACTOR_ONE;
+		case GLS_DSTBLEND_SRC_COLOR: return VK_BLEND_FACTOR_SRC_COLOR;
+		case GLS_DSTBLEND_ONE_MINUS_SRC_COLOR: return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+		case GLS_DSTBLEND_SRC_ALPHA: return VK_BLEND_FACTOR_SRC_ALPHA;
+		case GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA: return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+		case GLS_DSTBLEND_DST_ALPHA: return VK_BLEND_FACTOR_DST_ALPHA;
+		case GLS_DSTBLEND_ONE_MINUS_DST_ALPHA: return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+		default: return VK_BLEND_FACTOR_ZERO;
+	}
+}
+
+static VkCullModeFlags GetVkCullModeFlags(cullType_t cullType)
+{
+	assert((unsigned int)cullType < CT_COUNT);
+
+	switch(cullType)
+	{
+		case CT_FRONT_SIDED: return VK_CULL_MODE_BACK_BIT;
+		case CT_BACK_SIDED: return VK_CULL_MODE_FRONT_BIT;
+		default: return VK_CULL_MODE_NONE;
+	}
+}
+
+#include "shaders/triangle_ps.h"
+#include "shaders/triangle_vs.h"
+static void CreatePipeline() {
+
+    VkShaderModule vsModule;
+    VkShaderModuleCreateInfo vsCreateInfo = {};
+    vsCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    vsCreateInfo.codeSize = sizeof(triangle_vs);
+    vsCreateInfo.pCode = triangle_vs;
+
+    VkShaderModule psModule;
+    VkShaderModuleCreateInfo psCreateInfo = {};
+    psCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    psCreateInfo.codeSize = sizeof(triangle_ps);
+    psCreateInfo.pCode = triangle_ps;
+
+    VK(vkCreateShaderModule(vk.device, &vsCreateInfo,NULL,&vsModule));
+    VK(vkCreateShaderModule(vk.device, &psCreateInfo,NULL,&psModule));
+
+	int firstStage = 0;
+	int stageCount = 2;
+	VkPipelineShaderStageCreateInfo stages[2] = {};
+	stages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+	stages[0].pName = "vs";
+    stages[0].module = vsModule;
+	stages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	stages[1].pName = "ps";
+    stages[1].module = psModule;
+
+
+	VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
+	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+	inputAssembly.primitiveRestartEnable = VK_FALSE;
+	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+	VkViewport viewport;
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.width = glConfig.vidWidth;
+	viewport.height = glConfig.vidHeight;
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+
+	VkRect2D scissor;
+	scissor.offset.x = 0;
+	scissor.offset.y = 0;
+	scissor.extent.width = glConfig.vidWidth;
+	scissor.extent.height = glConfig.vidHeight;
+
+	VkPipelineViewportStateCreateInfo viewportState = {};
+	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	viewportState.viewportCount = 1;
+	viewportState.pViewports = &viewport;
+	viewportState.scissorCount = 1;
+	viewportState.pScissors = &scissor;
+
+	VkPipelineRasterizationStateCreateInfo rasterizer = {};
+	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+	rasterizer.cullMode = GetVkCullModeFlags(CT_TWO_SIDED);
+	rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+	rasterizer.depthClampEnable = VK_FALSE;
+	rasterizer.rasterizerDiscardEnable = VK_FALSE;
+	rasterizer.depthBiasEnable = VK_FALSE;
+	rasterizer.lineWidth = 1.0f;
+
+	// VkPipelineMultisampleStateCreateInfo multiSampling {};
+	// multiSampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+	// multiSampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+	// multiSampling.alphaToCoverageEnable = VK_FALSE;
+
+	/*const qbool disableBlend =
+		desc->srcBlend == GLS_SRCBLEND_ONE &&
+		desc->dstBlend == GLS_DSTBLEND_ZERO;*/
+	VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
+	colorBlendAttachment.blendEnable = VK_FALSE;
+	colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+	// colorBlendAttachment.srcColorBlendFactor = GetSourceColorBlendFactor(desc->srcBlend);
+	// colorBlendAttachment.dstColorBlendFactor = GetDestinationColorBlendFactor(desc->dstBlend);
+	colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+	colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; // @TODO:
+	colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // @TODO:
+	colorBlendAttachment.colorWriteMask =
+		VK_COLOR_COMPONENT_R_BIT |
+		VK_COLOR_COMPONENT_G_BIT |
+		VK_COLOR_COMPONENT_B_BIT |
+		VK_COLOR_COMPONENT_A_BIT;
+
+	VkPipelineColorBlendStateCreateInfo colorBlending = {};
+	colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+	colorBlending.logicOpEnable = VK_FALSE;
+	colorBlending.logicOp = VK_LOGIC_OP_COPY;
+	colorBlending.attachmentCount = 1;
+	colorBlending.pAttachments = &colorBlendAttachment;
+
+
+	// @NOTE: VK_DYNAMIC_STATE_CULL_MODE_EXT is not widely available (VK_EXT_extended_dynamic_state)
+	// const VkDynamicState dynamicStates[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+	// VkPipelineDynamicStateCreateInfo dynamicState {};
+	// dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	// dynamicState.dynamicStateCount = ARRAY_LEN(dynamicStates);
+	// dynamicState.pDynamicStates = dynamicStates;
+
+	// VkPipelineDepthStencilStateCreateInfo depthStencil = {};
+	// VkPipelineDepthStencilStateCreateInfo* depthStencilPtr = NULL;
+	// if(desc->renderTargets.hasDepthStencil)
+	// {
+	// 	depthStencilPtr = &depthStencil;
+	// 	depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+	// 	depthStencil.depthCompareOp = GetVkCompareOp((depthTest_t)desc->depthTest);
+	// 	depthStencil.depthTestEnable = desc->enableDepthTest ? VK_TRUE : VK_FALSE;
+	// 	depthStencil.depthWriteEnable = desc->enableDepthWrite ? VK_TRUE : VK_FALSE;
+	// }
+
+	Pipeline pipeline = {};
+	pipeline.compute = qfalse;
+    // Provide information for dynamic rendering
+    VkPipelineRenderingCreateInfo pipeline_create = {};
+    pipeline_create.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
+    pipeline_create.pNext                   = VK_NULL_HANDLE;
+    pipeline_create.colorAttachmentCount    = 1;
+
+    VkFormat color_rendering_format = VK_FORMAT_R8G8B8A8_UNORM;
+    pipeline_create.pColorAttachmentFormats = &color_rendering_format;
+    //pipeline_create.depthAttachmentFormat   = depth_format;
+    //pipeline_create.stencilAttachmentFormat = depth_format;
+
+    VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
+	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+
+    VkPipelineMultisampleStateCreateInfo multiSampling = {};
+	multiSampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+	multiSampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+	multiSampling.alphaToCoverageEnable = VK_FALSE;
+
+    VkPipelineDepthStencilStateCreateInfo depthStencil = {};
+    depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+
+
+    // Use the pNext to point to the rendering create struct
+    VkGraphicsPipelineCreateInfo createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    createInfo.pNext               = &pipeline_create; // reference the new dynamic structure
+    createInfo.renderPass          = VK_NULL_HANDLE; // previously required non-null
+    createInfo.layout = vk.pipelineLayout.pipelineLayout;
+	createInfo.subpass = 0; // we always target sub-pass 0
+	createInfo.stageCount = stageCount;
+	createInfo.pStages = stages + firstStage;
+	createInfo.pColorBlendState = &colorBlending;
+	createInfo.pDepthStencilState = &depthStencil;
+	createInfo.pDynamicState = NULL;
+	createInfo.pInputAssemblyState = &inputAssembly;
+	createInfo.pMultisampleState = &multiSampling;
+	createInfo.pRasterizationState = &rasterizer;
+	createInfo.pVertexInputState = &vertexInputInfo; //add later
+	createInfo.pViewportState = &viewportState;
+    VK(vkCreateGraphicsPipelines(vk.device, VK_NULL_HANDLE, 1, &createInfo, NULL, &pipeline.pipeline));
+
+    SetObjectName(VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline.pipeline, "Pipeline");
+    vk.pipeline = pipeline;
+}
 
 
 void VKimp_Init( void ) {
@@ -1273,6 +1718,7 @@ void VKimp_Init( void ) {
     CreateTempCommandBuffer();
     CreateSyncObjects();
     InitSwapChainImages();
-    RenderScene();
+    CreateTrianglePipelineLayout();
+    CreatePipeline();
     vk.initialized = qtrue;
 }
