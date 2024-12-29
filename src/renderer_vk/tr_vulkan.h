@@ -193,6 +193,9 @@ typedef struct
 	uint32_t swapChainImageCount;
 	VkImage swapChainImages[MAX_SWAP_CHAIN_IMAGES];
 	galTexture swapChainRenderTargets[MAX_SWAP_CHAIN_IMAGES];
+	VkImageView swapChainImageViews[MAX_SWAP_CHAIN_IMAGES]; //delete later
+
+	uint32_t swapChainImageIndex;
 
 	galCommandPool tempCommandPool;
 	galCommandBuffer tempCommandBuffer;
@@ -211,6 +214,8 @@ typedef struct
 
 	Shader vertexShader;
 	Shader fragmentShader;
+
+	
 
 
 	//

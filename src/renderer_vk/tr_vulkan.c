@@ -1003,27 +1003,11 @@ static void CreateTempCommandBuffer()
 
 void AcquireSubmitPresent() {
 
-    uint32_t ImageIndex = 0;
-
-    const VkResult r = vkAcquireNextImageKHR(vk.device, vk.swapChain, UINT64_MAX, vk.imageAcquired.semaphore, VK_NULL_HANDLE, &ImageIndex);
-
-    vk.currentFrameIndex = ImageIndex;
- 
-    // @TODO: when r is VK_ERROR_OUT_OF_DATE_KHR, recreate the swap chain
-    if(r == VK_SUCCESS || r == VK_SUBOPTIMAL_KHR)
-    {
-        vk.imageAcquired.signaled = qtrue;
-    }
-    else
-    {
-        Check(r, "vkAcquireNextImageKHR");
-        vk.imageAcquired.signaled = qfalse;
-    }
 
     VkSubmitInfo submitInfo = {};
     submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount   = 1;
-    submitInfo.pCommandBuffers      = &vk.commandBuffer[ImageIndex].commandBuffer;
+    submitInfo.pCommandBuffers      = &vk.commandBuffer[vk.currentFrameIndex].commandBuffer;
     submitInfo.waitSemaphoreCount   = 1;
     submitInfo.pWaitSemaphores      = &vk.imageAcquired.semaphore;
     submitInfo.signalSemaphoreCount = 1;
@@ -1040,7 +1024,7 @@ void AcquireSubmitPresent() {
     presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.swapchainCount     = 1;
     presentInfo.pSwapchains        = &vk.swapChain;
-    presentInfo.pImageIndices      = &ImageIndex;
+    presentInfo.pImageIndices      = &vk.swapChainImageIndex;
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores    = &vk.renderComplete.semaphore;
     
@@ -1063,9 +1047,10 @@ static void InitSwapChainImages()
     imageRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     imageRange.levelCount = 1;
     imageRange.layerCount = 1;
-          
-    for (uint32_t i = 0 ; i < RHI_FRAMES_IN_FLIGHT ; i++) {             
-        VK(vkBeginCommandBuffer(vk.commandBuffer[i].commandBuffer, &beginInfo));
+    
+    for (uint32_t i = 0 ; i < vk.swapChainImageCount ; i++) {
+        VkCommandBuffer commandBuffer = vk.commandBuffer[0].commandBuffer;
+        VK(vkBeginCommandBuffer(commandBuffer, &beginInfo));
 
         {
             VkImageMemoryBarrier2 barrier = {};
@@ -1087,10 +1072,10 @@ static void InitSwapChainImages()
             dep.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
             dep.imageMemoryBarrierCount = 1;
             dep.pImageMemoryBarriers = &barrier;
-            vkCmdPipelineBarrier2(vk.commandBuffer[i].commandBuffer, &dep);
+            vkCmdPipelineBarrier2(commandBuffer, &dep);
         }
 
-        vkCmdClearColorImage(vk.commandBuffer[i].commandBuffer, vk.swapChainImages[i], VK_IMAGE_LAYOUT_GENERAL, &clearColor, 1, &imageRange);                
+        vkCmdClearColorImage(commandBuffer, vk.swapChainImages[i], VK_IMAGE_LAYOUT_GENERAL, &clearColor, 1, &imageRange);                
 
         {
             VkImageMemoryBarrier2 barrier = {};
@@ -1112,16 +1097,57 @@ static void InitSwapChainImages()
             dep.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
             dep.imageMemoryBarrierCount = 1;
             dep.pImageMemoryBarriers = &barrier;
-            vkCmdPipelineBarrier2(vk.commandBuffer[i].commandBuffer, &dep);
+            vkCmdPipelineBarrier2(commandBuffer, &dep);
         }
 
-        VK(vkEndCommandBuffer(vk.commandBuffer[i].commandBuffer));
+        VkSemaphoreWaitInfo waitInfo = {};
+        waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
+        waitInfo.semaphoreCount = 1;
+        waitInfo.pSemaphores = &vk.renderComplete.semaphore;
+        
+        VK(vkEndCommandBuffer(commandBuffer));
         VK(vkWaitForFences(vk.device, 1, &vk.inFlightFence.fence, VK_TRUE, UINT64_MAX));
         VK(vkResetFences(vk.device, 1, &vk.inFlightFence.fence));
-        AcquireSubmitPresent();
+        //vkWaitSemaphores(vk.device, &waitInfo, UINT64_MAX)
+        // const VkResult r = vkAcquireNextImageKHR(vk.device, vk.swapChain, UINT64_MAX, vk.imageAcquired.semaphore, VK_NULL_HANDLE, &vk.swapChainImageIndex); 
+        // AcquireSubmitPresent();
+        
+        VkSubmitInfo submitInfo = {};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffer;
+
+        const VkPipelineStageFlags flags = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+        submitInfo.pWaitDstStageMask = &flags;
+        VK(vkQueueSubmit(vk.queues.present, 1, &submitInfo, vk.inFlightFence.fence));
+        VK(vkDeviceWaitIdle(vk.device));
+        
+         
+    }
+    
+    
+}
+
+static void CreateImageView(){
+    for(int i = 0; i < vk.swapChainImageCount; i++){
+        VkImageView view;
+        VkImageViewCreateInfo viewInfo = {};
+        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        viewInfo.image = vk.swapChainImages[i];
+        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.format = SURFACE_FORMAT_RGBA;
+        viewInfo.subresourceRange.aspectMask = GetVkImageAspectFlags(SURFACE_FORMAT_RGBA);
+        viewInfo.subresourceRange.baseMipLevel = 0;
+        viewInfo.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+        viewInfo.subresourceRange.baseArrayLayer = 0;
+        viewInfo.subresourceRange.layerCount = 1;
+        VK(vkCreateImageView(vk.device, &viewInfo, NULL, &view));
+        SetObjectName(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)view, "ImageView");
+        vk.swapChainImageViews[i] = view;
     }
     
 }
+
 int n = 0;
 static void BuildCommandBuffer()
 {
@@ -1181,6 +1207,56 @@ static void BuildCommandBuffer()
         barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
         barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
         barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+        barrier.subresourceRange.baseMipLevel = 0;
+        barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+
+        VkDependencyInfo dep = {};
+        dep.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+        dep.imageMemoryBarrierCount = 1;
+        dep.pImageMemoryBarriers = &barrier;
+        vkCmdPipelineBarrier2(vk.commandBuffer[vk.currentFrameIndex].commandBuffer, &dep);
+    }
+
+    
+
+    VkRenderingAttachmentInfo colorAttachmentInfo = {};
+    colorAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+    colorAttachmentInfo.imageView = vk.swapChainImageViews[vk.swapChainImageIndex];
+    colorAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    colorAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    colorAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    
+
+    VkRenderingInfo renderingInfo = {};
+    renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+    renderingInfo.colorAttachmentCount = 1;
+    renderingInfo.pColorAttachments = &colorAttachmentInfo;
+    renderingInfo.layerCount = 1;
+    renderingInfo.renderArea.extent.height = glConfig.vidHeight;
+    renderingInfo.renderArea.extent.width = glConfig.vidWidth;
+
+    
+
+    vkCmdBeginRendering(vk.commandBuffer[vk.currentFrameIndex].commandBuffer, &renderingInfo);
+	vkCmdBindPipeline(vk.commandBuffer[vk.currentFrameIndex].commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk.pipeline.pipeline);
+    //vkCmdBindDescriptorSets(vk.commandBuffer[vk.currentFrameIndex].commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+	//						vk.pipelineLayout.pipelineLayout, 0, 1, &set.descriptorSet, 0, NULL);
+    vkCmdDraw(vk.commandBuffer[vk.currentFrameIndex].commandBuffer,3, 1, 0, 0);
+    
+    vkCmdEndRendering(vk.commandBuffer[vk.currentFrameIndex].commandBuffer);
+    {
+        VkImageMemoryBarrier2 barrier = {};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+        barrier.image = vk.swapChainImages[vk.currentFrameIndex];
+        barrier.srcAccessMask = VK_ACCESS_2_NONE;
+        barrier.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
+        barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
+        barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         barrier.subresourceRange.baseArrayLayer = 0;
@@ -1261,10 +1337,26 @@ static void RenderScene()
 
 
 void RHI_BeginFrame() {
-
+    vk.currentFrameIndex = (vk.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT;
     VK(vkWaitForFences(vk.device, 1, &vk.inFlightFence.fence, VK_TRUE, UINT64_MAX));
     VK(vkResetFences(vk.device, 1, &vk.inFlightFence.fence));
+    
+    const VkResult r = vkAcquireNextImageKHR(vk.device, vk.swapChain, UINT64_MAX, vk.imageAcquired.semaphore, VK_NULL_HANDLE, &vk.swapChainImageIndex); 
+ 
+    // @TODO: when r is VK_ERROR_OUT_OF_DATE_KHR, recreate the swap chain
+    if(r == VK_SUCCESS || r == VK_SUBOPTIMAL_KHR)
+    {
+        vk.imageAcquired.signaled = qtrue;
+    }
+    else
+    {
+        Check(r, "vkAcquireNextImageKHR");
+        vk.imageAcquired.signaled = qfalse;
+    }
+
     BuildCommandBuffer();
+
+    
 
 
 }
@@ -1656,7 +1748,7 @@ static void CreatePipeline() {
     pipeline_create.pNext                   = VK_NULL_HANDLE;
     pipeline_create.colorAttachmentCount    = 1;
 
-    VkFormat color_rendering_format = VK_FORMAT_R8G8B8A8_UNORM;
+    VkFormat color_rendering_format = SURFACE_FORMAT_RGBA;
     pipeline_create.pColorAttachmentFormats = &color_rendering_format;
     //pipeline_create.depthAttachmentFormat   = depth_format;
     //pipeline_create.stencilAttachmentFormat = depth_format;
@@ -1715,6 +1807,7 @@ void VKimp_Init( void ) {
     CreateDevice();
     CreateAllocator();
     CreateSwapChain();
+    CreateImageView();
     CreateTempCommandBuffer();
     CreateSyncObjects();
     InitSwapChainImages();
