@@ -35,7 +35,7 @@ GAL_HANDLE_TYPE(galShader) //programmable logic to run on the gpu (vertex/fragme
 GAL_HANDLE_TYPE(galPipelineLayout) // push constant's byte count for both shader stages; which descriptor set layouts you have
 								   // push constant - constant data (up to 128 bytes) in the command stream, for the entire draw call
 								   // ex: matrices in vertex shader, texture/sampler indices for bindless rendering in frag shader
-
+GAL_HANDLE_TYPE(galBuffer) //raw data in gpu space (vertex/index can be specailized for the API's knowledge of what is in it)
 
 
 
@@ -192,6 +192,21 @@ typedef struct
 	qbool enableDepthTest;
 } galGraphicsPipelineDesc;
 
+typedef enum
+{
+	DeviceLocal,
+	Upload,
+	Readback,
+	galMemoryUsageIdCount
+} galMemoryUsageId;
+
+typedef struct 
+{
+	const char* name;
+	uint32_t byteCount;
+	galResourceStateFlags initialState;
+	galMemoryUsageId memoryUsage;
+} galBufferDesc;
 
 #if 0
 

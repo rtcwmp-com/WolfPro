@@ -158,6 +158,18 @@ typedef struct
 	VkDescriptorSetLayout layout;
 } DescriptorSetLayout;
 
+
+
+typedef struct 
+{
+	void* mappedData; // only if host coherent
+	VkBuffer buffer;
+	VmaAllocation allocation;
+	galMemoryUsageId memoryUsage;
+	qbool mapped;
+	qbool hostCoherent;
+} Buffer;
+
 typedef struct 
 {
     //
@@ -214,6 +226,11 @@ typedef struct
 
 	Shader vertexShader;
 	Shader fragmentShader;
+
+	galBuffer textureStagingBuffer;
+
+	VkBuffer vertexBuffer;
+	VkBuffer indexBuffer;
 
 	
 

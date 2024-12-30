@@ -1245,6 +1245,9 @@ static void BuildCommandBuffer()
 	vkCmdBindPipeline(vk.commandBuffer[vk.currentFrameIndex].commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk.pipeline.pipeline);
     //vkCmdBindDescriptorSets(vk.commandBuffer[vk.currentFrameIndex].commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
 	//						vk.pipelineLayout.pipelineLayout, 0, 1, &set.descriptorSet, 0, NULL);
+    VkDeviceSize vertexBufferOffset = 0;
+    vkCmdBindVertexBuffers(vk.commandBuffer[vk.currentFrameIndex].commandBuffer,0,1,&vk.vertexBuffer, &vertexBufferOffset);
+    vkCmdBindIndexBuffer(vk.commandBuffer[vk.currentFrameIndex].commandBuffer,vk.indexBuffer,0,VK_INDEX_TYPE_UINT32);
     vkCmdDraw(vk.commandBuffer[vk.currentFrameIndex].commandBuffer,3, 1, 0, 0);
     
     vkCmdEndRendering(vk.commandBuffer[vk.currentFrameIndex].commandBuffer);
@@ -1753,8 +1756,25 @@ static void CreatePipeline() {
     //pipeline_create.depthAttachmentFormat   = depth_format;
     //pipeline_create.stencilAttachmentFormat = depth_format;
 
+    VkVertexInputAttributeDescription vertexAttributeInfo = {};
+    VkVertexInputBindingDescription vertexBindingInfo = {};
+    vertexBindingInfo.binding = 0; //shader binding point
+    vertexBindingInfo.stride = 4 * sizeof(float); //only has vertex positions (XYZW)
+
+    vertexBindingInfo.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    //a binding can have multiple attributes (interleaved vertex format)
+    vertexAttributeInfo.location = 0; //attribute index
+    vertexAttributeInfo.binding = vertexBindingInfo.binding; //binding point of this attribute
+    vertexAttributeInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    vertexAttributeInfo.offset = 0; //attribute byte offset
+
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInputInfo.pVertexAttributeDescriptions = &vertexAttributeInfo;
+    vertexInputInfo.pVertexBindingDescriptions = &vertexBindingInfo;
+    vertexInputInfo.vertexAttributeDescriptionCount = 1;
+    vertexInputInfo.vertexBindingDescriptionCount = 1;
 
     VkPipelineMultisampleStateCreateInfo multiSampling = {};
 	multiSampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -1788,6 +1808,103 @@ static void CreatePipeline() {
     vk.pipeline = pipeline;
 }
 
+#if 0
+void GAL_CreateBuffer(galBuffer* bufferHandle, const galBufferDesc* desc)
+{
+	assert(bufferHandle);
+	assert(desc);
+	assert(desc->name);
+	assert(desc->byteCount > 0);
+
+	Buffer buffer = {};
+	buffer.memoryUsage = desc->memoryUsage;
+
+	VmaAllocationCreateInfo allocCreateInfo = {};
+	allocCreateInfo.usage = GetVmaMemoryUsage(desc->memoryUsage);
+
+	VkBufferCreateInfo bufferInfo = {};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	bufferInfo.size = desc->byteCount;
+	bufferInfo.usage = GetVkBufferUsageFlags(desc->initialState);
+
+	VmaAllocationInfo allocInfo;
+	VK(vmaCreateBuffer(vk.allocator, &bufferInfo, &allocCreateInfo, &buffer.buffer, &buffer.allocation, &allocInfo));
+
+	VkMemoryPropertyFlags memFlags;
+	vmaGetMemoryTypeProperties(vk.allocator, allocInfo.memoryType, &memFlags);
+	buffer.hostCoherent = (memFlags & (VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) != 0;
+	if(buffer.hostCoherent)
+	{
+		VK(vmaMapMemory(vk.allocator, buffer.allocation, &buffer.mappedData));
+		buffer.mapped = qtrue;
+	}
+
+	//*bufferHandle = vk.bufferPool.Add(buffer);
+
+	SetObjectName(VK_OBJECT_TYPE_BUFFER, (uint64_t)buffer.buffer, desc->name);
+}
+#endif
+
+static void CreateBuffers(void *vertexData, uint32_t vertexSize, void* indexData, uint32_t indexSize){
+    
+    {
+        VmaAllocationCreateInfo allocCreateInfo = {};
+        allocCreateInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+
+        VkBufferCreateInfo bufferInfo = {};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.size = vertexSize;
+        bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+
+        VmaAllocation vmaAlloc = {};
+
+        VmaAllocationInfo allocInfo = {};
+        VK(vmaCreateBuffer(vk.allocator, &bufferInfo, &allocCreateInfo, &vk.vertexBuffer, &vmaAlloc, &allocInfo));
+        SetObjectName(VK_OBJECT_TYPE_BUFFER, (uint64_t)vk.vertexBuffer, "Vertex Buffer");
+        void *mapped;
+        VK(vmaMapMemory(vk.allocator, vmaAlloc, &mapped));
+        memcpy(mapped, vertexData, vertexSize);
+        vmaUnmapMemory(vk.allocator, vmaAlloc);
+        vmaFlushAllocation(vk.allocator, vmaAlloc, 0, VK_WHOLE_SIZE);
+    }
+
+    {
+        VmaAllocationCreateInfo allocCreateInfo = {};
+        allocCreateInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+
+        VkBufferCreateInfo bufferInfo = {};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.size = vertexSize;
+        bufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+
+        VmaAllocation vmaAlloc = {};
+
+        VmaAllocationInfo allocInfo = {};
+        VK(vmaCreateBuffer(vk.allocator, &bufferInfo, &allocCreateInfo, &vk.indexBuffer, &vmaAlloc, &allocInfo));
+        SetObjectName(VK_OBJECT_TYPE_BUFFER, (uint64_t)vk.indexBuffer, "Index Buffer");
+        void *mapped;
+        VK(vmaMapMemory(vk.allocator, vmaAlloc, &mapped));
+        memcpy(mapped, indexData, indexSize);
+        vmaUnmapMemory(vk.allocator, vmaAlloc);
+        vmaFlushAllocation(vk.allocator, vmaAlloc, 0, VK_WHOLE_SIZE);
+
+    }
+}
+
+#if 0
+static void CreateTextureStagingBuffer()
+{
+	galBufferDesc desc = {};
+	desc.name = "texture staging buffer";
+	desc.byteCount = MAX_TEXTURE_SIZE * MAX_TEXTURE_SIZE * 4;
+	desc.initialState = CopySourceBit;
+	desc.memoryUsage = Upload;
+	GAL_CreateBuffer(&vk.textureStagingBuffer, &desc);
+}
+#endif
 
 void VKimp_Init( void ) {
     if(vk.initialized &&
@@ -1813,5 +1930,20 @@ void VKimp_Init( void ) {
     InitSwapChainImages();
     CreateTrianglePipelineLayout();
     CreatePipeline();
+    float vertex[16] = {
+        -0.7, 0.7, 0, 1, //x,y,z,w
+        0.7, 0.7, 0, 1,
+        0.7, -0.7, 0, 1,
+        -0.7, -0.7, 0,1  
+    };
+    // uint8_t colors[12] = {
+    //     255, 0, 255, 255,
+    //     0, 255, 0, 255,
+    //     255, 0, 0, 255
+    // };
+    uint32_t index[6] = {
+        0,1,2,2,3,0
+    };
+    CreateBuffers(vertex, sizeof(vertex), index, sizeof(index));
     vk.initialized = qtrue;
 }
