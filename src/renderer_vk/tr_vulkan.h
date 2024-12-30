@@ -231,6 +231,7 @@ typedef struct
 
 	VkBuffer vertexBuffer;
 	VkBuffer indexBuffer;
+	VkBuffer colorBuffer;
 
 	
 
