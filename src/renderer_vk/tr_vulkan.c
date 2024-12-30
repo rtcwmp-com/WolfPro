@@ -1248,7 +1248,8 @@ static void BuildCommandBuffer()
     VkDeviceSize vertexBufferOffset = 0;
     vkCmdBindVertexBuffers(vk.commandBuffer[vk.currentFrameIndex].commandBuffer,0,1,&vk.vertexBuffer, &vertexBufferOffset);
     vkCmdBindIndexBuffer(vk.commandBuffer[vk.currentFrameIndex].commandBuffer,vk.indexBuffer,0,VK_INDEX_TYPE_UINT32);
-    vkCmdDraw(vk.commandBuffer[vk.currentFrameIndex].commandBuffer,3, 1, 0, 0);
+    //vkCmdDraw(vk.commandBuffer[vk.currentFrameIndex].commandBuffer,4, 1, 0, 0);
+    vkCmdDrawIndexed(vk.commandBuffer[vk.currentFrameIndex].commandBuffer,6,1,0,0,0);
     
     vkCmdEndRendering(vk.commandBuffer[vk.currentFrameIndex].commandBuffer);
     {

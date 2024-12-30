@@ -4,17 +4,22 @@ struct VOut
     float4 position : SV_Position;
 };
 
-static const float2 g_position[3] =
+// static const float2 g_position[3] =
+// {
+//     float2(-0.7, 0.7),
+//     float2(0.7, 0.7),
+//     float2(0.0, -0.7)
+// };
+
+struct VIn
 {
-    float2(-0.7, 0.7),
-    float2(0.7, 0.7),
-    float2(0.0, -0.7)
+    float4 position : SV_Position;
 };
 
-VOut vs(uint id : SV_VertexID)
+VOut vs(VIn input)
 {
     VOut output;
-    output.position = float4(g_position[id % 3], 0.0, 1.0);
+    output.position = input.position;
 
     return output;
 }
