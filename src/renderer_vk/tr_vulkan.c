@@ -737,76 +737,6 @@ static VkImageAspectFlags GetVkImageAspectFlags(VkFormat format)
     }
 }
 
-void GAL_CreateTexture(galTexture* textureHandle, const galTextureDesc* desc)
-{
-    assert(textureHandle);
-    assert(desc);
-    assert(desc->width > 0);
-    assert(desc->height > 0);
-    assert(desc->mipCount > 0);
-    assert(desc->sampleCount > 0);
-
-    VkFormat format = GetVkFormat(desc->format);
-    const qbool ownsImage = desc->nativeImage == VK_NULL_HANDLE;
-
-    VkImage image = VK_NULL_HANDLE;
-    VmaAllocation allocation = VK_NULL_HANDLE;
-    if(!ownsImage)
-    {
-        image = (VkImage)desc->nativeImage;
-        format = SURFACE_FORMAT_RGBA; // @TODO:
-    }
-    else
-    {
-        VmaAllocationCreateInfo allocCreateInfo = {};
-        allocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-
-        VkImageCreateInfo imageInfo = {};
-        imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        imageInfo.imageType = VK_IMAGE_TYPE_2D;
-        imageInfo.extent.width = desc->width;
-        imageInfo.extent.height = desc->height;
-        imageInfo.extent.depth = 1;
-        imageInfo.mipLevels = desc->mipCount;
-        imageInfo.arrayLayers = 1;
-        imageInfo.format = format;
-        imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // @TODO: desc->initialState
-        imageInfo.usage = GetVkImageUsageFlags(desc->initialState) | GetVkImageUsageFlags((galResourceStateFlags)desc->descriptorType);
-        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT; // @TODO: desc->sampleCount
-        imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        VK(vmaCreateImage(vk.allocator, &imageInfo, &allocCreateInfo, &image, &allocation, NULL));
-
-        SetObjectName(VK_OBJECT_TYPE_IMAGE, (uint64_t)image, desc->name);
-    }
-
-    VkImageView view;
-    VkImageViewCreateInfo viewInfo = {};
-    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    viewInfo.image = image;
-    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    viewInfo.format = format;
-    viewInfo.subresourceRange.aspectMask = GetVkImageAspectFlags(format);
-    viewInfo.subresourceRange.baseMipLevel = 0;
-    viewInfo.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-    viewInfo.subresourceRange.baseArrayLayer = 0;
-    viewInfo.subresourceRange.layerCount = 1;
-    VK(vkCreateImageView(vk.device, &viewInfo, NULL, &view));
-    SetObjectName(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)view, desc->name);
-
-    static uint32_t rtCounter = 1;
-
-    Texture texture = {};
-    texture.desc = *desc;
-    texture.image = image;
-    texture.view = view;
-    texture.allocation = allocation;
-    texture.ownsImage = ownsImage;
-    texture.definedLayout = qfalse;
-    texture.uniqueRenderTargetId = (desc->initialState & RenderTargetBit) ? rtCounter++ : 0;
-    texture.format = format;
-    //*textureHandle = vk.texturePool.Add(texture);
-}
 
 static void CreateSwapChain()
 {
@@ -956,27 +886,20 @@ static void CreateSwapChain()
     ri.Hunk_FreeTempMemory(images);
 }
 
-void GAL_CreateCommandPool(galCommandPool* poolHandle, const galCommandPoolDesc* desc)
+void CreateCommandPool()
 {
-    assert(poolHandle);
-    assert(desc);
-
     CommandPool pool = {};
     VkCommandPoolCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    createInfo.queueFamilyIndex = desc->presentQueue ? vk.queues.presentFamily : vk.queues.graphicsFamily;
-    createInfo.flags = desc->transient ? VK_COMMAND_POOL_CREATE_TRANSIENT_BIT : 0;
+    createInfo.queueFamilyIndex = vk.queues.graphicsFamily;
+    createInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
     createInfo.flags |= VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // @TODO:
     VK(vkCreateCommandPool(vk.device, &createInfo, NULL, &pool.commandPool));
-    //*poolHandle = vk.commandPoolPool.Add(pool);
     vk.commandPool = pool;
 }
 
-void GAL_CreateCommandBuffer(galCommandBuffer* cmdBuf, galCommandPool pool, int instance)
+void CreateCommandBuffer(int instance)
 {
-    assert(cmdBuf);
-
-    //const VkCommandPool commandPool = vk.commandPoolPool.Get(pool).commandPool;
     const VkCommandPool commandPool = vk.commandPool.commandPool;
 
     CommandBuffer buffer = {};
@@ -987,18 +910,43 @@ void GAL_CreateCommandBuffer(galCommandBuffer* cmdBuf, galCommandPool pool, int 
     allocInfo.commandPool = commandPool;
     allocInfo.commandBufferCount = 1;
     VK(vkAllocateCommandBuffers(vk.device, &allocInfo, &buffer.commandBuffer));
-    //*cmdBuf = vk.commandBufferPool.Add(buffer);
     vk.commandBuffer[instance] = buffer;
 }
 
-static void CreateTempCommandBuffer()
+void CreateTempCommandPool()
 {
-    galCommandPoolDesc desc = {};
-    desc.presentQueue = qfalse;
-    desc.transient = qtrue;
-    GAL_CreateCommandPool(&vk.tempCommandPool, &desc);
-    GAL_CreateCommandBuffer(&vk.tempCommandBuffer, vk.tempCommandPool, 0);
-    GAL_CreateCommandBuffer(&vk.tempCommandBuffer, vk.tempCommandPool, 1);
+    CommandPool pool = {};
+    VkCommandPoolCreateInfo createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    createInfo.queueFamilyIndex = vk.queues.graphicsFamily;
+    createInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+    createInfo.flags |= VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // @TODO:
+    VK(vkCreateCommandPool(vk.device, &createInfo, NULL, &pool.commandPool));
+    vk.tempCommandPool = pool;
+}
+
+void CreateTempCommandBuffer()
+{
+    const VkCommandPool commandPool = vk.tempCommandPool.commandPool;
+
+    CommandBuffer buffer = {};
+    buffer.commandPool = commandPool;
+    VkCommandBufferAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool = commandPool;
+    allocInfo.commandBufferCount = 1;
+    VK(vkAllocateCommandBuffers(vk.device, &allocInfo, &buffer.commandBuffer));
+    vk.tempCommandBuffer = buffer;
+}
+
+static void CreateCommandBuffers()
+{
+    CreateCommandPool();
+    CreateCommandBuffer(0);
+    CreateCommandBuffer(1);
+    CreateTempCommandPool();
+    CreateTempCommandBuffer();
 }
 
 void AcquireSubmitPresent() {
@@ -1775,15 +1723,15 @@ static void CreatePipeline() {
 
     VkVertexInputAttributeDescription vertexPositionAttributeInfo = {};
     //a binding can have multiple attributes (interleaved vertex format)
-    vertexPositionAttributeInfo.location = 0; //attribute index
-    vertexPositionAttributeInfo.binding = vertexPositionBindingInfo.binding; //binding point of this attribute
+    vertexPositionAttributeInfo.location = 0; //shader bindings / shader input location (vk::location in HLSL) 
+    vertexPositionAttributeInfo.binding = vertexPositionBindingInfo.binding; //buffer bindings / vertex buffer index (CmdBindVertexBuffers in C)
     vertexPositionAttributeInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
     vertexPositionAttributeInfo.offset = 0; //attribute byte offset
 
     VkVertexInputAttributeDescription colorAttributeInfo = {};
     //a binding can have multiple attributes (interleaved vertex format)
-    colorAttributeInfo.location = 1; //attribute index
-    colorAttributeInfo.binding = colorBindingInfo.binding; //binding point of this attribute
+    colorAttributeInfo.location = 1; //shader bindings / shader input location (vk::location in HLSL) 
+    colorAttributeInfo.binding = colorBindingInfo.binding; //buffer bindings / vertex buffer index (CmdBindVertexBuffers in C)
     colorAttributeInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
     colorAttributeInfo.offset = 0; //attribute byte offset
 
@@ -1867,7 +1815,10 @@ void GAL_CreateBuffer(galBuffer* bufferHandle, const galBufferDesc* desc)
 }
 #endif
 
-static void CreateBuffers(void *vertexData, uint32_t vertexSize, void* indexData, uint32_t indexSize, void *colorData, uint32_t colorSize){
+static void CreateBuffers(void *vertexData, uint32_t vertexSize, 
+                            void *indexData, uint32_t indexSize, 
+                            void *colorData, uint32_t colorSize,
+                            void *imgData, uint32_t imgSize){
     //vertex 
     {
         VmaAllocationCreateInfo allocCreateInfo = {};
@@ -1936,19 +1887,226 @@ static void CreateBuffers(void *vertexData, uint32_t vertexSize, void* indexData
         vmaFlushAllocation(vk.allocator, vmaAlloc, 0, VK_WHOLE_SIZE);
 
     }
+    //texture staging buffer
+    {
+        VmaAllocationCreateInfo allocCreateInfo = {};
+        allocCreateInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU; //upload
+
+        VkBufferCreateInfo bufferInfo = {};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.size = imgSize;
+        bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT; //copy src bit
+
+        VmaAllocation vmaAlloc = {};
+
+        VmaAllocationInfo allocInfo = {};
+        VK(vmaCreateBuffer(vk.allocator, &bufferInfo, &allocCreateInfo, &vk.textureStagingBuffer, &vmaAlloc, &allocInfo));
+        SetObjectName(VK_OBJECT_TYPE_BUFFER, (uint64_t)vk.textureStagingBuffer, "Texture Staging Buffer");
+        void *mapped;
+        VK(vmaMapMemory(vk.allocator, vmaAlloc, &mapped));
+        memcpy(mapped, imgData, imgSize);
+        vmaUnmapMemory(vk.allocator, vmaAlloc);
+        vmaFlushAllocation(vk.allocator, vmaAlloc, 0, VK_WHOLE_SIZE);
+
+        // create and begin a temporary command buffer
+        //Reset temp command pool
+        vkResetCommandPool(vk.device, vk.tempCommandPool.commandPool, 0);
+
+        //Bind command buffer
+        vk.activeCommandBuffer = vk.tempCommandBuffer.commandBuffer;
+
+        //Begin command buffer
+        VkCommandBufferBeginInfo beginInfo = {};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        VK(vkBeginCommandBuffer(vk.activeCommandBuffer, &beginInfo));
+
+
+        // insert a barrier to change the mip's layout
+        // const galTextureBarrier barrier0 =
+        //     { textureHandle, galResourceState::Undefined, galResourceState::CopyDestinationBit };
+        // GAL_CmdBarriers(0, NULL, 1, &barrier0);
+        {
+            VkAccessFlags srcFlags = 0;
+            VkAccessFlags dstFlags = 0;
+            //Barrier
+            VkBufferMemoryBarrier bufferBarriers[1];
+            {
+                VkBufferMemoryBarrier barrier = {};
+                barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+                barrier.offset = 0;
+                barrier.size = VK_WHOLE_SIZE;
+                barrier.srcAccessMask = 0;
+                barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                barrier.buffer = vk.textureStagingBuffer;
+
+                srcFlags |= barrier.srcAccessMask;
+                dstFlags |= barrier.dstAccessMask;
+                bufferBarriers[0] = barrier;
+            }
+
+            VkImageMemoryBarrier imageBarriers[1];
+            {
+                VkImageMemoryBarrier barrier = {};
+                barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                barrier.srcAccessMask = 0;
+                barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+                barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+                barrier.image = vk.generatedImage;
+
+                srcFlags |= barrier.srcAccessMask;
+                dstFlags |= barrier.dstAccessMask;
+                imageBarriers[0] = barrier;
+            }
+
+            const VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            const VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            vkCmdPipelineBarrier(vk.activeCommandBuffer, srcStageMask, dstStageMask, 0, 0, NULL,
+                                1, bufferBarriers, 1, imageBarriers);
+        }
+
+
+        // copy from the staging buffer into the texture mip
+        VkBufferImageCopy region = {};
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.mipLevel = 0;
+        region.imageSubresource.layerCount = 1;
+        region.imageOffset.x = 0;
+        region.imageOffset.y = 0;
+        region.imageOffset.z = 0;
+        region.imageExtent.width = 64;
+        region.imageExtent.height = 64;
+        region.imageExtent.depth = 1;
+
+        vkCmdCopyBufferToImage(vk.activeCommandBuffer, vk.textureStagingBuffer, vk.generatedImage,
+                            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+        // insert a barrier to change the mip's layout
+        // const galTextureBarrier barrier1 =
+        //     { textureHandle, galResourceState::CopyDestinationBit, galResourceState::ShaderInputBit };
+        // GAL_CmdBarriers(0, NULL, 1, &barrier1);
+
+        {
+            VkAccessFlags srcFlags = 0;
+            VkAccessFlags dstFlags = 0;
+            //Barrier
+
+            VkImageMemoryBarrier imageBarriers[1];
+            {
+                VkImageMemoryBarrier barrier = {};
+                barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+                barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+                barrier.image = vk.generatedImage;
+
+                srcFlags |= barrier.srcAccessMask;
+                dstFlags |= barrier.dstAccessMask;
+                imageBarriers[0] = barrier;
+            }
+
+            const VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            const VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            vkCmdPipelineBarrier(vk.activeCommandBuffer, srcStageMask, dstStageMask, 0, 0, NULL,
+                                0, NULL, 1, imageBarriers);
+        }
+
+        // end, submit and destroy the command buffer
+        //commandBuffer.EndAndSubmit();
+        VK(vkEndCommandBuffer(vk.activeCommandBuffer));
+
+        const VkPipelineStageFlags waitDstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+        VkSubmitInfo info = {};
+        info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        info.commandBufferCount = 1;
+        info.pCommandBuffers = &vk.activeCommandBuffer;
+        /*info.signalSemaphoreCount = 1;
+        info.pSignalSemaphores = &vk.renderComplete.semaphore;
+        info.waitSemaphoreCount = 1;
+        info.pWaitSemaphores = &vk.imageAcquired.semaphore;*/
+        //info.pWaitDstStageMask = &waitDstStageMask;
+
+        VK(vkQueueSubmit(vk.queues.graphics, 1, &info, VK_NULL_HANDLE));
+
+        VK(vkDeviceWaitIdle(vk.device));
+
+        vk.activeCommandBuffer = vk.commandBuffer[vk.currentFrameIndex].commandBuffer;
+
+    }
 }
 
-#if 0
-static void CreateTextureStagingBuffer()
-{
-	galBufferDesc desc = {};
-	desc.name = "texture staging buffer";
-	desc.byteCount = MAX_TEXTURE_SIZE * MAX_TEXTURE_SIZE * 4;
-	desc.initialState = CopySourceBit;
-	desc.memoryUsage = Upload;
-	GAL_CreateBuffer(&vk.textureStagingBuffer, &desc);
+
+static void GenerateTexture(){
+    
+
+
 }
-#endif
+
+
+void CreateTexture(uint32_t w, uint32_t h)
+{
+    
+
+
+    VkFormat format = TEXTURE_FORMAT_RGBA;
+    VkImage image = VK_NULL_HANDLE;
+    VmaAllocation allocation = VK_NULL_HANDLE;
+    
+    VmaAllocationCreateInfo allocCreateInfo = {};
+    allocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+    VkImageCreateInfo imageInfo = {};
+    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.extent.width = 64;
+    imageInfo.extent.height = 64;
+    imageInfo.extent.depth = 1;
+    imageInfo.mipLevels = 1;
+    imageInfo.arrayLayers = 1;
+    imageInfo.format = format;
+    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // @TODO: desc->initialState
+    imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT; // @TODO: desc->sampleCount
+    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    VK(vmaCreateImage(vk.allocator, &imageInfo, &allocCreateInfo, &image, &allocation, NULL));
+
+    SetObjectName(VK_OBJECT_TYPE_IMAGE, (uint64_t)image, "Generated Texture Image");
+
+
+    VkImageView view;
+    VkImageViewCreateInfo viewInfo = {};
+    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.image = image;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = format;
+    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = 1;
+    VK(vkCreateImageView(vk.device, &viewInfo, NULL, &view));
+    SetObjectName(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)view, "Generated Texture ImageView");
+
+    vk.generatedImage = image;
+    vk.generatedImageView = view;
+    vk.generatedImageAllocation = allocation;
+}
 
 void VKimp_Init( void ) {
     if(vk.initialized &&
@@ -1969,7 +2127,7 @@ void VKimp_Init( void ) {
     CreateAllocator();
     CreateSwapChain();
     CreateImageView();
-    CreateTempCommandBuffer();
+    CreateCommandBuffers();
     CreateSyncObjects();
     InitSwapChainImages();
     CreateTrianglePipelineLayout();
@@ -1989,6 +2147,25 @@ void VKimp_Init( void ) {
     uint32_t index[6] = {
         0,1,2,2,3,0
     };
-    CreateBuffers(vertex, sizeof(vertex), index, sizeof(index), colors, sizeof(colors));
+
+    const int w = 64;
+    const int h = 64;
+    uint8_t img[64 * 64 * 4];
+    for(int y = 0; y < h; y++)
+    {
+        for(int x = 0; x < w; x++)
+        {
+            const int i = (y * w + x) * 4;
+            img[i + 0] = 127;
+            img[i + 1] = y * 4;
+            img[i + 2] = x * 4;
+            img[i + 3] = 255;
+        }
+    }
+    CreateTexture(w, h);
+    CreateBuffers(vertex, sizeof(vertex), index, sizeof(index), colors, sizeof(colors), img, sizeof(img));
+    
+
+
     vk.initialized = qtrue;
 }

@@ -209,8 +209,9 @@ typedef struct
 
 	uint32_t swapChainImageIndex;
 
-	galCommandPool tempCommandPool;
-	galCommandBuffer tempCommandBuffer;
+	CommandPool tempCommandPool;
+	CommandBuffer tempCommandBuffer;
+	VkCommandBuffer activeCommandBuffer;
 
 	CommandPool commandPool;
 	CommandBuffer commandBuffer[RHI_FRAMES_IN_FLIGHT];
@@ -227,13 +228,15 @@ typedef struct
 	Shader vertexShader;
 	Shader fragmentShader;
 
-	galBuffer textureStagingBuffer;
+	VkBuffer textureStagingBuffer;
 
 	VkBuffer vertexBuffer;
 	VkBuffer indexBuffer;
 	VkBuffer colorBuffer;
 
-	
+	VkImage generatedImage;
+	VkImageView generatedImageView;
+	VmaAllocation generatedImageAllocation;
 
 
 	//

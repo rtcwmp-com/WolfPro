@@ -311,7 +311,7 @@ uint64_t Sys_Vulkan_Init( void* vkInstance )
 
 	VkSurfaceKHR surface;
 
-	VkWin32SurfaceCreateInfoKHR createInfo;
+	VkWin32SurfaceCreateInfoKHR createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
 	createInfo.hwnd = vk_wv.hWnd;
 	createInfo.hinstance = GetModuleHandle(NULL);
