@@ -1195,9 +1195,9 @@ static void BuildCommandBuffer()
 	//						vk.pipelineLayout.pipelineLayout, 0, 1, &set.descriptorSet, 0, NULL);
     VkDeviceSize vertexBufferOffset = 0;
     VkDeviceSize colorBufferOffset = 0;
-    VkDeviceSize offsets[2] = {vertexBufferOffset, colorBufferOffset };
-    VkBuffer buffers[2] = {vk.vertexBuffer, vk.colorBuffer};
-    vkCmdBindVertexBuffers(vk.commandBuffer[vk.currentFrameIndex].commandBuffer,0,2, buffers, offsets);
+    VkDeviceSize offsets[3] = {vertexBufferOffset, colorBufferOffset, 0 };
+    VkBuffer buffers[3] = {vk.vertexBuffer, vk.colorBuffer, vk.tcBuffer};
+    vkCmdBindVertexBuffers(vk.commandBuffer[vk.currentFrameIndex].commandBuffer,0, sizeof(buffers)/sizeof(buffers[0]), buffers, offsets);
     vkCmdBindIndexBuffer(vk.commandBuffer[vk.currentFrameIndex].commandBuffer,vk.indexBuffer,0,VK_INDEX_TYPE_UINT32);
     //vkCmdBindVertexBuffers(vk.commandBuffer[vk.currentFrameIndex].commandBuffer,0,1,&vk.colorBuffer, &colorBufferOffset);
     //vkCmdDraw(vk.commandBuffer[vk.currentFrameIndex].commandBuffer,4, 1, 0, 0);
@@ -1719,6 +1719,11 @@ static void CreatePipeline() {
     colorBindingInfo.binding = 1; //shader binding point
     colorBindingInfo.stride = 4 * sizeof(uint8_t); //only has colors (RGBA)
     colorBindingInfo.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    VkVertexInputBindingDescription tcBindingInfo = {};
+    tcBindingInfo.binding = 2; //shader binding point
+    tcBindingInfo.stride = 2 * sizeof(float); //only has colors (RGBA)
+    tcBindingInfo.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
     
 
     VkVertexInputAttributeDescription vertexPositionAttributeInfo = {};
@@ -1735,15 +1740,22 @@ static void CreatePipeline() {
     colorAttributeInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
     colorAttributeInfo.offset = 0; //attribute byte offset
 
-    VkVertexInputAttributeDescription vertexAttributes[2] = {vertexPositionAttributeInfo,  colorAttributeInfo};
-    VkVertexInputBindingDescription vertexBindings[2] = {vertexPositionBindingInfo, colorBindingInfo };
+    VkVertexInputAttributeDescription tcAttributeInfo = {};
+    //a binding can have multiple attributes (interleaved vertex format)
+    tcAttributeInfo.location = 2; //shader bindings / shader input location (vk::location in HLSL) 
+    tcAttributeInfo.binding = tcBindingInfo.binding; //buffer bindings / vertex buffer index (CmdBindVertexBuffers in C)
+    tcAttributeInfo.format = VK_FORMAT_R32G32_SFLOAT;
+    tcAttributeInfo.offset = 0; //attribute byte offset
+
+    VkVertexInputAttributeDescription vertexAttributes[3] = {vertexPositionAttributeInfo,  colorAttributeInfo, tcAttributeInfo};
+    VkVertexInputBindingDescription vertexBindings[3] = {vertexPositionBindingInfo, colorBindingInfo, tcBindingInfo };
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputInfo.pVertexAttributeDescriptions = vertexAttributes;
     vertexInputInfo.pVertexBindingDescriptions = vertexBindings;
-    vertexInputInfo.vertexAttributeDescriptionCount = 2;
-    vertexInputInfo.vertexBindingDescriptionCount = 2;
+    vertexInputInfo.vertexAttributeDescriptionCount = ARRAY_LEN(vertexAttributes);
+    vertexInputInfo.vertexBindingDescriptionCount = ARRAY_LEN(vertexBindings);
 
     VkPipelineMultisampleStateCreateInfo multiSampling = {};
 	multiSampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -1818,7 +1830,8 @@ void GAL_CreateBuffer(galBuffer* bufferHandle, const galBufferDesc* desc)
 static void CreateBuffers(void *vertexData, uint32_t vertexSize, 
                             void *indexData, uint32_t indexSize, 
                             void *colorData, uint32_t colorSize,
-                            void *imgData, uint32_t imgSize){
+                            void *imgData, uint32_t imgSize,
+                            void *tcData, uint32_t tcSize){
     //vertex 
     {
         VmaAllocationCreateInfo allocCreateInfo = {};
@@ -1838,6 +1851,29 @@ static void CreateBuffers(void *vertexData, uint32_t vertexSize,
         void *mapped;
         VK(vmaMapMemory(vk.allocator, vmaAlloc, &mapped));
         memcpy(mapped, vertexData, vertexSize);
+        vmaUnmapMemory(vk.allocator, vmaAlloc);
+        vmaFlushAllocation(vk.allocator, vmaAlloc, 0, VK_WHOLE_SIZE);
+    }
+
+    //Texture coordinates
+    {
+        VmaAllocationCreateInfo allocCreateInfo = {};
+        allocCreateInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+
+        VkBufferCreateInfo bufferInfo = {};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.size = tcSize;
+        bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+
+        VmaAllocation vmaAlloc = {};
+
+        VmaAllocationInfo allocInfo = {};
+        VK(vmaCreateBuffer(vk.allocator, &bufferInfo, &allocCreateInfo, &vk.tcBuffer, &vmaAlloc, &allocInfo));
+        SetObjectName(VK_OBJECT_TYPE_BUFFER, (uint64_t)vk.tcBuffer, "Texture Coordinates Buffer");
+        void *mapped;
+        VK(vmaMapMemory(vk.allocator, vmaAlloc, &mapped));
+        memcpy(mapped, tcData, tcSize);
         vmaUnmapMemory(vk.allocator, vmaAlloc);
         vmaFlushAllocation(vk.allocator, vmaAlloc, 0, VK_WHOLE_SIZE);
     }
@@ -2138,6 +2174,13 @@ void VKimp_Init( void ) {
         0.7, -0.7, 0, 1,
         -0.7, -0.7, 0,1  
     };
+
+    float tc[8] = {
+        0, 1, 
+        1, 1,
+        1, 0,
+        0, 0 
+    };
     uint8_t colors[16] = {
         255, 0, 255, 255,
         0, 255, 0, 255,
@@ -2163,7 +2206,7 @@ void VKimp_Init( void ) {
         }
     }
     CreateTexture(w, h);
-    CreateBuffers(vertex, sizeof(vertex), index, sizeof(index), colors, sizeof(colors), img, sizeof(img));
+    CreateBuffers(vertex, sizeof(vertex), index, sizeof(index), colors, sizeof(colors), img, sizeof(img), tc, sizeof(tc));
     
 
 

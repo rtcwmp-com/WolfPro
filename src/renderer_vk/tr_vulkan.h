@@ -233,6 +233,7 @@ typedef struct
 	VkBuffer vertexBuffer;
 	VkBuffer indexBuffer;
 	VkBuffer colorBuffer;
+	VkBuffer tcBuffer;
 
 	VkImage generatedImage;
 	VkImageView generatedImageView;

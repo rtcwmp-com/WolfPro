@@ -4,12 +4,14 @@ struct VOut
 {
     [[vk::location(0)]] float4 position : SV_Position;
     [[vk::location(1)]] float4 color : COLOR0;
+    [[vk::location(2)]] float2 tc : TEXCOORD0;
 };
 
 struct VIn
 {
     [[vk::location(0)]] float4 position : SV_Position;
     [[vk::location(1)]] float4 color : COLOR0;
+    [[vk::location(2)]] float2 tc : TEXCOORD0;
 };
 
 VOut vs(VIn input)
@@ -17,11 +19,13 @@ VOut vs(VIn input)
     VOut output;
     output.position = input.position;
     output.color = input.color;
+    output.tc = input.tc;
 
     return output;
 }
 
 float4 ps(VOut input) : SV_Target
 {
-    return input.color;
+    return float4(input.tc,0,1);
+    //return input.color;
 }
