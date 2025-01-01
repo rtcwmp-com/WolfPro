@@ -1191,8 +1191,8 @@ static void BuildCommandBuffer()
 
     vkCmdBeginRendering(vk.commandBuffer[vk.currentFrameIndex].commandBuffer, &renderingInfo);
 	vkCmdBindPipeline(vk.commandBuffer[vk.currentFrameIndex].commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk.pipeline.pipeline);
-    //vkCmdBindDescriptorSets(vk.commandBuffer[vk.currentFrameIndex].commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-	//						vk.pipelineLayout.pipelineLayout, 0, 1, &set.descriptorSet, 0, NULL);
+    vkCmdBindDescriptorSets(vk.commandBuffer[vk.currentFrameIndex].commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+							vk.pipelineLayout.pipelineLayout, 0, 1, &vk.descriptorSet, 0, NULL);
     VkDeviceSize vertexBufferOffset = 0;
     VkDeviceSize colorBufferOffset = 0;
     VkDeviceSize offsets[3] = {vertexBufferOffset, colorBufferOffset, 0 };
@@ -1473,23 +1473,23 @@ static void CreateTrianglePipelineLayout()
 	// descSetFlagsCreateInfo.pBindingFlags = &bindingFlags;
 
 
-    // VkDescriptorSetLayoutBinding binding = {};
+    VkDescriptorSetLayoutBinding binding = {};
 
-    // binding.binding = 0;
-    // binding.stageFlags = GetVkShaderStageFlags(src.stageFlags);
-    // binding.descriptorType = GetVkDescriptorType(src.descriptorType);
-    // binding.descriptorCount = src.descriptorCount;
-    // binding.pImmutableSamplers = NULL;
+    binding.binding = 0;
+    binding.descriptorCount = 1;
+    binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    binding.pImmutableSamplers = NULL;
 
     
 	DescriptorSetLayout descLayout = {};
 	VkDescriptorSetLayoutCreateInfo descSetCreateInfo = {};
 	descSetCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	descSetCreateInfo.bindingCount = 0;
-	descSetCreateInfo.pBindings = NULL;
+	descSetCreateInfo.bindingCount = 1;
+	descSetCreateInfo.pBindings = &binding;
 	descSetCreateInfo.pNext = &descSetFlagsCreateInfo;
 	VK(vkCreateDescriptorSetLayout(vk.device, &descSetCreateInfo, NULL, &descLayout.layout));
-	//*layoutHandle = vk.descriptorSetLayoutPool.Add(layout);
+	vk.descriptorSetLayout = descLayout.layout;
 
 	SetObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)descLayout.layout, "Desc Layout");
 
@@ -1497,8 +1497,8 @@ static void CreateTrianglePipelineLayout()
 	//memcpy(layout.constantRanges, desc->pushConstantsPerStage, sizeof(layout.constantRanges));
 	VkPipelineLayoutCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	//createInfo.setLayoutCount = desc->descriptorSetLayoutCount;
-	// createInfo.pSetLayouts = layouts;
+	createInfo.setLayoutCount = 1;
+	createInfo.pSetLayouts = &vk.descriptorSetLayout;
 	//createInfo.pushConstantRangeCount = pushConstantsRangeCount;
 	//createInfo.pPushConstantRanges = pushConstantRanges;
 	VK(vkCreatePipelineLayout(vk.device, &createInfo, NULL, &layout.pipelineLayout));
@@ -2144,6 +2144,56 @@ void CreateTexture(uint32_t w, uint32_t h)
     vk.generatedImageAllocation = allocation;
 }
 
+static void CreateDescriptorSet(){
+    const VkDescriptorPoolSize poolSizes[] =
+	{
+		// @TODO:
+		{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1 }
+	};
+
+    VkDescriptorPoolCreateInfo poolInfo = {};
+	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolInfo.poolSizeCount = ARRAY_LEN(poolSizes);
+	poolInfo.pPoolSizes = poolSizes;
+	poolInfo.maxSets = 16; 
+    poolInfo.flags = 0; // @TODO: VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT ?
+	VK(vkCreateDescriptorPool(vk.device, &poolInfo, NULL, &vk.descriptorPool));
+
+
+    VkDescriptorSet descriptorSet;
+
+    VkDescriptorSetAllocateInfo allocInfo = {};
+	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocInfo.descriptorPool = vk.descriptorPool;
+	allocInfo.descriptorSetCount = 1;
+	allocInfo.pSetLayouts = &vk.descriptorSetLayout;
+	VK(vkAllocateDescriptorSets(vk.device, &allocInfo, &descriptorSet));
+	
+	SetObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)descriptorSet, "Descriptor Set");
+    vk.descriptorSet = descriptorSet;
+
+
+    VkDescriptorImageInfo image = {};
+    image.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    image.imageView = vk.generatedImageView;
+    image.sampler = VK_NULL_HANDLE;
+
+
+
+
+    VkWriteDescriptorSet write = {};
+	write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	write.dstSet = vk.descriptorSet;
+	write.dstBinding = 0;
+	write.descriptorCount = 1;
+	write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+	write.pBufferInfo = NULL;
+	write.pImageInfo = &image;
+
+    vkUpdateDescriptorSets(vk.device, 1, &write, 0, NULL);
+
+}
+
 void VKimp_Init( void ) {
     if(vk.initialized &&
        vk.width == glConfig.vidWidth &&
@@ -2207,7 +2257,7 @@ void VKimp_Init( void ) {
     }
     CreateTexture(w, h);
     CreateBuffers(vertex, sizeof(vertex), index, sizeof(index), colors, sizeof(colors), img, sizeof(img), tc, sizeof(tc));
-    
+    CreateDescriptorSet();
 
 
     vk.initialized = qtrue;

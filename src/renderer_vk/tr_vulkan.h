@@ -239,7 +239,9 @@ typedef struct
 	VkImageView generatedImageView;
 	VmaAllocation generatedImageAllocation;
 
-
+	VkDescriptorSetLayout descriptorSetLayout;
+	VkDescriptorSet descriptorSet;
+	VkDescriptorPool descriptorPool;
 	//
 	// extensions
 	// 

@@ -24,8 +24,16 @@ VOut vs(VIn input)
     return output;
 }
 
+Texture2D texture;
+
 float4 ps(VOut input) : SV_Target
 {
-    return float4(input.tc,0,1);
+    //texture.Sample
+    float height, width;
+    texture.GetDimensions(width, height);
+    float4 texColor = texture.Load(int3(input.tc.x * width, input.tc.y * height, 0));
+    
+    return texColor;
+    //return float4(input.tc,0,1);
     //return input.color;
 }
