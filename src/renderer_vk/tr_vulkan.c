@@ -1479,14 +1479,23 @@ static void CreateTrianglePipelineLayout()
     binding.descriptorCount = 1;
     binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    binding.pImmutableSamplers = NULL;
+    binding.pImmutableSamplers = &vk.sampler;
 
+    VkDescriptorSetLayoutBinding binding2 = {};
+
+    binding2.binding = 1;
+    binding2.descriptorCount = 1;
+    binding2.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+    binding2.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    binding2.pImmutableSamplers = &vk.sampler;
+
+    VkDescriptorSetLayoutBinding bindings[2] = {binding, binding2};
     
 	DescriptorSetLayout descLayout = {};
 	VkDescriptorSetLayoutCreateInfo descSetCreateInfo = {};
 	descSetCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	descSetCreateInfo.bindingCount = 1;
-	descSetCreateInfo.pBindings = &binding;
+	descSetCreateInfo.bindingCount = ARRAY_LEN(bindings);
+	descSetCreateInfo.pBindings = &bindings;
 	descSetCreateInfo.pNext = &descSetFlagsCreateInfo;
 	VK(vkCreateDescriptorSetLayout(vk.device, &descSetCreateInfo, NULL, &descLayout.layout));
 	vk.descriptorSetLayout = descLayout.layout;
@@ -1499,6 +1508,7 @@ static void CreateTrianglePipelineLayout()
 	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	createInfo.setLayoutCount = 1;
 	createInfo.pSetLayouts = &vk.descriptorSetLayout;
+    
 	//createInfo.pushConstantRangeCount = pushConstantsRangeCount;
 	//createInfo.pPushConstantRanges = pushConstantRanges;
 	VK(vkCreatePipelineLayout(vk.device, &createInfo, NULL, &layout.pipelineLayout));
@@ -2176,7 +2186,7 @@ static void CreateDescriptorSet(){
     VkDescriptorImageInfo image = {};
     image.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     image.imageView = vk.generatedImageView;
-    image.sampler = VK_NULL_HANDLE;
+    image.sampler = vk.sampler;
 
 
 
@@ -2192,6 +2202,29 @@ static void CreateDescriptorSet(){
 
     vkUpdateDescriptorSets(vk.device, 1, &write, 0, NULL);
 
+}
+
+static void CreateSampler(){
+    const VkSamplerAddressMode wrapMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE ;
+
+	VkSampler sampler;
+	VkSamplerCreateInfo createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	createInfo.addressModeU = wrapMode;
+	createInfo.addressModeV = wrapMode;
+	createInfo.addressModeW = wrapMode;
+	createInfo.anisotropyEnable = VK_FALSE;
+	createInfo.maxAnisotropy = 0; // @NOTE: ignored when anisotropyEnable is VK_FALSE
+	createInfo.minFilter = VK_FILTER_LINEAR;
+	createInfo.magFilter = VK_FILTER_LINEAR;
+	createInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	createInfo.minLod = 0.0f;
+	createInfo.maxLod = 666.0f;
+	createInfo.mipLodBias = 0.0f;
+	VK(vkCreateSampler(vk.device, &createInfo, NULL, &sampler));
+
+	SetObjectName(VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler, "Linear Sampler");
+    vk.sampler = sampler;
 }
 
 void VKimp_Init( void ) {
@@ -2216,6 +2249,7 @@ void VKimp_Init( void ) {
     CreateCommandBuffers();
     CreateSyncObjects();
     InitSwapChainImages();
+    CreateSampler();
     CreateTrianglePipelineLayout();
     CreatePipeline();
     float vertex[16] = {
@@ -2257,6 +2291,7 @@ void VKimp_Init( void ) {
     }
     CreateTexture(w, h);
     CreateBuffers(vertex, sizeof(vertex), index, sizeof(index), colors, sizeof(colors), img, sizeof(img), tc, sizeof(tc));
+    
     CreateDescriptorSet();
 
 

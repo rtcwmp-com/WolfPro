@@ -242,6 +242,8 @@ typedef struct
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkDescriptorSet descriptorSet;
 	VkDescriptorPool descriptorPool;
+
+	VkSampler sampler;
 	//
 	// extensions
 	// 

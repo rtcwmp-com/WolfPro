@@ -25,13 +25,14 @@ VOut vs(VIn input)
 }
 
 Texture2D texture;
+SamplerState mySampler;
 
 float4 ps(VOut input) : SV_Target
 {
-    //texture.Sample
-    float height, width;
-    texture.GetDimensions(width, height);
-    float4 texColor = texture.Load(int3(input.tc.x * width, input.tc.y * height, 0));
+    float4 texColor = texture.Sample(mySampler, input.tc);
+    //float height, width;
+    //texture.GetDimensions(width, height);
+    //float4 texColor = texture.Load(int3(input.tc.x * width, input.tc.y * height, 0));
     
     return texColor;
     //return float4(input.tc,0,1);
