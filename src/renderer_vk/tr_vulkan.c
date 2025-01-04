@@ -1479,7 +1479,7 @@ static void CreateTrianglePipelineLayout()
     binding.descriptorCount = 1;
     binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    binding.pImmutableSamplers = &vk.sampler;
+    binding.pImmutableSamplers = VK_NULL_HANDLE;
 
     VkDescriptorSetLayoutBinding binding2 = {};
 
@@ -1487,7 +1487,7 @@ static void CreateTrianglePipelineLayout()
     binding2.descriptorCount = 1;
     binding2.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
     binding2.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    binding2.pImmutableSamplers = &vk.sampler;
+    binding2.pImmutableSamplers = VK_NULL_HANDLE;
 
     VkDescriptorSetLayoutBinding bindings[2] = {binding, binding2};
     
@@ -2158,7 +2158,8 @@ static void CreateDescriptorSet(){
     const VkDescriptorPoolSize poolSizes[] =
 	{
 		// @TODO:
-		{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1 }
+		{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1 },
+        { VK_DESCRIPTOR_TYPE_SAMPLER, 1 }
 	};
 
     VkDescriptorPoolCreateInfo poolInfo = {};
@@ -2167,6 +2168,7 @@ static void CreateDescriptorSet(){
 	poolInfo.pPoolSizes = poolSizes;
 	poolInfo.maxSets = 16; 
     poolInfo.flags = 0; // @TODO: VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT ?
+    
 	VK(vkCreateDescriptorPool(vk.device, &poolInfo, NULL, &vk.descriptorPool));
 
 
@@ -2177,30 +2179,48 @@ static void CreateDescriptorSet(){
 	allocInfo.descriptorPool = vk.descriptorPool;
 	allocInfo.descriptorSetCount = 1;
 	allocInfo.pSetLayouts = &vk.descriptorSetLayout;
+    
 	VK(vkAllocateDescriptorSets(vk.device, &allocInfo, &descriptorSet));
 	
 	SetObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)descriptorSet, "Descriptor Set");
     vk.descriptorSet = descriptorSet;
 
+    //TEXTURE
+    {
+        VkDescriptorImageInfo image = {};
+        image.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        image.imageView = vk.generatedImageView;
+        image.sampler = VK_NULL_HANDLE;
 
-    VkDescriptorImageInfo image = {};
-    image.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image.imageView = vk.generatedImageView;
-    image.sampler = vk.sampler;
+        VkWriteDescriptorSet write = {};
+        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        write.dstSet = vk.descriptorSet;
+        write.dstBinding = 0;
+        write.descriptorCount = 1;
+        write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        write.pBufferInfo = NULL;
+        write.pImageInfo = &image;
 
+        vkUpdateDescriptorSets(vk.device, 1, &write, 0, NULL);
+    }
+    //SAMPLER
+    {
+        VkDescriptorImageInfo image = {};
+        image.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        image.imageView = VK_NULL_HANDLE;
+        image.sampler = vk.sampler;
 
+        VkWriteDescriptorSet write = {};
+        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        write.dstSet = vk.descriptorSet;
+        write.dstBinding = 1;
+        write.descriptorCount = 1;
+        write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+        write.pBufferInfo = NULL;
+        write.pImageInfo = &image;
 
-
-    VkWriteDescriptorSet write = {};
-	write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	write.dstSet = vk.descriptorSet;
-	write.dstBinding = 0;
-	write.descriptorCount = 1;
-	write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-	write.pBufferInfo = NULL;
-	write.pImageInfo = &image;
-
-    vkUpdateDescriptorSets(vk.device, 1, &write, 0, NULL);
+        vkUpdateDescriptorSets(vk.device, 1, &write, 0, NULL);
+    }
 
 }
 
