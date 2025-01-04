@@ -40,6 +40,16 @@ If you have questions concerning this license or the applicable additional terms
 #include <io.h>
 #include <conio.h>
 
+qbool Sys_IsDebugging(void){
+	return IsDebuggerPresent();
+}
+
+#ifndef _MSC_VER
+void Sys_DebugBreak(void){
+	DebugBreak();
+}
+#endif
+
 /*
 ================
 Sys_Milliseconds

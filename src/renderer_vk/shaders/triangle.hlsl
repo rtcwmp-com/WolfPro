@@ -24,8 +24,8 @@ VOut vs(VIn input)
     return output;
 }
 
-Texture2D texture;
-SamplerState mySampler;
+[[vk::binding(0)]] Texture2D texture;
+[[vk::binding(1)]] SamplerState mySampler;
 
 float4 ps(VOut input) : SV_Target
 {

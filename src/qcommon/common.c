@@ -247,6 +247,9 @@ void QDECL Com_Error( int code, const char *fmt, ... ) {
 		}
 	}
 #endif
+	if(code == ERR_FATAL && Sys_IsDebugging()){
+		Sys_DebugBreak();
+	}
 
 	// when we are running automated scripts, make sure we
 	// know if anything failed

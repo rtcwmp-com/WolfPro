@@ -34,6 +34,26 @@ If you have questions concerning this license or the applicable additional terms
 
 //#define	PRE_RELEASE_DEMO
 
+
+qbool Sys_IsDebugging(void);
+
+#ifdef _MSC_VER
+	#define Sys_DebugBreak __debugbreak
+	
+#else
+	void Sys_DebugBreak(void);
+#endif
+
+#ifdef _DEBUG
+#define Q_assert(x) if(!(x)) \
+						if(Sys_IsDebugging()) \
+						 	 Sys_DebugBreak(); \
+						else assert(x);
+#else
+#define Q_assert(x)
+#endif
+					
+
 //============================================================================
 #define CLIENT_WINDOW_TITLE "Wolfenstein"
 //
