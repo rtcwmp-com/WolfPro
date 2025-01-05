@@ -243,7 +243,7 @@ typedef struct
 	VkDescriptorSet descriptorSet;
 	VkDescriptorPool descriptorPool;
 
-	VkSampler sampler;
+	VkSampler sampler[2];
 	//
 	// extensions
 	// 

@@ -1484,10 +1484,11 @@ static void CreateTrianglePipelineLayout()
     VkDescriptorSetLayoutBinding binding2 = {};
 
     binding2.binding = 1;
-    binding2.descriptorCount = 1;
+    binding2.descriptorCount = 2;
     binding2.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
     binding2.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     binding2.pImmutableSamplers = VK_NULL_HANDLE;
+
 
     VkDescriptorSetLayoutBinding bindings[2] = {binding, binding2};
     
@@ -2203,30 +2204,42 @@ static void CreateDescriptorSet(){
 
         vkUpdateDescriptorSets(vk.device, 1, &write, 0, NULL);
     }
-    //SAMPLER
+    //SAMPLER1
     {
+        
+
         VkDescriptorImageInfo image = {};
         image.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         image.imageView = VK_NULL_HANDLE;
-        image.sampler = vk.sampler;
+        image.sampler = vk.sampler[0];
+
+        VkDescriptorImageInfo image2 = {};
+        image2.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        image2.imageView = VK_NULL_HANDLE;
+        image2.sampler = vk.sampler[1];
+
+        VkDescriptorImageInfo images[2] = {image, image2};
 
         VkWriteDescriptorSet write = {};
         write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         write.dstSet = vk.descriptorSet;
         write.dstBinding = 1;
-        write.descriptorCount = 1;
+        write.descriptorCount = 2;
         write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
         write.pBufferInfo = NULL;
-        write.pImageInfo = &image;
+        write.pImageInfo = &images;
 
         vkUpdateDescriptorSets(vk.device, 1, &write, 0, NULL);
     }
+
+
 
 }
 
 static void CreateSampler(){
     const VkSamplerAddressMode wrapMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE ;
 
+    {
 	VkSampler sampler;
 	VkSamplerCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -2244,7 +2257,29 @@ static void CreateSampler(){
 	VK(vkCreateSampler(vk.device, &createInfo, NULL, &sampler));
 
 	SetObjectName(VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler, "Linear Sampler");
-    vk.sampler = sampler;
+    vk.sampler[0] = sampler;
+    }
+
+    {
+	VkSampler sampler;
+	VkSamplerCreateInfo createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	createInfo.addressModeU = wrapMode;
+	createInfo.addressModeV = wrapMode;
+	createInfo.addressModeW = wrapMode;
+	createInfo.anisotropyEnable = VK_FALSE;
+	createInfo.maxAnisotropy = 0; // @NOTE: ignored when anisotropyEnable is VK_FALSE
+	createInfo.minFilter = VK_FILTER_NEAREST;
+	createInfo.magFilter = VK_FILTER_NEAREST;
+	createInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	createInfo.minLod = 0.0f;
+	createInfo.maxLod = 666.0f;
+	createInfo.mipLodBias = 0.0f;
+	VK(vkCreateSampler(vk.device, &createInfo, NULL, &sampler));
+
+	SetObjectName(VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler, "Nearest Sampler");
+    vk.sampler[1] = sampler;
+    }
 }
 
 void VKimp_Init( void ) {

@@ -25,11 +25,11 @@ VOut vs(VIn input)
 }
 
 [[vk::binding(0)]] Texture2D texture;
-[[vk::binding(1)]] SamplerState mySampler;
+[[vk::binding(1)]] SamplerState mySampler[2];
 
 float4 ps(VOut input) : SV_Target
 {
-    float4 texColor = texture.Sample(mySampler, input.tc);
+    float4 texColor = texture.Sample(mySampler[1], input.tc);
     //float height, width;
     //texture.GetDimensions(width, height);
     //float4 texColor = texture.Load(int3(input.tc.x * width, input.tc.y * height, 0));
