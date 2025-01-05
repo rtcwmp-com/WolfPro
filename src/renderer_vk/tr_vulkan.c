@@ -1199,8 +1199,12 @@ static void BuildCommandBuffer()
     VkBuffer buffers[3] = {vk.vertexBuffer, vk.colorBuffer, vk.tcBuffer};
     vkCmdBindVertexBuffers(vk.commandBuffer[vk.currentFrameIndex].commandBuffer,0, sizeof(buffers)/sizeof(buffers[0]), buffers, offsets);
     vkCmdBindIndexBuffer(vk.commandBuffer[vk.currentFrameIndex].commandBuffer,vk.indexBuffer,0,VK_INDEX_TYPE_UINT32);
+
     //vkCmdBindVertexBuffers(vk.commandBuffer[vk.currentFrameIndex].commandBuffer,0,1,&vk.colorBuffer, &colorBufferOffset);
     //vkCmdDraw(vk.commandBuffer[vk.currentFrameIndex].commandBuffer,4, 1, 0, 0);
+    uint32_t samplerIndex = r_dynamiclight->integer == 0 ? 0 : 1;
+    vkCmdPushConstants(vk.commandBuffer[vk.currentFrameIndex].commandBuffer, vk.pipelineLayout.pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, 4, &samplerIndex);
+
     vkCmdDrawIndexed(vk.commandBuffer[vk.currentFrameIndex].commandBuffer,6,1,0,0,0);
     
     vkCmdEndRendering(vk.commandBuffer[vk.currentFrameIndex].commandBuffer);
@@ -1489,9 +1493,17 @@ static void CreateTrianglePipelineLayout()
     binding2.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     binding2.pImmutableSamplers = VK_NULL_HANDLE;
 
+    VkDescriptorSetLayoutBinding binding3 = {};
 
-    VkDescriptorSetLayoutBinding bindings[2] = {binding, binding2};
-    
+    binding3.binding = 2;
+    binding3.descriptorCount = 1;
+    binding3.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    binding3.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    binding3.pImmutableSamplers = VK_NULL_HANDLE;
+
+
+    VkDescriptorSetLayoutBinding bindings[3] = {binding, binding2, binding3};
+
 	DescriptorSetLayout descLayout = {};
 	VkDescriptorSetLayoutCreateInfo descSetCreateInfo = {};
 	descSetCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -1503,12 +1515,18 @@ static void CreateTrianglePipelineLayout()
 
 	SetObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)descLayout.layout, "Desc Layout");
 
+    VkPushConstantRange pcr = {};
+    pcr.size = 4;
+    pcr.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
     PipelineLayout layout = {};
 	//memcpy(layout.constantRanges, desc->pushConstantsPerStage, sizeof(layout.constantRanges));
 	VkPipelineLayoutCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	createInfo.setLayoutCount = 1;
 	createInfo.pSetLayouts = &vk.descriptorSetLayout;
+    createInfo.pPushConstantRanges = &pcr;
+    createInfo.pushConstantRangeCount = 1;
     
 	//createInfo.pushConstantRangeCount = pushConstantsRangeCount;
 	//createInfo.pPushConstantRanges = pushConstantRanges;
@@ -1934,6 +1952,36 @@ static void CreateBuffers(void *vertexData, uint32_t vertexSize,
         vmaFlushAllocation(vk.allocator, vmaAlloc, 0, VK_WHOLE_SIZE);
 
     }
+    //sampler indices
+    {
+        float samplerIndicies[16] = {
+            1.0f, 0.0f, 0.0f, 1.0f,
+            1.0f, 1.0f, 0.0f, 1.0f,
+            1.0f, 0.0f, 1.0f, 1.0f,
+            0.0f, 0.0f, 1.0f, 1.0f
+                                    };
+
+        VmaAllocationCreateInfo allocCreateInfo = {};
+        allocCreateInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+
+        VkBufferCreateInfo bufferInfo = {};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.size = sizeof(samplerIndicies);
+        bufferInfo.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+
+        VmaAllocation vmaAlloc = {};
+
+        VmaAllocationInfo allocInfo = {};
+        VK(vmaCreateBuffer(vk.allocator, &bufferInfo, &allocCreateInfo, &vk.samplerBuffer, &vmaAlloc, &allocInfo));
+        SetObjectName(VK_OBJECT_TYPE_BUFFER, (uint64_t)vk.samplerBuffer, "Sampler Indicies Buffer");
+        void *mapped;
+        VK(vmaMapMemory(vk.allocator, vmaAlloc, &mapped));
+        memcpy(mapped, samplerIndicies, sizeof(samplerIndicies));
+        vmaUnmapMemory(vk.allocator, vmaAlloc);
+        vmaFlushAllocation(vk.allocator, vmaAlloc, 0, VK_WHOLE_SIZE);
+
+    }
     //texture staging buffer
     {
         VmaAllocationCreateInfo allocCreateInfo = {};
@@ -2228,6 +2276,26 @@ static void CreateDescriptorSet(){
         write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
         write.pBufferInfo = NULL;
         write.pImageInfo = &images;
+
+        vkUpdateDescriptorSets(vk.device, 1, &write, 0, NULL);
+    }
+
+    //sampler indices buffer
+
+    {
+        VkDescriptorBufferInfo bufferInfo = {};
+        bufferInfo.buffer = vk.samplerBuffer;
+        bufferInfo.offset = 0;
+        bufferInfo.range = VK_WHOLE_SIZE;
+
+        VkWriteDescriptorSet write = {};
+        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        write.dstSet = vk.descriptorSet;
+        write.dstBinding = 2;
+        write.descriptorCount = 1;
+        write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        write.pBufferInfo = &bufferInfo;
+        write.pImageInfo = NULL;
 
         vkUpdateDescriptorSets(vk.device, 1, &write, 0, NULL);
     }
