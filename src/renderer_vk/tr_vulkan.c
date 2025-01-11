@@ -537,7 +537,7 @@ static void CreateAllocator()
     VK(vmaCreateAllocator(&allocatorInfo, &vk.allocator));
 }
 
-static void SetObjectName(VkObjectType type, uint64_t object, const char* name)
+void SetObjectName(VkObjectType type, uint64_t object, const char* name)
 {
     if(name == NULL)
     {
@@ -2074,6 +2074,8 @@ void VKimp_Init( void ) {
     ri.Printf( PRINT_ALL, "Initializing Vulkan subsystem\n" );
 
     Pool_Init(&vk.commandBufferPool, 64, sizeof(CommandBuffer), 0);
+    Pool_Init(&vk.semaphorePool, 64, sizeof(Semaphore), 0);
+    Pool_Init(&vk.texturePool, 64, sizeof(Texture), 0);
     
 
     vk.instance = VK_NULL_HANDLE;

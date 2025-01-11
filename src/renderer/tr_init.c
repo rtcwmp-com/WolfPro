@@ -322,6 +322,11 @@ static void InitVulkan( void ) {
 	for(int i = 0; i < RHI_FRAMES_IN_FLIGHT; i++){
 		backEnd.commandBuffers[i] = RHI_CreateCommandBuffer();
 	}
+	backEnd.renderComplete = RHI_CreateTimelineSemaphore();
+	backEnd.renderCompleteBinary = RHI_CreateBinarySemaphore();
+	backEnd.imageAcquiredBinary = RHI_CreateBinarySemaphore();
+	
+
 	
 
 }

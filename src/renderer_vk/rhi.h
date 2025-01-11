@@ -22,7 +22,7 @@ typedef uint64_t rhiHandle;
 
 #define RHI_HANDLE_TYPE(TypeName) typedef struct { rhiHandle h; }  TypeName;
 
-RHI_HANDLE_TYPE(rhiFence) //sync cpu and gpu, allows you to wait on a queue on CPU for the GPU to finish work
+RHI_HANDLE_TYPE(rhiSemaphore) //either binary or timeline semaphore
 RHI_HANDLE_TYPE(rhiTexture) //1d,2d,3d data that can be filtered when read (render target when writing from graphics pipeline operation)
 RHI_HANDLE_TYPE(rhiCommandPool) //memory region for allocating command buffers, once in init
 RHI_HANDLE_TYPE(rhiCommandBuffer) //list of commands to be executed on the gpu
@@ -43,6 +43,7 @@ RHI_HANDLE_TYPE(rhiPipelineLayout) // push constant's byte count for both shader
 								   // push constant - constant data (up to 128 bytes) in the command stream, for the entire draw call
 								   // ex: matrices in vertex shader, texture/sampler indices for bindless rendering in frag shader
 RHI_HANDLE_TYPE(rhiBuffer) //raw data in gpu space (vertex/index can be specailized for the API's knowledge of what is in it)
+
 
 
 
@@ -215,15 +216,36 @@ typedef struct rhiBufferDesc
 	rhiMemoryUsageId memoryUsage;
 } rhiBufferDesc;
 
+typedef struct rhiSubmitGraphicsDesc {
+    rhiSemaphore signalSemaphores[8];
+    uint16_t signalSemaphoreCount;
+    uint64_t signalValues[8];
+    rhiSemaphore waitSemaphores[8];
+    uint16_t waitSemaphoreCount;
+} rhiSubmitGraphicsDesc;
+
+inline void RHI_SubmitGraphicsDesc_Signal(rhiSubmitGraphicsDesc *graphicsDesc, rhiSemaphore semaphore, uint64_t semaphoreValue){
+    assert(graphicsDesc->signalSemaphoreCount < ARRAY_LEN(graphicsDesc->signalSemaphores));
+    int newIndex = graphicsDesc->signalSemaphoreCount++;
+    graphicsDesc->signalSemaphores[newIndex] = semaphore;
+    graphicsDesc->signalValues[newIndex] = semaphoreValue;
+}
+
+inline void RHI_SubmitGraphicsDesc_Wait(rhiSubmitGraphicsDesc *graphicsDesc, rhiSemaphore semaphore){
+    assert(graphicsDesc->waitSemaphoreCount < ARRAY_LEN(graphicsDesc->waitSemaphores));
+    int newIndex = graphicsDesc->waitSemaphoreCount++;
+    graphicsDesc->waitSemaphores[newIndex] = semaphore;
+}
+
 
 void RHI_Init();
 void RHI_Shutdown();
 
 void RHI_WaitUntilDeviceIdle(); //debug only
 
-void RHI_CreateBinarySemaphore();
-void RHI_CreateTimelineSemaphore();
-void RHI_WaitOnSempaphore();
+rhiSemaphore RHI_CreateBinarySemaphore();
+rhiSemaphore RHI_CreateTimelineSemaphore();
+void RHI_WaitOnSemaphore(rhiSemaphore semaphore, uint64_t semaphoreValue);
 
 void RHI_CreateBuffer();
 void RHI_MapBuffer(); //cpu visible buffers
@@ -242,10 +264,11 @@ void RHI_CreateGraphicsPipeline();
 void RHI_CreateComputePipeline();
 
 void RHI_GetSwapChainInfo();
-void RHI_AcquireNextImage();
+void RHI_AcquireNextImage(uint32_t* outImageIndex, rhiSemaphore signalSemaphore);
 
-void RHI_SubmitGraphics();
-void RHI_SubmitPresent();
+
+void RHI_SubmitGraphics(const rhiSubmitGraphicsDesc* graphicsDesc);
+void RHI_SubmitPresent(rhiSemaphore waitSemaphore, uint32_t swapChainImageIndex);
 
 rhiCommandBuffer RHI_CreateCommandBuffer(void); // pass queue enum as argument
 void RHI_BindCommandBuffer(rhiCommandBuffer cmdBuffer);

@@ -928,6 +928,13 @@ typedef struct {
 
 	uint32_t currentFrameIndex;
 	rhiCommandBuffer commandBuffers[RHI_FRAMES_IN_FLIGHT];
+	rhiSemaphore renderComplete;
+	uint64_t renderCompleteCounter;
+	rhiSemaphore renderCompleteBinary;
+	rhiSemaphore imageAcquiredBinary;
+
+	uint32_t swapChainImageIndex;
+	
 } backEndState_t;
 
 /*

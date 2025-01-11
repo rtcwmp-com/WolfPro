@@ -1155,7 +1155,10 @@ RB_DrawBuffer
 =============
 */
 const void  *RB_DrawBuffer( const void *data ) {
+	backEnd.currentFrameIndex = (backEnd.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT;
+
 	RHI_BeginFrame();
+
 	const drawBufferCommand_t   *cmd;
 
 	cmd = (const drawBufferCommand_t *)data;
@@ -1167,6 +1170,11 @@ const void  *RB_DrawBuffer( const void *data ) {
 		qglClearColor( 1, 0, 0.5, 1 );
 		qglClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	}
+	RHI_WaitOnSemaphore(backEnd.renderComplete, backEnd.renderCompleteCounter);
+	RHI_AcquireNextImage(&backEnd.swapChainImageIndex, backEnd.imageAcquiredBinary);
+	RHI_BindCommandBuffer(backEnd.commandBuffers[backEnd.currentFrameIndex]);
+	RHI_BeginCommandBuffer();
+
 
 	return (const void *)( cmd + 1 );
 }
@@ -1280,7 +1288,19 @@ const void  *RB_SwapBuffers( const void *data ) {
 	}
 
 	GLimp_LogComment( "***************** RB_SwapBuffers *****************\n\n\n" );
+	
+	RHI_EndCommandBuffer();
+
+	backEnd.renderCompleteCounter++;
+	rhiSubmitGraphicsDesc graphicsDesc = {};
+	RHI_SubmitGraphicsDesc_Signal(&graphicsDesc, backEnd.renderCompleteBinary, 0);
+	RHI_SubmitGraphicsDesc_Signal(&graphicsDesc, backEnd.renderComplete, backEnd.renderCompleteCounter);
+	RHI_SubmitGraphicsDesc_Wait(&graphicsDesc, backEnd.imageAcquiredBinary);
+
+	RHI_SubmitGraphics(&graphicsDesc);
+	RHI_SubmitPresent(backEnd.renderCompleteBinary, backEnd.swapChainImageIndex);
 	RHI_EndFrame();
+	
 	GLimp_EndFrame();
 
 	backEnd.projection2D = qfalse;

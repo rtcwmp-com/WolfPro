@@ -102,11 +102,12 @@ typedef struct Queues
 // 	qbool submitted;
 // } Fence;
 
-// typedef struct Semaphore
-// {
-// 	VkSemaphore semaphore;
-// 	qbool signaled;
-// } Semaphore;
+typedef struct Semaphore
+{
+	VkSemaphore semaphore;
+	qbool signaled;
+	qbool binary;
+} Semaphore;
 
 typedef struct CommandBuffer
 {
@@ -114,23 +115,23 @@ typedef struct CommandBuffer
 	VkCommandPool commandPool; // the owner of this command
 } CommandBuffer;
 
-// typedef struct Texture
-// {
-// 	VkImage image;
-// 	VkImageView view;
-// 	VmaAllocation allocation;
-// 	galTextureDesc desc;
-// 	VkFormat format;
-// 	qbool ownsImage;
+typedef struct Texture
+{
+	VkImage image;
+	VkImageView view;
+	VmaAllocation allocation;
+	rhiTextureDesc desc;
+	VkFormat format;
+	qbool ownsImage;
 
-// 	// this gets set by resource barriers and texture updates
-// 	// when qfalse, we know the layout is still undefined and
-// 	// we can lazily do layout transitions on the user's behalf
-// 	qbool definedLayout;
+	// this gets set by resource barriers and texture updates
+	// when qfalse, we know the layout is still undefined and
+	// we can lazily do layout transitions on the user's behalf
+	qbool definedLayout;
 
-// 	// every render target creation use a new unique id
-// 	uint32_t uniqueRenderTargetId;
-// } Texture;
+	// every render target creation use a new unique id
+	uint32_t uniqueRenderTargetId;
+} Texture;
 
 // typedef struct Pipeline
 // {
@@ -209,7 +210,11 @@ typedef struct Vulkan
 
 	memoryPool commandBufferPool;
 
-	rhiCommandBuffer activeCommandBuffer;
+	VkCommandBuffer activeCommandBuffer;
+
+	memoryPool semaphorePool;
+
+	memoryPool texturePool;
 
 	//
 	// extensions
@@ -225,5 +230,6 @@ typedef struct Vulkan
 extern Vulkan vk;
 
 void Check(VkResult result, const char* function);
+void SetObjectName(VkObjectType type, uint64_t object, const char* name);
 
 #endif
