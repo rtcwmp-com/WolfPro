@@ -13,6 +13,7 @@ void Pool_Clear(memoryPool* pool) {
 void Pool_Init(memoryPool *pool, const uint32_t itemCount, const uint32_t typeSize, uint16_t type){
 	pool->poolType = type;
 	pool->typeSize = typeSize;
+	pool->itemCount = itemCount;
 	pool->poolData = (uint8_t*)malloc((itemCount + 1) * typeSize);
 	pool->lookupData = (memoryPoolItem*)malloc((itemCount + 1) * sizeof(memoryPoolItem));
 	Pool_Clear(pool);

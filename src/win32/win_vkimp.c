@@ -1,6 +1,5 @@
-
 #include <assert.h>
-#include "../renderer_vk/tr_local_gal.h"
+#include "../renderer/tr_local.h"
 #include "../qcommon/qcommon.h"
 #include "resource.h"
 #include "glw_win.h"
@@ -9,9 +8,6 @@
 
 #define VK_USE_PLATFORM_WIN32_KHR
 #include <vulkan/vulkan.h>
-
-#include "../renderer_vk/tr_vulkan.h"
-
 
 vkwstate_t vkw_state;
 

@@ -106,7 +106,7 @@ static qbool IsErrorCode(VkResult result)
 #undef VULKAN_CODE
 }
 
-static void Check(VkResult result, const char* function)
+void Check(VkResult result, const char* function)
 {
     if(!IsErrorCode(result))
     {

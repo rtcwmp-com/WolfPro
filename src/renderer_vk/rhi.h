@@ -2,7 +2,9 @@
 #define RHI_H
 //#pragma once 
 
-#include "tr_vulkan.h"
+#include "../game/q_shared.h"
+#include "../qcommon/qfiles.h"
+#include "../qcommon/qcommon.h"
 
 #define RHI_FRAMES_IN_FLIGHT			2
 

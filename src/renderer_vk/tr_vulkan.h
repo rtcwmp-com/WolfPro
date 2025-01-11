@@ -4,9 +4,9 @@
 
 #include <vulkan/vulkan.h>
 #include "../renderer/tr_local.h"
-#include "rhi.h"
 #include <vma/vk_mem_alloc.h>
 #include "../renderer/memorypool.h"
+
 
 
 //TODO only in debug builds
@@ -209,6 +209,8 @@ typedef struct Vulkan
 
 	memoryPool commandBufferPool;
 
+	rhiCommandBuffer activeCommandBuffer;
+
 	//
 	// extensions
 	// 
@@ -221,5 +223,7 @@ typedef struct Vulkan
 } Vulkan;
 
 extern Vulkan vk;
+
+void Check(VkResult result, const char* function);
 
 #endif

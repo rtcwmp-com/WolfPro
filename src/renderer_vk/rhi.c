@@ -1,4 +1,5 @@
 #include "rhi.h"
+#include "tr_vulkan.h"
 
 
 void RHI_Init()
@@ -101,12 +102,12 @@ rhiCommandBuffer RHI_CreateCommandBuffer() //pass queue enum
 
 void RHI_BindCommandBuffer(rhiCommandBuffer commandBuffer)
 {
-    CommandBuffer* cmdBuffer = (CommandBuffer*)Pool_Get(&vk.commandBufferPool, commandBuffer.v);
-    vk.activeCommandBuffer = cmdBuffer->buffer;
+    vk.activeCommandBuffer = commandBuffer;
 }
 
 void RHI_BeginCommandBuffer()
 {
+    //CommandBuffer* cmdBuffer = (CommandBuffer*)Pool_Get(&vk.commandBufferPool, commandBuffer.h);
 }
 
 void RHI_EndCommandBuffer()
