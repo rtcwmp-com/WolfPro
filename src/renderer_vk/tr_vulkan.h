@@ -1,9 +1,10 @@
-#ifndef TR_VULKAN
-#define TR_VULKAN
+#ifndef TR_VULKAN_H
+#define TR_VULKAN_H
+//#pragma once
 
 #include <vulkan/vulkan.h>
 #include "../renderer/tr_local.h"
-#include "tr_local_gal.h"
+#include "rhi.h"
 #include <vma/vk_mem_alloc.h>
 #include "../renderer/memorypool.h"
 
@@ -156,7 +157,7 @@ typedef struct CommandBuffer
 
 
 
-typedef struct Buffer
+typedef struct
 {
 	void* mappedData; // only if host coherent
 	VkBuffer buffer;
@@ -220,7 +221,5 @@ typedef struct Vulkan
 } Vulkan;
 
 extern Vulkan vk;
-
-
 
 #endif

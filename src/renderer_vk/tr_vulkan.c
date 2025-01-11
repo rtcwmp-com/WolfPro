@@ -1,6 +1,5 @@
 
 #include "tr_vulkan.h"
-#include "tr_local_gal.h"
 
 
 static Vulkan vk;
@@ -2074,7 +2073,8 @@ void VKimp_Init( void ) {
     
     ri.Printf( PRINT_ALL, "Initializing Vulkan subsystem\n" );
 
-
+    Pool_Init(&vk.commandBufferPool, 64, sizeof(CommandBuffer), 0);
+    
 
     vk.instance = VK_NULL_HANDLE;
     BuildLayerAndExtensionLists();

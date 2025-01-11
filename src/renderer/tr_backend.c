@@ -395,6 +395,7 @@ static void SetViewportAndScissor( void ) {
 				backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight );
 }
 
+
 /*
 =================
 RB_BeginDrawingView

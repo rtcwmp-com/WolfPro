@@ -36,6 +36,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "../qcommon/qcommon.h"
 #include "tr_public.h"
 #include "qgl.h"
+#include "../renderer_vk/rhi.h"
 
 #define GL_INDEX_TYPE       GL_UNSIGNED_INT
 typedef unsigned int glIndex_t;
@@ -924,6 +925,9 @@ typedef struct {
 	byte color2D[4];
 	qboolean vertexes2D;        // shader needs to be finished
 	trRefEntity_t entity2D;     // currentEntity will point at this when doing 2D rendering
+
+	uint32_t currentFrameIndex;
+	rhiCommandBuffer commandBuffers[RHI_FRAMES_IN_FLIGHT];
 } backEndState_t;
 
 /*

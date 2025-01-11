@@ -1,6 +1,10 @@
+#ifndef MEMORYPOOL_H
+#define MEMORYPOOL_H
+//#pragma once
+
 #include "tr_local.h"
 
-#pragma once
+
 
 typedef struct {
 	uint32_t nextFreeIndex;
@@ -30,3 +34,6 @@ DecomposedHandle DecomposeHandle(uint64_t handle);
 uint64_t Pool_Add(memoryPool *pool, void *rawItem);
 void Pool_Remove(memoryPool *pool, uint64_t handle);
 void* Pool_Get(memoryPool *pool, uint64_t handle);
+
+
+#endif

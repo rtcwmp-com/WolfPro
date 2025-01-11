@@ -319,6 +319,11 @@ static void InitOpenGL( void ) {
 
 static void InitVulkan( void ) {
 	VKimp_Init();
+	for(int i = 0; i < RHI_FRAMES_IN_FLIGHT; i++){
+		backEnd.commandBuffers[i] = RHI_CreateCommandBuffer();
+	}
+	
+
 }
 
 /*

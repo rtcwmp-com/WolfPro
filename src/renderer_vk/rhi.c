@@ -1,5 +1,6 @@
 #include "rhi.h"
 
+
 void RHI_Init()
 {
 }
@@ -80,21 +81,28 @@ void RHI_SubmitPresent()
 {
 }
 
-void RHI_CreateCommandBuffer()
+rhiCommandBuffer RHI_CreateCommandBuffer() //pass queue enum
 {
-    CommandBuffer buffer = {};
-    buffer.commandPool = vk.commandPool;
+    VkCommandBuffer commandBuffer;
     VkCommandBufferAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.commandPool = vk.commandPool;
     allocInfo.commandBufferCount = 1;
-    VK(vkAllocateCommandBuffers(vk.device, &allocInfo, &buffer.commandBuffer));
-    vk.commandBuffer[instance] = buffer;
+    VK(vkAllocateCommandBuffers(vk.device, &allocInfo, &commandBuffer));
+
+    CommandBuffer buffer = {};
+    buffer.commandPool = vk.commandPool;
+    buffer.commandBuffer = commandBuffer;
+    rhiCommandBuffer cmdBuffer;
+    cmdBuffer.h = Pool_Add(&vk.commandBufferPool, &buffer);
+    return cmdBuffer;
 }
 
-void RHI_BindCommandBuffer()
+void RHI_BindCommandBuffer(rhiCommandBuffer commandBuffer)
 {
+    CommandBuffer* cmdBuffer = (CommandBuffer*)Pool_Get(&vk.commandBufferPool, commandBuffer.v);
+    vk.activeCommandBuffer = cmdBuffer->buffer;
 }
 
 void RHI_BeginCommandBuffer()
