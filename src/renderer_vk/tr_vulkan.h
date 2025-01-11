@@ -5,6 +5,7 @@
 #include "../renderer/tr_local.h"
 #include "tr_local_gal.h"
 #include <vma/vk_mem_alloc.h>
+#include "../renderer/memorypool.h"
 
 
 //TODO only in debug builds
@@ -84,7 +85,7 @@
 #define MAX_LAYERS 16
 #define MAX_EXTENSIONS 16
 
-typedef struct 
+typedef struct Queues
 {
 	// graphics is graphics *and* compute
 	// present is presentation and *can* be the same as graphics
@@ -94,83 +95,78 @@ typedef struct
 	uint32_t presentFamily;
 } Queues;
 
-typedef struct
-{
-	VkFence fence;
-	qbool submitted;
-} Fence;
+// typedef struct Fence
+// {
+// 	VkFence fence;
+// 	qbool submitted;
+// } Fence;
 
-typedef struct Semaphore
-{
-	VkSemaphore semaphore;
-	qbool signaled;
-} Semaphore;
+// typedef struct Semaphore
+// {
+// 	VkSemaphore semaphore;
+// 	qbool signaled;
+// } Semaphore;
 
-typedef struct 
-{
-	VkCommandPool commandPool;
-} CommandPool;
-
-typedef struct 
+typedef struct CommandBuffer
 {
 	VkCommandBuffer commandBuffer;
 	VkCommandPool commandPool; // the owner of this command
 } CommandBuffer;
 
-typedef struct 
-{
-	VkImage image;
-	VkImageView view;
-	VmaAllocation allocation;
-	galTextureDesc desc;
-	VkFormat format;
-	qbool ownsImage;
+// typedef struct Texture
+// {
+// 	VkImage image;
+// 	VkImageView view;
+// 	VmaAllocation allocation;
+// 	galTextureDesc desc;
+// 	VkFormat format;
+// 	qbool ownsImage;
 
-	// this gets set by resource barriers and texture updates
-	// when qfalse, we know the layout is still undefined and
-	// we can lazily do layout transitions on the user's behalf
-	qbool definedLayout;
+// 	// this gets set by resource barriers and texture updates
+// 	// when qfalse, we know the layout is still undefined and
+// 	// we can lazily do layout transitions on the user's behalf
+// 	qbool definedLayout;
 
-	// every render target creation use a new unique id
-	uint32_t uniqueRenderTargetId;
-} Texture;
+// 	// every render target creation use a new unique id
+// 	uint32_t uniqueRenderTargetId;
+// } Texture;
 
-typedef struct 
-{
-	VkPipeline pipeline;
-	qbool compute;
-} Pipeline;
+// typedef struct Pipeline
+// {
+// 	VkPipeline pipeline;
+// 	qbool compute;
+// } Pipeline;
 
-typedef struct 
-{
-	VkPipelineLayout pipelineLayout;
-	PushConstantsRange constantRanges[galShaderTypeIdCount];
- } PipelineLayout;
+// typedef struct PipelineLayout
+// {
+// 	VkPipelineLayout pipelineLayout;
+// 	PushConstantsRange constantRanges[galShaderTypeIdCount];
+//  } PipelineLayout;
 
-typedef struct 
-{
-	VkShaderModule module;
-	galShaderTypeId type;
-} Shader;
+// typedef struct Shader
+// {
+// 	VkShaderModule module;
+// 	galShaderTypeId type;
+// } Shader;
 
-typedef struct 
-{
-	VkDescriptorSetLayout layout;
-} DescriptorSetLayout;
+// typedef struct DescriptorSetLayout
+// {
+// 	VkDescriptorSetLayout layout;
+// } DescriptorSetLayout;
 
 
 
-typedef struct 
+typedef struct Buffer
 {
 	void* mappedData; // only if host coherent
 	VkBuffer buffer;
 	VmaAllocation allocation;
-	galMemoryUsageId memoryUsage;
+	rhiMemoryUsageId memoryUsage;
 	qbool mapped;
 	qbool hostCoherent;
 } Buffer;
 
-typedef struct 
+typedef struct Vulkan
 {
     //
 	// init state
@@ -204,49 +200,14 @@ typedef struct
 	VkSurfaceFormatKHR swapChainFormat;
 	uint32_t swapChainImageCount;
 	VkImage swapChainImages[MAX_SWAP_CHAIN_IMAGES];
-	galTexture swapChainRenderTargets[MAX_SWAP_CHAIN_IMAGES];
+	rhiTexture swapChainRenderTargets[MAX_SWAP_CHAIN_IMAGES];
 	VkImageView swapChainImageViews[MAX_SWAP_CHAIN_IMAGES]; //delete later
 
-	uint32_t swapChainImageIndex;
-
-	CommandPool tempCommandPool;
-	CommandBuffer tempCommandBuffer;
-	VkCommandBuffer activeCommandBuffer;
-
-	CommandPool commandPool;
-	CommandBuffer commandBuffer[RHI_FRAMES_IN_FLIGHT];
-
-	Semaphore renderComplete;
-	Semaphore imageAcquired;
-
-	uint32_t currentFrameIndex;
-
-	Pipeline pipeline;
-	PipelineLayout pipelineLayout; 
-
-	Shader vertexShader;
-	Shader fragmentShader;
-
-	VkBuffer textureStagingBuffer;
-
-	VkBuffer vertexBuffer;
-	VkBuffer indexBuffer;
-	VkBuffer colorBuffer;
-	VkBuffer tcBuffer;
-	VkBuffer samplerBuffer;
-
-	VkImage generatedImage;
-	VkImageView generatedImageView;
-	VmaAllocation generatedImageAllocation;
-
-	VkDescriptorSetLayout descriptorSetLayout;
-	VkDescriptorSet descriptorSet;
 	VkDescriptorPool descriptorPool;
+	VkCommandPool commandPool;
 
-	VkSampler sampler[2];
+	memoryPool commandBufferPool;
 
-	uint64_t timelineValue; 
-	VkSemaphore timelineSemaphore;
 	//
 	// extensions
 	// 

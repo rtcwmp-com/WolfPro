@@ -1,0 +1,32 @@
+#include "tr_local.h"
+
+#pragma once
+
+typedef struct {
+	uint32_t nextFreeIndex;
+	uint16_t generation;
+	uint16_t inUse;
+} memoryPoolItem;
+
+typedef struct {
+	uint16_t poolType;
+	uint32_t firstFree;
+	uint32_t typeSize;
+	uint32_t itemCount;
+	uint8_t *poolData;
+	memoryPoolItem *lookupData;
+} memoryPool;
+
+typedef struct {
+	uint32_t index;
+	uint16_t generation;
+	uint16_t type;
+} DecomposedHandle;
+
+void Pool_Clear(memoryPool* pool);
+void Pool_Init(memoryPool *pool, const uint32_t itemCount, const uint32_t typeSize, uint16_t type);
+uint64_t ComposeHandle(uint32_t index, uint16_t generation,uint16_t type);
+DecomposedHandle DecomposeHandle(uint64_t handle);
+uint64_t Pool_Add(memoryPool *pool, void *rawItem);
+void Pool_Remove(memoryPool *pool, uint64_t handle);
+void* Pool_Get(memoryPool *pool, uint64_t handle);

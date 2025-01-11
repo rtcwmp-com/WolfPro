@@ -82,6 +82,15 @@ void RHI_SubmitPresent()
 
 void RHI_CreateCommandBuffer()
 {
+    CommandBuffer buffer = {};
+    buffer.commandPool = vk.commandPool;
+    VkCommandBufferAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool = vk.commandPool;
+    allocInfo.commandBufferCount = 1;
+    VK(vkAllocateCommandBuffers(vk.device, &allocInfo, &buffer.commandBuffer));
+    vk.commandBuffer[instance] = buffer;
 }
 
 void RHI_BindCommandBuffer()

@@ -31,7 +31,7 @@ void RHI_AcquireNextImage();
 void RHI_SubmitGraphics();
 void RHI_SubmitPresent();
 
-void RHI_CreateCommandBuffer();
+void RHI_CreateCommandBuffer(); // pass queue enum as argument
 void RHI_BindCommandBuffer();
 void RHI_BeginCommandBuffer();
 void RHI_EndCommandBuffer();
