@@ -218,7 +218,6 @@ typedef struct
 
 	Semaphore renderComplete;
 	Semaphore imageAcquired;
-	Fence inFlightFence;
 
 	uint32_t currentFrameIndex;
 
@@ -245,6 +244,9 @@ typedef struct
 	VkDescriptorPool descriptorPool;
 
 	VkSampler sampler[2];
+
+	uint64_t timelineValue; 
+	VkSemaphore timelineSemaphore;
 	//
 	// extensions
 	// 

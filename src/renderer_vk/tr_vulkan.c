@@ -286,86 +286,6 @@ static void BuildLayerAndExtensionLists()
 void CreateInstance()
 {
     ri.Printf( PRINT_ALL, "Vulkan Create Instance\n" );
-    #if 0
-    const VkValidationFeatureEnableEXT validationFeaturesEnabled[] =
-    {
-        // "GPU-assisted" can detect out of bounds descriptor accesses in shaders, etc
-        // @TODO: anything else I must do to make it work? doesn't trigger for me
-        VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,
-        VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT
-        //VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT
-    };
-    /*const VkValidationFeatureDisableEXT validationFeaturesDisabled[] =
-    {
-        VK_VALIDATION_FEATURE_DISABLE_ALL_EXT
-    };*/
-    VkValidationFeaturesEXT validationFeatures = {};
-    validationFeatures.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
-    validationFeatures.enabledValidationFeatureCount = ARRAY_LEN(validationFeaturesEnabled);
-    validationFeatures.pEnabledValidationFeatures = validationFeaturesEnabled;
-    //validationFeatures.disabledValidationFeatureCount = ARRAY_LEN(validationFeaturesDisabled);
-    //validationFeatures.pDisabledValidationFeatures = validationFeaturesDisabled;
-    validationFeatures.pNext = NULL;
-
-    VkDebugUtilsMessengerCreateInfoEXT messengerCreateInfo = {};
-    messengerCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-    messengerCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    messengerCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-    messengerCreateInfo.pfnUserCallback = &DebugCallback;
-    messengerCreateInfo.pUserData = NULL;
-    messengerCreateInfo.pNext = NULL;
-    messengerCreateInfo.flags = 0;
-
-    // @TODO: get the proper version string
-    VkApplicationInfo appInfo = {};
-    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.apiVersion = MINIMUM_VULKAN_API_VERSION;
-    appInfo.applicationVersion = VK_MAKE_VERSION(1, 4, 0);
-    appInfo.engineVersion = VK_MAKE_VERSION(1, 4, 0);
-    appInfo.pApplicationName = "Wolfenstein-vk";
-    appInfo.pEngineName = "Wolfenstein-vk";
-
-    VkInstanceCreateInfo createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    createInfo.pApplicationInfo = &appInfo;
-    if(vk.layerCount > 0)
-    {
-        createInfo.enabledLayerCount = vk.layerCount;
-        createInfo.ppEnabledLayerNames = vk.layers;
-        if(vk.ext.EXT_debug_utils)
-        {
-            // @NOTE: the messenger must always be chained in first so it ends up
-            // in last place and has its own pNext set to NULL, as mandated by the spec
-            const void* pSavedNext = createInfo.pNext;
-            createInfo.pNext = &messengerCreateInfo;
-            messengerCreateInfo.pNext = pSavedNext;
-        }
-        if(vk.ext.EXT_validation_features)
-        {
-            const void* pSavedNext = createInfo.pNext;
-            createInfo.pNext = &validationFeatures;
-            validationFeatures.pNext = pSavedNext;
-        }
-    }
-    if(vk.extensionCount > 0)
-    {
-        createInfo.enabledExtensionCount = vk.extensionCount;
-        createInfo.ppEnabledExtensionNames = vk.extensions;
-    }
-    VkInstance instance;
-    VK(vkCreateInstance(&createInfo, NULL, &instance));
-    vk.instance = instance;
-
-    if(vk.ext.EXT_debug_utils)
-    {
-        if(CreateDebugUtilsMessengerEXT(vk.instance, &messengerCreateInfo, NULL, &vk.ext.debugMessenger) != VK_SUCCESS)
-        {
-            ri.Printf(PRINT_WARNING, "Failed to register Vulkan debug messenger\n");
-        }
-    }
-    #endif
-    /*vk.extensions[0] = "VK_KHR_win32_surface";
-    vk.extensionCount = 1;*/
 
     VkDebugUtilsMessengerCreateInfoEXT messengerCreateInfo = {};
     messengerCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -568,15 +488,15 @@ static void CreateDevice()
         "VK_KHR_swapchain"
     };
 
-    // @NOTE: alright, we're gonna stick to uniform indexing for now
-    //VkPhysicalDeviceDescriptorIndexingFeatures featuresExt {};
-    //featuresExt.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
-    //featuresExt.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+    VkPhysicalDeviceTimelineSemaphoreFeatures timelineFeatures = {};
+    timelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
+    timelineFeatures.timelineSemaphore = VK_TRUE;
 
     VkPhysicalDeviceVulkan13Features vk13f = {};
     vk13f.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
     vk13f.synchronization2 = VK_TRUE;
     vk13f.dynamicRendering = VK_TRUE;
+    vk13f.pNext = &timelineFeatures;
 
     VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures = {};
     indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
@@ -643,28 +563,6 @@ static void SetObjectName(VkObjectType type, uint64_t object, const char* name)
     }
 }
 
-#if 0
-void GAL_CreateFence(galFence* fenceHandle, const char* name)
-{
-    assert(fenceHandle);
-    assert(name);
-
-    Fence fence;
-    VkFenceCreateInfo createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    VK(vkCreateFence(vk.device, &createInfo, NULL, &fence.fence));
-    fence.submitted = qfalse;
-    *fenceHandle = vk.fencePool.Add(fence);
-
-    SetObjectName(VK_OBJECT_TYPE_FENCE, (uint64_t)fence.fence, name);
-}
-
-void GAL_DestroyFence(galFence fence)
-{
-    vkDestroyFence(vk.device, vk.fencePool.Get(fence).fence, NULL);
-    vk.fencePool.Remove(fence);
-}
-#endif
 static VkImageUsageFlags GetVkImageUsageFlags(galResourceStateFlags state)
 {
     VkImageUsageFlags flags = VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -873,12 +771,10 @@ static void CreateSwapChain()
         rtDesc.sampleCount = 1;
         rtDesc.descriptorType = SampledImageBit;
         rtDesc.initialState = RenderTargetBit | PresentBit;
-        //rtDesc.format = GAL_SURFACE_FORMAT; // @TODO:
         for(int i = 0; i < imageCount; ++i)
         {
             rtDesc.nativeImage = (uint64_t)images[i];
             rtDesc.name = va("swap chain render target #%d", i + 1);
-            //GAL_CreateTexture(&vk.swapChainRenderTargets[i], &rtDesc);
             vk.swapChainImages[i] = images[i];
             
         }
@@ -950,21 +846,32 @@ static void CreateCommandBuffers()
 }
 
 void AcquireSubmitPresent() {
+    vk.timelineValue++;
+    uint64_t timelineValues[2] = {0, vk.timelineValue};
+    VkTimelineSemaphoreSubmitInfo timelineInfo1;
+    timelineInfo1.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
+    timelineInfo1.pNext = NULL;
+    timelineInfo1.waitSemaphoreValueCount = 0;
+    timelineInfo1.pWaitSemaphoreValues = VK_NULL_HANDLE;
+    timelineInfo1.signalSemaphoreValueCount = 2;
+    timelineInfo1.pSignalSemaphoreValues = timelineValues;
 
+    VkSemaphore semaphores[2] = { vk.renderComplete.semaphore, vk.timelineSemaphore};
 
     VkSubmitInfo submitInfo = {};
     submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.pNext                = &timelineInfo1;
     submitInfo.commandBufferCount   = 1;
     submitInfo.pCommandBuffers      = &vk.commandBuffer[vk.currentFrameIndex].commandBuffer;
     submitInfo.waitSemaphoreCount   = 1;
     submitInfo.pWaitSemaphores      = &vk.imageAcquired.semaphore;
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores    =  &vk.renderComplete.semaphore;
+    submitInfo.signalSemaphoreCount = 2;
+    submitInfo.pSignalSemaphores    = semaphores;
     const VkPipelineStageFlags flags = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     submitInfo.pWaitDstStageMask = &flags;
 
     
-    VK(vkQueueSubmit(vk.queues.present, 1, &submitInfo, vk.inFlightFence.fence));    
+    VK(vkQueueSubmit(vk.queues.present, 1, &submitInfo, VK_NULL_HANDLE));    
     
 
     
@@ -1054,11 +961,6 @@ static void InitSwapChainImages()
         waitInfo.pSemaphores = &vk.renderComplete.semaphore;
         
         VK(vkEndCommandBuffer(commandBuffer));
-        VK(vkWaitForFences(vk.device, 1, &vk.inFlightFence.fence, VK_TRUE, UINT64_MAX));
-        VK(vkResetFences(vk.device, 1, &vk.inFlightFence.fence));
-        //vkWaitSemaphores(vk.device, &waitInfo, UINT64_MAX)
-        // const VkResult r = vkAcquireNextImageKHR(vk.device, vk.swapChain, UINT64_MAX, vk.imageAcquired.semaphore, VK_NULL_HANDLE, &vk.swapChainImageIndex); 
-        // AcquireSubmitPresent();
         
         VkSubmitInfo submitInfo = {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -1067,9 +969,8 @@ static void InitSwapChainImages()
 
         const VkPipelineStageFlags flags = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
         submitInfo.pWaitDstStageMask = &flags;
-        VK(vkQueueSubmit(vk.queues.present, 1, &submitInfo, vk.inFlightFence.fence));
+        VK(vkQueueSubmit(vk.queues.present, 1, &submitInfo, VK_NULL_HANDLE));
         VK(vkDeviceWaitIdle(vk.device));
-        
          
     }
     
@@ -1200,8 +1101,6 @@ static void BuildCommandBuffer()
     vkCmdBindVertexBuffers(vk.commandBuffer[vk.currentFrameIndex].commandBuffer,0, sizeof(buffers)/sizeof(buffers[0]), buffers, offsets);
     vkCmdBindIndexBuffer(vk.commandBuffer[vk.currentFrameIndex].commandBuffer,vk.indexBuffer,0,VK_INDEX_TYPE_UINT32);
 
-    //vkCmdBindVertexBuffers(vk.commandBuffer[vk.currentFrameIndex].commandBuffer,0,1,&vk.colorBuffer, &colorBufferOffset);
-    //vkCmdDraw(vk.commandBuffer[vk.currentFrameIndex].commandBuffer,4, 1, 0, 0);
     uint32_t samplerIndex = r_dynamiclight->integer == 0 ? 0 : 1;
     vkCmdPushConstants(vk.commandBuffer[vk.currentFrameIndex].commandBuffer, vk.pipelineLayout.pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, 4, &samplerIndex);
 
@@ -1233,22 +1132,6 @@ static void BuildCommandBuffer()
 
     VK(vkEndCommandBuffer(vk.commandBuffer[vk.currentFrameIndex].commandBuffer));
 }
-#if 0
-void GAL_CreateSemaphore(galSemaphore* semaphoreHandle, const char* name)
-{
-    assert(semaphoreHandle);
-    assert(name);
-
-    Semaphore semaphore;
-    VkSemaphoreCreateInfo createInfo {};
-    createInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    VK(vkCreateSemaphore(vk.device, &createInfo, NULL, &semaphore.semaphore));
-    semaphore.signaled = qfalse;
-    *semaphoreHandle = vk.semaphorePool.Add(semaphore);
-
-    SetObjectName(VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)semaphore.semaphore, name);
-}
-#endif
 
 static void CreateSyncObjects(){
     Semaphore imageAcquired = {};
@@ -1273,17 +1156,27 @@ static void CreateSyncObjects(){
     }
     vk.renderComplete = renderComplete;
 
-    Fence inFlightFence = {};
+    Semaphore timelineSemaphore = {};
     {
-        VkFenceCreateInfo fenceInfo = {};
-        fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-        fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT; //initialize signaled so beginframe's wait passes
+        VkSemaphoreTypeCreateInfo timelineCreateInfo = {};
+        timelineCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO;
+        timelineCreateInfo.pNext = NULL;
+        timelineCreateInfo.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+        timelineCreateInfo.initialValue = 0;
+        vk.timelineValue = 0;
 
-        VK(vkCreateFence(vk.device, &fenceInfo, NULL, &inFlightFence.fence));
-        inFlightFence.submitted = qfalse;
+        VkSemaphoreCreateInfo createInfo = {};
+        createInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        createInfo.pNext = &timelineCreateInfo;
+        createInfo.flags = 0;
+
+
+        VK(vkCreateSemaphore(vk.device, &createInfo, NULL, &timelineSemaphore.semaphore));
+        timelineSemaphore.signaled = qfalse;
+
+        SetObjectName(VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)timelineSemaphore.semaphore, "timelineSemaphore semaphore");
+        vk.timelineSemaphore = timelineSemaphore.semaphore;
     }
-    vk.inFlightFence = inFlightFence;
-
 
 }
 
@@ -1298,8 +1191,15 @@ static void RenderScene()
 
 void RHI_BeginFrame() {
     vk.currentFrameIndex = (vk.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT;
-    VK(vkWaitForFences(vk.device, 1, &vk.inFlightFence.fence, VK_TRUE, UINT64_MAX));
-    VK(vkResetFences(vk.device, 1, &vk.inFlightFence.fence));
+
+    VkSemaphoreWaitInfo waitInfo = {};
+    waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
+    waitInfo.pNext = NULL;
+    waitInfo.flags = 0;
+    waitInfo.semaphoreCount = 1;
+    waitInfo.pSemaphores = &vk.timelineSemaphore;
+    waitInfo.pValues = &vk.timelineValue;
+    VK(vkWaitSemaphores(vk.device, &waitInfo, UINT64_MAX));
     
     const VkResult r = vkAcquireNextImageKHR(vk.device, vk.swapChain, UINT64_MAX, vk.imageAcquired.semaphore, VK_NULL_HANDLE, &vk.swapChainImageIndex); 
  
@@ -1315,11 +1215,8 @@ void RHI_BeginFrame() {
     }
 
     BuildCommandBuffer();
-
-    
-
-
 }
+
 void RHI_EndFrame() {
     AcquireSubmitPresent();
 }
@@ -1351,119 +1248,6 @@ static VkShaderStageFlags GetVkShaderStageFlags(galShaderTypeId shaderType)
 	assert(0); // means pairs is incomplete!
 	return 0;
 }
-
-#if 0
-void GAL_CreatePipelineLayout(galPipelineLayout* layoutHandle, const galPipelineLayoutDesc* desc)
-{
-    
-	assert(layoutHandle);
-	assert(desc);
-	assert(desc->name);
-
-	VkDescriptorSetLayout layouts[16];
-	assert(desc->descriptorSetLayoutCount <= ARRAY_LEN(layouts));
-
-	for(uint32_t l = 0; l < desc->descriptorSetLayoutCount; ++l)
-	{
-		const DescriptorSetLayout descSetLayout = vk.descriptorSetLayoutPool.Get(desc->descriptorSetLayouts[l]);
-		layouts[l] = descSetLayout.layout;
-	}
-
-	// @TODO: check that vertex and pixel shader ranges don't overlap?
-
-	VkPushConstantRange pushConstantRanges[galShaderTypeIdCount];
-	uint32_t pushConstantsByteCount = 0;
-	uint32_t pushConstantsRangeCount = 0;
-	for(int s = 0; s < galShaderTypeIdCount; ++s)
-	{
-		const uint32_t byteOffset = desc->pushConstantsPerStage[s].byteOffset;
-		const uint32_t byteCount = desc->pushConstantsPerStage[s].byteCount;
-		assert(byteOffset + byteCount <= 128);
-
-		if(byteCount > 0)
-		{
-			pushConstantsByteCount += byteCount;
-			pushConstantRanges[pushConstantsRangeCount].offset = byteOffset;
-			pushConstantRanges[pushConstantsRangeCount].size = byteCount;
-			pushConstantRanges[pushConstantsRangeCount].stageFlags = GetVkShaderStageFlags((galShaderTypeId)s);
-			++pushConstantsRangeCount;
-		}
-	}
-	assert(pushConstantsByteCount <= 128);
-
-	PipelineLayout layout = {};
-	memcpy(layout.constantRanges, desc->pushConstantsPerStage, sizeof(layout.constantRanges));
-	VkPipelineLayoutCreateInfo createInfo = {};
-	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	createInfo.setLayoutCount = desc->descriptorSetLayoutCount;
-	createInfo.pSetLayouts = layouts;
-	createInfo.pushConstantRangeCount = pushConstantsRangeCount;
-	createInfo.pPushConstantRanges = pushConstantRanges;
-	VK(vkCreatePipelineLayout(vk.device, &createInfo, NULL, &layout.pipelineLayout));
-	//*layoutHandle = vk.pipelineLayoutPool.Add(layout);
-    vk.pipelineLayout = layout;
-
-	SetObjectName(VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)layout.pipelineLayout, desc->name);
-}
-
-
-void GAL_CreateDescriptorSetLayout(galDescriptorSetLayout* layoutHandle, const galDescriptorSetLayoutDesc* desc)
-{
-	assert(layoutHandle);
-	assert(desc);
-	assert(desc->name);
-	assert(desc->bindingCount > 0);
-	assert(desc->bindings);
-
-	VkSampler immutableSamplers[64];
-	uint32_t immutableSamplerCount = 0;
-
-	TempArray<VkDescriptorSetLayoutBinding> bindings(desc->bindingCount + 1);
-	TempArray<VkDescriptorBindingFlags> bindingFlags(desc->bindingCount + 1);
-	for(uint32_t b = 0; b < desc->bindingCount; ++b)
-	{
-		const galDescriptorSetLayoutBinding& src = desc->bindings[b];
-		VkDescriptorSetLayoutBinding& dst = bindings[b];
-		dst.binding = src.bindingSlot;
-		dst.stageFlags = GetVkShaderStageFlags(src.stageFlags);
-		dst.descriptorType = GetVkDescriptorType(src.descriptorType);
-		dst.descriptorCount = src.descriptorCount;
-		dst.pImmutableSamplers = NULL;
-		if(src.immutableSamplers != NULL)
-		{
-			const uint32_t count = src.descriptorCount;
-			const uint32_t base = immutableSamplerCount;
-			if(base + count > ARRAY_LEN(immutableSamplers))
-			{
-				ri.Error(ERR_FATAL, "Too many immutable samplers specified\n");
-			}
-			for(uint32_t d = 0; d < count; ++d)
-			{
-				immutableSamplers[base + d] = vk.samplerPool.Get(src.immutableSamplers[d]).sampler;
-			}
-			dst.pImmutableSamplers = &immutableSamplers[base];
-			immutableSamplerCount += count;
-		}
-		bindingFlags[b] = src.canUpdateUnusedWhilePending ? VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT : 0;
-	}
-
-	VkDescriptorSetLayoutBindingFlagsCreateInfo descSetFlagsCreateInfo {};
-	descSetFlagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
-	descSetFlagsCreateInfo.bindingCount = desc->bindingCount;
-	descSetFlagsCreateInfo.pBindingFlags = bindingFlags;
-
-	DescriptorSetLayout layout {};
-	VkDescriptorSetLayoutCreateInfo descSetCreateInfo {};
-	descSetCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	descSetCreateInfo.bindingCount = desc->bindingCount;
-	descSetCreateInfo.pBindings = bindings;
-	descSetCreateInfo.pNext = &descSetFlagsCreateInfo;
-	VK(vkCreateDescriptorSetLayout(vk.device, &descSetCreateInfo, NULL, &layout.layout));
-	*layoutHandle = vk.descriptorSetLayoutPool.Add(layout);
-
-	SetObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)layout.layout, desc->name);
-}
-#endif
 
 static void CreateTrianglePipelineLayout()
 {
@@ -1818,44 +1602,6 @@ static void CreatePipeline() {
     vk.pipeline = pipeline;
 }
 
-#if 0
-void GAL_CreateBuffer(galBuffer* bufferHandle, const galBufferDesc* desc)
-{
-	assert(bufferHandle);
-	assert(desc);
-	assert(desc->name);
-	assert(desc->byteCount > 0);
-
-	Buffer buffer = {};
-	buffer.memoryUsage = desc->memoryUsage;
-
-	VmaAllocationCreateInfo allocCreateInfo = {};
-	allocCreateInfo.usage = GetVmaMemoryUsage(desc->memoryUsage);
-
-	VkBufferCreateInfo bufferInfo = {};
-	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	bufferInfo.size = desc->byteCount;
-	bufferInfo.usage = GetVkBufferUsageFlags(desc->initialState);
-
-	VmaAllocationInfo allocInfo;
-	VK(vmaCreateBuffer(vk.allocator, &bufferInfo, &allocCreateInfo, &buffer.buffer, &buffer.allocation, &allocInfo));
-
-	VkMemoryPropertyFlags memFlags;
-	vmaGetMemoryTypeProperties(vk.allocator, allocInfo.memoryType, &memFlags);
-	buffer.hostCoherent = (memFlags & (VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) != 0;
-	if(buffer.hostCoherent)
-	{
-		VK(vmaMapMemory(vk.allocator, buffer.allocation, &buffer.mappedData));
-		buffer.mapped = qtrue;
-	}
-
-	//*bufferHandle = vk.bufferPool.Add(buffer);
-
-	SetObjectName(VK_OBJECT_TYPE_BUFFER, (uint64_t)buffer.buffer, desc->name);
-}
-#endif
-
 static void CreateBuffers(void *vertexData, uint32_t vertexSize, 
                             void *indexData, uint32_t indexSize, 
                             void *colorData, uint32_t colorSize,
@@ -2019,9 +1765,6 @@ static void CreateBuffers(void *vertexData, uint32_t vertexSize,
 
 
         // insert a barrier to change the mip's layout
-        // const galTextureBarrier barrier0 =
-        //     { textureHandle, galResourceState::Undefined, galResourceState::CopyDestinationBit };
-        // GAL_CmdBarriers(0, NULL, 1, &barrier0);
         {
             VkAccessFlags srcFlags = 0;
             VkAccessFlags dstFlags = 0;
@@ -2086,9 +1829,6 @@ static void CreateBuffers(void *vertexData, uint32_t vertexSize,
                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
         // insert a barrier to change the mip's layout
-        // const galTextureBarrier barrier1 =
-        //     { textureHandle, galResourceState::CopyDestinationBit, galResourceState::ShaderInputBit };
-        // GAL_CmdBarriers(0, NULL, 1, &barrier1);
 
         {
             VkAccessFlags srcFlags = 0;
@@ -2130,11 +1870,6 @@ static void CreateBuffers(void *vertexData, uint32_t vertexSize,
         info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         info.commandBufferCount = 1;
         info.pCommandBuffers = &vk.activeCommandBuffer;
-        /*info.signalSemaphoreCount = 1;
-        info.pSignalSemaphores = &vk.renderComplete.semaphore;
-        info.waitSemaphoreCount = 1;
-        info.pWaitSemaphores = &vk.imageAcquired.semaphore;*/
-        //info.pWaitDstStageMask = &waitDstStageMask;
 
         VK(vkQueueSubmit(vk.queues.graphics, 1, &info, VK_NULL_HANDLE));
 
