@@ -57,24 +57,26 @@ typedef struct rhiCommandPoolDesc
 	qbool transient;
 } rhiCommandPoolDesc;
 
-typedef enum rhiResourceStateFlags
-{
-	rhiResourceStateFlagUndefined = 0,
-	VertexBufferBit = RHI_BIT(0),
-	IndexBufferBit = RHI_BIT(1),
-	RenderTargetBit = RHI_BIT(2),
-	PresentBit = RHI_BIT(3),
-	ShaderInputBit = RHI_BIT(4),
-	CopySourceBit = RHI_BIT(5),
-	CopyDestinationBit = RHI_BIT(6),
-	DepthWriteBit = RHI_BIT(7),
-	UnorderedAccessBit = RHI_BIT(8),
-	CommonBit = RHI_BIT(9),
-	IndirectCommandBit = RHI_BIT(10),
-	rhiResourceStateUniformBufferBit = RHI_BIT(11),
-	rhiResourceStateStorageBufferBit = RHI_BIT(12),
-	DepthReadBit = RHI_BIT(13)
+typedef enum rhiResourceStateFlags {
+        rhiResourceStateUndefined = 0,
+        VertexBufferBit = RHI_BIT(0),
+        IndexBufferBit = RHI_BIT(1),
+        RenderTargetBit = RHI_BIT(2),
+        PresentBit = RHI_BIT(3),
+        ShaderInputBit = RHI_BIT(4),
+        CopySourceBit = RHI_BIT(5),
+        CopyDestinationBit = RHI_BIT(6),
+        DepthWriteBit = RHI_BIT(7),
+        UnorderedAccessBit = RHI_BIT(8),
+        CommonBit = RHI_BIT(9),
+        IndirectCommandBit = RHI_BIT(10),
+        rhiResourceStateUniformBufferBit = RHI_BIT(11),
+        rhiResourceStateStorageBufferBit = RHI_BIT(12),
+        DepthReadBit = RHI_BIT(13)
 } rhiResourceStateFlags;
+
+
+
 
 
 typedef enum rhiDescriptorTypeFlags
@@ -104,6 +106,7 @@ typedef enum rhiTextureFormatId
 typedef struct rhiTextureDesc
 {
 	uint64_t nativeImage;
+    uint64_t nativeFormat;
 	const char* name;
 	uint32_t width;
 	uint32_t height;
@@ -224,6 +227,11 @@ typedef struct rhiSubmitGraphicsDesc {
     uint16_t waitSemaphoreCount;
 } rhiSubmitGraphicsDesc;
 
+typedef enum {
+	ImageLayoutUndefined = 0,
+	ImageLayoutGeneral
+} rhiImageLayoutFormat;
+
 inline void RHI_SubmitGraphicsDesc_Signal(rhiSubmitGraphicsDesc *graphicsDesc, rhiSemaphore semaphore, uint64_t semaphoreValue){
     assert(graphicsDesc->signalSemaphoreCount < ARRAY_LEN(graphicsDesc->signalSemaphores));
     int newIndex = graphicsDesc->signalSemaphoreCount++;
@@ -251,7 +259,7 @@ void RHI_CreateBuffer();
 void RHI_MapBuffer(); //cpu visible buffers
 void RHI_UnmapBuffer();
 
-void RHI_CreateTexture();
+rhiTexture RHI_CreateTexture(const rhiTextureDesc *desc);
 
 void RHI_CreateSampler();
 
@@ -263,7 +271,10 @@ void RHI_CreateDescriptorSet();
 void RHI_CreateGraphicsPipeline();
 void RHI_CreateComputePipeline();
 
-void RHI_GetSwapChainInfo();
+
+rhiTexture* RHI_GetSwapChainImages( void );
+uint32_t RHI_GetSwapChainImageCount( void );
+
 void RHI_AcquireNextImage(uint32_t* outImageIndex, rhiSemaphore signalSemaphore);
 
 
@@ -272,8 +283,8 @@ void RHI_SubmitPresent(rhiSemaphore waitSemaphore, uint32_t swapChainImageIndex)
 
 rhiCommandBuffer RHI_CreateCommandBuffer(void); // pass queue enum as argument
 void RHI_BindCommandBuffer(rhiCommandBuffer cmdBuffer);
-void RHI_BeginCommandBuffer();
-void RHI_EndCommandBuffer();
+void RHI_BeginCommandBuffer( void );
+void RHI_EndCommandBuffer( void );
 
 void RHI_BeginRendering(); //bind render targets
 void RHI_EndRendering();
@@ -288,9 +299,9 @@ void RHI_CmdPushConstants();
 void RHI_CmdDraw();
 void RHI_CmdDrawIndexed();
 
-void RHI_CmdBeginBarrier();
-void RHI_CmdEndBarrier();
-void RHI_CmdTextureBarrier(); //pass handle to this
+void RHI_CmdBeginBarrier( void );
+void RHI_CmdEndBarrier( void );
+void RHI_CmdTextureBarrier(rhiTexture handle, rhiResourceStateFlags flag); //pass handle to this
 void RHI_CmdBufferBarrier(); //pass handle to this
 
 void RHI_CmdCopyBuffer();

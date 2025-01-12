@@ -325,7 +325,9 @@ static void InitVulkan( void ) {
 	backEnd.renderComplete = RHI_CreateTimelineSemaphore();
 	backEnd.renderCompleteBinary = RHI_CreateBinarySemaphore();
 	backEnd.imageAcquiredBinary = RHI_CreateBinarySemaphore();
-	
+	backEnd.swapChainTextures = RHI_GetSwapChainImages();
+	backEnd.swapChainTextureCount = RHI_GetSwapChainImageCount();
+
 
 	
 

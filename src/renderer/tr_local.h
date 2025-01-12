@@ -934,6 +934,8 @@ typedef struct {
 	rhiSemaphore imageAcquiredBinary;
 
 	uint32_t swapChainImageIndex;
+	rhiTexture* swapChainTextures;
+	uint32_t swapChainTextureCount;
 	
 } backEndState_t;
 

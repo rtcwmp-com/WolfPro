@@ -1297,8 +1297,13 @@ const void  *RB_SwapBuffers( const void *data ) {
 	RHI_SubmitGraphicsDesc_Signal(&graphicsDesc, backEnd.renderComplete, backEnd.renderCompleteCounter);
 	RHI_SubmitGraphicsDesc_Wait(&graphicsDesc, backEnd.imageAcquiredBinary);
 
+
+	RHI_CmdBeginBarrier();
+	RHI_CmdTextureBarrier(RHI_GetSwapChainImages()[backEnd.swapChainImageIndex], PresentBit);
 	RHI_SubmitGraphics(&graphicsDesc);
 	RHI_SubmitPresent(backEnd.renderCompleteBinary, backEnd.swapChainImageIndex);
+	
+
 	RHI_EndFrame();
 	
 	GLimp_EndFrame();

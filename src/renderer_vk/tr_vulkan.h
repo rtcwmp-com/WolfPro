@@ -203,6 +203,11 @@ typedef struct Vulkan
 	uint32_t swapChainImageCount;
 	VkImage swapChainImages[MAX_SWAP_CHAIN_IMAGES];
 	rhiTexture swapChainRenderTargets[MAX_SWAP_CHAIN_IMAGES];
+
+	rhiTexture textureBarriers[2048];
+	uint32_t textureBarrierCount;
+	rhiResourceStateFlags textureState[2048];
+
 	VkImageView swapChainImageViews[MAX_SWAP_CHAIN_IMAGES]; //delete later
 
 	VkDescriptorPool descriptorPool;
@@ -215,6 +220,8 @@ typedef struct Vulkan
 	memoryPool semaphorePool;
 
 	memoryPool texturePool;
+
+	
 
 	//
 	// extensions
@@ -231,5 +238,7 @@ extern Vulkan vk;
 
 void Check(VkResult result, const char* function);
 void SetObjectName(VkObjectType type, uint64_t object, const char* name);
+VkFormat GetVkFormat(rhiTextureFormatId format);
+VkImageAspectFlags GetVkImageAspectFlags(VkFormat format);
 
 #endif

@@ -2,7 +2,7 @@
 #include "tr_vulkan.h"
 
 #define GET_SEMAPHORE(handle) ((Semaphore*)Pool_Get(&vk.semaphorePool, handle.h))
-
+#define GET_TEXTURE(handle) ((Texture*)Pool_Get(&vk.texturePool, handle.h))
 
 void RHI_Init()
 {
@@ -16,7 +16,7 @@ void RHI_WaitUntilDeviceIdle()
 {
 }
 
-rhiSemaphore RHI_CreateBinarySemaphore()
+rhiSemaphore RHI_CreateBinarySemaphore( void )
 {
     VkSemaphore semaphore;
     VkSemaphoreCreateInfo createInfo = {};
@@ -31,7 +31,7 @@ rhiSemaphore RHI_CreateBinarySemaphore()
     return (rhiSemaphore) { Pool_Add(&vk.semaphorePool, &binarySemaphore) };
 }
 
-rhiSemaphore RHI_CreateTimelineSemaphore()
+rhiSemaphore RHI_CreateTimelineSemaphore( void )
 {
     VkSemaphoreTypeCreateInfo timelineCreateInfo = {};
     timelineCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO;
@@ -79,8 +79,52 @@ void RHI_UnmapBuffer()
 {
 }
 
-void RHI_CreateTexture()
+rhiTexture RHI_CreateTexture(const rhiTextureDesc *desc)
 {
+    assert(desc);
+    assert(desc->width > 0);
+    assert(desc->height > 0);
+    assert(desc->mipCount > 0);
+    assert(desc->sampleCount > 0);
+
+    VkFormat format = GetVkFormat(desc->format);
+    const qbool ownsImage = desc->nativeImage == VK_NULL_HANDLE;
+
+    VkImage image = VK_NULL_HANDLE;
+    VmaAllocation allocation = VK_NULL_HANDLE;
+    if(!ownsImage)
+    {
+        image = (VkImage)desc->nativeImage;
+        format = (VkFormat)desc->nativeFormat;
+    }
+    else
+    {
+        assert(0);
+    }
+
+    VkImageView view;
+    VkImageViewCreateInfo viewInfo = {};
+    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.image = image;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = format;
+    viewInfo.subresourceRange.aspectMask = GetVkImageAspectFlags(format);
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = 1;
+    VK(vkCreateImageView(vk.device, &viewInfo, NULL, &view));
+    SetObjectName(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)view, desc->name);
+
+    Texture texture = {};
+    texture.desc = *desc;
+    texture.image = image;
+    texture.view = view;
+    texture.allocation = allocation;
+    texture.ownsImage = ownsImage;
+    texture.definedLayout = qfalse;
+    texture.format = format;
+    return (rhiTexture) { Pool_Add(&vk.texturePool, &texture) };
 }
 
 void RHI_CreateSampler()
@@ -107,8 +151,13 @@ void RHI_CreateComputePipeline()
 {
 }
 
-void RHI_GetSwapChainInfo()
+rhiTexture* RHI_GetSwapChainImages( void )
 {
+    return vk.swapChainRenderTargets;
+}
+
+uint32_t RHI_GetSwapChainImageCount( void ){
+    return vk.swapChainImageCount;
 }
 
 void RHI_AcquireNextImage(uint32_t* outImageIndex, rhiSemaphore signalSemaphore)
@@ -185,7 +234,7 @@ void RHI_SubmitPresent(rhiSemaphore waitSemaphore, uint32_t swapChainImageIndex)
     VK(vkQueuePresentKHR(vk.queues.present, &presentInfo));    
 }
 
-rhiCommandBuffer RHI_CreateCommandBuffer() //pass queue enum
+rhiCommandBuffer RHI_CreateCommandBuffer( void ) //pass queue enum
 {
     VkCommandBuffer commandBuffer;
     VkCommandBufferAllocateInfo allocInfo = {};
@@ -207,7 +256,7 @@ void RHI_BindCommandBuffer(rhiCommandBuffer commandBuffer)
     vk.activeCommandBuffer = cmdBuffer->commandBuffer;
 }
 
-void RHI_BeginCommandBuffer()
+void RHI_BeginCommandBuffer( void )
 {
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -266,14 +315,53 @@ void RHI_CmdDrawIndexed()
 
 void RHI_CmdBeginBarrier()
 {
+    vk.textureBarrierCount = 0;      
 }
 
 void RHI_CmdEndBarrier()
 {
+    VkImageMemoryBarrier2 barriers[16];
+    uint32_t barrierCount = 0;
+    for(int i = 0; i < vk.textureBarrierCount; i++){
+        Texture* texture = GET_TEXTURE(vk.textureBarriers[i]);
+        VkImageMemoryBarrier2 barrier = {};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+        barrier.image = texture->image;
+        barrier.srcAccessMask = VK_ACCESS_2_NONE;
+        barrier.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
+        barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
+        barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+        barrier.subresourceRange.baseMipLevel = 0;
+        barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+        if(0){
+            barriers[barrierCount] = barrier;
+            barrierCount++;
+        }
+        
+
+    }
+    
+    if(barrierCount == 0){
+        return;
+    }
+
+    VkDependencyInfo dep = {};
+    dep.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+    dep.imageMemoryBarrierCount = barrierCount;
+    dep.pImageMemoryBarriers = barriers;
+    vkCmdPipelineBarrier2(vk.activeCommandBuffer, &dep);
 }
 
-void RHI_CmdTextureBarrier()
+void RHI_CmdTextureBarrier(rhiTexture handle, rhiResourceStateFlags flag)
 {
+    int idx = vk.textureBarrierCount++;
+    vk.textureState[idx] = flag; 
+    vk.textureBarriers[idx] = handle;
 }
 
 void RHI_CmdBufferBarrier()

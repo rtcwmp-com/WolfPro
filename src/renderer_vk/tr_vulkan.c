@@ -590,7 +590,7 @@ static VkImageUsageFlags GetVkImageUsageFlags(rhiResourceStateFlags state)
     return flags;
 }
 
-static VkFormat GetVkFormat(rhiTextureFormatId format)
+VkFormat GetVkFormat(rhiTextureFormatId format)
 {
     assert((unsigned int)format < Count);
 
@@ -622,7 +622,7 @@ static VkFormat GetVkFormatCnt(rhiDataTypeId type, uint32_t count)
 	return formats[type][count - 1];
 }
 
-static VkImageAspectFlags GetVkImageAspectFlags(VkFormat format)
+VkImageAspectFlags GetVkImageAspectFlags(VkFormat format)
 {
     switch(format)
     {
@@ -770,12 +770,14 @@ static void CreateSwapChain()
         rtDesc.sampleCount = 1;
         rtDesc.descriptorType = SampledImageBit;
         rtDesc.initialState = RenderTargetBit | PresentBit;
+        
         for(int i = 0; i < imageCount; ++i)
         {
             rtDesc.nativeImage = (uint64_t)images[i];
+            rtDesc.nativeFormat = SURFACE_FORMAT_RGBA;
             rtDesc.name = va("swap chain render target #%d", i + 1);
             vk.swapChainImages[i] = images[i];
-            
+            vk.swapChainRenderTargets[i] = RHI_CreateTexture(&rtDesc);
         }
     }
     ri.Hunk_FreeTempMemory(images);
@@ -2062,6 +2064,7 @@ static void CreateDescriptorPool(){
 //     vk.sampler[1] = sampler;
 //     }
 // }
+
 
 void VKimp_Init( void ) {
     if(vk.initialized &&
