@@ -237,5 +237,6 @@ VkImageAspectFlags GetVkImageAspectFlags(VkFormat format);
 VkImageLayout GetVkImageLayout(RHI_ResourceState state);
 VkAccessFlags2 GetVkAccessFlags(VkImageLayout state);
 VkPipelineStageFlags2 GetVkStageFlags(VkImageLayout state);
+VkAttachmentLoadOp GetVkAttachmentLoadOp(RHI_LoadOp load);
 
 #endif

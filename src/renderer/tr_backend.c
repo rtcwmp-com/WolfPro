@@ -1294,7 +1294,13 @@ const void  *RB_EndFrame( const void *data ) {
 	RHI_CmdTextureBarrier(backEnd.swapChainTextures[backEnd.swapChainImageIndex], RHI_ResourceState_RenderTarget);
 	RHI_CmdEndBarrier();
 
-	RHI_BeginRendering(backEnd.swapChainTextures[backEnd.swapChainImageIndex]);
+	RHI_RenderPass renderPass = {};
+	Vector4Set(renderPass.color, 1.0f, 1.0f, 0.0f, 1.0f);
+	
+	renderPass.colorLoad = RHI_LoadOp_Clear;
+	renderPass.colorTexture = backEnd.swapChainTextures[backEnd.swapChainImageIndex];
+
+	RHI_BeginRendering(&renderPass);
 	RHI_EndRendering();
 
 

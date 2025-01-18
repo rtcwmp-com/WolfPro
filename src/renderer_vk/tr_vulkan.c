@@ -2142,6 +2142,23 @@ VkAccessFlags2 GetVkAccessFlags(VkImageLayout state)
 	// };
 }
 
+VkAttachmentLoadOp GetVkAttachmentLoadOp(RHI_LoadOp load)
+{
+    
+
+    switch(load){
+        case RHI_LoadOp_Clear:
+            return VK_ATTACHMENT_LOAD_OP_CLEAR;
+        case RHI_LoadOp_Load:
+            return VK_ATTACHMENT_LOAD_OP_LOAD;
+        case RHI_LoadOp_Discard:
+            return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        default:
+            assert(!"Unhandled load op");
+            return VK_ATTACHMENT_LOAD_OP_LOAD;
+    }
+}
+
 VkImageLayout GetVkImageLayout(RHI_ResourceState state)
 {
     assert(__popcnt(state) == 1); //TODO

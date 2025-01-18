@@ -81,6 +81,20 @@ typedef enum {
 	RHI_ResourceState_Present = RHI_BIT(1)
 } RHI_ResourceState;
 
+typedef enum {
+	RHI_LoadOp_Load,
+	RHI_LoadOp_Clear,
+	RHI_LoadOp_Discard
+} RHI_LoadOp;
+
+typedef struct {
+	RHI_LoadOp colorLoad;
+	RHI_LoadOp depthLoad;
+	rhiTexture colorTexture;
+	rhiTexture depthTexture;
+	vec4_t color;
+	float depth;
+} RHI_RenderPass;
 
 
 typedef enum rhiDescriptorTypeFlags
@@ -291,7 +305,7 @@ void RHI_BindCommandBuffer(rhiCommandBuffer cmdBuffer);
 void RHI_BeginCommandBuffer( void );
 void RHI_EndCommandBuffer( void );
 
-void RHI_BeginRendering(rhiTexture texture); //bind render targets
+void RHI_BeginRendering(const RHI_RenderPass *renderPass); //bind render targets
 void RHI_EndRendering();
 
 void RHI_CmdBindPipeline(); //create pipeline layout here

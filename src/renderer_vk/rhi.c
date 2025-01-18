@@ -289,31 +289,38 @@ void RHI_EndCommandBuffer()
     VK(vkEndCommandBuffer(vk.activeCommandBuffer));
 }
 
-void RHI_BeginRendering(rhiTexture texture)
+void RHI_BeginRendering(const RHI_RenderPass* renderPass)
 {
-    Texture* currentTexture = GET_TEXTURE(texture);
+    Texture* colorTexture = GET_TEXTURE(renderPass->colorTexture);
     VkRenderingAttachmentInfo colorAttachmentInfo = {};
     colorAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-    colorAttachmentInfo.imageView = currentTexture->view;
-    colorAttachmentInfo.imageLayout = currentTexture->currentLayout;
-    colorAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    
-    colorAttachmentInfo.clearValue.color.float32[0] = 0.5f + 0.5f + sinf(Sys_Milliseconds() / 1000.0f);;
-    colorAttachmentInfo.clearValue.color.float32[1] = 1.0f; 
-    colorAttachmentInfo.clearValue.color.float32[2] = 0.0f; 
-    colorAttachmentInfo.clearValue.color.float32[3] = 1.0f;
+    colorAttachmentInfo.imageView = colorTexture->view;
+    colorAttachmentInfo.imageLayout = colorTexture->currentLayout;
+    colorAttachmentInfo.loadOp = GetVkAttachmentLoadOp(renderPass->colorLoad);
+    memcpy(colorAttachmentInfo.clearValue.color.float32, renderPass->color, sizeof(float) * 4);
     colorAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    
+
+    VkRenderingAttachmentInfo depthAttachmentInfo = {};
+    VkRenderingAttachmentInfo *pDepthAttachmentInfo = NULL;
+    if(renderPass->depthTexture.h != 0){
+        Texture* depthTexture = GET_TEXTURE(renderPass->depthTexture);
+        depthAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        depthAttachmentInfo.imageView = depthTexture->view;
+        depthAttachmentInfo.imageLayout = depthTexture->currentLayout;
+        depthAttachmentInfo.loadOp = GetVkAttachmentLoadOp(renderPass->depthLoad);
+        depthAttachmentInfo.clearValue.depthStencil.depth = renderPass->depth;
+        depthAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        pDepthAttachmentInfo = &depthAttachmentInfo;
+    }
 
     VkRenderingInfo renderingInfo = {};
     renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
     renderingInfo.colorAttachmentCount = 1;
     renderingInfo.pColorAttachments = &colorAttachmentInfo;
+    renderingInfo.pDepthAttachment = pDepthAttachmentInfo;
     renderingInfo.layerCount = 1;
     renderingInfo.renderArea.extent.height = glConfig.vidHeight;
     renderingInfo.renderArea.extent.width = glConfig.vidWidth;
-
-    
 
     vkCmdBeginRendering(vk.activeCommandBuffer, &renderingInfo);
     
