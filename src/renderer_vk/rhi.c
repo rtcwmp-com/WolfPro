@@ -92,10 +92,12 @@ rhiTexture RHI_CreateTexture(const rhiTextureDesc *desc)
 
     VkImage image = VK_NULL_HANDLE;
     VmaAllocation allocation = VK_NULL_HANDLE;
+    VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
     if(!ownsImage)
     {
         image = (VkImage)desc->nativeImage;
         format = (VkFormat)desc->nativeFormat;
+        layout = (VkImageLayout)desc->nativeLayout;
     }
     else
     {
@@ -122,8 +124,8 @@ rhiTexture RHI_CreateTexture(const rhiTextureDesc *desc)
     texture.view = view;
     texture.allocation = allocation;
     texture.ownsImage = ownsImage;
-    texture.definedLayout = qfalse;
     texture.format = format;
+    texture.currentLayout = layout;
     return (rhiTexture) { Pool_Add(&vk.texturePool, &texture) };
 }
 
@@ -320,29 +322,33 @@ void RHI_CmdBeginBarrier()
 
 void RHI_CmdEndBarrier()
 {
-    VkImageMemoryBarrier2 barriers[16];
+    VkImageMemoryBarrier2 barriers[2048];
     uint32_t barrierCount = 0;
     for(int i = 0; i < vk.textureBarrierCount; i++){
         Texture* texture = GET_TEXTURE(vk.textureBarriers[i]);
+        VkImageLayout newLayout = GetVkImageLayout(vk.textureState[i]);
+        if(texture->currentLayout == newLayout ){
+            continue;
+        }
+        
+
         VkImageMemoryBarrier2 barrier = {};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
         barrier.image = texture->image;
-        barrier.srcAccessMask = VK_ACCESS_2_NONE;
-        barrier.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
-        barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
-        barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.srcAccessMask = GetVkAccessFlags(texture->currentLayout);
+        barrier.dstAccessMask = GetVkAccessFlags(newLayout);
+        barrier.srcStageMask = GetVkStageFlags(texture->currentLayout);
+        barrier.dstStageMask = GetVkStageFlags(newLayout);
+        barrier.oldLayout = texture->currentLayout;
+        barrier.newLayout = newLayout;
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; //TODO depth buffer VK_IMAGE_ASPECT_DEPTH_BIT
         barrier.subresourceRange.baseArrayLayer = 0;
         barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
         barrier.subresourceRange.baseMipLevel = 0;
         barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-        if(0){
-            barriers[barrierCount] = barrier;
-            barrierCount++;
-        }
         
+        barriers[barrierCount] = barrier;
+        barrierCount++;
 
     }
     

@@ -775,6 +775,7 @@ static void CreateSwapChain()
         {
             rtDesc.nativeImage = (uint64_t)images[i];
             rtDesc.nativeFormat = SURFACE_FORMAT_RGBA;
+            rtDesc.nativeLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             rtDesc.name = va("swap chain render target #%d", i + 1);
             vk.swapChainImages[i] = images[i];
             vk.swapChainRenderTargets[i] = RHI_CreateTexture(&rtDesc);
@@ -2064,6 +2065,118 @@ static void CreateDescriptorPool(){
 //     vk.sampler[1] = sampler;
 //     }
 // }
+
+VkPipelineStageFlags2 GetVkStageFlags(VkImageLayout state)
+{
+    const VkPipelineStageFlags2 vertexFragmentCompute =
+		VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT |
+		VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT |
+		VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+
+    switch(state){
+        case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
+            return vertexFragmentCompute;
+        case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+            return VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+        default:
+            assert(!"Unhandled image layout for stage flags");
+            return VK_PIPELINE_STAGE_2_NONE;
+    }
+    
+    
+    
+	// const Pair pairs[] = 
+	// {
+	// 	{ VK_ACCESS_INDEX_READ_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT },
+	// 	{ VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT },
+	// 	{ VK_ACCESS_UNIFORM_READ_BIT, vertexFragmentCompute },
+	// 	{ VK_ACCESS_SHADER_READ_BIT, vertexFragmentCompute },
+	// 	{ VK_ACCESS_SHADER_WRITE_BIT, vertexFragmentCompute },
+	// 	{ VK_ACCESS_INPUT_ATTACHMENT_READ_BIT,
+	// 		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+	// 		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT },
+	// 	{ VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT },
+	// 	{ VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT, fragmentTests },
+	// 	{ VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, fragmentTests },
+	// 	{ VK_ACCESS_INDIRECT_COMMAND_READ_BIT, VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT },
+	// 	{ VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT },
+	// 	{ VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT },
+	// 	{ VK_ACCESS_HOST_READ_BIT, VK_PIPELINE_STAGE_HOST_BIT },
+	// 	{ VK_ACCESS_HOST_WRITE_BIT, VK_PIPELINE_STAGE_HOST_BIT }
+	// };
+}
+
+VkAccessFlags2 GetVkAccessFlags(VkImageLayout state)
+{
+    
+
+    switch(state){
+        case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
+            return VK_ACCESS_2_MEMORY_READ_BIT;
+        case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+            return (VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
+        default:
+            assert(!"Unhandled image layout");
+            return VK_ACCESS_2_NONE;
+    }
+    
+    
+    
+	// const Pair pairs[] =
+	// {
+		// { galResourceState::CopySourceBit, VK_ACCESS_TRANSFER_READ_BIT },
+		// { galResourceState::CopyDestinationBit, VK_ACCESS_TRANSFER_WRITE_BIT },
+		// { galResourceState::VertexBufferBit, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT },
+		// { galResourceState::IndexBufferBit, VK_ACCESS_INDEX_READ_BIT },
+		// { galResourceState::UnorderedAccessBit, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT },
+		// { galResourceState::IndirectCommandBit, VK_ACCESS_INDIRECT_COMMAND_READ_BIT },
+		// { galResourceState::RenderTargetBit, VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT },
+		// { galResourceState::DepthWriteBit, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT },
+		// { galResourceState::ShaderInputBit, VK_ACCESS_SHADER_READ_BIT },
+		// { galResourceState::UniformBufferBit, VK_ACCESS_UNIFORM_READ_BIT },
+		// { galResourceState::StorageBufferBit, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT },
+		// { galResourceState::PresentBit, VK_ACCESS_MEMORY_READ_BIT }
+	// };
+}
+
+VkImageLayout GetVkImageLayout(RHI_ResourceState state)
+{
+    assert(__popcnt(state) == 1); //TODO
+
+    typedef struct {
+        RHI_ResourceState state;
+        VkImageLayout layout;
+    } Pair;
+
+    Pair pairs[] = {
+        { RHI_ResourceState_Present, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR },
+        { RHI_ResourceState_RenderTarget, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}
+    };
+
+    for(int i = 0; i < ARRAY_LEN(pairs); i++){
+        if(pairs[i].state == state){
+            return pairs[i].layout;
+        }
+    }
+    
+    
+	// const Pair pairs[] =
+	// {
+	// 	{ galResourceState::CopySourceBit, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL },
+	// 	{ galResourceState::CopyDestinationBit, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL },
+	// 	{ galResourceState::RenderTargetBit, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL },
+	// 	{ galResourceState::DepthWriteBit, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL },
+	// 	{ galResourceState::DepthReadBit, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL },
+	// 	{ galResourceState::UnorderedAccessBit, VK_IMAGE_LAYOUT_GENERAL },
+	// 	{ galResourceState::ShaderInputBit, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
+	// 	{ galResourceState::PresentBit, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR }
+	// };
+
+
+
+    assert(!"Should have a resource state");
+	return VK_IMAGE_LAYOUT_UNDEFINED;
+}
 
 
 void VKimp_Init( void ) {

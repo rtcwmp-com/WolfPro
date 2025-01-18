@@ -247,9 +247,7 @@ void QDECL Com_Error( int code, const char *fmt, ... ) {
 		}
 	}
 #endif
-	if(code == ERR_FATAL && Sys_IsDebugging()){
-		Sys_DebugBreak();
-	}
+	
 
 	// when we are running automated scripts, make sure we
 	// know if anything failed
@@ -279,6 +277,10 @@ void QDECL Com_Error( int code, const char *fmt, ... ) {
 	va_start( argptr,fmt );
 	Q_vsnprintf( com_errorMessage, sizeof( com_errorMessage ), fmt, argptr );
 	va_end( argptr );
+
+	if(code == ERR_FATAL && Sys_IsDebugging()){
+		Sys_DebugBreak();
+	}
 
 	if ( code != ERR_DISCONNECT && code != ERR_NEED_CD ) {
 		Cvar_Set( "com_errorMessage", com_errorMessage );

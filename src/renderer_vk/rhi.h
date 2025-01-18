@@ -76,6 +76,10 @@ typedef enum rhiResourceStateFlags {
 } rhiResourceStateFlags;
 
 
+typedef enum {
+	RHI_ResourceState_RenderTarget,
+	RHI_ResourceState_Present
+} RHI_ResourceState;
 
 
 
@@ -107,6 +111,7 @@ typedef struct rhiTextureDesc
 {
 	uint64_t nativeImage;
     uint64_t nativeFormat;
+	uint64_t nativeLayout; 
 	const char* name;
 	uint32_t width;
 	uint32_t height;

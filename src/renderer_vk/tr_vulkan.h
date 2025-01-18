@@ -123,14 +123,8 @@ typedef struct Texture
 	rhiTextureDesc desc;
 	VkFormat format;
 	qbool ownsImage;
-
-	// this gets set by resource barriers and texture updates
-	// when qfalse, we know the layout is still undefined and
-	// we can lazily do layout transitions on the user's behalf
-	qbool definedLayout;
-
-	// every render target creation use a new unique id
-	uint32_t uniqueRenderTargetId;
+	VkImageLayout currentLayout;
+	
 } Texture;
 
 // typedef struct Pipeline
@@ -206,7 +200,7 @@ typedef struct Vulkan
 
 	rhiTexture textureBarriers[2048];
 	uint32_t textureBarrierCount;
-	rhiResourceStateFlags textureState[2048];
+	RHI_ResourceState textureState[2048];
 
 	VkImageView swapChainImageViews[MAX_SWAP_CHAIN_IMAGES]; //delete later
 
@@ -240,5 +234,8 @@ void Check(VkResult result, const char* function);
 void SetObjectName(VkObjectType type, uint64_t object, const char* name);
 VkFormat GetVkFormat(rhiTextureFormatId format);
 VkImageAspectFlags GetVkImageAspectFlags(VkFormat format);
+VkImageLayout GetVkImageLayout(RHI_ResourceState state);
+VkAccessFlags2 GetVkAccessFlags(VkImageLayout state);
+VkPipelineStageFlags2 GetVkStageFlags(VkImageLayout state);
 
 #endif
