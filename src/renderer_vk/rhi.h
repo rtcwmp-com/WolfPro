@@ -57,28 +57,28 @@ typedef struct rhiCommandPoolDesc
 	qbool transient;
 } rhiCommandPoolDesc;
 
-typedef enum rhiResourceStateFlags {
-        rhiResourceStateUndefined = 0,
-        VertexBufferBit = RHI_BIT(0),
-        IndexBufferBit = RHI_BIT(1),
-        RenderTargetBit = RHI_BIT(2),
-        PresentBit = RHI_BIT(3),
-        ShaderInputBit = RHI_BIT(4),
-        CopySourceBit = RHI_BIT(5),
-        CopyDestinationBit = RHI_BIT(6),
-        DepthWriteBit = RHI_BIT(7),
-        UnorderedAccessBit = RHI_BIT(8),
-        CommonBit = RHI_BIT(9),
-        IndirectCommandBit = RHI_BIT(10),
-        rhiResourceStateUniformBufferBit = RHI_BIT(11),
-        rhiResourceStateStorageBufferBit = RHI_BIT(12),
-        DepthReadBit = RHI_BIT(13)
-} rhiResourceStateFlags;
+//typedef enum rhiResourceStateFlags {
+//        rhiResourceStateUndefined = 0,
+//        VertexBufferBit = RHI_BIT(0),
+//        IndexBufferBit = RHI_BIT(1),
+//        RenderTargetBit = RHI_BIT(2),
+//        PresentBit = RHI_BIT(3),
+//        ShaderInputBit = RHI_BIT(4),
+//        CopySourceBit = RHI_BIT(5),
+//        CopyDestinationBit = RHI_BIT(6),
+//        DepthWriteBit = RHI_BIT(7),
+//        UnorderedAccessBit = RHI_BIT(8),
+//        CommonBit = RHI_BIT(9),
+//        IndirectCommandBit = RHI_BIT(10),
+//        rhiResourceStateUniformBufferBit = RHI_BIT(11),
+//        rhiResourceStateStorageBufferBit = RHI_BIT(12),
+//        DepthReadBit = RHI_BIT(13)
+//} rhiResourceStateFlags;
 
 
 typedef enum {
-	RHI_ResourceState_RenderTarget,
-	RHI_ResourceState_Present
+	RHI_ResourceState_RenderTarget = RHI_BIT(0),
+	RHI_ResourceState_Present = RHI_BIT(1)
 } RHI_ResourceState;
 
 
@@ -117,7 +117,7 @@ typedef struct rhiTextureDesc
 	uint32_t height;
 	uint32_t mipCount;
 	uint32_t sampleCount;
-	rhiResourceStateFlags initialState;
+	/*RHI_ResourceState initialState;*/
 	rhiDescriptorTypeFlags descriptorType;
 	rhiTextureFormatId format;
 } rhiTextureDesc;
@@ -220,7 +220,7 @@ typedef struct rhiBufferDesc
 {
 	const char* name;
 	uint32_t byteCount;
-	rhiResourceStateFlags initialState;
+	//RHI_ResourceState initialState;
 	rhiMemoryUsageId memoryUsage;
 } rhiBufferDesc;
 
@@ -291,7 +291,7 @@ void RHI_BindCommandBuffer(rhiCommandBuffer cmdBuffer);
 void RHI_BeginCommandBuffer( void );
 void RHI_EndCommandBuffer( void );
 
-void RHI_BeginRendering(); //bind render targets
+void RHI_BeginRendering(rhiTexture texture); //bind render targets
 void RHI_EndRendering();
 
 void RHI_CmdBindPipeline(); //create pipeline layout here
@@ -306,7 +306,7 @@ void RHI_CmdDrawIndexed();
 
 void RHI_CmdBeginBarrier( void );
 void RHI_CmdEndBarrier( void );
-void RHI_CmdTextureBarrier(rhiTexture handle, rhiResourceStateFlags flag); //pass handle to this
+void RHI_CmdTextureBarrier(rhiTexture handle, RHI_ResourceState flag); //pass handle to this
 void RHI_CmdBufferBarrier(); //pass handle to this
 
 void RHI_CmdCopyBuffer();

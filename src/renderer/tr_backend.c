@@ -1171,11 +1171,10 @@ const void  *RB_BeginFrame( const void *data ) {
 		qglClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	}
 	RHI_WaitOnSemaphore(backEnd.renderComplete, backEnd.renderCompleteCounter);
-	static int frameCount = 0;
-	frameCount++;
 	RHI_AcquireNextImage(&backEnd.swapChainImageIndex, backEnd.imageAcquiredBinary);
 	RHI_BindCommandBuffer(backEnd.commandBuffers[backEnd.currentFrameIndex]);
 	RHI_BeginCommandBuffer();
+	
 
 
 	return (const void *)( cmd + 1 );
@@ -1292,8 +1291,18 @@ const void  *RB_EndFrame( const void *data ) {
 	GLimp_LogComment( "***************** RB_EndFrame *****************\n\n\n" );
 
 	RHI_CmdBeginBarrier();
+	RHI_CmdTextureBarrier(backEnd.swapChainTextures[backEnd.swapChainImageIndex], RHI_ResourceState_RenderTarget);
+	RHI_CmdEndBarrier();
+
+	RHI_BeginRendering(backEnd.swapChainTextures[backEnd.swapChainImageIndex]);
+	RHI_EndRendering();
+
+
+	RHI_CmdBeginBarrier();
 	RHI_CmdTextureBarrier(backEnd.swapChainTextures[backEnd.swapChainImageIndex], RHI_ResourceState_Present);
 	RHI_CmdEndBarrier();
+
+	
 	
 	RHI_EndCommandBuffer();
 

@@ -562,30 +562,30 @@ void SetObjectName(VkObjectType type, uint64_t object, const char* name)
     }
 }
 
-static VkImageUsageFlags GetVkImageUsageFlags(rhiResourceStateFlags state)
+static VkImageUsageFlags GetVkImageUsageFlags(RHI_ResourceState state)
 {
     VkImageUsageFlags flags = VK_IMAGE_USAGE_SAMPLED_BIT;
-    if(state & RenderTargetBit)
+    if(state & RHI_ResourceState_RenderTarget)
     {
         flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     }
-    else if(state & DepthWriteBit)
-    {
-        flags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-    }
-    if(state & CopySourceBit)
-    {
-        flags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    }
-    if(state & CopyDestinationBit)
-    {
-        flags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    }
-    if(state & ShaderInputBit)
-    {
-        // @TODO: is this correct ???
-        flags |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
-    }
+    //else if(state & DepthWriteBit)
+    //{
+    //    flags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    //}
+    //if(state & CopySourceBit)
+    //{
+    //    flags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    //}
+    //if(state & CopyDestinationBit)
+    //{
+    //    flags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    //}
+    //if(state & ShaderInputBit)
+    //{
+    //    // @TODO: is this correct ???
+    //    flags |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+    //}
 
     return flags;
 }
@@ -769,7 +769,7 @@ static void CreateSwapChain()
         rtDesc.mipCount = 1;
         rtDesc.sampleCount = 1;
         rtDesc.descriptorType = SampledImageBit;
-        rtDesc.initialState = RenderTargetBit | PresentBit;
+        //rtDesc.initialState = RenderTargetBit | PresentBit;
         
         for(int i = 0; i < imageCount; ++i)
         {

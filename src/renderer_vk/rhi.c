@@ -289,12 +289,39 @@ void RHI_EndCommandBuffer()
     VK(vkEndCommandBuffer(vk.activeCommandBuffer));
 }
 
-void RHI_BeginRendering()
+void RHI_BeginRendering(rhiTexture texture)
 {
+    Texture* currentTexture = GET_TEXTURE(texture);
+    VkRenderingAttachmentInfo colorAttachmentInfo = {};
+    colorAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+    colorAttachmentInfo.imageView = currentTexture->view;
+    colorAttachmentInfo.imageLayout = currentTexture->currentLayout;
+    colorAttachmentInfo.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    
+    colorAttachmentInfo.clearValue.color.float32[0] = 0.5f + 0.5f + sinf(Sys_Milliseconds() / 1000.0f);;
+    colorAttachmentInfo.clearValue.color.float32[1] = 1.0f; 
+    colorAttachmentInfo.clearValue.color.float32[2] = 0.0f; 
+    colorAttachmentInfo.clearValue.color.float32[3] = 1.0f;
+    colorAttachmentInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    
+
+    VkRenderingInfo renderingInfo = {};
+    renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+    renderingInfo.colorAttachmentCount = 1;
+    renderingInfo.pColorAttachments = &colorAttachmentInfo;
+    renderingInfo.layerCount = 1;
+    renderingInfo.renderArea.extent.height = glConfig.vidHeight;
+    renderingInfo.renderArea.extent.width = glConfig.vidWidth;
+
+    
+
+    vkCmdBeginRendering(vk.activeCommandBuffer, &renderingInfo);
+    
 }
 
 void RHI_EndRendering()
 {
+    vkCmdEndRendering(vk.activeCommandBuffer);
 }
 
 void RHI_CmdBindPipeline()
@@ -364,6 +391,8 @@ void RHI_CmdEndBarrier()
         barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
         barrier.subresourceRange.baseMipLevel = 0;
         barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+
+        texture->currentLayout = newLayout;
         
         barriers[barrierCount] = barrier;
         barrierCount++;
@@ -381,7 +410,7 @@ void RHI_CmdEndBarrier()
     vkCmdPipelineBarrier2(vk.activeCommandBuffer, &dep);
 }
 
-void RHI_CmdTextureBarrier(rhiTexture handle, rhiResourceStateFlags flag)
+void RHI_CmdTextureBarrier(rhiTexture handle, RHI_ResourceState flag)
 {
     int idx = vk.textureBarrierCount++;
     vk.textureState[idx] = flag; 
