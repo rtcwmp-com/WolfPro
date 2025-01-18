@@ -1958,13 +1958,13 @@ static void FixRenderCommandList( int newShader ) {
 				curCmd = (const void *)( ds_cmd + 1 );
 				break;
 			}
-			case RC_DRAW_BUFFER:
+			case RC_BEGIN_FRAME:
 			{
 				const drawBufferCommand_t *db_cmd = (const drawBufferCommand_t *)curCmd;
 				curCmd = (const void *)( db_cmd + 1 );
 				break;
 			}
-			case RC_SWAP_BUFFERS:
+			case RC_END_FRAME:
 			{
 				const swapBuffersCommand_t *sb_cmd = (const swapBuffersCommand_t *)curCmd;
 				curCmd = (const void *)( sb_cmd + 1 );

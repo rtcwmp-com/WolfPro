@@ -1685,8 +1685,8 @@ typedef enum {
 	RC_ROTATED_PIC,
 	RC_STRETCH_PIC_GRADIENT,    // (SA) added
 	RC_DRAW_SURFS,
-	RC_DRAW_BUFFER,
-	RC_SWAP_BUFFERS
+	RC_BEGIN_FRAME,
+	RC_END_FRAME
 } renderCommand_t;
 
 

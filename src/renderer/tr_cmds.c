@@ -483,7 +483,7 @@ void RE_BeginFrame( stereoFrame_t stereoFrame ) {
 	if ( !cmd ) {
 		return;
 	}
-	cmd->commandId = RC_DRAW_BUFFER;
+	cmd->commandId = RC_BEGIN_FRAME;
 
 	if ( glConfig.stereoEnabled ) {
 		if ( stereoFrame == STEREO_LEFT ) {
@@ -523,7 +523,7 @@ void RE_EndFrame( int *frontEndMsec, int *backEndMsec ) {
 	if ( !cmd ) {
 		return;
 	}
-	cmd->commandId = RC_SWAP_BUFFERS;
+	cmd->commandId = RC_END_FRAME;
 
 	R_IssueRenderCommands( qtrue );
 

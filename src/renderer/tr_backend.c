@@ -1150,11 +1150,11 @@ const void  *RB_DrawSurfs( const void *data ) {
 
 /*
 =============
-RB_DrawBuffer
+RB_BeginFrame
 
 =============
 */
-const void  *RB_DrawBuffer( const void *data ) {
+const void  *RB_BeginFrame( const void *data ) {
 	backEnd.currentFrameIndex = (backEnd.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT;
 
 	RHI_BeginFrame();
@@ -1171,6 +1171,8 @@ const void  *RB_DrawBuffer( const void *data ) {
 		qglClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	}
 	RHI_WaitOnSemaphore(backEnd.renderComplete, backEnd.renderCompleteCounter);
+	static int frameCount = 0;
+	frameCount++;
 	RHI_AcquireNextImage(&backEnd.swapChainImageIndex, backEnd.imageAcquiredBinary);
 	RHI_BindCommandBuffer(backEnd.commandBuffers[backEnd.currentFrameIndex]);
 	RHI_BeginCommandBuffer();
@@ -1244,11 +1246,11 @@ void RB_ShowImages( void ) {
 
 /*
 =============
-RB_SwapBuffers
+RB_EndFrame
 
 =============
 */
-const void  *RB_SwapBuffers( const void *data ) {
+const void  *RB_EndFrame( const void *data ) {
 	
 	const swapBuffersCommand_t  *cmd;
 
@@ -1287,7 +1289,11 @@ const void  *RB_SwapBuffers( const void *data ) {
 		qglFinish();
 	}
 
-	GLimp_LogComment( "***************** RB_SwapBuffers *****************\n\n\n" );
+	GLimp_LogComment( "***************** RB_EndFrame *****************\n\n\n" );
+
+	RHI_CmdBeginBarrier();
+	RHI_CmdTextureBarrier(backEnd.swapChainTextures[backEnd.swapChainImageIndex], RHI_ResourceState_Present);
+	RHI_CmdEndBarrier();
 	
 	RHI_EndCommandBuffer();
 
@@ -1298,8 +1304,7 @@ const void  *RB_SwapBuffers( const void *data ) {
 	RHI_SubmitGraphicsDesc_Wait(&graphicsDesc, backEnd.imageAcquiredBinary);
 
 
-	RHI_CmdBeginBarrier();
-	RHI_CmdTextureBarrier(RHI_GetSwapChainImages()[backEnd.swapChainImageIndex], PresentBit);
+	
 	RHI_SubmitGraphics(&graphicsDesc);
 	RHI_SubmitPresent(backEnd.renderCompleteBinary, backEnd.swapChainImageIndex);
 	
@@ -1349,15 +1354,15 @@ void RB_ExecuteRenderCommands( const void *data ) {
 		case RC_DRAW_SURFS:
 			data = RB_DrawSurfs( data );
 			break;
-		case RC_DRAW_BUFFER:
-			data = RB_DrawBuffer( data );
+		case RC_BEGIN_FRAME:
+			data = RB_BeginFrame( data );
 			//wait for swap chain acquire
 			//start recording command buffer
 			//N frames in flight n command buffers 
 
 			break;
-		case RC_SWAP_BUFFERS:
-			data = RB_SwapBuffers( data );
+		case RC_END_FRAME:
+			data = RB_EndFrame( data );
 			//stop recording to command buffer
 			//submit to graphics queue
 			//submit to present queue

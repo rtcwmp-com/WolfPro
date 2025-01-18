@@ -197,11 +197,23 @@ void RHI_SubmitGraphics(const rhiSubmitGraphicsDesc *graphicsDesc)
     VkSemaphore signal[ARRAY_LEN(graphicsDesc->signalSemaphores)];
 
     for(int i = 0; i < graphicsDesc->waitSemaphoreCount; i++){
-        wait[i] = GET_SEMAPHORE(graphicsDesc->waitSemaphores[i])->semaphore;
+        Semaphore *semaphore = GET_SEMAPHORE(graphicsDesc->waitSemaphores[i]);
+        wait[i] = semaphore->semaphore;
+    
+        if(semaphore->binary){
+            assert(semaphore->signaled == qtrue);
+            semaphore->signaled = qfalse;
+        }
     }
 
     for(int i = 0; i < graphicsDesc->signalSemaphoreCount; i++){
-        signal[i] = GET_SEMAPHORE(graphicsDesc->signalSemaphores[i])->semaphore;
+        Semaphore *semaphore = GET_SEMAPHORE(graphicsDesc->signalSemaphores[i]);
+        signal[i] = semaphore->semaphore;
+        if(semaphore->binary){
+            assert(semaphore->signaled == qfalse);
+            semaphore->signaled = qtrue;
+        }
+        
     }
 
     VkSubmitInfo submitInfo = {};
@@ -216,6 +228,7 @@ void RHI_SubmitGraphics(const rhiSubmitGraphicsDesc *graphicsDesc)
     const VkPipelineStageFlags flags = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     submitInfo.pWaitDstStageMask = &flags;
 
+
     VK(vkQueueSubmit(vk.queues.present, 1, &submitInfo, VK_NULL_HANDLE)); 
 }
 
@@ -223,7 +236,8 @@ void RHI_SubmitGraphics(const rhiSubmitGraphicsDesc *graphicsDesc)
 
 void RHI_SubmitPresent(rhiSemaphore waitSemaphore, uint32_t swapChainImageIndex)
 {
-    VkSemaphore wait = GET_SEMAPHORE(waitSemaphore)->semaphore;
+    Semaphore* semaphore = GET_SEMAPHORE(waitSemaphore);
+    VkSemaphore wait = semaphore->semaphore;
 
     VkPresentInfoKHR presentInfo = {};
     presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -232,6 +246,10 @@ void RHI_SubmitPresent(rhiSemaphore waitSemaphore, uint32_t swapChainImageIndex)
     presentInfo.pImageIndices      = &swapChainImageIndex;
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores    = &wait;
+
+    assert(semaphore->binary == qtrue);
+    assert(semaphore->signaled == qtrue);
+    semaphore->signaled = qfalse;
 
     VK(vkQueuePresentKHR(vk.queues.present, &presentInfo));    
 }

@@ -850,8 +850,7 @@ static void CreateCommandPool()
     VkCommandPoolCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     createInfo.queueFamilyIndex = vk.queues.graphicsFamily;
-    createInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-    //createInfo.flags |= VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // @TODO:
+    createInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     VK(vkCreateCommandPool(vk.device, &createInfo, NULL, &vk.commandPool));
 
 }
@@ -2074,6 +2073,8 @@ VkPipelineStageFlags2 GetVkStageFlags(VkImageLayout state)
 		VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
 
     switch(state){
+        case VK_IMAGE_LAYOUT_UNDEFINED:
+            return VK_PIPELINE_STAGE_2_NONE;
         case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
             return vertexFragmentCompute;
         case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
@@ -2111,6 +2112,8 @@ VkAccessFlags2 GetVkAccessFlags(VkImageLayout state)
     
 
     switch(state){
+        case VK_IMAGE_LAYOUT_UNDEFINED:
+            return VK_ACCESS_2_NONE;
         case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
             return VK_ACCESS_2_MEMORY_READ_BIT;
         case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
