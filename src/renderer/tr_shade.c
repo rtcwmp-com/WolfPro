@@ -1153,9 +1153,9 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 	float h = glConfig.vidHeight;
 	float projectionMatrix[16] = {
 		2.0f/w, 0.0f, 0.0f, 0.0f,
-		0.0f, 2.0f/h, 0.0f, 0.0f,
+		0.0f, -2.0f/h, 0.0f, 0.0f,
 		0.0f, 0.0f, 0.0f, 0.0f,
-		-1.0f, -1.0f, 0.0f, 1.0f
+		-1.0f, 1.0f, 0.0f, 1.0f
 	};
 	RHI_CmdPushConstants(backEnd.pipeline,projectionMatrix,64);
 

@@ -18,7 +18,7 @@ struct VIn
 
 struct RootConstants
 {
-	matrix projectionMatrix;
+  matrix projectionMatrix;
 };
 [[vk::push_constant]] RootConstants rc;
 
@@ -26,7 +26,7 @@ struct RootConstants
 VOut vs(VIn input)
 {
     VOut output;
-	output.position = mul(rc.projectionMatrix, float4(input.position.xyz, 1.0));
+    output.position = mul(rc.projectionMatrix, input.position);
     output.color = input.color;
     output.tc = input.tc;
 
