@@ -84,7 +84,7 @@ rhiBuffer RHI_CreateBuffer(const rhiBufferDesc *desc)
     bufferInfo.size = desc->byteCount;
     bufferInfo.usage = GetVkBufferUsageFlags(desc->initialState);
 
-    VmaAllocation vmaAlloc = {};
+    VmaAllocation vmaAlloc = VK_NULL_HANDLE;
     VmaAllocationInfo allocInfo = {};
 
     VkBuffer newBuffer;
@@ -198,7 +198,7 @@ rhiDescriptorSetLayout RHI_CreateDescriptorSetLayout()
 	descSetFlagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
 
     
-    VkDescriptorSetLayout layout = {};
+    VkDescriptorSetLayout layout = VK_NULL_HANDLE;
 	VkDescriptorSetLayoutCreateInfo descSetCreateInfo = {};
 	descSetCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	descSetCreateInfo.pNext = &descSetFlagsCreateInfo;
@@ -227,7 +227,7 @@ rhiPipeline RHI_CreateGraphicsPipeline(rhiDescriptorSetLayout descLayout)
     pcr.size = 64;
     pcr.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
-    VkPipelineLayout vkPipelineLayout = {};
+    VkPipelineLayout vkPipelineLayout = VK_NULL_HANDLE;
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
     pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutCreateInfo.setLayoutCount = 1;
@@ -249,13 +249,13 @@ rhiPipeline RHI_CreateGraphicsPipeline(rhiDescriptorSetLayout descLayout)
     VkShaderModuleCreateInfo vsCreateInfo = {};
     vsCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     vsCreateInfo.codeSize = sizeof(triangle_vs);
-    vsCreateInfo.pCode = triangle_vs;
+    vsCreateInfo.pCode = (const uint32_t*)triangle_vs;
 
     VkShaderModule psModule;
     VkShaderModuleCreateInfo psCreateInfo = {};
     psCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     psCreateInfo.codeSize = sizeof(triangle_ps);
-    psCreateInfo.pCode = triangle_ps;
+    psCreateInfo.pCode = (const uint32_t*)triangle_ps;
 
     VK(vkCreateShaderModule(vk.device, &vsCreateInfo,NULL,&vsModule));
     VK(vkCreateShaderModule(vk.device, &psCreateInfo,NULL,&psModule));
@@ -322,6 +322,8 @@ rhiPipeline RHI_CreateGraphicsPipeline(rhiDescriptorSetLayout descLayout)
 	colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
 	// colorBlendAttachment.srcColorBlendFactor = GetSourceColorBlendFactor(desc->srcBlend);
 	// colorBlendAttachment.dstColorBlendFactor = GetDestinationColorBlendFactor(desc->dstBlend);
+	colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA; // @TODO:
+	colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA; // @TODO:
 	colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 	colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA; // @TODO:
 	colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA; // @TODO:
