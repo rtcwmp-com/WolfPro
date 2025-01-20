@@ -16,12 +16,17 @@ struct VIn
     [[vk::location(2)]] float2 tc : TEXCOORD0;
 };
 
+struct RootConstants
+{
+  matrix projectionMatrix;
+};
+[[vk::push_constant]] RootConstants rc;
 
 
 VOut vs(VIn input)
 {
     VOut output;
-    output.position = input.position;
+    output.position = mul(rc.projectionMatrix, input.position);
     output.color = input.color;
     output.tc = input.tc;
 
@@ -30,11 +35,7 @@ VOut vs(VIn input)
 
 // [[vk::binding(0)]] Texture2D texture;
 // [[vk::binding(1)]] SamplerState mySampler[2];
-struct RootConstants
-{
-  uint samplerIndex;
-};
-[[vk::push_constant]] RootConstants rc;
+
 
 // struct MyStruct
 // {

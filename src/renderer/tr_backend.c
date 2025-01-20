@@ -749,6 +749,8 @@ void    RB_SetGL2D( void ) {
 	qglMatrixMode( GL_PROJECTION );
 	qglLoadIdentity();
 	qglOrtho( 0, glConfig.vidWidth, glConfig.vidHeight, 0, 0, 1 );
+	float m[16];
+	qglGetFloatv(GL_PROJECTION_MATRIX, m);
 	qglMatrixMode( GL_MODELVIEW );
 	qglLoadIdentity();
 

@@ -1133,21 +1133,31 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 	ComputeColors( pStage );
 	ComputeTexCoords( pStage );
 
-	void *indexBufferData = RHI_MapBuffer(vb->index);
+	byte *indexBufferData = RHI_MapBuffer(vb->index);
 	memcpy(indexBufferData + (vb->indexFirst * sizeof(tess.indexes[0])), tess.indexes,	tess.numIndexes * sizeof(tess.indexes[0]));
 	RHI_UnmapBuffer(vb->index);
 
-	void *positionBufferData = RHI_MapBuffer(vb->position);
+	byte *positionBufferData = RHI_MapBuffer(vb->position);
 	memcpy(positionBufferData + (vb->vertexFirst * sizeof(tess.xyz[0])), tess.xyz, tess.numVertexes * sizeof(tess.xyz[0]));
 	RHI_UnmapBuffer(vb->position);
 
-	void *tcBufferData = RHI_MapBuffer(vb->textureCoord);
+	byte *tcBufferData = RHI_MapBuffer(vb->textureCoord);
 	memcpy(tcBufferData + (vb->vertexFirst * sizeof(float) * 2), tess.svars.texcoords, tess.numVertexes * sizeof(float) * 2);
 	RHI_UnmapBuffer(vb->textureCoord);
 
-	void *colorBufferData = RHI_MapBuffer(vb->color);
+	byte *colorBufferData = RHI_MapBuffer(vb->color);
 	memcpy(colorBufferData + (vb->vertexFirst * sizeof(tess.svars.colors[0])), tess.svars.colors, tess.numVertexes * sizeof(tess.svars.colors[0]));
 	RHI_UnmapBuffer(vb->color);
+
+	float w = glConfig.vidWidth;
+	float h = glConfig.vidHeight;
+	float projectionMatrix[16] = {
+		2.0f/w, 0.0f, 0.0f, 0.0f,
+		0.0f, -2.0f/h, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 0.0f,
+		-1.0f, 1.0f, 0.0f, 1.0f
+	};
+	RHI_CmdPushConstants(backEnd.pipeline,projectionMatrix,64);
 
 	RHI_CmdDrawIndexed(tess.numIndexes, vb->indexFirst, vb->vertexFirst);
 

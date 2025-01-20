@@ -224,8 +224,8 @@ rhiPipeline RHI_CreateGraphicsPipeline(rhiDescriptorSetLayout descLayout)
     DescriptorSetLayout *descriptorSetLayout = GET_LAYOUT(descLayout);
 
     VkPushConstantRange pcr = {};
-    pcr.size = 4;
-    pcr.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    pcr.size = 64;
+    pcr.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
     VkPipelineLayout vkPipelineLayout = {};
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
@@ -318,7 +318,7 @@ rhiPipeline RHI_CreateGraphicsPipeline(rhiDescriptorSetLayout descLayout)
 		desc->srcBlend == GLS_SRCBLEND_ONE &&
 		desc->dstBlend == GLS_DSTBLEND_ZERO;*/
 	VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
-	colorBlendAttachment.blendEnable = VK_FALSE;
+	colorBlendAttachment.blendEnable = VK_TRUE;
 	colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
 	// colorBlendAttachment.srcColorBlendFactor = GetSourceColorBlendFactor(desc->srcBlend);
 	// colorBlendAttachment.dstColorBlendFactor = GetDestinationColorBlendFactor(desc->dstBlend);
