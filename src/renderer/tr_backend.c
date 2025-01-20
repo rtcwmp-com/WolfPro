@@ -915,6 +915,7 @@ const void *RB_StretchPic( const void *data ) {
 	tess.numVertexes += 4;
 	tess.numIndexes += 6;
 
+	//the quad vertices (4 vertices / 3 indices per triangle 2 vertices are reused)
 	tess.indexes[ numIndexes ] = numVerts + 3;
 	tess.indexes[ numIndexes + 1 ] = numVerts + 0;
 	tess.indexes[ numIndexes + 2 ] = numVerts + 2;
@@ -1156,6 +1157,11 @@ RB_BeginFrame
 */
 const void  *RB_BeginFrame( const void *data ) {
 	backEnd.currentFrameIndex = (backEnd.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT;
+	
+	backEnd.vertexBuffers[backEnd.currentFrameIndex].indexCount = 0; 
+	backEnd.vertexBuffers[backEnd.currentFrameIndex].indexFirst = 0; 
+	backEnd.vertexBuffers[backEnd.currentFrameIndex].vertexCount = 0; 
+	backEnd.vertexBuffers[backEnd.currentFrameIndex].vertexFirst = 0; 
 
 	RHI_BeginFrame();
 
@@ -1174,7 +1180,27 @@ const void  *RB_BeginFrame( const void *data ) {
 	RHI_AcquireNextImage(&backEnd.swapChainImageIndex, backEnd.imageAcquiredBinary);
 	RHI_BindCommandBuffer(backEnd.commandBuffers[backEnd.currentFrameIndex]);
 	RHI_BeginCommandBuffer();
+
+
+	RHI_CmdBeginBarrier();
+	RHI_CmdTextureBarrier(backEnd.swapChainTextures[backEnd.swapChainImageIndex], RHI_ResourceState_RenderTargetBit);
+	RHI_CmdEndBarrier();
+
+
+	RHI_RenderPass renderPass = {};
+	Vector4Set(renderPass.color, 1.0f, 0.0f, 0.0f, 1.0f);
 	
+	renderPass.colorLoad = RHI_LoadOp_Clear;
+	renderPass.colorTexture = backEnd.swapChainTextures[backEnd.swapChainImageIndex];
+
+	RHI_BeginRendering(&renderPass);
+	RHI_CmdBindPipeline(backEnd.pipeline);
+	//RHI_CmdBindDescriptorSet(backEnd.pipeline, backEnd.descriptorSet);
+	RHI_CmdBindIndexBuffer(backEnd.vertexBuffers[backEnd.currentFrameIndex].index);
+	rhiBuffer buffers[3] = {backEnd.vertexBuffers[backEnd.currentFrameIndex].position, 
+	backEnd.vertexBuffers[backEnd.currentFrameIndex].color,
+	backEnd.vertexBuffers[backEnd.currentFrameIndex].textureCoord};
+	RHI_CmdBindVertexBuffers(buffers, ARRAY_LEN(buffers));
 
 
 	return (const void *)( cmd + 1 );
@@ -1290,22 +1316,22 @@ const void  *RB_EndFrame( const void *data ) {
 
 	GLimp_LogComment( "***************** RB_EndFrame *****************\n\n\n" );
 
-	RHI_CmdBeginBarrier();
-	RHI_CmdTextureBarrier(backEnd.swapChainTextures[backEnd.swapChainImageIndex], RHI_ResourceState_RenderTarget);
-	RHI_CmdEndBarrier();
+	// RHI_CmdBeginBarrier();
+	// RHI_CmdTextureBarrier(backEnd.swapChainTextures[backEnd.swapChainImageIndex], RHI_ResourceState_RenderTargetBit);
+	// RHI_CmdEndBarrier();
 
-	RHI_RenderPass renderPass = {};
-	Vector4Set(renderPass.color, 1.0f, 1.0f, 0.0f, 1.0f);
+	// RHI_RenderPass renderPass = {};
+	// Vector4Set(renderPass.color, 1.0f, 1.0f, 0.0f, 1.0f);
 	
-	renderPass.colorLoad = RHI_LoadOp_Clear;
-	renderPass.colorTexture = backEnd.swapChainTextures[backEnd.swapChainImageIndex];
+	// renderPass.colorLoad = RHI_LoadOp_Clear;
+	// renderPass.colorTexture = backEnd.swapChainTextures[backEnd.swapChainImageIndex];
 
-	RHI_BeginRendering(&renderPass);
+	// RHI_BeginRendering(&renderPass);
 	RHI_EndRendering();
 
 
 	RHI_CmdBeginBarrier();
-	RHI_CmdTextureBarrier(backEnd.swapChainTextures[backEnd.swapChainImageIndex], RHI_ResourceState_Present);
+	RHI_CmdTextureBarrier(backEnd.swapChainTextures[backEnd.swapChainImageIndex], RHI_ResourceState_PresentBit);
 	RHI_CmdEndBarrier();
 
 	

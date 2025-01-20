@@ -39,10 +39,9 @@ RHI_HANDLE_TYPE(rhiPipeline) //pipeline state object (PSO) all of the state of t
 							// viewport related to the projection matrix
 							// scissor rect is where you are allowed to write (outside of this does not get written to render target)
 RHI_HANDLE_TYPE(rhiShader) //programmable logic to run on the gpu (vertex/fragment shading) multiple fragments can contribute to a pixel (MSAA)
-RHI_HANDLE_TYPE(rhiPipelineLayout) // push constant's byte count for both shader stages; which descriptor set layouts you have
-								   // push constant - constant data (up to 128 bytes) in the command stream, for the entire draw call
-								   // ex: matrices in vertex shader, texture/sampler indices for bindless rendering in frag shader
+
 RHI_HANDLE_TYPE(rhiBuffer) //raw data in gpu space (vertex/index can be specailized for the API's knowledge of what is in it)
+RHI_HANDLE_TYPE(rhiDescriptorSet)
 
 
 
@@ -77,8 +76,11 @@ typedef struct rhiCommandPoolDesc
 
 
 typedef enum {
-	RHI_ResourceState_RenderTarget = RHI_BIT(0),
-	RHI_ResourceState_Present = RHI_BIT(1)
+	RHI_ResourceState_RenderTargetBit = RHI_BIT(0),
+	RHI_ResourceState_PresentBit = RHI_BIT(1),
+	RHI_ResourceState_VertexBufferBit = RHI_BIT(2),
+	RHI_ResourceState_IndexBufferBit = RHI_BIT(3),
+	RHI_ResourceState_StorageBufferBit = RHI_BIT(4)
 } RHI_ResourceState;
 
 typedef enum {
@@ -213,7 +215,6 @@ typedef struct rhiGraphicsPipelineDesc
 	rhiShader fragmentShader;
 	rhiSpecialization vertexSpec;
 	rhiSpecialization fragmentSpec;
-	rhiPipelineLayout pipelineLayout;
 	uint32_t cullType; // cullType_t
 	uint32_t srcBlend; // stateBits & GLS_SRCBLEND_BITS
 	uint32_t dstBlend; // stateBits & GLS_DSTBLEND_BITS
@@ -224,18 +225,18 @@ typedef struct rhiGraphicsPipelineDesc
 
 typedef enum 
 {
-	DeviceLocal,
-	Upload,
-	Readback,
-	rhiMemoryUsageIdCount
-} rhiMemoryUsageId;
+	RHI_MemoryUsage_DeviceLocal,
+	RHI_MemoryUsage_Upload,
+	RHI_MemoryUsage_Readback,
+	RHI_MemoryUsage_Count
+} RHI_MemoryUsage;
 
 typedef struct rhiBufferDesc
 {
 	const char* name;
 	uint32_t byteCount;
-	//RHI_ResourceState initialState;
-	rhiMemoryUsageId memoryUsage;
+	RHI_ResourceState initialState;
+	RHI_MemoryUsage memoryUsage;
 } rhiBufferDesc;
 
 typedef struct rhiSubmitGraphicsDesc {
@@ -274,9 +275,9 @@ rhiSemaphore RHI_CreateBinarySemaphore();
 rhiSemaphore RHI_CreateTimelineSemaphore();
 void RHI_WaitOnSemaphore(rhiSemaphore semaphore, uint64_t semaphoreValue);
 
-void RHI_CreateBuffer();
-void RHI_MapBuffer(); //cpu visible buffers
-void RHI_UnmapBuffer();
+rhiBuffer RHI_CreateBuffer(const rhiBufferDesc *desc);
+byte* RHI_MapBuffer(rhiBuffer buffer); //cpu visible buffers
+void RHI_UnmapBuffer(rhiBuffer buffer);
 
 rhiTexture RHI_CreateTexture(const rhiTextureDesc *desc);
 
@@ -284,10 +285,10 @@ void RHI_CreateSampler();
 
 void RHI_CreateShader();
 
-void RHI_CreateDescriptorSetLayout();
+rhiDescriptorSetLayout RHI_CreateDescriptorSetLayout();
 void RHI_CreateDescriptorSet();
 
-void RHI_CreateGraphicsPipeline();
+rhiPipeline RHI_CreateGraphicsPipeline(rhiDescriptorSetLayout descLayout);
 void RHI_CreateComputePipeline();
 
 
@@ -306,26 +307,25 @@ void RHI_BeginCommandBuffer( void );
 void RHI_EndCommandBuffer( void );
 
 void RHI_BeginRendering(const RHI_RenderPass *renderPass); //bind render targets
-void RHI_EndRendering();
+void RHI_EndRendering( void );
 
-void RHI_CmdBindPipeline(); //create pipeline layout here
-void RHI_CmdBindDescriptorSet();
-void RHI_CmdBindVertexBuffers();
-void RHI_CmdBindIndexBuffer();
+void RHI_CmdBindPipeline(rhiPipeline pipeline); //create pipeline layout here
+void RHI_CmdBindDescriptorSet(rhiPipeline pipeline, rhiDescriptorSet descriptorSet);
+void RHI_CmdBindVertexBuffers(const rhiBuffer *vertexBuffers, uint32_t bufferCount);
+void RHI_CmdBindIndexBuffer(rhiBuffer indexBuffer);
 void RHI_CmdSetViewport();
 void RHI_CmdSetScissor();
-void RHI_CmdPushConstants();
-void RHI_CmdDraw();
-void RHI_CmdDrawIndexed();
+void RHI_CmdPushConstants(rhiPipeline pipeline, const void *constants, uint32_t byteCount);
+void RHI_CmdDraw(uint32_t vertexCount, uint32_t firstVertex); //non indexed triangles (not for 2d)
+void RHI_CmdDrawIndexed(uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex);
 
 void RHI_CmdBeginBarrier( void );
 void RHI_CmdEndBarrier( void );
 void RHI_CmdTextureBarrier(rhiTexture handle, RHI_ResourceState flag); //pass handle to this
-void RHI_CmdBufferBarrier(); //pass handle to this
+void RHI_CmdBufferBarrier(); //pass handle to this //(not for 2d)
 
 void RHI_CmdCopyBuffer();
 void RHI_CmdCopyBufferRegions();
-void RHI_CmdClearColorTexture();
 void RHI_CmdInsertDebugLabel();
 void RHI_CmdBeginDebugLabel();
 void RHI_CmdEndDebugLabel();

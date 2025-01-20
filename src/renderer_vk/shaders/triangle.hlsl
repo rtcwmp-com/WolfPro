@@ -28,8 +28,8 @@ VOut vs(VIn input)
     return output;
 }
 
-[[vk::binding(0)]] Texture2D texture;
-[[vk::binding(1)]] SamplerState mySampler[2];
+// [[vk::binding(0)]] Texture2D texture;
+// [[vk::binding(1)]] SamplerState mySampler[2];
 struct RootConstants
 {
   uint samplerIndex;
@@ -40,7 +40,7 @@ struct RootConstants
 // {
 //   uint samplerIndex;
 // };
-[[vk::binding(2)]] StructuredBuffer<float4> myData;
+// [[vk::binding(2)]] StructuredBuffer<float4> myData;
 
 float4 ps(VOut input) : SV_Target
 {
@@ -49,8 +49,8 @@ float4 ps(VOut input) : SV_Target
     //texture.GetDimensions(width, height);
     //float4 texColor = texture.Load(int3(input.tc.x * width, input.tc.y * height, 0));
     
-    return myData[rc.samplerIndex];
+    //return myData[rc.samplerIndex];
     //return texColor;
     //return float4(input.tc,0,1);
-    //return input.color;
+    return input.color;
 }

@@ -127,17 +127,20 @@ typedef struct Texture
 	
 } Texture;
 
-// typedef struct Pipeline
-// {
-// 	VkPipeline pipeline;
-// 	qbool compute;
-// } Pipeline;
+typedef struct PipelineLayout
+{
+	VkPipelineLayout pipelineLayout;
+	PushConstantsRange constantRanges[rhiShaderTypeIdCount];
+ } PipelineLayout;
 
-// typedef struct PipelineLayout
-// {
-// 	VkPipelineLayout pipelineLayout;
-// 	PushConstantsRange constantRanges[galShaderTypeIdCount];
-//  } PipelineLayout;
+typedef struct Pipeline
+{
+	PipelineLayout layout;
+	VkPipeline pipeline;
+	qbool compute;
+} Pipeline;
+
+
 
 // typedef struct Shader
 // {
@@ -145,19 +148,23 @@ typedef struct Texture
 // 	galShaderTypeId type;
 // } Shader;
 
-// typedef struct DescriptorSetLayout
-// {
-// 	VkDescriptorSetLayout layout;
-// } DescriptorSetLayout;
+typedef struct DescriptorSetLayout
+{
+	VkDescriptorSetLayout layout;
+} DescriptorSetLayout;
 
-
+typedef struct DescriptorSet
+{
+	VkDescriptorSet set;
+} DescriptorSet;
 
 typedef struct
 {
+	rhiBufferDesc desc;
 	void* mappedData; // only if host coherent
 	VkBuffer buffer;
 	VmaAllocation allocation;
-	rhiMemoryUsageId memoryUsage;
+	RHI_MemoryUsage memoryUsage;
 	qbool mapped;
 	qbool hostCoherent;
 } Buffer;
@@ -215,8 +222,12 @@ typedef struct Vulkan
 
 	memoryPool texturePool;
 
-	
+	memoryPool bufferPool;
 
+	memoryPool descriptorSetLayoutPool;
+	memoryPool descriptorSetPool;
+
+	memoryPool pipelinePool;
 	//
 	// extensions
 	// 
@@ -238,5 +249,8 @@ VkImageLayout GetVkImageLayout(RHI_ResourceState state);
 VkAccessFlags2 GetVkAccessFlags(VkImageLayout state);
 VkPipelineStageFlags2 GetVkStageFlags(VkImageLayout state);
 VkAttachmentLoadOp GetVkAttachmentLoadOp(RHI_LoadOp load);
+VmaMemoryUsage GetVmaMemoryUsage(RHI_MemoryUsage usage);
+VkBufferUsageFlags GetVkBufferUsageFlags(RHI_ResourceState state);
+VkCullModeFlags GetVkCullModeFlags(cullType_t cullType);
 
 #endif

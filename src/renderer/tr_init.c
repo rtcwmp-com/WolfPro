@@ -319,16 +319,42 @@ static void InitOpenGL( void ) {
 
 static void InitVulkan( void ) {
 	VKimp_Init();
+
+	rhiBufferDesc vertexBufferDesc = {};
+	vertexBufferDesc.initialState = RHI_ResourceState_VertexBufferBit;
+	vertexBufferDesc.memoryUsage = RHI_MemoryUsage_Upload;
+
 	for(int i = 0; i < RHI_FRAMES_IN_FLIGHT; i++){
 		backEnd.commandBuffers[i] = RHI_CreateCommandBuffer();
+		
+		vertexBufferDesc.initialState = RHI_ResourceState_VertexBufferBit;
+		vertexBufferDesc.name = va("%s %d", "Color Buffer", i);
+		vertexBufferDesc.byteCount = VBA_MAX * sizeof(tess.vertexColors[0]);
+		backEnd.vertexBuffers[i].color = RHI_CreateBuffer(&vertexBufferDesc);
+		
+		vertexBufferDesc.initialState = RHI_ResourceState_VertexBufferBit;
+		vertexBufferDesc.name = va("%s %d", "Position Buffer", i);
+		vertexBufferDesc.byteCount = VBA_MAX * sizeof(tess.xyz[0]);
+		backEnd.vertexBuffers[i].position = RHI_CreateBuffer(&vertexBufferDesc);
+
+		vertexBufferDesc.initialState = RHI_ResourceState_VertexBufferBit;
+		vertexBufferDesc.name = va("%s %d", "Texture Coordinates Buffer", i);
+		vertexBufferDesc.byteCount = VBA_MAX * sizeof(tess.texCoords[0][0]);
+		backEnd.vertexBuffers[i].textureCoord = RHI_CreateBuffer(&vertexBufferDesc);
+		
+		vertexBufferDesc.initialState = RHI_ResourceState_IndexBufferBit;
+		vertexBufferDesc.name = va("%s %d", "Index Buffer", i);
+		vertexBufferDesc.byteCount = IDX_MAX * sizeof(tess.indexes[0]);
+		backEnd.vertexBuffers[i].index = RHI_CreateBuffer(&vertexBufferDesc);
 	}
+
 	backEnd.renderComplete = RHI_CreateTimelineSemaphore();
 	backEnd.renderCompleteBinary = RHI_CreateBinarySemaphore();
 	backEnd.imageAcquiredBinary = RHI_CreateBinarySemaphore();
 	backEnd.swapChainTextures = RHI_GetSwapChainImages();
 	backEnd.swapChainTextureCount = RHI_GetSwapChainImageCount();
-
-
+	backEnd.descriptorSetLayout = RHI_CreateDescriptorSetLayout();
+	backEnd.pipeline = RHI_CreateGraphicsPipeline(backEnd.descriptorSetLayout);
 	
 
 }

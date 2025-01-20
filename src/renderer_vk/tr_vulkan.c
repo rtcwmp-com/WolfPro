@@ -565,7 +565,7 @@ void SetObjectName(VkObjectType type, uint64_t object, const char* name)
 static VkImageUsageFlags GetVkImageUsageFlags(RHI_ResourceState state)
 {
     VkImageUsageFlags flags = VK_IMAGE_USAGE_SAMPLED_BIT;
-    if(state & RHI_ResourceState_RenderTarget)
+    if(state & RHI_ResourceState_RenderTargetBit)
     {
         flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     }
@@ -1273,7 +1273,7 @@ static VkShaderStageFlags GetVkShaderStageFlags(rhiShaderTypeId shaderType)
 
 //     VkDescriptorSetLayoutBinding bindings[3] = {binding, binding2, binding3};
 
-// 	DescriptorSetLayout descLayout = {};
+ //	DescriptorSetLayout descLayout = {};
 // 	VkDescriptorSetLayoutCreateInfo descSetCreateInfo = {};
 // 	descSetCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 // 	descSetCreateInfo.bindingCount = ARRAY_LEN(bindings);
@@ -1366,7 +1366,7 @@ static VkBlendFactor GetDestinationColorBlendFactor(unsigned int bits)
 	}
 }
 
-static VkCullModeFlags GetVkCullModeFlags(cullType_t cullType)
+VkCullModeFlags GetVkCullModeFlags(cullType_t cullType)
 {
 	assert((unsigned int)cullType < CT_COUNT);
 
@@ -1378,8 +1378,8 @@ static VkCullModeFlags GetVkCullModeFlags(cullType_t cullType)
 	}
 }
 
-#include "shaders/triangle_ps.h"
-#include "shaders/triangle_vs.h"
+// #include "shaders/triangle_ps.h"
+// #include "shaders/triangle_vs.h"
 
 // static void CreatePipeline() {
 
@@ -2168,9 +2168,9 @@ VkImageLayout GetVkImageLayout(RHI_ResourceState state)
         VkImageLayout layout;
     } Pair;
 
-    Pair pairs[] = {
-        { RHI_ResourceState_Present, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR },
-        { RHI_ResourceState_RenderTarget, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}
+    const Pair pairs[] = {
+        { RHI_ResourceState_PresentBit, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR },
+        { RHI_ResourceState_RenderTargetBit, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}
     };
 
     for(int i = 0; i < ARRAY_LEN(pairs); i++){
@@ -2198,6 +2198,49 @@ VkImageLayout GetVkImageLayout(RHI_ResourceState state)
 	return VK_IMAGE_LAYOUT_UNDEFINED;
 }
 
+VmaMemoryUsage GetVmaMemoryUsage(RHI_MemoryUsage usage)
+{
+	assert((unsigned int)usage < RHI_MemoryUsage_Count);
+
+	switch(usage)
+	{
+		case RHI_MemoryUsage_DeviceLocal: return VMA_MEMORY_USAGE_GPU_ONLY;
+		case RHI_MemoryUsage_Upload: return VMA_MEMORY_USAGE_CPU_TO_GPU;
+		case RHI_MemoryUsage_Readback: return VMA_MEMORY_USAGE_GPU_TO_CPU;
+		default: assert(0); return VMA_MEMORY_USAGE_UNKNOWN;
+	}
+}
+
+VkBufferUsageFlags GetVkBufferUsageFlags(RHI_ResourceState state)
+{
+    typedef struct Pair
+	{
+		RHI_ResourceState inBit;
+		VkBufferUsageFlags outBit;
+	} Pair;
+	const Pair pairs[] =
+	{
+		{ RHI_ResourceState_VertexBufferBit, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT },
+		{ RHI_ResourceState_IndexBufferBit, VK_BUFFER_USAGE_INDEX_BUFFER_BIT },
+		// { galResourceState::CopySourceBit, VK_BUFFER_USAGE_TRANSFER_SRC_BIT },
+		// { galResourceState::CopyDestinationBit, VK_BUFFER_USAGE_TRANSFER_DST_BIT },
+		// { galResourceState::IndirectCommandBit, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT },
+		// { galResourceState::UniformBufferBit, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT },
+		{ RHI_ResourceState_StorageBufferBit, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT }
+	};
+
+	VkBufferUsageFlags flags = 0;
+	for(int p = 0; p < ARRAY_LEN(pairs); ++p)
+	{
+		if(state & pairs[p].inBit)
+		{
+			flags |= pairs[p].outBit;
+		}
+	}
+
+	return flags;
+}
+
 
 void VKimp_Init( void ) {
     if(vk.initialized &&
@@ -2212,7 +2255,10 @@ void VKimp_Init( void ) {
     Pool_Init(&vk.commandBufferPool, 64, sizeof(CommandBuffer), 0);
     Pool_Init(&vk.semaphorePool, 64, sizeof(Semaphore), 0);
     Pool_Init(&vk.texturePool, 64, sizeof(Texture), 0);
-    
+    Pool_Init(&vk.bufferPool, 64, sizeof(Buffer), 0);
+    Pool_Init(&vk.descriptorSetLayoutPool, 64, sizeof(DescriptorSetLayout), 0);
+    Pool_Init(&vk.descriptorSetPool, 64, sizeof(DescriptorSet), 0);
+    Pool_Init(&vk.pipelinePool, 256, sizeof(Pipeline), 0);
 
     vk.instance = VK_NULL_HANDLE;
     BuildLayerAndExtensionLists();

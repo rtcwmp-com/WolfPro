@@ -909,6 +909,20 @@ typedef struct {
 	int msec;               // total msec for backend run
 } backEndCounters_t;
 
+typedef struct {
+	rhiBuffer position;
+	rhiBuffer color;
+	rhiBuffer textureCoord;
+	rhiBuffer index;
+	uint32_t indexCount; //total indices written this frame
+	uint32_t indexFirst; //first index of the draw call
+	uint32_t vertexCount; //total vertices written this frame
+	uint32_t vertexFirst; //first vertex of the draw call
+} VertexBuffers;
+
+#define VBA_MAX 64000
+#define IDX_MAX (VBA_MAX * 8)
+
 // all state modified by the back end is seperated
 // from the front end state
 typedef struct {
@@ -936,6 +950,11 @@ typedef struct {
 	uint32_t swapChainImageIndex;
 	rhiTexture* swapChainTextures;
 	uint32_t swapChainTextureCount;
+
+	rhiDescriptorSetLayout descriptorSetLayout;
+	rhiPipeline pipeline;
+
+	VertexBuffers vertexBuffers[RHI_FRAMES_IN_FLIGHT];
 	
 } backEndState_t;
 
