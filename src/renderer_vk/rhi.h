@@ -284,7 +284,10 @@ typedef struct rhiDescriptorSetLayoutDesc {
 	const char *name;
 } rhiDescriptorSetLayoutDesc; 
 
-
+typedef enum RHI_TextureAddressing {
+	RHI_TextureAddressing_Repeat = 0,
+	RHI_TextureAddressing_Clamp
+} RHI_TextureAddressing;
 
 
 inline void RHI_SubmitGraphicsDesc_Signal(rhiSubmitGraphicsDesc *graphicsDesc, rhiSemaphore semaphore, uint64_t semaphoreValue){
@@ -316,7 +319,7 @@ void RHI_UnmapBuffer(rhiBuffer buffer);
 
 rhiTexture RHI_CreateTexture(const rhiTextureDesc *desc);
 
-void RHI_CreateSampler();
+rhiSampler RHI_CreateSampler(const char* name, RHI_TextureAddressing mode, uint32_t anisotropy);
 
 void RHI_CreateShader();
 

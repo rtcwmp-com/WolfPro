@@ -207,8 +207,32 @@ rhiTexture RHI_CreateTexture(const rhiTextureDesc *desc)
     return (rhiTexture) { Pool_Add(&vk.texturePool, &texture) };
 }
 
-void RHI_CreateSampler()
+rhiSampler RHI_CreateSampler(const char* name, RHI_TextureAddressing mode, uint32_t anisotropy)
 {
+    VkSamplerAddressMode wrapMode = (mode == RHI_TextureAddressing_Repeat) ?  VK_SAMPLER_ADDRESS_MODE_REPEAT : VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+
+    VkSampler sampler;
+	VkSamplerCreateInfo createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	createInfo.addressModeU = wrapMode;
+	createInfo.addressModeV = wrapMode;
+	createInfo.addressModeW = wrapMode;
+	createInfo.anisotropyEnable = anisotropy > 1 ? VK_TRUE : VK_FALSE;
+	createInfo.maxAnisotropy = anisotropy;
+	createInfo.minFilter = VK_FILTER_LINEAR;
+	createInfo.magFilter = VK_FILTER_LINEAR;
+	createInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	createInfo.minLod = 0.0f;
+	createInfo.maxLod = 666.0f;
+	createInfo.mipLodBias = 0.0f;
+	VK(vkCreateSampler(vk.device, &createInfo, NULL, &sampler));
+
+	SetObjectName(VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler, name);
+
+    Sampler privateSampler;
+    privateSampler.sampler = sampler;
+
+    return (rhiSampler) { Pool_Add(&vk.samplerPool, &privateSampler) };
 }
 
 void RHI_CreateShader()

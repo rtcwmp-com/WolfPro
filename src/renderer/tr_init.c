@@ -369,6 +369,10 @@ static void InitVulkan( void ) {
 	backEnd.pipeline = RHI_CreateGraphicsPipeline(backEnd.descriptorSetLayout);
 
 	backEnd.descriptorSet = RHI_CreateDescriptorSet("Game Textures", backEnd.descriptorSetLayout);
+
+	backEnd.sampler = RHI_CreateSampler("Trilinear", RHI_TextureAddressing_Repeat, 0);
+
+	RHI_UpdateDescriptorSet(backEnd.descriptorSet, 1, RHI_DescriptorType_Sampler, 0, 1, &backEnd.sampler);
 	
 
 }

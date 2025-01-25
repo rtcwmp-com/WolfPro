@@ -958,6 +958,8 @@ typedef struct {
 	rhiDescriptorSet descriptorSet;
 	rhiPipeline pipeline;
 
+	rhiSampler sampler;
+
 	VertexBuffers vertexBuffers[RHI_FRAMES_IN_FLIGHT];
 	
 } backEndState_t;
