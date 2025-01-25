@@ -140,6 +140,10 @@ typedef struct Pipeline
 	qbool compute;
 } Pipeline;
 
+typedef struct Sampler
+{
+	VkSampler sampler;
+} Sampler;
 
 
 // typedef struct Shader
@@ -151,11 +155,13 @@ typedef struct Pipeline
 typedef struct DescriptorSetLayout
 {
 	VkDescriptorSetLayout layout;
+	rhiDescriptorSetLayoutDesc desc;
 } DescriptorSetLayout;
 
 typedef struct DescriptorSet
 {
 	VkDescriptorSet set;
+	rhiDescriptorSetLayout layout;
 } DescriptorSet;
 
 typedef struct
@@ -234,6 +240,7 @@ typedef struct Vulkan
 	memoryPool descriptorSetPool;
 
 	memoryPool pipelinePool;
+	memoryPool samplerPool;
 
 	rhiBuffer uploadBuffer;
 	rhiTexture uploadTextureHandle;
@@ -267,5 +274,8 @@ VkImageUsageFlags GetVkImageUsageFlags(RHI_ResourceState state);
 uint32_t GetByteCountsPerPixel(VkFormat format);
 VkPipelineStageFlags2 GetVkStageFlagsFromResource(RHI_ResourceState state);
 VkAccessFlags2 GetVkAccessFlagsFromResource(RHI_ResourceState state);
+VkDescriptorType GetVkDescriptorType(RHI_DescriptorType type);
+VkShaderStageFlags GetVkShaderStageFlags(RHI_PipelineStage stage);
+
 
 #endif

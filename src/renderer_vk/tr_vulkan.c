@@ -1209,34 +1209,6 @@ void RHI_EndFrame() {
     // AcquireSubmitPresent();
 }
 
-static VkShaderStageFlags GetVkShaderStageFlags(rhiShaderTypeId shaderType)
-{
-	assert((unsigned int)shaderType < rhiShaderTypeIdCount);
-
-	typedef struct 
-	{
-		rhiShaderTypeId inValue;
-		VkShaderStageFlags outValue;
-	} Pair;
-	const Pair pairs[] =
-	{
-		{ rhiShaderTypeIdVertex, VK_SHADER_STAGE_VERTEX_BIT },
-		{ rhiShaderTypeIdPixel, VK_SHADER_STAGE_FRAGMENT_BIT },
-		{ rhiShaderTypeIdCompute, VK_SHADER_STAGE_COMPUTE_BIT }
-	};
-
-	for(int p = 0; p < ARRAY_LEN(pairs); ++p)
-	{
-		if(shaderType == pairs[p].inValue)
-		{
-			return pairs[p].outValue;
-		}
-	}
-
-	assert(0); // means pairs is incomplete!
-	return 0;
-}
-
 // static void CreateTrianglePipelineLayout()
 // {
 
@@ -1253,7 +1225,7 @@ static VkShaderStageFlags GetVkShaderStageFlags(rhiShaderTypeId shaderType)
 
 //     binding.binding = 0;
 //     binding.descriptorCount = 1;
-//     binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    //  binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 //     binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 //     binding.pImmutableSamplers = VK_NULL_HANDLE;
 
@@ -2325,6 +2297,38 @@ uint32_t GetByteCountsPerPixel(VkFormat format){
     return 4;
 }
 
+VkDescriptorType GetVkDescriptorType(RHI_DescriptorType type){
+    switch(type){
+        case RHI_DescriptorType_Sampler:
+            return VK_DESCRIPTOR_TYPE_SAMPLER;
+	    case RHI_DescriptorType_ReadOnlyBuffer: 
+            return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	    case RHI_DescriptorType_ReadWriteBuffer: 
+            return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	    case RHI_DescriptorType_ReadOnlyTexture:
+            return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+	    case RHI_DescriptorType_ReadWriteTexture:
+            return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+        default:
+            assert(!"Invalid descriptor type");
+            return -1;
+    }
+    	
+}
+VkShaderStageFlags GetVkShaderStageFlags(RHI_PipelineStage stage){
+    VkShaderStageFlags flags = 0;
+    if(stage & RHI_PipelineStage_VertexBit){
+        flags |= VK_SHADER_STAGE_VERTEX_BIT;
+    }
+    if(stage & RHI_PipelineStage_PixelBit){
+        flags |= VK_SHADER_STAGE_FRAGMENT_BIT;
+    }
+    if(stage & RHI_PipelineStage_ComputeBit){
+        flags |= VK_SHADER_STAGE_COMPUTE_BIT;
+    }
+    return flags;
+}
+
 
 void VKimp_Init( void ) {
     if(vk.initialized &&
@@ -2343,6 +2347,7 @@ void VKimp_Init( void ) {
     Pool_Init(&vk.descriptorSetLayoutPool, 64, sizeof(DescriptorSetLayout), 0);
     Pool_Init(&vk.descriptorSetPool, 64, sizeof(DescriptorSet), 0);
     Pool_Init(&vk.pipelinePool, 256, sizeof(Pipeline), 0);
+    Pool_Init(&vk.samplerPool, 16, sizeof(Sampler), 0);
 
     vk.instance = VK_NULL_HANDLE;
     BuildLayerAndExtensionLists();

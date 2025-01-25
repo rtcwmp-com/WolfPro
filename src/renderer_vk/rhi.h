@@ -42,6 +42,8 @@ RHI_HANDLE_TYPE(rhiShader) //programmable logic to run on the gpu (vertex/fragme
 
 RHI_HANDLE_TYPE(rhiBuffer) //raw data in gpu space (vertex/index can be specailized for the API's knowledge of what is in it)
 RHI_HANDLE_TYPE(rhiDescriptorSet)
+RHI_HANDLE_TYPE(rhiSampler)
+
 
 
 
@@ -252,6 +254,39 @@ typedef struct rhiTextureUpload {
 	uint32_t height;
 } rhiTextureUpload;
 
+typedef enum RHI_DescriptorType {
+	RHI_DescriptorType_None = 0,
+	RHI_DescriptorType_Sampler,
+	RHI_DescriptorType_ReadOnlyBuffer, //Uniform buffer
+	RHI_DescriptorType_ReadWriteBuffer, //Storage buffer
+	RHI_DescriptorType_ReadOnlyTexture, //Sampled image
+	RHI_DescriptorType_ReadWriteTexture // ???
+
+} RHI_DescriptorType;
+
+typedef enum RHI_PipelineStage {
+	RHI_PipelineStage_None = 0,
+	RHI_PipelineStage_VertexBit = RHI_BIT(0),
+	RHI_PipelineStage_PixelBit = RHI_BIT(1),
+	RHI_PipelineStage_ComputeBit = RHI_BIT(2)
+} RHI_PipelineStage;
+
+typedef struct rhiDescriptorSetLayoutBinding {
+	uint32_t descriptorCount;
+	RHI_DescriptorType descriptorType;
+	RHI_PipelineStage stageFlags;
+
+} rhiDescriptorSetLayoutBinding; 
+
+typedef struct rhiDescriptorSetLayoutDesc {
+	rhiDescriptorSetLayoutBinding bindings[4];
+	uint32_t bindingCount;
+	const char *name;
+} rhiDescriptorSetLayoutDesc; 
+
+
+
+
 inline void RHI_SubmitGraphicsDesc_Signal(rhiSubmitGraphicsDesc *graphicsDesc, rhiSemaphore semaphore, uint64_t semaphoreValue){
     assert(graphicsDesc->signalSemaphoreCount < ARRAY_LEN(graphicsDesc->signalSemaphores));
     int newIndex = graphicsDesc->signalSemaphoreCount++;
@@ -285,8 +320,9 @@ void RHI_CreateSampler();
 
 void RHI_CreateShader();
 
-rhiDescriptorSetLayout RHI_CreateDescriptorSetLayout();
-void RHI_CreateDescriptorSet();
+rhiDescriptorSetLayout RHI_CreateDescriptorSetLayout(const rhiDescriptorSetLayoutDesc *desc);
+rhiDescriptorSet RHI_CreateDescriptorSet(const char *name, rhiDescriptorSetLayout layoutHandle);
+void RHI_UpdateDescriptorSet(rhiDescriptorSet descriptorHandle, uint32_t bindingIndex, RHI_DescriptorType type, uint32_t offset, uint32_t descriptorCount, const void *handles); //rhiTexture, rhiSampler, rhiBuffer
 
 rhiPipeline RHI_CreateGraphicsPipeline(rhiDescriptorSetLayout descLayout);
 void RHI_CreateComputePipeline();

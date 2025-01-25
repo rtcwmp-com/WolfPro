@@ -955,6 +955,7 @@ typedef struct {
 	uint32_t swapChainTextureCount;
 
 	rhiDescriptorSetLayout descriptorSetLayout;
+	rhiDescriptorSet descriptorSet;
 	rhiPipeline pipeline;
 
 	VertexBuffers vertexBuffers[RHI_FRAMES_IN_FLIGHT];

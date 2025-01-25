@@ -7,6 +7,7 @@
 #define GET_LAYOUT(handle) ((DescriptorSetLayout*)Pool_Get(&vk.descriptorSetLayoutPool, handle.h))
 #define GET_PIPELINE(handle) ((Pipeline*)Pool_Get(&vk.pipelinePool, handle.h))
 #define GET_DESCRIPTORSET(handle) ((DescriptorSet*)Pool_Get(&vk.descriptorSetPool, handle.h))
+#define GET_SAMPLER(handle) ((Sampler*)Pool_Get(&vk.samplerPool, handle.h))
 void RHI_Init()
 {
     
@@ -214,29 +215,119 @@ void RHI_CreateShader()
 {
 }
 
-rhiDescriptorSetLayout RHI_CreateDescriptorSetLayout()
+
+
+
+
+rhiDescriptorSetLayout RHI_CreateDescriptorSetLayout(const rhiDescriptorSetLayoutDesc *desc)
 {
+    VkDescriptorSetLayoutBinding bindings[ARRAY_LEN(desc->bindings)];
+    VkDescriptorBindingFlags bindingFlags[ARRAY_LEN(desc->bindings)];
+
+    for(int i = 0; i < desc->bindingCount; i++){
+        assert(desc->bindings[i].stageFlags != 0);
+        VkDescriptorSetLayoutBinding *binding = &bindings[i];
+        *binding = (VkDescriptorSetLayoutBinding){};
+        binding->binding = i;
+        binding->descriptorCount = desc->bindings[i].descriptorCount;
+        binding->descriptorType = GetVkDescriptorType(desc->bindings[i].descriptorType);
+        binding->stageFlags = GetVkShaderStageFlags(desc->bindings[i].stageFlags);
+        binding->pImmutableSamplers = VK_NULL_HANDLE;
+
+        bindingFlags[i] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
+
+    }
 
     VkDescriptorSetLayoutBindingFlagsCreateInfo descSetFlagsCreateInfo = {};
 	descSetFlagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+    descSetFlagsCreateInfo.pBindingFlags = bindingFlags;
 
     
     VkDescriptorSetLayout layout = VK_NULL_HANDLE;
 	VkDescriptorSetLayoutCreateInfo descSetCreateInfo = {};
 	descSetCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	descSetCreateInfo.pNext = &descSetFlagsCreateInfo;
+    descSetCreateInfo.pBindings = bindings;
+    descSetCreateInfo.bindingCount = desc->bindingCount;
 	VK(vkCreateDescriptorSetLayout(vk.device, &descSetCreateInfo, NULL, &layout));
 
-	SetObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)layout, "Desc Layout");
+	SetObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)layout, desc->name);
 
     DescriptorSetLayout descLayout = {};
     descLayout.layout = layout;
+    descLayout.desc = *desc;
 
     return (rhiDescriptorSetLayout) { Pool_Add(&vk.descriptorSetLayoutPool, &descLayout) };
 }
 
-void RHI_CreateDescriptorSet()
+rhiDescriptorSet RHI_CreateDescriptorSet(const char *name, rhiDescriptorSetLayout layoutHandle)
 {
+    DescriptorSetLayout *layout = GET_LAYOUT(layoutHandle);
+
+    VkDescriptorSet descriptorSet;
+
+    VkDescriptorSetAllocateInfo allocInfo = {};
+	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocInfo.descriptorPool = vk.descriptorPool;
+	allocInfo.descriptorSetCount = 1;
+	allocInfo.pSetLayouts = &layout->layout;
+    
+	VK(vkAllocateDescriptorSets(vk.device, &allocInfo, &descriptorSet));
+    SetObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)descriptorSet, name);
+    DescriptorSet desc = {};
+    desc.set = descriptorSet;
+    desc.layout = layoutHandle;
+
+    return (rhiDescriptorSet) { Pool_Add(&vk.descriptorSetPool, &desc) };
+}
+
+void RHI_UpdateDescriptorSet(rhiDescriptorSet descriptorHandle, uint32_t bindingIndex, RHI_DescriptorType type, uint32_t offset, uint32_t descriptorCount, const void *handles){
+    DescriptorSet *descSet = GET_DESCRIPTORSET(descriptorHandle);
+    DescriptorSetLayout *layout = GET_LAYOUT(descSet->layout);
+
+    assert(bindingIndex < layout->desc.bindingCount);
+    assert(layout->desc.bindings[bindingIndex].descriptorType == type);
+    assert(layout->desc.bindings[bindingIndex].descriptorCount >= offset + descriptorCount);
+
+
+    VkWriteDescriptorSet write = {};
+	write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	write.dstSet = descSet->set;
+	write.dstBinding = bindingIndex;
+	write.descriptorCount = descriptorCount;
+	write.descriptorType = GetVkDescriptorType(type);
+	write.pBufferInfo = NULL;
+	write.pImageInfo = NULL;
+    write.dstArrayElement = offset;
+
+    static VkDescriptorImageInfo imageInfo[MAX_DRAWIMAGES];
+
+    if(type == RHI_DescriptorType_ReadOnlyTexture){
+        const rhiTexture *textureHandle = (const rhiTexture*)handles;
+        for(int i = 0; i < descriptorCount; i++){
+            Texture *texture = GET_TEXTURE(textureHandle[i]);
+            imageInfo[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            imageInfo[i].imageView = texture->view;
+            imageInfo[i].sampler = VK_NULL_HANDLE;
+        }
+        write.pImageInfo = imageInfo;
+        vkUpdateDescriptorSets(vk.device, 1, &write, 0, NULL);
+    } 
+    else if(type == RHI_DescriptorType_Sampler){
+        const rhiSampler *samplerHandle = (const rhiSampler*)handles;
+        for(int i = 0; i < descriptorCount; i++){
+            imageInfo[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            imageInfo[i].imageView = VK_NULL_HANDLE;
+            imageInfo[i].sampler = GET_SAMPLER(samplerHandle[i])->sampler;
+        }
+        write.pImageInfo = imageInfo;
+        vkUpdateDescriptorSets(vk.device, 1, &write, 0, NULL);
+    }
+
+
+
+
+
 }
 
 #include "shaders/triangle_ps.h"

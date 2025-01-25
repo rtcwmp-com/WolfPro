@@ -353,8 +353,22 @@ static void InitVulkan( void ) {
 	backEnd.imageAcquiredBinary = RHI_CreateBinarySemaphore();
 	backEnd.swapChainTextures = RHI_GetSwapChainImages();
 	backEnd.swapChainTextureCount = RHI_GetSwapChainImageCount();
-	backEnd.descriptorSetLayout = RHI_CreateDescriptorSetLayout();
+
+	rhiDescriptorSetLayoutDesc descSetLayoutDesc = {};
+	descSetLayoutDesc.name = "Shared Game Textures";
+	descSetLayoutDesc.bindingCount = 2;
+	descSetLayoutDesc.bindings[0].descriptorCount = MAX_DRAWIMAGES;
+	descSetLayoutDesc.bindings[0].descriptorType = RHI_DescriptorType_ReadOnlyTexture;
+	descSetLayoutDesc.bindings[0].stageFlags = RHI_PipelineStage_PixelBit;
+
+	descSetLayoutDesc.bindings[1].descriptorCount = 6;
+	descSetLayoutDesc.bindings[1].descriptorType = RHI_DescriptorType_Sampler;
+	descSetLayoutDesc.bindings[1].stageFlags = RHI_PipelineStage_PixelBit;
+
+	backEnd.descriptorSetLayout = RHI_CreateDescriptorSetLayout(&descSetLayoutDesc);
 	backEnd.pipeline = RHI_CreateGraphicsPipeline(backEnd.descriptorSetLayout);
+
+	backEnd.descriptorSet = RHI_CreateDescriptorSet("Game Textures", backEnd.descriptorSetLayout);
 	
 
 }
