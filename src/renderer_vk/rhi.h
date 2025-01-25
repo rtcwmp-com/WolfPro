@@ -245,6 +245,13 @@ typedef enum rhiImageLayoutFormat {
 	ImageLayoutGeneral
 } rhiImageLayoutFormat;
 
+typedef struct rhiTextureUpload {
+	byte *data;
+	uint32_t rowPitch;
+	uint32_t width;
+	uint32_t height;
+} rhiTextureUpload;
+
 inline void RHI_SubmitGraphicsDesc_Signal(rhiSubmitGraphicsDesc *graphicsDesc, rhiSemaphore semaphore, uint64_t semaphoreValue){
     assert(graphicsDesc->signalSemaphoreCount < ARRAY_LEN(graphicsDesc->signalSemaphores));
     int newIndex = graphicsDesc->signalSemaphoreCount++;
@@ -315,7 +322,7 @@ void RHI_CmdDrawIndexed(uint32_t indexCount, uint32_t firstIndex, uint32_t first
 void RHI_CmdBeginBarrier( void );
 void RHI_CmdEndBarrier( void );
 void RHI_CmdTextureBarrier(rhiTexture handle, RHI_ResourceState flag); //pass handle to this
-void RHI_CmdBufferBarrier(); //pass handle to this //(not for 2d)
+void RHI_CmdBufferBarrier(rhiBuffer handle, RHI_ResourceState state); //pass handle to this //(not for 2d)
 
 void RHI_CmdCopyBuffer();
 void RHI_CmdCopyBufferRegions();
@@ -331,7 +338,7 @@ void RHI_ResolveDurationQuery();
 //upload manager
 void RHI_BeginBufferUpload();
 void RHI_EndBufferUpload();
-void RHI_BeginTextureUpload();
+void RHI_BeginTextureUpload(rhiTextureUpload *textureUpload, rhiTexture handle);
 void RHI_EndTextureUpload();
 void RHI_GetUploadSemaphore(); //(semaphore handle, value to wait on)
 

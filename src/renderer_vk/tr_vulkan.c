@@ -2082,6 +2082,12 @@ VkPipelineStageFlags2 GetVkStageFlags(VkImageLayout state)
             return vertexFragmentCompute;
         case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
             return VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+        case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+            return VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+        case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+            return VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+        case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+            return vertexFragmentCompute;
         default:
             assert(!"Unhandled image layout for stage flags");
             return VK_PIPELINE_STAGE_2_NONE;
@@ -2121,6 +2127,12 @@ VkAccessFlags2 GetVkAccessFlags(VkImageLayout state)
             return VK_ACCESS_2_MEMORY_READ_BIT;
         case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
             return (VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
+        case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+            return VK_ACCESS_2_TRANSFER_WRITE_BIT;
+        case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+            return VK_ACCESS_2_TRANSFER_READ_BIT;
+        case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+            return VK_ACCESS_SHADER_READ_BIT;
         default:
             assert(!"Unhandled image layout");
             return VK_ACCESS_2_NONE;
@@ -2144,6 +2156,47 @@ VkAccessFlags2 GetVkAccessFlags(VkImageLayout state)
 		// { galResourceState::PresentBit, VK_ACCESS_MEMORY_READ_BIT }
 	// };
 }
+
+VkAccessFlags2 GetVkAccessFlagsFromResource(RHI_ResourceState state)
+{
+    switch(state){
+        case RHI_ResourceState_CopySourceBit:
+            return VK_ACCESS_2_TRANSFER_READ_BIT;
+        case RHI_ResourceState_CopyDestinationBit:
+            return VK_ACCESS_2_TRANSFER_WRITE_BIT;
+        case RHI_ResourceState_VertexBufferBit:
+            return VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT;
+        case RHI_ResourceState_IndexBufferBit:
+            return VK_ACCESS_2_INDEX_READ_BIT;
+        case RHI_ResourceState_StorageBufferBit:
+            return VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_SHADER_WRITE_BIT;
+        default:
+            assert(!"Unhandled resource state access flags");
+            return 0;
+    }
+
+}
+
+VkPipelineStageFlags2 GetVkStageFlagsFromResource(RHI_ResourceState state)
+{
+    switch(state){
+        case RHI_ResourceState_CopySourceBit:
+            return VK_PIPELINE_STAGE_2_COPY_BIT;
+        case RHI_ResourceState_CopyDestinationBit:
+            return VK_PIPELINE_STAGE_2_COPY_BIT;
+        case RHI_ResourceState_VertexBufferBit:
+            return VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT;
+        case RHI_ResourceState_IndexBufferBit:
+            return VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT;
+        case RHI_ResourceState_StorageBufferBit:
+            return VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
+        default:
+            assert(!"Unhandled resource state stage flags");
+            return 0;
+    }
+}
+
+    
 
 VkAttachmentLoadOp GetVkAttachmentLoadOp(RHI_LoadOp load)
 {
@@ -2174,7 +2227,10 @@ VkImageLayout GetVkImageLayout(RHI_ResourceState state)
     const Pair pairs[] = {
         { RHI_ResourceState_Undefined, VK_IMAGE_LAYOUT_UNDEFINED },
         { RHI_ResourceState_PresentBit, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR },
-        { RHI_ResourceState_RenderTargetBit, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}
+        { RHI_ResourceState_RenderTargetBit, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
+        { RHI_ResourceState_ShaderInputBit, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
+        { RHI_ResourceState_CopySourceBit, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL },
+     	{ RHI_ResourceState_CopyDestinationBit, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL }
     };
 
     for(int i = 0; i < ARRAY_LEN(pairs); i++){
@@ -2226,8 +2282,8 @@ VkBufferUsageFlags GetVkBufferUsageFlags(RHI_ResourceState state)
 	{
 		{ RHI_ResourceState_VertexBufferBit, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT },
 		{ RHI_ResourceState_IndexBufferBit, VK_BUFFER_USAGE_INDEX_BUFFER_BIT },
-		// { galResourceState::CopySourceBit, VK_BUFFER_USAGE_TRANSFER_SRC_BIT },
-		// { galResourceState::CopyDestinationBit, VK_BUFFER_USAGE_TRANSFER_DST_BIT },
+		{ RHI_ResourceState_CopySourceBit, VK_BUFFER_USAGE_TRANSFER_SRC_BIT },
+		{ RHI_ResourceState_CopyDestinationBit, VK_BUFFER_USAGE_TRANSFER_DST_BIT },
 		// { galResourceState::IndirectCommandBit, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT },
 		// { galResourceState::UniformBufferBit, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT },
 		{ RHI_ResourceState_StorageBufferBit, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT }
@@ -2241,8 +2297,32 @@ VkBufferUsageFlags GetVkBufferUsageFlags(RHI_ResourceState state)
 			flags |= pairs[p].outBit;
 		}
 	}
+    assert(flags != 0);
 
 	return flags;
+}
+
+static void CreateUploadManager(){
+    rhiBufferDesc textureStagingBufferDesc = {};
+    textureStagingBufferDesc.name = "Upload Buffer";
+    textureStagingBufferDesc.initialState = RHI_ResourceState_CopySourceBit;
+    textureStagingBufferDesc.memoryUsage = RHI_MemoryUsage_Upload;
+    textureStagingBufferDesc.byteCount = 2048 * 2048 * 4 * 2; //x * y * RGBA * alignment
+
+    vk.uploadBuffer = RHI_CreateBuffer(&textureStagingBufferDesc);
+
+    vk.uploadCmdBuffer = RHI_CreateCommandBuffer();
+
+
+}
+
+uint32_t GetByteCountsPerPixel(VkFormat format){
+    if(format == VK_FORMAT_R8G8B8A8_UNORM){
+        return 4;
+    }
+    
+    assert(!"Unrecognized texture format");
+    return 4;
 }
 
 
@@ -2258,7 +2338,7 @@ void VKimp_Init( void ) {
 
     Pool_Init(&vk.commandBufferPool, 64, sizeof(CommandBuffer), 0);
     Pool_Init(&vk.semaphorePool, 64, sizeof(Semaphore), 0);
-    Pool_Init(&vk.texturePool, 64, sizeof(Texture), 0);
+    Pool_Init(&vk.texturePool, MAX_DRAWIMAGES + 256, sizeof(Texture), 0);
     Pool_Init(&vk.bufferPool, 64, sizeof(Buffer), 0);
     Pool_Init(&vk.descriptorSetLayoutPool, 64, sizeof(DescriptorSetLayout), 0);
     Pool_Init(&vk.descriptorSetPool, 64, sizeof(DescriptorSet), 0);
@@ -2274,6 +2354,9 @@ void VKimp_Init( void ) {
     CreateSwapChain();
     CreateCommandPool();
     CreateDescriptorPool();
+
+    CreateUploadManager();
+    
     
 
 

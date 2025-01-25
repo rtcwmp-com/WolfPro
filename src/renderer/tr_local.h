@@ -91,6 +91,7 @@ typedef struct image_s {
 	int width, height;                      // source image
 	int uploadWidth, uploadHeight;          // after power of two and picmip but not including clamp to MAX_TEXTURE_SIZE
 	GLuint texnum;                      // gl texture binding
+	rhiTexture handle;
 
 	int frameUsed;                  // for texture usage in frame statistics
 
@@ -104,6 +105,8 @@ typedef struct image_s {
 	int hash;           // for fast building of the backupHash
 
 	struct image_s* next;
+
+	
 } image_t;
 
 //===============================================================================

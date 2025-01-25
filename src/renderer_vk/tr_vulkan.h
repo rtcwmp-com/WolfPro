@@ -167,6 +167,8 @@ typedef struct
 	RHI_MemoryUsage memoryUsage;
 	qbool mapped;
 	qbool hostCoherent;
+	RHI_ResourceState currentLayout;
+
 } Buffer;
 
 typedef struct Vulkan
@@ -209,6 +211,10 @@ typedef struct Vulkan
 	uint32_t textureBarrierCount;
 	RHI_ResourceState textureState[2048];
 
+	rhiBuffer bufferBarriers[64];
+	uint32_t bufferBarrierCount;
+	RHI_ResourceState bufferState[64];
+
 	VkImageView swapChainImageViews[MAX_SWAP_CHAIN_IMAGES]; //delete later
 
 	VkDescriptorPool descriptorPool;
@@ -228,6 +234,11 @@ typedef struct Vulkan
 	memoryPool descriptorSetPool;
 
 	memoryPool pipelinePool;
+
+	rhiBuffer uploadBuffer;
+	rhiTexture uploadTextureHandle;
+
+	rhiCommandBuffer uploadCmdBuffer;
 	//
 	// extensions
 	// 
@@ -253,5 +264,8 @@ VmaMemoryUsage GetVmaMemoryUsage(RHI_MemoryUsage usage);
 VkBufferUsageFlags GetVkBufferUsageFlags(RHI_ResourceState state);
 VkCullModeFlags GetVkCullModeFlags(cullType_t cullType);
 VkImageUsageFlags GetVkImageUsageFlags(RHI_ResourceState state);
+uint32_t GetByteCountsPerPixel(VkFormat format);
+VkPipelineStageFlags2 GetVkStageFlagsFromResource(RHI_ResourceState state);
+VkAccessFlags2 GetVkAccessFlagsFromResource(RHI_ResourceState state);
 
 #endif

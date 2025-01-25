@@ -615,7 +615,8 @@ static void Upload32(   unsigned *data,
 						qboolean lightMap,
 						int *format,
 						int *pUploadWidth, int *pUploadHeight,
-						qboolean noCompress ) {
+						qboolean noCompress,
+						image_t *image ) {
 	int samples;
 	int scaled_width, scaled_height;
 	unsigned    *scaledBuffer = NULL;
@@ -748,6 +749,20 @@ static void Upload32(   unsigned *data,
 	} else {
 		internalFormat = 3;
 	}
+	internalFormat = GL_RGBA8; //@TODO: ???
+
+	rhiTextureDesc imageDesc = {};
+	imageDesc.height = scaled_height;
+	imageDesc.width = scaled_width;
+	imageDesc.name = image->imgName;
+	imageDesc.mipCount = 1;
+	imageDesc.format = R8G8B8A8_UNorm;
+	imageDesc.initialState = RHI_ResourceState_ShaderInputBit;
+	imageDesc.allowedStates = RHI_ResourceState_ShaderInputBit | RHI_ResourceState_CopyDestinationBit;
+	imageDesc.sampleCount = 1;
+
+	image->handle = RHI_CreateTexture(&imageDesc);
+
 	// copy or resample data as appropriate for first MIP level
 	if ( ( scaled_width == width ) &&
 		 ( scaled_height == height ) ) {
@@ -756,6 +771,23 @@ static void Upload32(   unsigned *data,
 			*pUploadWidth = scaled_width;
 			*pUploadHeight = scaled_height;
 			*format = internalFormat;
+
+
+	
+			if(internalFormat == GL_RGBA8){
+				
+
+				rhiTextureUpload textureUpload = {};
+				RHI_BeginTextureUpload(&textureUpload, image->handle );
+			
+				for(int i = 0; i < textureUpload.height; i++ ){
+					memcpy(textureUpload.data + textureUpload.rowPitch * i, (byte*)data + textureUpload.width * 4 * i, textureUpload.width * 4);
+				}
+				RHI_EndTextureUpload();
+			}
+			
+
+			
 
 			goto done;
 		}
@@ -901,6 +933,10 @@ image_t *R_CreateImage( const char *name, const byte *pic, int width, int height
 
 	GL_Bind( image );
 
+	
+
+
+
 	Upload32( (unsigned *)pic,
 			  image->width, image->height,
 			  image->mipmap,
@@ -909,7 +945,8 @@ image_t *R_CreateImage( const char *name, const byte *pic, int width, int height
 			  &image->internalFormat,
 			  &image->uploadWidth,
 			  &image->uploadHeight,
-			  noCompress );
+			  noCompress,
+			  image );
 
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glWrapClampMode );
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, glWrapClampMode );

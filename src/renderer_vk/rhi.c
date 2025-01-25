@@ -9,6 +9,7 @@
 #define GET_DESCRIPTORSET(handle) ((DescriptorSet*)Pool_Get(&vk.descriptorSetPool, handle.h))
 void RHI_Init()
 {
+    
 }
 
 void RHI_Shutdown()
@@ -98,6 +99,7 @@ rhiBuffer RHI_CreateBuffer(const rhiBufferDesc *desc)
     buffer.mapped = qfalse;
     buffer.mappedData = NULL;
     buffer.memoryUsage = desc->memoryUsage;
+    buffer.currentLayout = desc->initialState;
     
     VkMemoryPropertyFlags memFlags;
 	vmaGetMemoryTypeProperties(vk.allocator, allocInfo.memoryType, &memFlags);
@@ -170,7 +172,7 @@ rhiTexture RHI_CreateTexture(const rhiTextureDesc *desc)
 		imageInfo.arrayLayers = 1;
 		imageInfo.format = format;
 		imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-		imageInfo.initialLayout = GetVkImageLayout(desc->initialState); 
+		imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; 
 		imageInfo.usage = GetVkImageUsageFlags(desc->allowedStates);
 		imageInfo.samples = VK_SAMPLE_COUNT_1_BIT; // @TODO: desc->sampleCount
 		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -727,13 +729,43 @@ void RHI_CmdDrawIndexed(uint32_t indexCount, uint32_t firstIndex, uint32_t first
 
 void RHI_CmdBeginBarrier()
 {
-    vk.textureBarrierCount = 0;      
+    vk.textureBarrierCount = 0;    
+    vk.bufferBarrierCount = 0;  
 }
 
 void RHI_CmdEndBarrier()
 {
-    VkImageMemoryBarrier2 barriers[2048];
-    uint32_t barrierCount = 0;
+    VkBufferMemoryBarrier2 bufferBarriers[ARRAY_LEN(vk.bufferBarriers)];
+    uint32_t bufferBarrierCount = 0;
+
+    for(int i = 0; i < vk.bufferBarrierCount; i++){
+        Buffer* buffer = GET_BUFFER(vk.bufferBarriers[i]);
+        RHI_ResourceState newLayout = vk.bufferState[i];
+        if(buffer->currentLayout == newLayout ){
+            continue;
+        }
+        VkBufferMemoryBarrier2 barrier = {};
+        barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2;
+        barrier.offset = 0;
+        barrier.size = VK_WHOLE_SIZE;
+        barrier.srcAccessMask = GetVkAccessFlagsFromResource(buffer->currentLayout);
+        barrier.dstAccessMask = GetVkAccessFlagsFromResource(newLayout);
+        barrier.srcStageMask = GetVkStageFlagsFromResource(buffer->currentLayout);
+        barrier.dstStageMask = GetVkStageFlagsFromResource(newLayout);
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.buffer = buffer->buffer;
+
+        buffer->currentLayout = newLayout;
+        
+        bufferBarriers[bufferBarrierCount] = barrier;
+        bufferBarrierCount++;
+
+    }
+
+
+    VkImageMemoryBarrier2 textureBarriers[ARRAY_LEN(vk.textureBarriers)];
+    uint32_t textureBarrierCount = 0;
     for(int i = 0; i < vk.textureBarrierCount; i++){
         Texture* texture = GET_TEXTURE(vk.textureBarriers[i]);
         VkImageLayout newLayout = GetVkImageLayout(vk.textureState[i]);
@@ -759,31 +791,42 @@ void RHI_CmdEndBarrier()
 
         texture->currentLayout = newLayout;
         
-        barriers[barrierCount] = barrier;
-        barrierCount++;
+        textureBarriers[textureBarrierCount] = barrier;
+        textureBarrierCount++;
 
     }
     
-    if(barrierCount == 0){
+    vk.textureBarrierCount = 0;
+    vk.bufferBarrierCount = 0;
+
+    if(textureBarrierCount == 0 && bufferBarrierCount == 0){
         return;
     }
 
+
     VkDependencyInfo dep = {};
     dep.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-    dep.imageMemoryBarrierCount = barrierCount;
-    dep.pImageMemoryBarriers = barriers;
+    dep.imageMemoryBarrierCount = textureBarrierCount;
+    dep.pImageMemoryBarriers = textureBarriers;
+    dep.bufferMemoryBarrierCount = bufferBarrierCount;
+    dep.pBufferMemoryBarriers = bufferBarriers;
     vkCmdPipelineBarrier2(vk.activeCommandBuffer, &dep);
 }
 
 void RHI_CmdTextureBarrier(rhiTexture handle, RHI_ResourceState flag)
 {
+    assert(vk.textureBarrierCount < ARRAY_LEN(vk.textureState));
     int idx = vk.textureBarrierCount++;
     vk.textureState[idx] = flag; 
     vk.textureBarriers[idx] = handle;
 }
 
-void RHI_CmdBufferBarrier()
+void RHI_CmdBufferBarrier(rhiBuffer handle, RHI_ResourceState state)
 {
+    assert(vk.bufferBarrierCount < ARRAY_LEN(vk.bufferState));
+    int idx = vk.bufferBarrierCount++;
+    vk.bufferState[idx] = state; 
+    vk.bufferBarriers[idx] = handle;
 }
 
 void RHI_CmdCopyBuffer()
@@ -833,12 +876,60 @@ void RHI_EndBufferUpload()
 {
 }
 
-void RHI_BeginTextureUpload()
+void RHI_BeginTextureUpload(rhiTextureUpload *textureUpload, rhiTexture handle)
 {
+    assert(vk.uploadTextureHandle.h == 0);
+    //use vk.deviceProperties.limits.optimalBufferCopyRowPitchAlignment
+    //use vk.deviceProperties.limits.optimalBufferCopyOffsetAlignment
+    Texture *texture = GET_TEXTURE(handle);
+
+    textureUpload->data = RHI_MapBuffer(vk.uploadBuffer);
+    textureUpload->width = texture->desc.width;
+    textureUpload->height = texture->desc.height;
+    textureUpload->rowPitch = texture->desc.width * GetByteCountsPerPixel(texture->format); 
+    vk.uploadTextureHandle = handle;
+
 }
 
 void RHI_EndTextureUpload()
 {
+    RHI_UnmapBuffer(vk.uploadBuffer);
+    VkCommandBuffer previousCmdBuffer = vk.activeCommandBuffer;
+    RHI_BindCommandBuffer(vk.uploadCmdBuffer);
+    Texture *texture = GET_TEXTURE(vk.uploadTextureHandle);
+    RHI_BeginCommandBuffer();
+    RHI_CmdBeginBarrier();
+    RHI_CmdBufferBarrier(vk.uploadBuffer, RHI_ResourceState_CopySourceBit);
+    RHI_CmdTextureBarrier(vk.uploadTextureHandle, RHI_ResourceState_CopyDestinationBit);
+    RHI_CmdEndBarrier();
+
+    // copy from the staging buffer into the texture mip
+    VkBufferImageCopy region = {};
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.mipLevel = 0;
+    region.imageSubresource.layerCount = 1;
+    region.imageOffset.x = 0;
+    region.imageOffset.y = 0;
+    region.imageOffset.z = 0;
+    region.imageExtent.width = texture->desc.width;
+    region.imageExtent.height = texture->desc.height;
+    region.imageExtent.depth = 1;
+
+    vkCmdCopyBufferToImage(vk.activeCommandBuffer, GET_BUFFER(vk.uploadBuffer)->buffer, texture->image,
+                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+    RHI_CmdBeginBarrier();
+    RHI_CmdTextureBarrier(vk.uploadTextureHandle, texture->desc.initialState);
+    RHI_CmdEndBarrier();
+
+    RHI_EndCommandBuffer();
+
+    rhiSubmitGraphicsDesc submitDesc = {};
+    RHI_SubmitGraphics(&submitDesc);
+    vkDeviceWaitIdle(vk.device); //@TODO remove - signal timeline semaphore, wait on sem before uploading 
+    
+    vk.uploadTextureHandle.h = 0;
+    vk.activeCommandBuffer = previousCmdBuffer;
 }
 
 void RHI_GetUploadSemaphore()
