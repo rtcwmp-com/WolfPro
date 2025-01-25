@@ -500,6 +500,8 @@ static void CreateDevice()
     VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures = {};
     indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
     indexingFeatures.descriptorBindingUpdateUnusedWhilePending = VK_TRUE;
+    indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
+    indexingFeatures.descriptorBindingUpdateUnusedWhilePending = VK_TRUE;
     indexingFeatures.pNext = &vk13f;
 
     // @TODO: copy over results from vk.deviceFeatures when they're optional
@@ -562,33 +564,34 @@ void SetObjectName(VkObjectType type, uint64_t object, const char* name)
     }
 }
 
-static VkImageUsageFlags GetVkImageUsageFlags(RHI_ResourceState state)
+VkImageUsageFlags GetVkImageUsageFlags(RHI_ResourceState state)
 {
     VkImageUsageFlags flags = VK_IMAGE_USAGE_SAMPLED_BIT;
     if(state & RHI_ResourceState_RenderTargetBit)
     {
         flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     }
-    //else if(state & DepthWriteBit)
-    //{
-    //    flags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-    //}
-    //if(state & CopySourceBit)
-    //{
-    //    flags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    //}
-    //if(state & CopyDestinationBit)
-    //{
-    //    flags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    //}
-    //if(state & ShaderInputBit)
-    //{
-    //    // @TODO: is this correct ???
-    //    flags |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
-    //}
+    if(state & RHI_ResourceState_DepthWriteBit)
+    {
+       flags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    }
+    if(state & RHI_ResourceState_CopySourceBit)
+    {
+       flags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    }
+    if(state & RHI_ResourceState_CopyDestinationBit)
+    {
+       flags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    }
+    if(state & RHI_ResourceState_ShaderInputBit)
+    {
+       // @TODO: is this correct ???
+       flags |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+    }
 
     return flags;
 }
+
 
 VkFormat GetVkFormat(rhiTextureFormatId format)
 {
@@ -768,8 +771,8 @@ static void CreateSwapChain()
         rtDesc.height = glConfig.vidHeight;
         rtDesc.mipCount = 1;
         rtDesc.sampleCount = 1;
-        rtDesc.descriptorType = SampledImageBit;
-        //rtDesc.initialState = RenderTargetBit | PresentBit;
+        rtDesc.allowedStates = RHI_ResourceState_RenderTargetBit | RHI_ResourceState_PresentBit;
+        rtDesc.initialState = RHI_ResourceState_PresentBit;
         
         for(int i = 0; i < imageCount; ++i)
         {
@@ -2169,6 +2172,7 @@ VkImageLayout GetVkImageLayout(RHI_ResourceState state)
     } Pair;
 
     const Pair pairs[] = {
+        { RHI_ResourceState_Undefined, VK_IMAGE_LAYOUT_UNDEFINED },
         { RHI_ResourceState_PresentBit, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR },
         { RHI_ResourceState_RenderTargetBit, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}
     };

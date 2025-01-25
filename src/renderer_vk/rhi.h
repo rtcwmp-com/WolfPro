@@ -75,21 +75,26 @@ typedef struct rhiCommandPoolDesc
 //} rhiResourceStateFlags;
 
 
-typedef enum {
+typedef enum RHI_ResourceState {
+	RHI_ResourceState_Undefined = 0,
 	RHI_ResourceState_RenderTargetBit = RHI_BIT(0),
 	RHI_ResourceState_PresentBit = RHI_BIT(1),
 	RHI_ResourceState_VertexBufferBit = RHI_BIT(2),
 	RHI_ResourceState_IndexBufferBit = RHI_BIT(3),
-	RHI_ResourceState_StorageBufferBit = RHI_BIT(4)
+	RHI_ResourceState_StorageBufferBit = RHI_BIT(4),
+	RHI_ResourceState_DepthWriteBit = RHI_BIT(5),
+	RHI_ResourceState_CopySourceBit = RHI_BIT(6),
+	RHI_ResourceState_CopyDestinationBit = RHI_BIT(7),
+	RHI_ResourceState_ShaderInputBit = RHI_BIT(8)
 } RHI_ResourceState;
 
-typedef enum {
+typedef enum RHI_LoadOp {
 	RHI_LoadOp_Load,
 	RHI_LoadOp_Clear,
 	RHI_LoadOp_Discard
 } RHI_LoadOp;
 
-typedef struct {
+typedef struct RHI_RenderPass {
 	RHI_LoadOp colorLoad;
 	RHI_LoadOp depthLoad;
 	rhiTexture colorTexture;
@@ -98,18 +103,6 @@ typedef struct {
 	float depth;
 } RHI_RenderPass;
 
-
-typedef enum rhiDescriptorTypeFlags
-{
-	rhiDescriptorTypeFlagUndefined,
-	SamplerBit = RHI_BIT(1),
-	CombinedImageSamplerBit = RHI_BIT(2),
-	SampledImageBit = RHI_BIT(3),
-	rhiDescriptorTypeUniformBufferBit = RHI_BIT(4),
-	rhiDescriptorTypeStorageBufferBit = RHI_BIT(5),
-	InputAttachmentBit = RHI_BIT(6),
-	ReadWriteImageBit = RHI_BIT(7)
-} rhiDescriptorTypeFlags;
 
 typedef enum rhiTextureFormatId
 {
@@ -133,8 +126,8 @@ typedef struct rhiTextureDesc
 	uint32_t height;
 	uint32_t mipCount;
 	uint32_t sampleCount;
-	/*RHI_ResourceState initialState;*/
-	rhiDescriptorTypeFlags descriptorType;
+	RHI_ResourceState allowedStates;
+	RHI_ResourceState initialState;
 	rhiTextureFormatId format;
 } rhiTextureDesc;
 
@@ -223,7 +216,7 @@ typedef struct rhiGraphicsPipelineDesc
 	qbool enableDepthTest;
 } rhiGraphicsPipelineDesc;
 
-typedef enum 
+typedef enum RHI_MemoryUsage
 {
 	RHI_MemoryUsage_DeviceLocal,
 	RHI_MemoryUsage_Upload,
@@ -247,7 +240,7 @@ typedef struct rhiSubmitGraphicsDesc {
     uint16_t waitSemaphoreCount;
 } rhiSubmitGraphicsDesc;
 
-typedef enum {
+typedef enum rhiImageLayoutFormat {
 	ImageLayoutUndefined = 0,
 	ImageLayoutGeneral
 } rhiImageLayoutFormat;

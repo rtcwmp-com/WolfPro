@@ -140,6 +140,8 @@ rhiTexture RHI_CreateTexture(const rhiTextureDesc *desc)
     assert(desc->height > 0);
     assert(desc->mipCount > 0);
     assert(desc->sampleCount > 0);
+    assert(__popcnt(desc->initialState) == 1);
+    assert((desc->initialState & desc->allowedStates) != 0);
 
     VkFormat format = GetVkFormat(desc->format);
     const qbool ownsImage = desc->nativeImage == VK_NULL_HANDLE;
@@ -155,7 +157,26 @@ rhiTexture RHI_CreateTexture(const rhiTextureDesc *desc)
     }
     else
     {
-        assert(0);
+		VmaAllocationCreateInfo allocCreateInfo = {};
+		allocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+		VkImageCreateInfo imageInfo = {};
+		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+		imageInfo.imageType = VK_IMAGE_TYPE_2D;
+		imageInfo.extent.width = desc->width;
+		imageInfo.extent.height = desc->height;
+		imageInfo.extent.depth = 1;
+		imageInfo.mipLevels = desc->mipCount;
+		imageInfo.arrayLayers = 1;
+		imageInfo.format = format;
+		imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+		imageInfo.initialLayout = GetVkImageLayout(desc->initialState); 
+		imageInfo.usage = GetVkImageUsageFlags(desc->allowedStates);
+		imageInfo.samples = VK_SAMPLE_COUNT_1_BIT; // @TODO: desc->sampleCount
+		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		VK(vmaCreateImage(vk.allocator, &imageInfo, &allocCreateInfo, &image, &allocation, NULL));
+
+		SetObjectName(VK_OBJECT_TYPE_IMAGE, (uint64_t)image, desc->name);
     }
 
     VkImageView view;

@@ -252,5 +252,6 @@ VkAttachmentLoadOp GetVkAttachmentLoadOp(RHI_LoadOp load);
 VmaMemoryUsage GetVmaMemoryUsage(RHI_MemoryUsage usage);
 VkBufferUsageFlags GetVkBufferUsageFlags(RHI_ResourceState state);
 VkCullModeFlags GetVkCullModeFlags(cullType_t cullType);
+VkImageUsageFlags GetVkImageUsageFlags(RHI_ResourceState state);
 
 #endif
