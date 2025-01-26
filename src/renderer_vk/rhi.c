@@ -827,8 +827,17 @@ void RHI_CmdBindIndexBuffer(rhiBuffer indexBuffer)
     vkCmdBindIndexBuffer(vk.activeCommandBuffer,privateBuffer->buffer, 0, VK_INDEX_TYPE_UINT32);
 }
 
-void RHI_CmdSetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height, float minDepth, float maxDepth)
+void RHI_CmdSetViewport(int32_t x, int32_t y, uint32_t width, uint32_t height, float minDepth, float maxDepth)
 {
+    if(x < 0){
+        width = Com_ClampInt(1, width, width + x);
+        x = 0;
+    }
+    if(y < 0){
+        height = Com_ClampInt(1, height, height + y);
+        y = 0;
+    }
+    
     VkViewport viewport;
 	viewport.x = (float)x;
 	viewport.y = (float)y;
@@ -840,8 +849,16 @@ void RHI_CmdSetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height,
     vkCmdSetViewport(vk.activeCommandBuffer, 0, 1, &viewport);
 }
 
-void RHI_CmdSetScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
+void RHI_CmdSetScissor(int32_t x, int32_t y, uint32_t width, uint32_t height)
 {
+    if(x < 0){
+        width = Com_ClampInt(1, width, width + x);
+        x = 0;
+    }
+    if(y < 0){
+        height = Com_ClampInt(1, height, height + y);
+        y = 0;
+    }
     VkRect2D scissor;
 	scissor.offset.x = x;
 	scissor.offset.y = y;

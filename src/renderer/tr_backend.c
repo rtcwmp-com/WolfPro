@@ -1285,7 +1285,6 @@ RB_EndFrame
 =============
 */
 const void  *RB_EndFrame( const void *data ) {
-	
 	const swapBuffersCommand_t  *cmd;
 
 	// finish any 2D drawing if needed
@@ -1381,12 +1380,20 @@ void RB_ExecuteRenderCommands( const void *data ) {
 
 	t1 = ri.Milliseconds();
 
+	static qbool begun = qfalse;
+	static int counter = 0;
+	counter++;
+
+
 	while ( 1 ) {
 		switch ( *(const int *)data ) {
 		case RC_SET_COLOR:
 			data = RB_SetColor( data );
 			break;
 		case RC_STRETCH_PIC:
+			if (!begun) {
+				__debugbreak();
+			}
 			data = RB_StretchPic( data );
 			break;
 		case RC_ROTATED_PIC:
@@ -1399,6 +1406,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 			data = RB_DrawSurfs( data );
 			break;
 		case RC_BEGIN_FRAME:
+			begun = qtrue;
 			data = RB_BeginFrame( data );
 			//wait for swap chain acquire
 			//start recording command buffer
