@@ -393,6 +393,11 @@ static void SetViewportAndScissor( void ) {
 				 backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight );
 	qglScissor( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
 				backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight );
+	RHI_CmdSetScissor( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
+				backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight );
+	RHI_CmdSetViewport( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
+				 backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight, 0.0f, 1.0f );
+
 }
 
 
@@ -742,6 +747,9 @@ RB_SetGL2D
 */
 void    RB_SetGL2D( void ) {
 	backEnd.projection2D = qtrue;
+
+	RHI_CmdSetScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+	RHI_CmdSetViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight, 0.0f, 1.0f );
 
 	// set 2D virtual screen size
 	qglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );

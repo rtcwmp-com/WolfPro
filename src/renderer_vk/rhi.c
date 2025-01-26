@@ -434,26 +434,6 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
 	inputAssembly.primitiveRestartEnable = VK_FALSE;
 	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
-	VkViewport viewport;
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.width = glConfig.vidWidth;
-	viewport.height = glConfig.vidHeight;
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-
-	VkRect2D scissor;
-	scissor.offset.x = 0;
-	scissor.offset.y = 0;
-	scissor.extent.width = glConfig.vidWidth;
-	scissor.extent.height = glConfig.vidHeight;
-
-	VkPipelineViewportStateCreateInfo viewportState = {};
-	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-	viewportState.viewportCount = 1;
-	viewportState.pViewports = &viewport;
-	viewportState.scissorCount = 1;
-	viewportState.pScissors = &scissor;
 
 	VkPipelineRasterizationStateCreateInfo rasterizer = {};
 	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -498,11 +478,16 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
 
 
 	// @NOTE: VK_DYNAMIC_STATE_CULL_MODE_EXT is not widely available (VK_EXT_extended_dynamic_state)
-	// const VkDynamicState dynamicStates[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
-	// VkPipelineDynamicStateCreateInfo dynamicState {};
-	// dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-	// dynamicState.dynamicStateCount = ARRAY_LEN(dynamicStates);
-	// dynamicState.pDynamicStates = dynamicStates;
+	const VkDynamicState dynamicStates[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+	VkPipelineDynamicStateCreateInfo dynamicState = {};
+	dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	dynamicState.dynamicStateCount = ARRAY_LEN(dynamicStates);
+	dynamicState.pDynamicStates = dynamicStates;
+
+    VkPipelineViewportStateCreateInfo viewportState = {};
+	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	viewportState.viewportCount = 1;
+	viewportState.scissorCount = 1;
 
 	// VkPipelineDepthStencilStateCreateInfo depthStencil = {};
 	// VkPipelineDepthStencilStateCreateInfo* depthStencilPtr = NULL;
@@ -595,7 +580,8 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
 	createInfo.pStages = stages + firstStage;
 	createInfo.pColorBlendState = &colorBlending;
 	createInfo.pDepthStencilState = &depthStencil;
-	createInfo.pDynamicState = NULL;
+	createInfo.pDynamicState = &dynamicState;
+    
 	createInfo.pInputAssemblyState = &inputAssembly;
 	createInfo.pMultisampleState = &multiSampling;
 	createInfo.pRasterizationState = &rasterizer;
@@ -746,7 +732,9 @@ void RHI_BindCommandBuffer(rhiCommandBuffer commandBuffer)
 {
     CommandBuffer* cmdBuffer = (CommandBuffer*)Pool_Get(&vk.commandBufferPool, commandBuffer.h);
     vk.activeCommandBuffer = cmdBuffer->commandBuffer;
+    assert(vk.activeCommandBuffer != NULL);
 }
+
 
 void RHI_BeginCommandBuffer( void )
 {
@@ -839,12 +827,28 @@ void RHI_CmdBindIndexBuffer(rhiBuffer indexBuffer)
     vkCmdBindIndexBuffer(vk.activeCommandBuffer,privateBuffer->buffer, 0, VK_INDEX_TYPE_UINT32);
 }
 
-void RHI_CmdSetViewport()
+void RHI_CmdSetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height, float minDepth, float maxDepth)
 {
+    VkViewport viewport;
+	viewport.x = (float)x;
+	viewport.y = (float)y;
+	viewport.width = (float)width;
+	viewport.height = (float)height;
+	viewport.minDepth = minDepth;
+	viewport.maxDepth = maxDepth;
+
+    vkCmdSetViewport(vk.activeCommandBuffer, 0, 1, &viewport);
 }
 
-void RHI_CmdSetScissor()
+void RHI_CmdSetScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height)
 {
+    VkRect2D scissor;
+	scissor.offset.x = x;
+	scissor.offset.y = y;
+	scissor.extent.width = width;
+	scissor.extent.height = height;
+
+    vkCmdSetScissor(vk.activeCommandBuffer, 0, 1, &scissor);
 }
 
 void RHI_CmdPushConstants(rhiPipeline pipeline, RHI_Shader shader, const void *constants, uint32_t byteCount)

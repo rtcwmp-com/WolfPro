@@ -372,8 +372,8 @@ void RHI_CmdBindPipeline(rhiPipeline pipeline); //create pipeline layout here
 void RHI_CmdBindDescriptorSet(rhiPipeline pipeline, rhiDescriptorSet descriptorSet);
 void RHI_CmdBindVertexBuffers(const rhiBuffer *vertexBuffers, uint32_t bufferCount);
 void RHI_CmdBindIndexBuffer(rhiBuffer indexBuffer);
-void RHI_CmdSetViewport();
-void RHI_CmdSetScissor();
+void RHI_CmdSetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height, float minDepth, float maxDepth);
+void RHI_CmdSetScissor(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
 void RHI_CmdPushConstants(rhiPipeline pipeline, RHI_Shader shader, const void *constants, uint32_t byteCount);
 void RHI_CmdDraw(uint32_t vertexCount, uint32_t firstVertex); //non indexed triangles (not for 2d)
 void RHI_CmdDrawIndexed(uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex);
