@@ -1157,7 +1157,20 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 		0.0f, 0.0f, 0.0f, 0.0f,
 		-1.0f, -1.0f, 0.0f, 1.0f
 	};
-	RHI_CmdPushConstants(backEnd.pipeline,projectionMatrix,64);
+
+	typedef struct pushConstants {
+		float projectionMatrix[16];
+		uint32_t textureIndex;
+		uint32_t samplerIndex;
+	}pushConstants;
+
+	//RHI_CmdPushConstants(backEnd.pipeline,projectionMatrix,64);
+
+	pushConstants pc; 
+	memcpy(pc.projectionMatrix, projectionMatrix, 16*sizeof(float));
+	pc.samplerIndex = 0;
+	pc.textureIndex = pStage->bundle[0].image[0]->descriptorIndex; //@TODO: update for animated images
+	RHI_CmdPushConstants(backEnd.pipeline,&pc,sizeof(pc));
 
 	RHI_CmdDrawIndexed(tess.numIndexes, vb->indexFirst, vb->vertexFirst);
 

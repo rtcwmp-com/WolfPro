@@ -1197,7 +1197,7 @@ const void  *RB_BeginFrame( const void *data ) {
 
 	RHI_BeginRendering(&renderPass);
 	RHI_CmdBindPipeline(backEnd.pipeline);
-	//RHI_CmdBindDescriptorSet(backEnd.pipeline, backEnd.descriptorSet);
+	RHI_CmdBindDescriptorSet(backEnd.pipeline, backEnd.descriptorSet);
 	RHI_CmdBindIndexBuffer(backEnd.vertexBuffers[backEnd.currentFrameIndex].index);
 	rhiBuffer buffers[3] = {backEnd.vertexBuffers[backEnd.currentFrameIndex].position, 
 	backEnd.vertexBuffers[backEnd.currentFrameIndex].color,

@@ -763,6 +763,7 @@ static void Upload32(   unsigned *data,
 	imageDesc.sampleCount = 1;
 
 	image->handle = RHI_CreateTexture(&imageDesc);
+	image->descriptorIndex = imageIndex;
 	RHI_UpdateDescriptorSet(backEnd.descriptorSet, 0, RHI_DescriptorType_ReadOnlyTexture, imageIndex, 1, &image->handle);
 
 	// copy or resample data as appropriate for first MIP level

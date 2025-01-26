@@ -265,6 +265,7 @@ rhiDescriptorSetLayout RHI_CreateDescriptorSetLayout(const rhiDescriptorSetLayou
     VkDescriptorSetLayoutBindingFlagsCreateInfo descSetFlagsCreateInfo = {};
 	descSetFlagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
     descSetFlagsCreateInfo.pBindingFlags = bindingFlags;
+    descSetFlagsCreateInfo.bindingCount = desc->bindingCount;
 
     
     VkDescriptorSetLayout layout = VK_NULL_HANDLE;
@@ -362,8 +363,12 @@ rhiPipeline RHI_CreateGraphicsPipeline(rhiDescriptorSetLayout descLayout)
     DescriptorSetLayout *descriptorSetLayout = GET_LAYOUT(descLayout);
 
     VkPushConstantRange pcr = {};
-    pcr.size = 64;
-    pcr.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    pcr.size = 72;
+    pcr.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    pcr.offset = 0;
+
+
+
 
     VkPipelineLayout vkPipelineLayout = VK_NULL_HANDLE;
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
@@ -827,9 +832,9 @@ void RHI_CmdSetScissor()
 void RHI_CmdPushConstants(rhiPipeline pipeline, const void *constants, uint32_t byteCount)
 {
     Pipeline *privatePipeline = GET_PIPELINE(pipeline);
-    assert(byteCount == 64);
+    assert(byteCount == 72);
     //TODO: update to dynamically choose shader stage and size
-    vkCmdPushConstants(vk.activeCommandBuffer, privatePipeline->layout.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, byteCount, constants);
+    vkCmdPushConstants(vk.activeCommandBuffer, privatePipeline->layout.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT , 0, byteCount, constants);
 }
 
 void RHI_CmdDraw(uint32_t vertexCount, uint32_t firstVertex)
