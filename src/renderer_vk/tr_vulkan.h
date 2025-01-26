@@ -232,6 +232,7 @@ typedef struct Vulkan
 	memoryPool commandBufferPool;
 
 	VkCommandBuffer activeCommandBuffer;
+	VkCommandBuffer previousActiveCommandBuffer;
 
 	memoryPool semaphorePool;
 

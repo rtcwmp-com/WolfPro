@@ -34,6 +34,13 @@ If you have questions concerning this license or the applicable additional terms
 
 //#define	PRE_RELEASE_DEMO
 
+#if defined(_MSC_VER)
+#include <sal.h>
+#define PRINTF_FORMAT_STRING _Printf_format_string_
+#else
+#define PRINTF_FORMAT_STRING
+#endif
+
 
 qbool Sys_IsDebugging(void);
 
@@ -1084,6 +1091,8 @@ char    *Sys_DefaultCDPath( void );
 char    *Sys_DefaultBasePath( void );
 char    *Sys_DefaultInstallPath( void );
 char    *Sys_DefaultHomePath( void );
+
+void Sys_DebugPrintf( PRINTF_FORMAT_STRING const char* fmt, ... );
 
 char **Sys_ListFiles( const char *directory, const char *extension, char *filter, int *numfiles, qboolean wantsubs );
 void    Sys_FreeFileList( char **list );

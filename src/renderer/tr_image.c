@@ -2570,8 +2570,6 @@ qhandle_t RE_RegisterSkin( const char *name ) {
 //			a map that has ai characters who had invalid skin names entered
 //			in thier "skin" or "head" field
 
-	// make sure the render thread is stopped
-	R_SyncRenderThread();
 
 	// If not a .skin file, load as a single shader
 	if ( strcmp( name + strlen( name ) - 5, ".skin" ) ) {
@@ -3421,7 +3419,6 @@ void R_PurgeBackupImages( int purgeCount ) {
 		return;
 	}
 
-	R_SyncRenderThread();
 
 	cnt = 0;
 	for ( i = lastPurged; i < FILE_HASH_SIZE; ) {

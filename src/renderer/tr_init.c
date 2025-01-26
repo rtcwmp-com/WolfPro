@@ -60,8 +60,6 @@ cvar_t  *r_detailTextures;
 cvar_t  *r_znear;
 cvar_t  *r_zfar;
 
-cvar_t  *r_smp;
-cvar_t  *r_showSmp;
 cvar_t  *r_skipBackEnd;
 
 cvar_t  *r_ignorehwgamma;
@@ -970,9 +968,6 @@ void GfxInfo_f( void ) {
 	if ( glConfig.hardwareType == GLHW_RIVA128 ) {
 		ri.Printf( PRINT_ALL, "HACK: riva128 approximations\n" );
 	}
-	if ( glConfig.smpActive ) {
-		ri.Printf( PRINT_ALL, "Using dual processor acceleration\n" );
-	}
 	if ( r_finish->integer ) {
 		ri.Printf( PRINT_ALL, "Forcing glFinish\n" );
 	}
@@ -1041,12 +1036,6 @@ void R_Register( void ) {
 	r_vertexLight = ri.Cvar_Get( "r_vertexLight", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_uiFullScreen = ri.Cvar_Get( "r_uifullscreen", "0", 0 );
 	r_subdivisions = ri.Cvar_Get( "r_subdivisions", "4", CVAR_ARCHIVE | CVAR_LATCH );
-#ifdef MACOS_X
-	// Default to using SMP on Mac OS X if we have multiple processors
-	r_smp = ri.Cvar_Get( "r_smp", Sys_ProcessorCount() > 1 ? "1" : "0", CVAR_ARCHIVE | CVAR_LATCH );
-#else
-	r_smp = ri.Cvar_Get( "r_smp", "0", CVAR_ARCHIVE | CVAR_LATCH );
-#endif
 	r_ignoreFastPath = ri.Cvar_Get( "r_ignoreFastPath", "1", CVAR_ARCHIVE | CVAR_LATCH );
 #if MAC_STVEF_HM || MAC_WOLF2_MP
 	r_ext_texture_filter_anisotropic = ri.Cvar_Get( "r_ext_texture_filter_anisotropic", "0", CVAR_ARCHIVE | CVAR_LATCH ); //DAJ
@@ -1135,8 +1124,6 @@ void R_Register( void ) {
 	r_flareSize = ri.Cvar_Get( "r_flareSize", "40", CVAR_CHEAT );
 	ri.Cvar_Set( "r_flareFade", "5" ); // to force this when people already have "7" in their config
 	r_flareFade = ri.Cvar_Get( "r_flareFade", "5", CVAR_CHEAT );
-
-	r_showSmp = ri.Cvar_Get( "r_showSmp", "0", CVAR_CHEAT );
 	r_skipBackEnd = ri.Cvar_Get( "r_skipBackEnd", "0", CVAR_CHEAT );
 
 	r_measureOverdraw = ri.Cvar_Get( "r_measureOverdraw", "0", CVAR_CHEAT );
@@ -1254,16 +1241,7 @@ void R_Init( void ) {
 		max_polyverts = MAX_POLYVERTS;
 	}
 
-//	backEndData[0] = ri.Hunk_Alloc( sizeof( *backEndData[0] ), h_low );
-	backEndData[0] = ri.Hunk_Alloc( sizeof( *backEndData[0] ) + sizeof( srfPoly_t ) * max_polys + sizeof( polyVert_t ) * max_polyverts, h_low );
-
-	if ( r_smp->integer ) {
-//		backEndData[1] = ri.Hunk_Alloc( sizeof( *backEndData[1] ), h_low );
-		backEndData[1] = ri.Hunk_Alloc( sizeof( *backEndData[1] ) + sizeof( srfPoly_t ) * max_polys + sizeof( polyVert_t ) * max_polyverts, h_low );
-	} else {
-		backEndData[1] = NULL;
-	}
-	R_ToggleSmpFrame();
+	backEndData = ri.Hunk_Alloc( sizeof( *backEndData ) + sizeof( srfPoly_t ) * max_polys + sizeof( polyVert_t ) * max_polyverts, h_low );
 
 	InitOpenGL();
 
@@ -1322,7 +1300,6 @@ void RE_Shutdown( qboolean destroyWindow ) {
 	if ( r_cache->integer ) {
 		if ( tr.registered ) {
 			if ( destroyWindow ) {
-				R_SyncRenderThread();
 				R_ShutdownCommandBuffers();
 				R_DeleteTextures();
 			} else {
@@ -1335,7 +1312,6 @@ void RE_Shutdown( qboolean destroyWindow ) {
 			}
 		}
 	} else if ( tr.registered ) {
-		R_SyncRenderThread();
 		R_ShutdownCommandBuffers();
 		R_DeleteTextures();
 	}
@@ -1364,7 +1340,6 @@ Touch all images to make sure they are resident
 =============
 */
 void RE_EndRegistration( void ) {
-	R_SyncRenderThread();
 	if ( !Sys_LowPhysicalMemory() ) {
 		RB_ShowImages();
 	}

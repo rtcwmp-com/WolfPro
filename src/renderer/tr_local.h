@@ -49,11 +49,6 @@ long myftol( float f );
 #endif
 
 
-// everything that is needed by the backend needs
-// to be double buffered to allow it to run in
-// parallel on a dual cpu machine
-#define SMP_FRAMES      2
-
 #define MAX_SHADERS             8192
 
 #define MAX_SHADER_STATES 2048
@@ -621,7 +616,7 @@ typedef struct srfGridMesh_s {
 	surfaceType_t surfaceType;
 
 	// dynamic lighting information
-	int dlightBits[SMP_FRAMES];
+	int dlightBits;
 
 	// culling information
 	vec3_t meshBounds[2];
@@ -651,7 +646,7 @@ typedef struct {
 	cplane_t plane;
 
 	// dynamic lighting information
-	int dlightBits[SMP_FRAMES];
+	int dlightBits;
 
 	// triangle definitions (no normals at points)
 	int numPoints;
@@ -667,7 +662,7 @@ typedef struct {
 	surfaceType_t surfaceType;
 
 	// dynamic lighting information
-	int dlightBits[SMP_FRAMES];
+	int dlightBits;
 
 	// culling information (FIXME: use this!)
 	vec3_t bounds[2];
@@ -1205,8 +1200,6 @@ extern cvar_t  *r_portalOnly;
 
 extern cvar_t  *r_subdivisions;
 extern cvar_t  *r_lodCurveError;
-extern cvar_t  *r_smp;
-extern cvar_t  *r_showSmp;
 extern cvar_t  *r_skipBackEnd;
 
 extern cvar_t  *r_ignoreGLErrors;
@@ -1394,11 +1387,6 @@ void        VKimp_Init( void );
 void        GLimp_Shutdown( void );
 void        GLimp_EndFrame( void );
 
-qboolean GLimp_SpawnRenderThread( void ( *function )( void ) );
-void        *GLimp_RendererSleep( void );
-void        GLimp_FrontEndSleep( void );
-void        GLimp_WakeRenderer( void *data );
-
 void        GLimp_LogComment( char *comment );
 
 void GLimp_SetGamma( unsigned char red[256],
@@ -1570,7 +1558,7 @@ SCENE GENERATION
 ============================================================
 */
 
-void R_ToggleSmpFrame( void );
+void R_ClearFrame( void );
 
 void RE_ClearScene( void );
 void RE_AddRefEntityToScene( const refEntity_t *ent );
@@ -1639,7 +1627,6 @@ RENDERER BACK END FUNCTIONS
 =============================================================
 */
 
-void RB_RenderThread( void );
 void RB_ExecuteRenderCommands( const void *data );
 
 /*
@@ -1745,11 +1732,10 @@ typedef struct {
 extern int max_polys;
 extern int max_polyverts;
 
-extern backEndData_t   *backEndData[SMP_FRAMES];    // the second one may not be allocated
+extern backEndData_t   *backEndData;    // the second one may not be allocated
 
 extern volatile renderCommandList_t    *renderCommandList;
 
-extern volatile qboolean renderThreadActive;
 
 
 void *R_GetCommandBuffer( int bytes );
@@ -1758,7 +1744,6 @@ void RB_ExecuteRenderCommands( const void *data );
 void R_InitCommandBuffers( void );
 void R_ShutdownCommandBuffers( void );
 
-void R_SyncRenderThread( void );
 
 void R_AddDrawSurfCmd( drawSurf_t *drawSurfs, int numDrawSurfs );
 

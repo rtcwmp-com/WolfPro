@@ -141,8 +141,6 @@ qhandle_t RE_RegisterModel( const char *name ) {
 	Q_strncpyz( mod->name, name, sizeof( mod->name ) );
 
 
-	// make sure the render thread is stopped
-	R_SyncRenderThread();
 
 	// Ridah, look for it cached
 	if ( R_FindCachedModel( name, mod ) ) {
@@ -1309,7 +1307,6 @@ void RE_BeginRegistration( glconfig_t *glconfigOut ) {
 	R_Init();
 	*glconfigOut = glConfig;
 
-	R_SyncRenderThread();
 
 	tr.viewCluster = -1;        // force markleafs to regenerate
 	R_ClearFlares();

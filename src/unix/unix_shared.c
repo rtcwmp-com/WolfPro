@@ -390,3 +390,7 @@ void Sys_EnterCriticalSection( void *ptr ) {
 
 void Sys_LeaveCriticalSection( void *ptr ) {
 }
+
+void Sys_DebugPrintf( PRINTF_FORMAT_STRING const char* fmt, ... )
+{
+}
