@@ -2329,6 +2329,20 @@ VkShaderStageFlags GetVkShaderStageFlags(RHI_PipelineStage stage){
     return flags;
 }
 
+VkShaderStageFlags GetVkShaderStageFlagsFromShader(RHI_Shader stage){
+    switch(stage){
+        case RHI_Shader_Vertex:
+            return VK_SHADER_STAGE_VERTEX_BIT;
+        case RHI_Shader_Pixel:
+            return VK_SHADER_STAGE_FRAGMENT_BIT;
+        case RHI_Shader_Compute:
+            return VK_SHADER_STAGE_COMPUTE_BIT;
+        default:
+            assert(!"Invalid shader stage");
+            return 0;
+    }
+}
+
 
 void VKimp_Init( void ) {
     if(vk.initialized &&

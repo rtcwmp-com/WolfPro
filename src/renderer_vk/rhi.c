@@ -358,25 +358,38 @@ void RHI_UpdateDescriptorSet(rhiDescriptorSet descriptorHandle, uint32_t binding
 #include "shaders/triangle_ps.h"
 #include "shaders/triangle_vs.h"
 
-rhiPipeline RHI_CreateGraphicsPipeline(rhiDescriptorSetLayout descLayout)
+rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDesc)
 {
-    DescriptorSetLayout *descriptorSetLayout = GET_LAYOUT(descLayout);
+    
+    DescriptorSetLayout *descriptorSetLayout = GET_LAYOUT(graphicsDesc->descLayout);
 
-    VkPushConstantRange pcr = {};
-    pcr.size = 72;
-    pcr.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-    pcr.offset = 0;
+    
 
-
-
+    VkPushConstantRange pcr[2] = {};
+    uint32_t pcrOffset = 0;
+    uint32_t pcrCount = 0;
+    if(graphicsDesc->pushConstants.vsBytes > 0){
+        VkPushConstantRange *range = &pcr[pcrCount++];
+        range->size = graphicsDesc->pushConstants.vsBytes;
+        range->stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        range->offset = pcrOffset;
+        pcrOffset += graphicsDesc->pushConstants.vsBytes;
+    }
+    if(graphicsDesc->pushConstants.psBytes > 0){
+        VkPushConstantRange *range = &pcr[pcrCount++];
+        range->size = graphicsDesc->pushConstants.psBytes;
+        range->stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        range->offset = pcrOffset;
+    }
+    
 
     VkPipelineLayout vkPipelineLayout = VK_NULL_HANDLE;
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
     pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutCreateInfo.setLayoutCount = 1;
     pipelineLayoutCreateInfo.pSetLayouts = &descriptorSetLayout->layout;
-    pipelineLayoutCreateInfo.pPushConstantRanges = &pcr;
-    pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
+    pipelineLayoutCreateInfo.pPushConstantRanges = pcr;
+    pipelineLayoutCreateInfo.pushConstantRangeCount = pcrCount;
 
 	VK(vkCreatePipelineLayout(vk.device, &pipelineLayoutCreateInfo, NULL, &vkPipelineLayout));
 	SetObjectName(VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)vkPipelineLayout, "Pipeline Layout");
@@ -598,6 +611,11 @@ rhiPipeline RHI_CreateGraphicsPipeline(rhiDescriptorSetLayout descLayout)
     pipeline.pipeline = vkPipeline;
     pipeline.compute = qfalse;
     pipeline.layout = layout;
+    pipeline.pushConstantOffsets[RHI_Shader_Vertex] = 0;
+    pipeline.pushConstantOffsets[RHI_Shader_Pixel] = graphicsDesc->pushConstants.vsBytes;
+    pipeline.pushConstantSize[RHI_Shader_Vertex] = graphicsDesc->pushConstants.vsBytes;
+    pipeline.pushConstantSize[RHI_Shader_Pixel] = graphicsDesc->pushConstants.psBytes;
+
 
     return (rhiPipeline) { Pool_Add(&vk.pipelinePool, &pipeline) };
 
@@ -829,12 +847,13 @@ void RHI_CmdSetScissor()
 {
 }
 
-void RHI_CmdPushConstants(rhiPipeline pipeline, const void *constants, uint32_t byteCount)
+void RHI_CmdPushConstants(rhiPipeline pipeline, RHI_Shader shader, const void *constants, uint32_t byteCount)
 {
     Pipeline *privatePipeline = GET_PIPELINE(pipeline);
-    assert(byteCount == 72);
-    //TODO: update to dynamically choose shader stage and size
-    vkCmdPushConstants(vk.activeCommandBuffer, privatePipeline->layout.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT , 0, byteCount, constants);
+    assert(byteCount == privatePipeline->pushConstantSize[shader]);
+    assert((uint32_t)shader < RHI_Shader_Count);
+
+    vkCmdPushConstants(vk.activeCommandBuffer, privatePipeline->layout.pipelineLayout, GetVkShaderStageFlagsFromShader(shader), privatePipeline->pushConstantOffsets[shader], byteCount, constants);
 }
 
 void RHI_CmdDraw(uint32_t vertexCount, uint32_t firstVertex)
@@ -1015,7 +1034,7 @@ void RHI_EndTextureUpload()
 {
     RHI_UnmapBuffer(vk.uploadBuffer);
     VkCommandBuffer previousCmdBuffer = vk.activeCommandBuffer;
-    RHI_BindCommandBuffer(vk.uploadCmdBuffer);
+    RHI_BindCommandBuffer(vk.uploadCmdBuffer); //@TODO: return VkCommandBuffer to assign previous?
     Texture *texture = GET_TEXTURE(vk.uploadTextureHandle);
     RHI_BeginCommandBuffer();
     RHI_CmdBeginBarrier();

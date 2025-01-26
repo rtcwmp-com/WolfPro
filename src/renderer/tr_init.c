@@ -366,7 +366,15 @@ static void InitVulkan( void ) {
 	descSetLayoutDesc.bindings[1].stageFlags = RHI_PipelineStage_PixelBit;
 
 	backEnd.descriptorSetLayout = RHI_CreateDescriptorSetLayout(&descSetLayoutDesc);
-	backEnd.pipeline = RHI_CreateGraphicsPipeline(backEnd.descriptorSetLayout);
+
+	
+	rhiGraphicsPipelineDesc graphicsDesc = {};
+	graphicsDesc.name = "Graphics Pipeline";
+	graphicsDesc.descLayout = backEnd.descriptorSetLayout;
+	graphicsDesc.pushConstants.vsBytes = 64;
+	graphicsDesc.pushConstants.psBytes = 8;
+
+	backEnd.pipeline = RHI_CreateGraphicsPipeline(&graphicsDesc);
 
 	backEnd.descriptorSet = RHI_CreateDescriptorSet("Game Textures", backEnd.descriptorSetLayout);
 

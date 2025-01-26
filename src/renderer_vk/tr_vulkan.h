@@ -138,6 +138,9 @@ typedef struct Pipeline
 	PipelineLayout layout;
 	VkPipeline pipeline;
 	qbool compute;
+	rhiGraphicsPipelineDesc graphicsDesc;
+	uint32_t pushConstantOffsets[RHI_Shader_Count];
+	uint32_t pushConstantSize[RHI_Shader_Count];
 } Pipeline;
 
 typedef struct Sampler
@@ -276,6 +279,7 @@ VkPipelineStageFlags2 GetVkStageFlagsFromResource(RHI_ResourceState state);
 VkAccessFlags2 GetVkAccessFlagsFromResource(RHI_ResourceState state);
 VkDescriptorType GetVkDescriptorType(RHI_DescriptorType type);
 VkShaderStageFlags GetVkShaderStageFlags(RHI_PipelineStage stage);
+VkShaderStageFlags GetVkShaderStageFlagsFromShader(RHI_Shader stage);
 
 
 #endif

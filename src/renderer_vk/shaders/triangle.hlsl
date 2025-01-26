@@ -9,16 +9,13 @@ struct VOut
     [[vk::location(2)]] float2 tc : TEXCOORD0;
 };
 
+#if VS
+
 struct RootConstants
 {
 	matrix projectionMatrix;
-	uint textureIndex;
-    uint samplerIndex;
 };
 [[vk::push_constant]] RootConstants rc;
-
-
-#if VS
 
 struct VIn
 {
@@ -41,34 +38,21 @@ VOut vs(VIn input)
 
 #if PS
 
+struct RootConstants
+{
+    [[vk::offset(64)]]
+	uint textureIndex;
+    uint samplerIndex;
+};
+[[vk::push_constant]] RootConstants rc;
+
 [[vk::binding(0)]] Texture2D texture[2048];
 [[vk::binding(1)]] SamplerState mySampler[6];
 
 
-// struct MyStruct
-// {
-//   uint samplerIndex;
-// };
-// [[vk::binding(2)]] StructuredBuffer<float4> myData;
-
-// struct PsRootConstants
-// {
-//     [[vk::offset(64)]]
-// 	uint textureIndex;
-//     uint samplerIndex;
-// };
-// [[vk::push_constant]] PsRootConstants psRc;
-
 float4 ps(VOut input) : SV_Target
 {
     float4 texColor = texture[rc.textureIndex].Sample(mySampler[rc.samplerIndex], input.tc);
-    //float height, width;
-    //texture.GetDimensions(width, height);
-    //float4 texColor = texture.Load(int3(input.tc.x * width, input.tc.y * height, 0));
-    
-    //return myData[rc.samplerIndex];
-    //return texColor;
-    //return float4(input.tc,0,1);
     return texColor * input.color;
 }
 

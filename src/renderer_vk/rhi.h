@@ -201,22 +201,22 @@ typedef struct rhiSpecialization
 	uint32_t byteCount;
 } rhiSpecialization;
 
-typedef struct rhiGraphicsPipelineDesc
-{
-	const char* name;
+// typedef struct rhiGraphicsPipelineDesc
+// {
+// 	const char* name;
 	
-	VertexLayout vertexLayout;
-	rhiShader vertexShader;
-	rhiShader fragmentShader;
-	rhiSpecialization vertexSpec;
-	rhiSpecialization fragmentSpec;
-	uint32_t cullType; // cullType_t
-	uint32_t srcBlend; // stateBits & GLS_SRCBLEND_BITS
-	uint32_t dstBlend; // stateBits & GLS_DSTBLEND_BITS
-	uint32_t depthTest; // depthTest_t
-	qbool enableDepthWrite;
-	qbool enableDepthTest;
-} rhiGraphicsPipelineDesc;
+// 	VertexLayout vertexLayout;
+// 	rhiShader vertexShader;
+// 	rhiShader fragmentShader;
+// 	rhiSpecialization vertexSpec;
+// 	rhiSpecialization fragmentSpec;
+// 	uint32_t cullType; // cullType_t
+// 	uint32_t srcBlend; // stateBits & GLS_SRCBLEND_BITS
+// 	uint32_t dstBlend; // stateBits & GLS_DSTBLEND_BITS
+// 	uint32_t depthTest; // depthTest_t
+// 	qbool enableDepthWrite;
+// 	qbool enableDepthTest;
+// } rhiGraphicsPipelineDesc;
 
 typedef enum RHI_MemoryUsage
 {
@@ -286,9 +286,29 @@ typedef struct rhiDescriptorSetLayoutDesc {
 
 typedef enum RHI_TextureAddressing {
 	RHI_TextureAddressing_Repeat = 0,
-	RHI_TextureAddressing_Clamp
+	RHI_TextureAddressing_Clamp,
+	RHI_TextureAddressing_Count
 } RHI_TextureAddressing;
 
+typedef struct rhiPushConstants {
+	uint32_t psBytes;
+	uint32_t vsBytes;
+	uint32_t csBytes;
+} rhiPushConstants;
+
+typedef enum RHI_Shader {
+	RHI_Shader_Vertex = 0,
+	RHI_Shader_Pixel,
+	RHI_Shader_Compute,
+	RHI_Shader_Count
+} RHI_Shader;
+
+typedef struct rhiGraphicsPipelineDesc {
+	const char *name;
+	rhiDescriptorSetLayout descLayout;
+	rhiPushConstants pushConstants;
+
+}rhiGraphicsPipelineDesc;
 
 inline void RHI_SubmitGraphicsDesc_Signal(rhiSubmitGraphicsDesc *graphicsDesc, rhiSemaphore semaphore, uint64_t semaphoreValue){
     assert(graphicsDesc->signalSemaphoreCount < ARRAY_LEN(graphicsDesc->signalSemaphores));
@@ -327,7 +347,7 @@ rhiDescriptorSetLayout RHI_CreateDescriptorSetLayout(const rhiDescriptorSetLayou
 rhiDescriptorSet RHI_CreateDescriptorSet(const char *name, rhiDescriptorSetLayout layoutHandle);
 void RHI_UpdateDescriptorSet(rhiDescriptorSet descriptorHandle, uint32_t bindingIndex, RHI_DescriptorType type, uint32_t offset, uint32_t descriptorCount, const void *handles); //rhiTexture, rhiSampler, rhiBuffer
 
-rhiPipeline RHI_CreateGraphicsPipeline(rhiDescriptorSetLayout descLayout);
+rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDesc);
 void RHI_CreateComputePipeline();
 
 
@@ -354,7 +374,7 @@ void RHI_CmdBindVertexBuffers(const rhiBuffer *vertexBuffers, uint32_t bufferCou
 void RHI_CmdBindIndexBuffer(rhiBuffer indexBuffer);
 void RHI_CmdSetViewport();
 void RHI_CmdSetScissor();
-void RHI_CmdPushConstants(rhiPipeline pipeline, const void *constants, uint32_t byteCount);
+void RHI_CmdPushConstants(rhiPipeline pipeline, RHI_Shader shader, const void *constants, uint32_t byteCount);
 void RHI_CmdDraw(uint32_t vertexCount, uint32_t firstVertex); //non indexed triangles (not for 2d)
 void RHI_CmdDrawIndexed(uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex);
 
