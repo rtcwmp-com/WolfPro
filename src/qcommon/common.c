@@ -3411,3 +3411,44 @@ void Field_CompleteCommand( field_t *field ) {
 	Cmd_CommandCompletion( PrintMatches );
 	Cvar_CommandCompletion( PrintMatches );
 }
+
+
+
+static unsigned int CRC32_table[256];
+static qbool CRC32_tableCreated = qfalse;
+
+
+void CRC32_Begin( unsigned int* crc )
+{
+	if ( !CRC32_tableCreated )
+	{
+		for ( int i = 0; i < 256; i++ )
+		{
+			unsigned int c = i;
+			for ( int j = 0; j < 8; j++ )
+				c = c & 1 ? (c >> 1) ^ 0xEDB88320UL : c >> 1;
+			CRC32_table[i] = c;
+		}
+		CRC32_tableCreated = qtrue;
+	}
+
+	*crc = 0xFFFFFFFFUL;
+}
+
+
+void CRC32_ProcessBlock( unsigned int* crc, const void* buffer, unsigned int length )
+{
+	unsigned int hash = *crc;
+	const unsigned char* buf = (const unsigned char*)buffer;
+	while ( length-- )
+	{
+		hash = CRC32_table[(hash ^ *buf++) & 0xFF] ^ (hash >> 8);
+	}
+	*crc = hash;
+}
+
+
+void CRC32_End( unsigned int* crc )
+{
+	*crc ^= 0xFFFFFFFFUL;
+}

@@ -1233,5 +1233,9 @@ extern huffman_t clientHuffTables;
 #error unknown OS
 #endif
 
+void CRC32_Begin( unsigned int* crc );
+void CRC32_ProcessBlock( unsigned int* crc, const void* buffer, unsigned int length );
+void CRC32_End( unsigned int* crc );
+
 #endif // _QCOMMON_H_
 

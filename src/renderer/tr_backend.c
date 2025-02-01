@@ -1436,8 +1436,51 @@ void RB_ExecuteRenderCommands( const void *data ) {
 #include "../renderer_vk/shaders/triangle_ps.h"
 #include "../renderer_vk/shaders/triangle_vs.h"
 
+typedef struct cachedPipeline {
+	rhiGraphicsPipelineDesc desc;
+	rhiPipeline pipeline;
+	uint32_t hash;
+	struct cachedPipeline *next;
+} cachedPipeline;
+
+cachedPipeline pipelineCache[4096];
+cachedPipeline *pipelineHash[256];
+int pipelineCount = 0;
+
+uint32_t RB_HashPipeline(rhiGraphicsPipelineDesc *desc){
+	uint32_t crc = 0;
+	CRC32_Begin(&crc);
+	CRC32_ProcessBlock(&crc, desc, sizeof(rhiGraphicsPipelineDesc));
+	CRC32_End(&crc);
+	return crc;
+}
+
+qboolean RB_GetCachedPipeline(uint32_t hash, rhiPipeline *pipeline, rhiGraphicsPipelineDesc *desc){
+	cachedPipeline *head = pipelineHash[hash & (ARRAY_LEN(pipelineHash)-1)];
+	for(; head; head = head->next){
+		if(head->hash == hash && (memcmp(desc, &head->desc, sizeof(rhiGraphicsPipelineDesc))==0)){
+			*pipeline = head->pipeline;
+			return qtrue;
+		}
+	}
+	return qfalse;
+}
+
+void RB_AddCachedPipeline(uint32_t hash, cachedPipeline *cache){
+	if(pipelineCount >= ARRAY_LEN(pipelineCache)){
+		assert(!"Pipeline cache is full");
+		return;
+	}
+	cachedPipeline *currentPipeline = &pipelineCache[pipelineCount++];
+	cachedPipeline *head = pipelineHash[hash & (ARRAY_LEN(pipelineHash)-1)];
+	*currentPipeline = *cache;
+	currentPipeline->next = head;
+	pipelineHash[hash & (ARRAY_LEN(pipelineHash)-1)] = currentPipeline;
+
+}
 
 void RB_CreateGraphicsPipeline(shader_t *newShader){
+	
 	
 	for(int i = 0; i < MAX_SHADER_STAGES; i++){
 		
@@ -1446,8 +1489,9 @@ void RB_CreateGraphicsPipeline(shader_t *newShader){
 			continue;
 		}
 
-		rhiGraphicsPipelineDesc graphicsDesc = {};
-		graphicsDesc.name = newShader->name;
+		rhiGraphicsPipelineDesc graphicsDesc;
+		memset(&graphicsDesc, 0, sizeof(rhiGraphicsPipelineDesc));
+		// graphicsDesc.name = newShader->name;
 		graphicsDesc.descLayout = backEnd.descriptorSetLayout;
 		graphicsDesc.pushConstants.vsBytes = 64;
 		graphicsDesc.pushConstants.psBytes = 8;
@@ -1475,9 +1519,23 @@ void RB_CreateGraphicsPipeline(shader_t *newShader){
 		graphicsDesc.attributes[2].elementFormat = RHI_VertexFormat_Float32;
 		graphicsDesc.attributes[2].stride = 2 * sizeof(float);
 
-		rhiPipeline pipeline = RHI_CreateGraphicsPipeline(&graphicsDesc);
-		stage->pipeline = pipeline;
-		totalPipelines++;
+		uint32_t hash = RB_HashPipeline(&graphicsDesc);
+		cachedPipeline cached = {};
+		
+		if(!RB_GetCachedPipeline(hash, &cached.pipeline, &graphicsDesc)){
+			graphicsDesc.name = newShader->name;
+			cached.pipeline = RHI_CreateGraphicsPipeline(&graphicsDesc);
+			
+			graphicsDesc.name = NULL;
+			cached.desc = graphicsDesc;
+			cached.hash = hash;
+			RB_AddCachedPipeline(hash, &cached);
+			totalPipelines++;
+		}
+		assert(cached.pipeline.h != 0);
+		stage->pipeline = cached.pipeline;
+
+		
 	}
 	
 }
