@@ -1119,60 +1119,71 @@ void SetIteratorFog( void ) {
 }
 
 static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
-	shaderStage_t *pStage = tess.xstages[0];
-	if(pStage == NULL){
-		return;
-	}
 
 	VertexBuffers *vb = &backEnd.vertexBuffers[backEnd.currentFrameIndex];
 
-	if((vb->indexCount + tess.numIndexes) > IDX_MAX || (vb->vertexCount + tess.numVertexes) > VBA_MAX ){
-		return;
+
+	for(int i = 0; i < MAX_SHADER_STAGES; i++){
+
+
+		shaderStage_t *pStage = tess.xstages[i];
+		if (pStage == NULL || !pStage->active) {
+			continue;
+		}
+
+		
+
+		if((vb->indexCount + tess.numIndexes) > IDX_MAX || (vb->vertexCount + tess.numVertexes) > VBA_MAX ){
+			return;
+		}
+
+		ComputeColors( pStage );
+		ComputeTexCoords( pStage );
+
+		byte *indexBufferData = RHI_MapBuffer(vb->index);
+		memcpy(indexBufferData + (vb->indexFirst * sizeof(tess.indexes[0])), tess.indexes,	tess.numIndexes * sizeof(tess.indexes[0]));
+		RHI_UnmapBuffer(vb->index);
+
+		byte *positionBufferData = RHI_MapBuffer(vb->position);
+		memcpy(positionBufferData + (vb->vertexFirst * sizeof(tess.xyz[0])), tess.xyz, tess.numVertexes * sizeof(tess.xyz[0]));
+		RHI_UnmapBuffer(vb->position);
+
+		byte *tcBufferData = RHI_MapBuffer(vb->textureCoord);
+		memcpy(tcBufferData + (vb->vertexFirst * sizeof(float) * 2), tess.svars.texcoords, tess.numVertexes * sizeof(float) * 2);
+		RHI_UnmapBuffer(vb->textureCoord);
+
+		byte *colorBufferData = RHI_MapBuffer(vb->color);
+		memcpy(colorBufferData + (vb->vertexFirst * sizeof(tess.svars.colors[0])), tess.svars.colors, tess.numVertexes * sizeof(tess.svars.colors[0]));
+		RHI_UnmapBuffer(vb->color);
+
+		float w = glConfig.vidWidth;
+		float h = glConfig.vidHeight;
+		float projectionMatrix[16] = {
+			2.0f/w, 0.0f, 0.0f, 0.0f,
+			0.0f, 2.0f/h, 0.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 0.0f,
+			-1.0f, -1.0f, 0.0f, 1.0f
+		};
+
+		typedef struct pushConstants {
+			uint32_t textureIndex;
+			uint32_t samplerIndex;
+		}pushConstants;
+
+		pushConstants pc; 
+		pc.samplerIndex = 0;
+		pc.textureIndex = pStage->bundle[0].image[0]->descriptorIndex; //@TODO: update for animated images
+		RHI_CmdBindPipeline(pStage->pipeline);
+		RHI_CmdBindDescriptorSet(pStage->pipeline, backEnd.descriptorSet);
+
+		RHI_CmdPushConstants(pStage->pipeline, RHI_Shader_Vertex, projectionMatrix,sizeof(projectionMatrix));
+		RHI_CmdPushConstants(pStage->pipeline, RHI_Shader_Pixel, &pc, sizeof(pc));
+
+		RHI_CmdDrawIndexed(tess.numIndexes, vb->indexFirst, vb->vertexFirst);
+
+		vb->indexCount += tess.numIndexes;
+		vb->vertexCount += tess.numVertexes;
 	}
-
-	ComputeColors( pStage );
-	ComputeTexCoords( pStage );
-
-	byte *indexBufferData = RHI_MapBuffer(vb->index);
-	memcpy(indexBufferData + (vb->indexFirst * sizeof(tess.indexes[0])), tess.indexes,	tess.numIndexes * sizeof(tess.indexes[0]));
-	RHI_UnmapBuffer(vb->index);
-
-	byte *positionBufferData = RHI_MapBuffer(vb->position);
-	memcpy(positionBufferData + (vb->vertexFirst * sizeof(tess.xyz[0])), tess.xyz, tess.numVertexes * sizeof(tess.xyz[0]));
-	RHI_UnmapBuffer(vb->position);
-
-	byte *tcBufferData = RHI_MapBuffer(vb->textureCoord);
-	memcpy(tcBufferData + (vb->vertexFirst * sizeof(float) * 2), tess.svars.texcoords, tess.numVertexes * sizeof(float) * 2);
-	RHI_UnmapBuffer(vb->textureCoord);
-
-	byte *colorBufferData = RHI_MapBuffer(vb->color);
-	memcpy(colorBufferData + (vb->vertexFirst * sizeof(tess.svars.colors[0])), tess.svars.colors, tess.numVertexes * sizeof(tess.svars.colors[0]));
-	RHI_UnmapBuffer(vb->color);
-
-	float w = glConfig.vidWidth;
-	float h = glConfig.vidHeight;
-	float projectionMatrix[16] = {
-		2.0f/w, 0.0f, 0.0f, 0.0f,
-		0.0f, 2.0f/h, 0.0f, 0.0f,
-		0.0f, 0.0f, 0.0f, 0.0f,
-		-1.0f, -1.0f, 0.0f, 1.0f
-	};
-
-	typedef struct pushConstants {
-		uint32_t textureIndex;
-		uint32_t samplerIndex;
-	}pushConstants;
-
-	pushConstants pc; 
-	pc.samplerIndex = 0;
-	pc.textureIndex = pStage->bundle[0].image[0]->descriptorIndex; //@TODO: update for animated images
-	RHI_CmdPushConstants(backEnd.pipeline, RHI_Shader_Vertex, projectionMatrix,sizeof(projectionMatrix));
-	RHI_CmdPushConstants(backEnd.pipeline, RHI_Shader_Pixel, &pc, sizeof(pc));
-
-	RHI_CmdDrawIndexed(tess.numIndexes, vb->indexFirst, vb->vertexFirst);
-
-	vb->indexCount += tess.numIndexes;
-	vb->vertexCount += tess.numVertexes;
 }
 
 /*

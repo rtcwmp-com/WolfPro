@@ -325,6 +325,7 @@ typedef struct {
 
 	qboolean isDetail;
 	qboolean isFogged;              // used only for shaders that have fog disabled, so we can enable it for individual stages
+	rhiPipeline pipeline;
 } shaderStage_t;
 
 struct shaderCommands_s;
@@ -953,7 +954,6 @@ typedef struct {
 
 	rhiDescriptorSetLayout descriptorSetLayout;
 	rhiDescriptorSet descriptorSet;
-	rhiPipeline pipeline;
 
 	rhiSampler sampler;
 
@@ -1627,6 +1627,7 @@ RENDERER BACK END FUNCTIONS
 */
 
 void RB_ExecuteRenderCommands( const void *data );
+void RB_CreateGraphicsPipeline(shader_t *newShader);
 
 /*
 =============================================================

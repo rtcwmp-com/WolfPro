@@ -363,39 +363,7 @@ static void InitVulkan( void ) {
 
 	backEnd.descriptorSetLayout = RHI_CreateDescriptorSetLayout(&descSetLayoutDesc);
 
-	
-	rhiGraphicsPipelineDesc graphicsDesc = {};
-	graphicsDesc.name = "Graphics Pipeline";
-	graphicsDesc.descLayout = backEnd.descriptorSetLayout;
-	graphicsDesc.pushConstants.vsBytes = 64;
-	graphicsDesc.pushConstants.psBytes = 8;
-	#include "../renderer_vk/shaders/triangle_ps.h"
-	#include "../renderer_vk/shaders/triangle_vs.h"
-	graphicsDesc.vertexShader.data = triangle_vs;
-	graphicsDesc.vertexShader.byteCount = sizeof(triangle_vs);
-	graphicsDesc.pixelShader.data = triangle_ps;
-	graphicsDesc.pixelShader.byteCount = sizeof(triangle_ps);
-	graphicsDesc.cullType = CT_TWO_SIDED;
-	graphicsDesc.polygonOffset = 0;
-	graphicsDesc.srcBlend = GLS_SRCBLEND_SRC_ALPHA;
-	graphicsDesc.dstBlend = GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA;
-	graphicsDesc.depthTest = qfalse;
-	graphicsDesc.depthWrite = qfalse;
-	graphicsDesc.depthTestEqual = qfalse;
-	graphicsDesc.wireframe = qfalse;
-	graphicsDesc.attributeCount = 3; //position, color, tc
-	graphicsDesc.attributes[0].elementCount = 4;
-	graphicsDesc.attributes[0].elementFormat = RHI_VertexFormat_Float32;
-	graphicsDesc.attributes[0].stride = 4 * sizeof(float);
-	graphicsDesc.attributes[1].elementCount = 4;
-	graphicsDesc.attributes[1].elementFormat = RHI_VertexFormat_UNorm8;
-	graphicsDesc.attributes[1].stride = 4 * sizeof(byte);
-	graphicsDesc.attributes[2].elementCount = 2;
-	graphicsDesc.attributes[2].elementFormat = RHI_VertexFormat_Float32;
-	graphicsDesc.attributes[2].stride = 2 * sizeof(float);
 
-
-	backEnd.pipeline = RHI_CreateGraphicsPipeline(&graphicsDesc);
 
 	backEnd.descriptorSet = RHI_CreateDescriptorSet("Game Textures", backEnd.descriptorSetLayout);
 

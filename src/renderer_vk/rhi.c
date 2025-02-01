@@ -498,17 +498,6 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
 	viewportState.viewportCount = 1;
 	viewportState.scissorCount = 1;
 
-	//VkPipelineDepthStencilStateCreateInfo depthStencil = {};
-	// VkPipelineDepthStencilStateCreateInfo* depthStencilPtr = NULL;
-	// if(desc->renderTargets.hasDepthStencil)
-	// {
-	// 	depthStencilPtr = &depthStencil;
-	// 	depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-	// 	depthStencil.depthCompareOp = GetVkCompareOp((depthTest_t)desc->depthTest);
-	// 	depthStencil.depthTestEnable = desc->enableDepthTest ? VK_TRUE : VK_FALSE;
-	// 	depthStencil.depthWriteEnable = desc->enableDepthWrite ? VK_TRUE : VK_FALSE;
-	// }
-
 
     // Provide information for dynamic rendering
     VkPipelineRenderingCreateInfo pipeline_create = {};
@@ -521,47 +510,7 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
     //pipeline_create.depthAttachmentFormat   = depth_format;
     //pipeline_create.stencilAttachmentFormat = depth_format;
 
-    
-    // VkVertexInputBindingDescription vertexPositionBindingInfo = {};
-    // vertexPositionBindingInfo.binding = 0; //shader binding point
-    // vertexPositionBindingInfo.stride = 4 * sizeof(float); //only has vertex positions (XYZW)
-    // vertexPositionBindingInfo.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-    // VkVertexInputBindingDescription colorBindingInfo = {};
-    // colorBindingInfo.binding = 1; //shader binding point
-    // colorBindingInfo.stride = 4 * sizeof(uint8_t); //only has colors (RGBA)
-    // colorBindingInfo.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-    // VkVertexInputBindingDescription tcBindingInfo = {};
-    // tcBindingInfo.binding = 2; //shader binding point
-    // tcBindingInfo.stride = 2 * sizeof(float); //
-    // tcBindingInfo.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-    
-
-    // VkVertexInputAttributeDescription vertexPositionAttributeInfo = {};
-    // //a binding can have multiple attributes (interleaved vertex format)
-    // vertexPositionAttributeInfo.location = 0; //shader bindings / shader input location (vk::location in HLSL) 
-    // vertexPositionAttributeInfo.binding = vertexPositionBindingInfo.binding; //buffer bindings / vertex buffer index (CmdBindVertexBuffers in C)
-    // vertexPositionAttributeInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
-    // vertexPositionAttributeInfo.offset = 0; //attribute byte offset
-
-    // VkVertexInputAttributeDescription colorAttributeInfo = {};
-    // //a binding can have multiple attributes (interleaved vertex format)
-    // colorAttributeInfo.location = 1; //shader bindings / shader input location (vk::location in HLSL) 
-    // colorAttributeInfo.binding = colorBindingInfo.binding; //buffer bindings / vertex buffer index (CmdBindVertexBuffers in C)
-    // colorAttributeInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
-    // colorAttributeInfo.offset = 0; //attribute byte offset
-
-    // VkVertexInputAttributeDescription tcAttributeInfo = {};
-    // //a binding can have multiple attributes (interleaved vertex format)
-    // tcAttributeInfo.location = 2; //shader bindings / shader input location (vk::location in HLSL) 
-    // tcAttributeInfo.binding = tcBindingInfo.binding; //buffer bindings / vertex buffer index (CmdBindVertexBuffers in C)
-    // tcAttributeInfo.format = VK_FORMAT_R32G32_SFLOAT;
-    // tcAttributeInfo.offset = 0; //attribute byte offset
-
-    // VkVertexInputAttributeDescription vertexAttributes[3] = {vertexPositionAttributeInfo,  colorAttributeInfo, tcAttributeInfo};
-    // VkVertexInputBindingDescription vertexBindings[3] = {vertexPositionBindingInfo, colorBindingInfo, tcBindingInfo };
-
+  
     VkVertexInputAttributeDescription vertexAttributes[ARRAY_LEN(graphicsDesc->attributes)];
     VkVertexInputBindingDescription vertexBindings[ARRAY_LEN(graphicsDesc->attributes)];
     for(int i = 0; i < graphicsDesc->attributeCount; i++){

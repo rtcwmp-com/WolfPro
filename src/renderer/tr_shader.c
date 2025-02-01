@@ -2077,6 +2077,8 @@ static shader_t *GeneratePermanentShader( void ) {
 	newShader->next = hashTable[hash];
 	hashTable[hash] = newShader;
 
+	RB_CreateGraphicsPipeline(newShader);
+
 	return newShader;
 }
 

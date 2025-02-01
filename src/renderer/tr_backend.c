@@ -31,6 +31,8 @@ If you have questions concerning this license or the applicable additional terms
 backEndData_t   *backEndData;
 backEndState_t backEnd;
 
+int totalPipelines = 0;
+
 
 static float s_flipMatrix[16] = {
 	// convert from our coordinate system (looking down X)
@@ -1203,8 +1205,8 @@ const void  *RB_BeginFrame( const void *data ) {
 	renderPass.colorTexture = backEnd.swapChainTextures[backEnd.swapChainImageIndex];
 
 	RHI_BeginRendering(&renderPass);
-	RHI_CmdBindPipeline(backEnd.pipeline);
-	RHI_CmdBindDescriptorSet(backEnd.pipeline, backEnd.descriptorSet);
+	// RHI_CmdBindPipeline(backEnd.pipeline);
+	// RHI_CmdBindDescriptorSet(backEnd.pipeline, backEnd.descriptorSet);
 	RHI_CmdBindIndexBuffer(backEnd.vertexBuffers[backEnd.currentFrameIndex].index);
 	rhiBuffer buffers[3] = {backEnd.vertexBuffers[backEnd.currentFrameIndex].position, 
 	backEnd.vertexBuffers[backEnd.currentFrameIndex].color,
@@ -1431,4 +1433,51 @@ void RB_ExecuteRenderCommands( const void *data ) {
 
 }
 
+#include "../renderer_vk/shaders/triangle_ps.h"
+#include "../renderer_vk/shaders/triangle_vs.h"
 
+
+void RB_CreateGraphicsPipeline(shader_t *newShader){
+	
+	for(int i = 0; i < MAX_SHADER_STAGES; i++){
+		
+		shaderStage_t *stage = newShader->stages[i];
+		if (stage == NULL || !stage->active) {
+			continue;
+		}
+
+		rhiGraphicsPipelineDesc graphicsDesc = {};
+		graphicsDesc.name = newShader->name;
+		graphicsDesc.descLayout = backEnd.descriptorSetLayout;
+		graphicsDesc.pushConstants.vsBytes = 64;
+		graphicsDesc.pushConstants.psBytes = 8;
+		
+		graphicsDesc.vertexShader.data = triangle_vs;
+		graphicsDesc.vertexShader.byteCount = sizeof(triangle_vs);
+		graphicsDesc.pixelShader.data = triangle_ps;
+		graphicsDesc.pixelShader.byteCount = sizeof(triangle_ps);
+		graphicsDesc.cullType = newShader->cullType;
+		graphicsDesc.polygonOffset = newShader->polygonOffset;
+		graphicsDesc.srcBlend = stage->stateBits & GLS_SRCBLEND_BITS;
+		graphicsDesc.dstBlend = stage->stateBits & GLS_DSTBLEND_BITS;
+		graphicsDesc.depthTest = (stage->stateBits & GLS_DEPTHTEST_DISABLE) == 0;
+		graphicsDesc.depthWrite = (stage->stateBits & GLS_DEPTHMASK_TRUE) != 0;
+		graphicsDesc.depthTestEqual = (stage->stateBits & GLS_DEPTHFUNC_EQUAL) != 0;
+		graphicsDesc.wireframe = (stage->stateBits & GLS_POLYMODE_LINE) != 0;
+		graphicsDesc.attributeCount = 3; //position, color, tc
+		graphicsDesc.attributes[0].elementCount = 4;
+		graphicsDesc.attributes[0].elementFormat = RHI_VertexFormat_Float32;
+		graphicsDesc.attributes[0].stride = 4 * sizeof(float);
+		graphicsDesc.attributes[1].elementCount = 4;
+		graphicsDesc.attributes[1].elementFormat = RHI_VertexFormat_UNorm8;
+		graphicsDesc.attributes[1].stride = 4 * sizeof(byte);
+		graphicsDesc.attributes[2].elementCount = 2;
+		graphicsDesc.attributes[2].elementFormat = RHI_VertexFormat_Float32;
+		graphicsDesc.attributes[2].stride = 2 * sizeof(float);
+
+		rhiPipeline pipeline = RHI_CreateGraphicsPipeline(&graphicsDesc);
+		stage->pipeline = pipeline;
+		totalPipelines++;
+	}
+	
+}
