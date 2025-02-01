@@ -959,6 +959,7 @@ typedef struct {
 
 	VertexBuffers vertexBuffers[RHI_FRAMES_IN_FLIGHT];
 	rhiPipeline previousPipeline;
+	rhiDescriptorSet currentDescriptorSet;
 } backEndState_t;
 
 /*

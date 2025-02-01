@@ -1177,7 +1177,11 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 			RHI_CmdBindPipeline(pStage->pipeline);
 			backEnd.previousPipeline = pStage->pipeline;
 		}
-		RHI_CmdBindDescriptorSet(pStage->pipeline, backEnd.descriptorSet);
+		if(backEnd.currentDescriptorSet.h == 0){
+			RHI_CmdBindDescriptorSet(pStage->pipeline, backEnd.descriptorSet);
+			backEnd.currentDescriptorSet = backEnd.descriptorSet;
+		}
+		
 
 		RHI_CmdPushConstants(pStage->pipeline, RHI_Shader_Vertex, projectionMatrix,sizeof(projectionMatrix));
 		RHI_CmdPushConstants(pStage->pipeline, RHI_Shader_Pixel, &pc, sizeof(pc));
