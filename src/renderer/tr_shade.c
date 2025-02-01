@@ -1173,7 +1173,10 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 		pushConstants pc; 
 		pc.samplerIndex = 0;
 		pc.textureIndex = pStage->bundle[0].image[0]->descriptorIndex; //@TODO: update for animated images
-		RHI_CmdBindPipeline(pStage->pipeline);
+		if(backEnd.previousPipeline.h != pStage->pipeline.h){
+			RHI_CmdBindPipeline(pStage->pipeline);
+			backEnd.previousPipeline = pStage->pipeline;
+		}
 		RHI_CmdBindDescriptorSet(pStage->pipeline, backEnd.descriptorSet);
 
 		RHI_CmdPushConstants(pStage->pipeline, RHI_Shader_Vertex, projectionMatrix,sizeof(projectionMatrix));

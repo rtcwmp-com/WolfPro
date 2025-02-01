@@ -958,7 +958,7 @@ typedef struct {
 	rhiSampler sampler;
 
 	VertexBuffers vertexBuffers[RHI_FRAMES_IN_FLIGHT];
-	
+	rhiPipeline previousPipeline;
 } backEndState_t;
 
 /*

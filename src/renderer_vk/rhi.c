@@ -572,7 +572,7 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
     VkPipeline vkPipeline;
     VK(vkCreateGraphicsPipelines(vk.device, VK_NULL_HANDLE, 1, &createInfo, NULL, &vkPipeline));
 
-    SetObjectName(VK_OBJECT_TYPE_PIPELINE, (uint64_t)vkPipeline, "Pipeline");
+    SetObjectName(VK_OBJECT_TYPE_PIPELINE, (uint64_t)vkPipeline, graphicsDesc->name);
 
     Pipeline pipeline = {};
     pipeline.pipeline = vkPipeline;
