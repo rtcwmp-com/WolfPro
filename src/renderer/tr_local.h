@@ -1174,8 +1174,7 @@ extern cvar_t  *r_glDriver;
 extern cvar_t  *r_glIgnoreWicked3D;
 extern cvar_t  *r_swapInterval;
 extern cvar_t  *r_textureMode;
-extern cvar_t  *r_offsetFactor;
-extern cvar_t  *r_offsetUnits;
+
 
 //extern	cvar_t	*r_fullbright;					// avoid lightmap pass // JPW NERVE removed per atvi request
 extern cvar_t  *r_lightmap;                     // render lightmaps only

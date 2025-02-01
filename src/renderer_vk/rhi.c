@@ -355,12 +355,21 @@ void RHI_UpdateDescriptorSet(rhiDescriptorSet descriptorHandle, uint32_t binding
 
 }
 
-#include "shaders/triangle_ps.h"
-#include "shaders/triangle_vs.h"
+VkBool32 isBlendEnabled(uint32_t srcBlend, uint32_t dstBlend){
+    if(srcBlend == GLS_SRCBLEND_ONE && dstBlend == GLS_DSTBLEND_ZERO){
+        return VK_FALSE;
+    }
+    if(srcBlend == 0 && dstBlend == 0){
+        return VK_FALSE;
+    }
+    return VK_TRUE;
+}
+
 
 rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDesc)
 {
-    
+    assert((graphicsDesc->srcBlend & (~GLS_SRCBLEND_BITS)) == 0);
+    assert((graphicsDesc->dstBlend & (~GLS_DSTBLEND_BITS)) == 0);
     DescriptorSetLayout *descriptorSetLayout = GET_LAYOUT(graphicsDesc->descLayout);
 
     
@@ -397,21 +406,20 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
     PipelineLayout layout = {};
     layout.pipelineLayout = vkPipelineLayout;
 
-    
 
     // --------------------------------------------------------------------------------------------------
 
     VkShaderModule vsModule;
     VkShaderModuleCreateInfo vsCreateInfo = {};
     vsCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    vsCreateInfo.codeSize = sizeof(triangle_vs);
-    vsCreateInfo.pCode = (const uint32_t*)triangle_vs;
+    vsCreateInfo.codeSize = graphicsDesc->vertexShader.byteCount;
+    vsCreateInfo.pCode = (const uint32_t*)graphicsDesc->vertexShader.data;
 
     VkShaderModule psModule;
     VkShaderModuleCreateInfo psCreateInfo = {};
     psCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    psCreateInfo.codeSize = sizeof(triangle_ps);
-    psCreateInfo.pCode = (const uint32_t*)triangle_ps;
+    psCreateInfo.codeSize = graphicsDesc->pixelShader.byteCount;
+    psCreateInfo.pCode = (const uint32_t*)graphicsDesc->pixelShader.data;
 
     VK(vkCreateShaderModule(vk.device, &vsCreateInfo,NULL,&vsModule));
     VK(vkCreateShaderModule(vk.device, &psCreateInfo,NULL,&psModule));
@@ -437,32 +445,33 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
 
 	VkPipelineRasterizationStateCreateInfo rasterizer = {};
 	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-	rasterizer.cullMode = GetVkCullModeFlags(CT_TWO_SIDED);
+	rasterizer.polygonMode = graphicsDesc->wireframe ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
+	rasterizer.cullMode = GetVkCullModeFlags(graphicsDesc->cullType);
 	rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
 	rasterizer.depthClampEnable = VK_FALSE;
 	rasterizer.rasterizerDiscardEnable = VK_FALSE;
-	rasterizer.depthBiasEnable = VK_FALSE;
 	rasterizer.lineWidth = 1.0f;
+    
+    if(graphicsDesc->polygonOffset){
+        rasterizer.depthBiasEnable = VK_TRUE;
+        rasterizer.depthBiasConstantFactor = -1.0f;
+        rasterizer.depthBiasSlopeFactor = -1.0f;
+    }
 
 	// VkPipelineMultisampleStateCreateInfo multiSampling {};
 	// multiSampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 	// multiSampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 	// multiSampling.alphaToCoverageEnable = VK_FALSE;
 
-	/*const qbool disableBlend =
-		desc->srcBlend == GLS_SRCBLEND_ONE &&
-		desc->dstBlend == GLS_DSTBLEND_ZERO;*/
+
 	VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
-	colorBlendAttachment.blendEnable = VK_TRUE;
+	colorBlendAttachment.blendEnable = isBlendEnabled(graphicsDesc->srcBlend, graphicsDesc->dstBlend);
 	colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
-	// colorBlendAttachment.srcColorBlendFactor = GetSourceColorBlendFactor(desc->srcBlend);
-	// colorBlendAttachment.dstColorBlendFactor = GetDestinationColorBlendFactor(desc->dstBlend);
-	colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA; // @TODO:
-	colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA; // @TODO:
+	colorBlendAttachment.srcColorBlendFactor = GetSourceColorBlendFactor(graphicsDesc->srcBlend);
+	colorBlendAttachment.dstColorBlendFactor = GetDestinationColorBlendFactor(graphicsDesc->dstBlend);
 	colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
-	colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA; // @TODO:
-	colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA; // @TODO:
+	colorBlendAttachment.srcAlphaBlendFactor = GetSourceColorBlendFactor(graphicsDesc->srcBlend); // @TODO: validate alpha blend factor
+	colorBlendAttachment.dstAlphaBlendFactor = GetDestinationColorBlendFactor(graphicsDesc->dstBlend); // @TODO:
 	colorBlendAttachment.colorWriteMask =
 		VK_COLOR_COMPONENT_R_BIT |
 		VK_COLOR_COMPONENT_G_BIT |
@@ -489,7 +498,7 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
 	viewportState.viewportCount = 1;
 	viewportState.scissorCount = 1;
 
-	// VkPipelineDepthStencilStateCreateInfo depthStencil = {};
+	//VkPipelineDepthStencilStateCreateInfo depthStencil = {};
 	// VkPipelineDepthStencilStateCreateInfo* depthStencilPtr = NULL;
 	// if(desc->renderTargets.hasDepthStencil)
 	// {
@@ -567,6 +576,9 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
 
     VkPipelineDepthStencilStateCreateInfo depthStencil = {};
     depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencil.depthWriteEnable = graphicsDesc->depthWrite;
+    depthStencil.depthTestEnable = graphicsDesc->depthTest;
+    depthStencil.depthCompareOp = graphicsDesc->depthTestEqual? VK_COMPARE_OP_EQUAL: VK_COMPARE_OP_LESS_OR_EQUAL;
 
 
     // Use the pNext to point to the rendering create struct

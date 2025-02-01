@@ -139,8 +139,6 @@ cvar_t  *r_finish;
 cvar_t  *r_clear;
 cvar_t  *r_swapInterval;
 cvar_t  *r_textureMode;
-cvar_t  *r_offsetFactor;
-cvar_t  *r_offsetUnits;
 cvar_t  *r_gamma;
 cvar_t  *r_intensity;
 cvar_t  *r_lockpvs;
@@ -371,6 +369,21 @@ static void InitVulkan( void ) {
 	graphicsDesc.descLayout = backEnd.descriptorSetLayout;
 	graphicsDesc.pushConstants.vsBytes = 64;
 	graphicsDesc.pushConstants.psBytes = 8;
+	#include "../renderer_vk/shaders/triangle_ps.h"
+	#include "../renderer_vk/shaders/triangle_vs.h"
+	graphicsDesc.vertexShader.data = triangle_vs;
+	graphicsDesc.vertexShader.byteCount = sizeof(triangle_vs);
+	graphicsDesc.pixelShader.data = triangle_ps;
+	graphicsDesc.pixelShader.byteCount = sizeof(triangle_ps);
+	graphicsDesc.cullType = CT_TWO_SIDED;
+	graphicsDesc.polygonOffset = 0;
+	graphicsDesc.srcBlend = GLS_SRCBLEND_SRC_ALPHA;
+	graphicsDesc.dstBlend = GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA;
+	graphicsDesc.depthTest = qfalse;
+	graphicsDesc.depthWrite = qfalse;
+	graphicsDesc.depthTestEqual = qfalse;
+	graphicsDesc.wireframe = qfalse;
+
 
 	backEnd.pipeline = RHI_CreateGraphicsPipeline(&graphicsDesc);
 
@@ -1143,8 +1156,6 @@ void R_Register( void ) {
 	r_showsky = ri.Cvar_Get( "r_showsky", "0", CVAR_CHEAT );
 	r_shownormals = ri.Cvar_Get( "r_shownormals", "0", CVAR_CHEAT );
 	r_clear = ri.Cvar_Get( "r_clear", "0", CVAR_CHEAT );
-	r_offsetFactor = ri.Cvar_Get( "r_offsetfactor", "-1", CVAR_CHEAT );
-	r_offsetUnits = ri.Cvar_Get( "r_offsetunits", "-2", CVAR_CHEAT );
 	r_drawBuffer = ri.Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
 	r_lockpvs = ri.Cvar_Get( "r_lockpvs", "0", CVAR_CHEAT );
 	r_noportals = ri.Cvar_Get( "r_noportals", "0", CVAR_CHEAT );

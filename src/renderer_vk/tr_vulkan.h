@@ -232,7 +232,6 @@ typedef struct Vulkan
 	memoryPool commandBufferPool;
 
 	VkCommandBuffer activeCommandBuffer;
-	VkCommandBuffer previousActiveCommandBuffer;
 
 	memoryPool semaphorePool;
 
@@ -281,6 +280,7 @@ VkAccessFlags2 GetVkAccessFlagsFromResource(RHI_ResourceState state);
 VkDescriptorType GetVkDescriptorType(RHI_DescriptorType type);
 VkShaderStageFlags GetVkShaderStageFlags(RHI_PipelineStage stage);
 VkShaderStageFlags GetVkShaderStageFlagsFromShader(RHI_Shader stage);
-
+VkBlendFactor GetSourceColorBlendFactor(unsigned int bits);
+VkBlendFactor GetDestinationColorBlendFactor(unsigned int bits);
 
 #endif

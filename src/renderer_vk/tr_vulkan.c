@@ -1308,7 +1308,7 @@ static void BuildSpecializationDesc(const VkSpecializationInfo** outPtr, VkSpeci
 	*outPtr = out;
 }
 
-static VkBlendFactor GetSourceColorBlendFactor(unsigned int bits)
+VkBlendFactor GetSourceColorBlendFactor(unsigned int bits)
 {
 	switch(bits)
 	{
@@ -1325,7 +1325,7 @@ static VkBlendFactor GetSourceColorBlendFactor(unsigned int bits)
 	}
 }
 
-static VkBlendFactor GetDestinationColorBlendFactor(unsigned int bits)
+VkBlendFactor GetDestinationColorBlendFactor(unsigned int bits)
 {
 	switch(bits)
 	{

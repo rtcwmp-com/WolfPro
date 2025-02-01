@@ -201,22 +201,7 @@ typedef struct rhiSpecialization
 	uint32_t byteCount;
 } rhiSpecialization;
 
-// typedef struct rhiGraphicsPipelineDesc
-// {
-// 	const char* name;
-	
-// 	VertexLayout vertexLayout;
-// 	rhiShader vertexShader;
-// 	rhiShader fragmentShader;
-// 	rhiSpecialization vertexSpec;
-// 	rhiSpecialization fragmentSpec;
-// 	uint32_t cullType; // cullType_t
-// 	uint32_t srcBlend; // stateBits & GLS_SRCBLEND_BITS
-// 	uint32_t dstBlend; // stateBits & GLS_DSTBLEND_BITS
-// 	uint32_t depthTest; // depthTest_t
-// 	qbool enableDepthWrite;
-// 	qbool enableDepthTest;
-// } rhiGraphicsPipelineDesc;
+
 
 typedef enum RHI_MemoryUsage
 {
@@ -303,10 +288,43 @@ typedef enum RHI_Shader {
 	RHI_Shader_Count
 } RHI_Shader;
 
+typedef struct rhiShaderDesc {
+	const void *data;
+	uint32_t byteCount;
+
+} rhiShaderDesc;
+
+// typedef struct rhiGraphicsPipelineDesc
+// {
+// 	const char* name;
+	
+// 	VertexLayout vertexLayout;
+// 	rhiShader vertexShader;
+// 	rhiShader fragmentShader;
+// 	rhiSpecialization vertexSpec;
+// 	rhiSpecialization fragmentSpec;
+// 	uint32_t cullType; // cullType_t
+// 	uint32_t srcBlend; // stateBits & GLS_SRCBLEND_BITS
+// 	uint32_t dstBlend; // stateBits & GLS_DSTBLEND_BITS
+// 	uint32_t depthTest; // depthTest_t
+// 	qbool enableDepthWrite;
+// 	qbool enableDepthTest;
+// } rhiGraphicsPipelineDesc;
+
 typedef struct rhiGraphicsPipelineDesc {
 	const char *name;
 	rhiDescriptorSetLayout descLayout;
 	rhiPushConstants pushConstants;
+	rhiShaderDesc vertexShader;
+	rhiShaderDesc pixelShader;
+	uint32_t cullType; //cullType_t
+	qboolean polygonOffset;
+	unsigned int srcBlend;
+	unsigned int dstBlend;
+	qboolean depthWrite;
+	qboolean depthTest;
+	qboolean depthTestEqual;
+	qboolean wireframe;
 
 }rhiGraphicsPipelineDesc;
 

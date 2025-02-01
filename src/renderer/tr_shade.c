@@ -1312,7 +1312,7 @@ void RB_StageIteratorGeneric( void ) {
 	// set polygon offset if necessary
 	if ( input->shader->polygonOffset ) {
 		qglEnable( GL_POLYGON_OFFSET_FILL );
-		qglPolygonOffset( r_offsetFactor->value, r_offsetUnits->value );
+		qglPolygonOffset( -1, -1 );
 	}
 
 	//
