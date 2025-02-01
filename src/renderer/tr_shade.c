@@ -1119,42 +1119,46 @@ void SetIteratorFog( void ) {
 }
 
 static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
-
+	
 	VertexBuffers *vb = &backEnd.vertexBuffers[backEnd.currentFrameIndex];
 
+	if((vb->indexCount + tess.numIndexes) > IDX_MAX || (vb->vertexCount + tess.numVertexes) > VBA_MAX ){
+		assert(!"Out of vertex buffer memory");
+		return;
+	}
+
+	byte *indexBufferData = RHI_MapBuffer(vb->index);
+	memcpy(indexBufferData + (vb->indexFirst * sizeof(tess.indexes[0])), tess.indexes,	tess.numIndexes * sizeof(tess.indexes[0]));
+	RHI_UnmapBuffer(vb->index);
+
+	byte *positionBufferData = RHI_MapBuffer(vb->position);
+	memcpy(positionBufferData + (vb->vertexFirst * sizeof(tess.xyz[0])), tess.xyz, tess.numVertexes * sizeof(tess.xyz[0]));
+	RHI_UnmapBuffer(vb->position);
 
 	for(int i = 0; i < MAX_SHADER_STAGES; i++){
 
+		
 
 		shaderStage_t *pStage = tess.xstages[i];
 		if (pStage == NULL || !pStage->active) {
 			continue;
 		}
 
-		
-
-		if((vb->indexCount + tess.numIndexes) > IDX_MAX || (vb->vertexCount + tess.numVertexes) > VBA_MAX ){
-			return;
+		if (i > 0) {
+			//__debugbreak();
+			//break;
 		}
 
 		ComputeColors( pStage );
 		ComputeTexCoords( pStage );
 
-		byte *indexBufferData = RHI_MapBuffer(vb->index);
-		memcpy(indexBufferData + (vb->indexFirst * sizeof(tess.indexes[0])), tess.indexes,	tess.numIndexes * sizeof(tess.indexes[0]));
-		RHI_UnmapBuffer(vb->index);
-
-		byte *positionBufferData = RHI_MapBuffer(vb->position);
-		memcpy(positionBufferData + (vb->vertexFirst * sizeof(tess.xyz[0])), tess.xyz, tess.numVertexes * sizeof(tess.xyz[0]));
-		RHI_UnmapBuffer(vb->position);
-
-		byte *tcBufferData = RHI_MapBuffer(vb->textureCoord);
+		byte *tcBufferData = RHI_MapBuffer(vb->textureCoord[i]);
 		memcpy(tcBufferData + (vb->vertexFirst * sizeof(float) * 2), tess.svars.texcoords, tess.numVertexes * sizeof(float) * 2);
-		RHI_UnmapBuffer(vb->textureCoord);
+		RHI_UnmapBuffer(vb->textureCoord[i]);
 
-		byte *colorBufferData = RHI_MapBuffer(vb->color);
+		byte *colorBufferData = RHI_MapBuffer(vb->color[i]);
 		memcpy(colorBufferData + (vb->vertexFirst * sizeof(tess.svars.colors[0])), tess.svars.colors, tess.numVertexes * sizeof(tess.svars.colors[0]));
-		RHI_UnmapBuffer(vb->color);
+		RHI_UnmapBuffer(vb->color[i]);
 
 		float w = glConfig.vidWidth;
 		float h = glConfig.vidHeight;
@@ -1168,7 +1172,7 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 		typedef struct pushConstants {
 			uint32_t textureIndex;
 			uint32_t samplerIndex;
-		}pushConstants;
+		} pushConstants;
 
 		pushConstants pc; 
 		pc.samplerIndex = 0;
@@ -1181,16 +1185,18 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 			RHI_CmdBindDescriptorSet(pStage->pipeline, backEnd.descriptorSet);
 			backEnd.currentDescriptorSet = backEnd.descriptorSet;
 		}
+
+		rhiBuffer buffers[3] = {vb->position, vb->color[i], vb->textureCoord[i]};
+		RHI_CmdBindVertexBuffers(buffers, ARRAY_LEN(buffers));
 		
 
 		RHI_CmdPushConstants(pStage->pipeline, RHI_Shader_Vertex, projectionMatrix,sizeof(projectionMatrix));
 		RHI_CmdPushConstants(pStage->pipeline, RHI_Shader_Pixel, &pc, sizeof(pc));
 
 		RHI_CmdDrawIndexed(tess.numIndexes, vb->indexFirst, vb->vertexFirst);
-
-		vb->indexCount += tess.numIndexes;
-		vb->vertexCount += tess.numVertexes;
 	}
+	vb->indexCount += tess.numIndexes;
+	vb->vertexCount += tess.numVertexes;
 }
 
 /*

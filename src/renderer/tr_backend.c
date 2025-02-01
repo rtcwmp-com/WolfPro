@@ -1211,10 +1211,10 @@ const void  *RB_BeginFrame( const void *data ) {
 	// RHI_CmdBindPipeline(backEnd.pipeline);
 	// RHI_CmdBindDescriptorSet(backEnd.pipeline, backEnd.descriptorSet);
 	RHI_CmdBindIndexBuffer(backEnd.vertexBuffers[backEnd.currentFrameIndex].index);
-	rhiBuffer buffers[3] = {backEnd.vertexBuffers[backEnd.currentFrameIndex].position, 
+	/*rhiBuffer buffers[3] = {backEnd.vertexBuffers[backEnd.currentFrameIndex].position, 
 	backEnd.vertexBuffers[backEnd.currentFrameIndex].color,
 	backEnd.vertexBuffers[backEnd.currentFrameIndex].textureCoord};
-	RHI_CmdBindVertexBuffers(buffers, ARRAY_LEN(buffers));
+	RHI_CmdBindVertexBuffers(buffers, ARRAY_LEN(buffers));*/
 
 
 	return (const void *)( cmd + 1 );

@@ -323,25 +323,32 @@ static void InitVulkan( void ) {
 	for(int i = 0; i < RHI_FRAMES_IN_FLIGHT; i++){
 		backEnd.commandBuffers[i] = RHI_CreateCommandBuffer();
 		
-		vertexBufferDesc.initialState = RHI_ResourceState_VertexBufferBit;
-		vertexBufferDesc.name = va("%s %d", "Color Buffer", i);
-		vertexBufferDesc.byteCount = VBA_MAX * sizeof(tess.vertexColors[0]);
-		backEnd.vertexBuffers[i].color = RHI_CreateBuffer(&vertexBufferDesc);
+		
 		
 		vertexBufferDesc.initialState = RHI_ResourceState_VertexBufferBit;
 		vertexBufferDesc.name = va("%s %d", "Position Buffer", i);
 		vertexBufferDesc.byteCount = VBA_MAX * sizeof(tess.xyz[0]);
 		backEnd.vertexBuffers[i].position = RHI_CreateBuffer(&vertexBufferDesc);
 
-		vertexBufferDesc.initialState = RHI_ResourceState_VertexBufferBit;
-		vertexBufferDesc.name = va("%s %d", "Texture Coordinates Buffer", i);
-		vertexBufferDesc.byteCount = VBA_MAX * sizeof(tess.texCoords[0][0]);
-		backEnd.vertexBuffers[i].textureCoord = RHI_CreateBuffer(&vertexBufferDesc);
-		
 		vertexBufferDesc.initialState = RHI_ResourceState_IndexBufferBit;
 		vertexBufferDesc.name = va("%s %d", "Index Buffer", i);
 		vertexBufferDesc.byteCount = IDX_MAX * sizeof(tess.indexes[0]);
 		backEnd.vertexBuffers[i].index = RHI_CreateBuffer(&vertexBufferDesc);
+
+		for(int stage = 0; stage < MAX_SHADER_STAGES; stage++){
+			vertexBufferDesc.initialState = RHI_ResourceState_VertexBufferBit;
+			vertexBufferDesc.name = va("%s %d #%d", "Texture Coordinates Buffer", i, stage+1);
+			vertexBufferDesc.byteCount = VBA_MAX * sizeof(tess.texCoords[0][0]);
+			backEnd.vertexBuffers[i].textureCoord[stage] = RHI_CreateBuffer(&vertexBufferDesc);
+
+			vertexBufferDesc.initialState = RHI_ResourceState_VertexBufferBit;
+			vertexBufferDesc.name = va("%s %d #%d", "Color Buffer", i, stage+1);
+			vertexBufferDesc.byteCount = VBA_MAX * sizeof(tess.vertexColors[0]);
+			backEnd.vertexBuffers[i].color[stage] = RHI_CreateBuffer(&vertexBufferDesc);
+		}
+		
+		
+		
 	}
 
 	backEnd.renderComplete = RHI_CreateTimelineSemaphore();
