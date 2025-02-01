@@ -2343,6 +2343,20 @@ VkShaderStageFlags GetVkShaderStageFlagsFromShader(RHI_Shader stage){
     }
 }
 
+VkFormat GetVkFormatFromVertexFormat(RHI_VertexFormat format, uint32_t elementCount){
+    assert((unsigned int)format < RHI_VertexFormat_Count);
+	assert(elementCount >= 1 && elementCount <= 4);
+
+	const VkFormat formats[RHI_VertexFormat_Count][4] =
+	{
+		{ VK_FORMAT_R32_SFLOAT, VK_FORMAT_R32G32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32A32_SFLOAT },
+		{ VK_FORMAT_R8_UNORM, VK_FORMAT_R8G8_UNORM, VK_FORMAT_R8G8B8_UNORM, VK_FORMAT_R8G8B8A8_UNORM },
+		{ VK_FORMAT_R32_UINT, VK_FORMAT_R32G32_UINT, VK_FORMAT_R32G32B32_UINT, VK_FORMAT_R32G32B32A32_UINT }
+	};
+
+	return formats[format][elementCount - 1];
+}
+
 
 void VKimp_Init( void ) {
     if(vk.initialized &&

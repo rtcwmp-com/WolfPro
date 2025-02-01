@@ -311,6 +311,19 @@ typedef struct rhiShaderDesc {
 // 	qbool enableDepthTest;
 // } rhiGraphicsPipelineDesc;
 
+typedef enum RHI_VertexFormat {
+	RHI_VertexFormat_Float32 = 0,
+	RHI_VertexFormat_UNorm8,
+	RHI_VertexFormat_UInt32,
+	RHI_VertexFormat_Count
+} RHI_VertexFormat;
+
+typedef struct rhiVertexAttributeDesc {
+	uint32_t stride;
+	uint32_t elementCount;
+	RHI_VertexFormat elementFormat;
+} rhiVertexAttributeDesc;
+
 typedef struct rhiGraphicsPipelineDesc {
 	const char *name;
 	rhiDescriptorSetLayout descLayout;
@@ -325,6 +338,8 @@ typedef struct rhiGraphicsPipelineDesc {
 	qboolean depthTest;
 	qboolean depthTestEqual;
 	qboolean wireframe;
+	rhiVertexAttributeDesc attributes[8];
+	uint32_t attributeCount;
 
 }rhiGraphicsPipelineDesc;
 

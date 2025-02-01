@@ -383,6 +383,16 @@ static void InitVulkan( void ) {
 	graphicsDesc.depthWrite = qfalse;
 	graphicsDesc.depthTestEqual = qfalse;
 	graphicsDesc.wireframe = qfalse;
+	graphicsDesc.attributeCount = 3; //position, color, tc
+	graphicsDesc.attributes[0].elementCount = 4;
+	graphicsDesc.attributes[0].elementFormat = RHI_VertexFormat_Float32;
+	graphicsDesc.attributes[0].stride = 4 * sizeof(float);
+	graphicsDesc.attributes[1].elementCount = 4;
+	graphicsDesc.attributes[1].elementFormat = RHI_VertexFormat_UNorm8;
+	graphicsDesc.attributes[1].stride = 4 * sizeof(byte);
+	graphicsDesc.attributes[2].elementCount = 2;
+	graphicsDesc.attributes[2].elementFormat = RHI_VertexFormat_Float32;
+	graphicsDesc.attributes[2].stride = 2 * sizeof(float);
 
 
 	backEnd.pipeline = RHI_CreateGraphicsPipeline(&graphicsDesc);
