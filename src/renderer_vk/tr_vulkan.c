@@ -2347,14 +2347,20 @@ VkFormat GetVkFormatFromVertexFormat(RHI_VertexFormat format, uint32_t elementCo
     assert((unsigned int)format < RHI_VertexFormat_Count);
 	assert(elementCount >= 1 && elementCount <= 4);
 
-	const VkFormat formats[RHI_VertexFormat_Count][4] =
-	{
-		{ VK_FORMAT_R32_SFLOAT, VK_FORMAT_R32G32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32A32_SFLOAT },
-		{ VK_FORMAT_R8_UNORM, VK_FORMAT_R8G8_UNORM, VK_FORMAT_R8G8B8_UNORM, VK_FORMAT_R8G8B8A8_UNORM },
-		{ VK_FORMAT_R32_UINT, VK_FORMAT_R32G32_UINT, VK_FORMAT_R32G32B32_UINT, VK_FORMAT_R32G32B32A32_UINT }
-	};
+    switch(format){
+        case RHI_VertexFormat_Float32:
+            return (VkFormat[4]) { VK_FORMAT_R32_SFLOAT, VK_FORMAT_R32G32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32A32_SFLOAT }[elementCount - 1];
 
-	return formats[format][elementCount - 1];
+        case RHI_VertexFormat_UNorm8:
+            return (VkFormat[4]) { VK_FORMAT_R8_UNORM, VK_FORMAT_R8G8_UNORM, VK_FORMAT_R8G8B8_UNORM, VK_FORMAT_R8G8B8A8_UNORM }[elementCount - 1];
+
+        case RHI_VertexFormat_UInt32:
+            return (VkFormat[4]) { VK_FORMAT_R32_UINT, VK_FORMAT_R32G32_UINT, VK_FORMAT_R32G32B32_UINT, VK_FORMAT_R32G32B32A32_UINT }[elementCount - 1];
+
+        default:
+            assert(!"Invalid vertex format");
+            return 0;
+    }
 }
 
 
