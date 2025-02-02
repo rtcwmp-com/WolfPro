@@ -470,8 +470,8 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
 	colorBlendAttachment.srcColorBlendFactor = GetSourceColorBlendFactor(graphicsDesc->srcBlend);
 	colorBlendAttachment.dstColorBlendFactor = GetDestinationColorBlendFactor(graphicsDesc->dstBlend);
 	colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
-	colorBlendAttachment.srcAlphaBlendFactor = GetSourceColorBlendFactor(graphicsDesc->srcBlend); // @TODO: validate alpha blend factor
-	colorBlendAttachment.dstAlphaBlendFactor = GetDestinationColorBlendFactor(graphicsDesc->dstBlend); // @TODO:
+	colorBlendAttachment.srcAlphaBlendFactor = GetSourceColorBlendFactor(graphicsDesc->srcBlend);
+	colorBlendAttachment.dstAlphaBlendFactor = GetDestinationColorBlendFactor(graphicsDesc->dstBlend);
 	colorBlendAttachment.colorWriteMask =
 		VK_COLOR_COMPONENT_R_BIT |
 		VK_COLOR_COMPONENT_G_BIT |

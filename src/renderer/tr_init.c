@@ -303,9 +303,6 @@ static void InitOpenGL( void ) {
 		}
 	}
 
-	// init command buffers and SMP
-	R_InitCommandBuffers();
-
 	// print info
 	GfxInfo_f();
 
@@ -1285,8 +1282,6 @@ void RE_Shutdown( qboolean destroyWindow ) {
 	ri.Cmd_RemoveCommand( "cropimages" );
 	// done.
 
-	R_ShutdownCommandBuffers();
-
 	// Ridah, keep a backup of the current images if possible
 	// clean out any remaining unused media from the last backup
 	R_PurgeShaders( 9999999 );
@@ -1296,19 +1291,15 @@ void RE_Shutdown( qboolean destroyWindow ) {
 	if ( r_cache->integer ) {
 		if ( tr.registered ) {
 			if ( destroyWindow ) {
-				R_ShutdownCommandBuffers();
 				R_DeleteTextures();
 			} else {
 				// backup the current media
-				R_ShutdownCommandBuffers();
-
 				R_BackupModels();
 				R_BackupShaders();
 				R_BackupImages();
 			}
 		}
 	} else if ( tr.registered ) {
-		R_ShutdownCommandBuffers();
 		R_DeleteTextures();
 	}
 
