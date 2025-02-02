@@ -211,28 +211,22 @@ SURFACE SHADERS
 shaderCommands_t tess;
 static qboolean setArraysOnce;
 
-/*
-=================
-R_BindAnimatedImage
 
-=================
-*/
-static void R_BindAnimatedImage( textureBundle_t *bundle ) {
+
+static image_t* R_GetAnimatedImage( textureBundle_t *bundle ) {
 	int index;
 
 	if ( bundle->isVideoMap ) {
 		ri.CIN_RunCinematic( bundle->videoMapHandle );
 		ri.CIN_UploadCinematic( bundle->videoMapHandle );
-		return;
+		return NULL;
 	}
 
 	if ( bundle->numImageAnimations <= 1 ) {
 		if ( bundle->isLightmap && ( backEnd.refdef.rdflags & RDF_SNOOPERVIEW ) ) {
-			GL_Bind( tr.whiteImage );
-		} else {
-			GL_Bind( bundle->image[0] );
+			return tr.whiteImage;
 		}
-		return;
+		return bundle->image[0];
 	}
 
 	// it is necessary to do this messy calc to make sure animations line up
@@ -246,9 +240,29 @@ static void R_BindAnimatedImage( textureBundle_t *bundle ) {
 	index %= bundle->numImageAnimations;
 
 	if ( bundle->isLightmap && ( backEnd.refdef.rdflags & RDF_SNOOPERVIEW ) ) {
-		GL_Bind( tr.whiteImage );
-	} else {
-		GL_Bind( bundle->image[ index ] );
+		return tr.whiteImage;
+	}
+	return bundle->image[ index ];
+
+}
+
+static image_t* R_GetAnimatedImageSafe( textureBundle_t *bundle ) {
+	image_t *image = R_GetAnimatedImage(bundle);
+	if(image == NULL){
+		return tr.whiteImage;
+	}
+	return image;
+}
+/*
+=================
+R_BindAnimatedImage
+
+=================
+*/
+static void R_BindAnimatedImage( textureBundle_t *bundle ) {
+	image_t *image = R_GetAnimatedImage(bundle);
+	if(image != NULL){
+		GL_Bind(image);
 	}
 }
 
@@ -1140,8 +1154,9 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 		
 
 		shaderStage_t *pStage = tess.xstages[i];
-		if (pStage == NULL || !pStage->active) {
-			continue;
+		//if (pStage == NULL || !pStage->active) {
+		if (pStage == NULL) {
+			break;
 		}
 
 		if (i > 0) {
@@ -1176,7 +1191,8 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 
 		pushConstants pc; 
 		pc.samplerIndex = 0;
-		pc.textureIndex = pStage->bundle[0].image[0]->descriptorIndex; //@TODO: update for animated images
+		pc.textureIndex = R_GetAnimatedImageSafe(&pStage->bundle[0])->descriptorIndex;
+		
 		if(backEnd.previousPipeline.h != pStage->pipeline.h){
 			RHI_CmdBindPipeline(pStage->pipeline);
 			backEnd.previousPipeline = pStage->pipeline;
