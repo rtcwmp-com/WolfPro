@@ -341,7 +341,7 @@ typedef struct rhiGraphicsPipelineDesc {
 	rhiVertexAttributeDesc attributes[8];
 	uint32_t attributeCount;
 
-}rhiGraphicsPipelineDesc;
+} rhiGraphicsPipelineDesc;
 
 inline void RHI_SubmitGraphicsDesc_Signal(rhiSubmitGraphicsDesc *graphicsDesc, rhiSemaphore semaphore, uint64_t semaphoreValue){
     assert(graphicsDesc->signalSemaphoreCount < ARRAY_LEN(graphicsDesc->signalSemaphores));

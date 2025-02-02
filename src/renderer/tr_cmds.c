@@ -81,22 +81,7 @@ void R_PerformanceCounters( void ) {
 }
 
 
-/*
-====================
-R_InitCommandBuffers
-====================
-*/
-void R_InitCommandBuffers( void ) {
-	glConfig.smpActive = qfalse;
-}
 
-/*
-====================
-R_ShutdownCommandBuffers
-====================
-*/
-void R_ShutdownCommandBuffers( void ) {
-}
 
 /*
 ====================
