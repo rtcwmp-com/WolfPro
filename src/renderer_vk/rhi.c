@@ -81,9 +81,9 @@ void RHI_Shutdown(qboolean destroyWindow)
         
         if(!texture->desc.longLifetime || destroyWindow){
             if(!texture->desc.nativeImage){
-                vkDestroyImageView(vk.device, texture->view, NULL);
                 vmaDestroyImage(vk.allocator, texture->image, texture->allocation);
             }
+            vkDestroyImageView(vk.device, texture->view, NULL);
             Pool_Remove(&vk.texturePool, it.handle);
         }
     }
