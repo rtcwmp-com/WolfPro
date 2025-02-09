@@ -3,7 +3,7 @@
 
 void Pool_Clear(memoryPool* pool) {
 	pool->firstFree = 1;
-	for (int i = 1; i < pool->itemCount; i++) {
+	for (int i = 0; i < pool->itemCount + 1; i++) {
 		pool->lookupData[i].inUse = 0;
 		pool->lookupData[i].nextFreeIndex = i < (pool->itemCount - 1) ? i + 1 : 0;
 		pool->lookupData[i].generation = 0;
@@ -74,6 +74,7 @@ void Pool_Remove(memoryPool *pool, uint64_t handle){
 	DecomposedHandle item = DecomposeHandle(handle);
 	HandleChecks(item, pool, "Pool_Remove");
 	pool->lookupData[item.index].nextFreeIndex = pool->firstFree;
+	pool->lookupData[item.index].inUse = 0;
 	pool->firstFree = item.index;
 }
 
@@ -83,4 +84,20 @@ void* Pool_Get(memoryPool *pool, uint64_t handle){
 
 	uint32_t itemLocation = item.index * pool->typeSize;
 	return pool->poolData+itemLocation;
+}
+
+PoolIterator Pool_BeginIteration(){
+	return (PoolIterator) { -1, NULL, 0 };
+}
+
+qboolean Pool_Iterate(memoryPool *pool, PoolIterator *it){
+	for(it->index++; it->index < pool->itemCount + 1; it->index++){
+		if(pool->lookupData[it->index].inUse){
+			uint32_t itemLocation = it->index * pool->typeSize;
+			it->value = pool->poolData + itemLocation;
+			it->handle = ComposeHandle(it->index, pool->lookupData[it->index].generation, pool->poolType);
+			return qtrue;
+		}
+	}
+	return qfalse;
 }

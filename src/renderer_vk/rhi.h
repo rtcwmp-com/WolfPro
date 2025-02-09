@@ -52,12 +52,6 @@ RHI_HANDLE_TYPE(rhiSampler)
 #define RHI_BIT(x)						(1 << x)
 
 
-typedef struct rhiCommandPoolDesc
-{
-	qbool presentQueue;
-	qbool transient;
-} rhiCommandPoolDesc;
-
 //typedef enum rhiResourceStateFlags {
 //        rhiResourceStateUndefined = 0,
 //        VertexBufferBit = RHI_BIT(0),
@@ -131,6 +125,7 @@ typedef struct rhiTextureDesc
 	RHI_ResourceState allowedStates;
 	RHI_ResourceState initialState;
 	rhiTextureFormatId format;
+	qbool longLifetime;
 } rhiTextureDesc;
 
 typedef struct PushConstantsRange
@@ -217,6 +212,7 @@ typedef struct rhiBufferDesc
 	uint32_t byteCount;
 	RHI_ResourceState initialState;
 	RHI_MemoryUsage memoryUsage;
+	qbool longLifetime;
 } rhiBufferDesc;
 
 typedef struct rhiSubmitGraphicsDesc {
@@ -267,6 +263,7 @@ typedef struct rhiDescriptorSetLayoutDesc {
 	rhiDescriptorSetLayoutBinding bindings[4];
 	uint32_t bindingCount;
 	const char *name;
+	qbool longLifetime;
 } rhiDescriptorSetLayoutDesc; 
 
 typedef enum RHI_TextureAddressing {
@@ -340,6 +337,7 @@ typedef struct rhiGraphicsPipelineDesc {
 	qboolean wireframe;
 	rhiVertexAttributeDesc attributes[8];
 	uint32_t attributeCount;
+	qbool longLifetime;
 
 } rhiGraphicsPipelineDesc;
 
@@ -357,13 +355,13 @@ inline void RHI_SubmitGraphicsDesc_Wait(rhiSubmitGraphicsDesc *graphicsDesc, rhi
 }
 
 
-void RHI_Init();
-void RHI_Shutdown();
+void RHI_Init( void );
+void RHI_Shutdown(qboolean destroyWindow);
 
 void RHI_WaitUntilDeviceIdle(); //debug only
 
-rhiSemaphore RHI_CreateBinarySemaphore();
-rhiSemaphore RHI_CreateTimelineSemaphore();
+rhiSemaphore RHI_CreateBinarySemaphore( void );
+rhiSemaphore RHI_CreateTimelineSemaphore( void );
 void RHI_WaitOnSemaphore(rhiSemaphore semaphore, uint64_t semaphoreValue);
 
 rhiBuffer RHI_CreateBuffer(const rhiBufferDesc *desc);
@@ -393,7 +391,7 @@ void RHI_AcquireNextImage(uint32_t* outImageIndex, rhiSemaphore signalSemaphore)
 void RHI_SubmitGraphics(const rhiSubmitGraphicsDesc* graphicsDesc);
 void RHI_SubmitPresent(rhiSemaphore waitSemaphore, uint32_t swapChainImageIndex);
 
-rhiCommandBuffer RHI_CreateCommandBuffer(void); // pass queue enum as argument
+rhiCommandBuffer RHI_CreateCommandBuffer(qboolean longLifetime); // pass queue enum as argument
 void RHI_BindCommandBuffer(rhiCommandBuffer cmdBuffer);
 void RHI_BeginCommandBuffer( void );
 void RHI_EndCommandBuffer( void );

@@ -107,12 +107,14 @@ typedef struct Semaphore
 	VkSemaphore semaphore;
 	qbool signaled;
 	qbool binary;
+	qbool longLifetime;
 } Semaphore;
 
 typedef struct CommandBuffer
 {
 	VkCommandBuffer commandBuffer;
 	VkCommandPool commandPool; // the owner of this command
+	qbool longLifetime;
 } CommandBuffer;
 
 typedef struct Texture
@@ -223,8 +225,6 @@ typedef struct Vulkan
 	rhiBuffer bufferBarriers[64];
 	uint32_t bufferBarrierCount;
 	RHI_ResourceState bufferState[64];
-
-	VkImageView swapChainImageViews[MAX_SWAP_CHAIN_IMAGES]; //delete later
 
 	VkDescriptorPool descriptorPool;
 	VkCommandPool commandPool;

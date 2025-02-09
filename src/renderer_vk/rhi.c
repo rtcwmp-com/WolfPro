@@ -8,14 +8,100 @@
 #define GET_PIPELINE(handle) ((Pipeline*)Pool_Get(&vk.pipelinePool, handle.h))
 #define GET_DESCRIPTORSET(handle) ((DescriptorSet*)Pool_Get(&vk.descriptorSetPool, handle.h))
 #define GET_SAMPLER(handle) ((Sampler*)Pool_Get(&vk.samplerPool, handle.h))
-void RHI_Init()
+
+void RHI_Shutdown(qboolean destroyWindow)
 {
+    vkDeviceWaitIdle(vk.device);
+
+    //destroy user resources
+    PoolIterator it = Pool_BeginIteration();
+    while(Pool_Iterate(&vk.samplerPool, &it)){
+        Sampler *sampler = (Sampler*)it.value;
+        vkDestroySampler(vk.device, sampler->sampler, NULL);
+    }
+    Pool_Clear(&vk.samplerPool);
+
+    it = Pool_BeginIteration();
+    while(Pool_Iterate(&vk.bufferPool, &it)){
+        Buffer *buffer = (Buffer*)it.value;
+        if(!buffer->desc.longLifetime || destroyWindow){
+            vmaDestroyBuffer(vk.allocator, buffer->buffer, NULL);
+            Pool_Remove(&vk.bufferPool, it.handle);
+        }
+    }
+
+
+    it = Pool_BeginIteration();
+    while(Pool_Iterate(&vk.semaphorePool, &it)){
+        Semaphore *semaphore = (Semaphore*)it.value;
+        if(!semaphore->longLifetime || destroyWindow){
+            vkDestroySemaphore(vk.device, semaphore->semaphore, NULL);
+            Pool_Remove(&vk.semaphorePool, it.handle);
+        }
+    }
+
+    it = Pool_BeginIteration();
+    while(Pool_Iterate(&vk.descriptorSetLayoutPool, &it)){
+        DescriptorSetLayout *descSetLayout = (DescriptorSetLayout*)it.value;
+        if(!descSetLayout->desc.longLifetime || destroyWindow){
+            vkDestroyDescriptorSetLayout(vk.device,descSetLayout->layout, NULL);
+            Pool_Remove(&vk.descriptorSetLayoutPool, it.handle);
+        }
+    }
+
+    //it = Pool_BeginIteration();
+    //while(Pool_Iterate(&vk.descriptorSetPool, &it)){
+    //    DescriptorSet *descSet = (DescriptorSet*)it.value;
+    //    vkFreeDescriptorSets(vk.device, vk.descriptorPool, 1, &descSet->set);
+    //}
+    Pool_Clear(&vk.descriptorSetPool);
+
+    it = Pool_BeginIteration();
+    while(Pool_Iterate(&vk.pipelinePool, &it)){
+        Pipeline *pipeline = (Pipeline*)it.value;
+        if(!pipeline->graphicsDesc.longLifetime || destroyWindow){
+            vkDestroyPipelineLayout(vk.device, pipeline->layout.pipelineLayout, NULL);
+            vkDestroyPipeline(vk.device,pipeline->pipeline, NULL);
+            Pool_Remove(&vk.pipelinePool, it.handle);
+        }
+    }
+
+    it = Pool_BeginIteration();
+    while(Pool_Iterate(&vk.commandBufferPool, &it)){
+        CommandBuffer *commandBuffer = (CommandBuffer*)it.value;
+        if(!commandBuffer->longLifetime || destroyWindow){
+            vkFreeCommandBuffers(vk.device, commandBuffer->commandPool, 1, &commandBuffer->commandBuffer);
+            Pool_Remove(&vk.commandBufferPool, it.handle);
+        }
+    }
+
+    it = Pool_BeginIteration();
+    while(Pool_Iterate(&vk.texturePool, &it)){
+        Texture *texture = (Texture*)it.value;
+        
+        if(!texture->desc.longLifetime || destroyWindow){
+            if(!texture->desc.nativeImage){
+                vkDestroyImageView(vk.device, texture->view, NULL);
+                vmaDestroyImage(vk.allocator, texture->image, texture->allocation);
+            }
+            Pool_Remove(&vk.texturePool, it.handle);
+        }
+    }
     
+    if(destroyWindow){
+        //destroy private resources
+        vkDestroyDescriptorPool(vk.device, vk.descriptorPool, NULL);
+        vkDestroyCommandPool(vk.device, vk.commandPool, NULL);
+        vkDestroySwapchainKHR(vk.device, vk.swapChain, NULL);
+        vmaDestroyAllocator(vk.allocator);
+        vkDestroyDevice(vk.device, NULL);
+        vkDestroySurfaceKHR(vk.instance, vk.surface, NULL);
+        vkDestroyInstance(vk.instance, NULL);
+        vk.initialized = qfalse;
+    }
+
 }
 
-void RHI_Shutdown()
-{
-}
 
 void RHI_WaitUntilDeviceIdle()
 {
@@ -572,6 +658,9 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
     VkPipeline vkPipeline;
     VK(vkCreateGraphicsPipelines(vk.device, VK_NULL_HANDLE, 1, &createInfo, NULL, &vkPipeline));
 
+    vkDestroyShaderModule(vk.device, psModule, NULL);
+    vkDestroyShaderModule(vk.device, vsModule, NULL);
+
     SetObjectName(VK_OBJECT_TYPE_PIPELINE, (uint64_t)vkPipeline, graphicsDesc->name);
 
     Pipeline pipeline = {};
@@ -693,7 +782,7 @@ void RHI_SubmitPresent(rhiSemaphore waitSemaphore, uint32_t swapChainImageIndex)
     VK(vkQueuePresentKHR(vk.queues.present, &presentInfo));    
 }
 
-rhiCommandBuffer RHI_CreateCommandBuffer( void ) //pass queue enum
+rhiCommandBuffer RHI_CreateCommandBuffer( qboolean longLifetime)
 {
     VkCommandBuffer commandBuffer;
     VkCommandBufferAllocateInfo allocInfo = {};
@@ -706,6 +795,7 @@ rhiCommandBuffer RHI_CreateCommandBuffer( void ) //pass queue enum
     CommandBuffer buffer = {};
     buffer.commandPool = vk.commandPool;
     buffer.commandBuffer = commandBuffer;
+    buffer.longLifetime = longLifetime;
     return (rhiCommandBuffer) { Pool_Add(&vk.commandBufferPool, &buffer) };
 }
 

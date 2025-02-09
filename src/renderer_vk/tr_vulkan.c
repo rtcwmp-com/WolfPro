@@ -786,23 +786,23 @@ static void CreateSwapChain()
     }
     ri.Hunk_FreeTempMemory(images);
 
-    //Create ImageViews for swap chain images
-    for(int i = 0; i < vk.swapChainImageCount; i++){
-        VkImageView view;
-        VkImageViewCreateInfo viewInfo = {};
-        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        viewInfo.image = vk.swapChainImages[i];
-        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        viewInfo.format = SURFACE_FORMAT_RGBA;
-        viewInfo.subresourceRange.aspectMask = GetVkImageAspectFlags(SURFACE_FORMAT_RGBA);
-        viewInfo.subresourceRange.baseMipLevel = 0;
-        viewInfo.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-        viewInfo.subresourceRange.baseArrayLayer = 0;
-        viewInfo.subresourceRange.layerCount = 1;
-        VK(vkCreateImageView(vk.device, &viewInfo, NULL, &view));
-        SetObjectName(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)view, "ImageView");
-        vk.swapChainImageViews[i] = view;
-    }
+    // //Create ImageViews for swap chain images
+    // for(int i = 0; i < vk.swapChainImageCount; i++){
+    //     VkImageView view;
+    //     VkImageViewCreateInfo viewInfo = {};
+    //     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    //     viewInfo.image = vk.swapChainImages[i];
+    //     viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    //     viewInfo.format = SURFACE_FORMAT_RGBA;
+    //     viewInfo.subresourceRange.aspectMask = GetVkImageAspectFlags(SURFACE_FORMAT_RGBA);
+    //     viewInfo.subresourceRange.baseMipLevel = 0;
+    //     viewInfo.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+    //     viewInfo.subresourceRange.baseArrayLayer = 0;
+    //     viewInfo.subresourceRange.layerCount = 1;
+    //     VK(vkCreateImageView(vk.device, &viewInfo, NULL, &view));
+    //     SetObjectName(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)view, "ImageView");
+    //     vk.swapChainImageViews[i] = view;
+    // }
 }
 
 
@@ -2280,10 +2280,11 @@ static void CreateUploadManager(){
     textureStagingBufferDesc.initialState = RHI_ResourceState_CopySourceBit;
     textureStagingBufferDesc.memoryUsage = RHI_MemoryUsage_Upload;
     textureStagingBufferDesc.byteCount = 2048 * 2048 * 4 * 2; //x * y * RGBA * alignment
+    textureStagingBufferDesc.longLifetime = qtrue;
 
     vk.uploadBuffer = RHI_CreateBuffer(&textureStagingBufferDesc);
 
-    vk.uploadCmdBuffer = RHI_CreateCommandBuffer();
+    vk.uploadCmdBuffer = RHI_CreateCommandBuffer(qtrue);
 
 
 }
@@ -2364,16 +2365,15 @@ VkFormat GetVkFormatFromVertexFormat(RHI_VertexFormat format, uint32_t elementCo
 }
 
 
-void VKimp_Init( void ) {
-    if(vk.initialized &&
-       vk.width == glConfig.vidWidth &&
-       vk.height == glConfig.vidHeight)
+void RHI_Init( void ) {
+    if(vk.initialized)
     {
         return;
     }
     
     ri.Printf( PRINT_ALL, "Initializing Vulkan subsystem\n" );
 
+    
     Pool_Init(&vk.commandBufferPool, 64, sizeof(CommandBuffer), 0);
     Pool_Init(&vk.semaphorePool, 64, sizeof(Semaphore), 0);
     Pool_Init(&vk.texturePool, MAX_DRAWIMAGES + 256, sizeof(Texture), 0);
@@ -2382,6 +2382,8 @@ void VKimp_Init( void ) {
     Pool_Init(&vk.descriptorSetPool, 64, sizeof(DescriptorSet), 0);
     Pool_Init(&vk.pipelinePool, 256, sizeof(Pipeline), 0);
     Pool_Init(&vk.samplerPool, 16, sizeof(Sampler), 0);
+    
+    
 
     vk.instance = VK_NULL_HANDLE;
     BuildLayerAndExtensionLists();
@@ -2400,4 +2402,7 @@ void VKimp_Init( void ) {
 
 
     vk.initialized = qtrue;
+    vk.width = glConfig.vidWidth;
+	vk.height = glConfig.vidHeight;
 }
+

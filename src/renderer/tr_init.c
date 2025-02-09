@@ -311,14 +311,14 @@ static void InitOpenGL( void ) {
 }
 
 static void InitVulkan( void ) {
-	VKimp_Init();
+	RHI_Init();
 
 	rhiBufferDesc vertexBufferDesc = {};
 	vertexBufferDesc.initialState = RHI_ResourceState_VertexBufferBit;
 	vertexBufferDesc.memoryUsage = RHI_MemoryUsage_Upload;
 
 	for(int i = 0; i < RHI_FRAMES_IN_FLIGHT; i++){
-		backEnd.commandBuffers[i] = RHI_CreateCommandBuffer();
+		backEnd.commandBuffers[i] = RHI_CreateCommandBuffer(qfalse);
 		
 		
 		
@@ -1314,6 +1314,8 @@ void RE_Shutdown( qboolean destroyWindow ) {
 		R_FreeImageBuffer();
 		ri.Tag_Free();  // wipe all render alloc'd zone memory
 	}
+
+	RHI_Shutdown(destroyWindow);
 
 	tr.registered = qfalse;
 }

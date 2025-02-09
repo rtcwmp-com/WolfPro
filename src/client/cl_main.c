@@ -696,7 +696,6 @@ Also called by Com_Error
 =================
 */
 void CL_FlushMemory( void ) {
-
 	// shutdown all the client stuff
 	CL_ShutdownAll();
 
