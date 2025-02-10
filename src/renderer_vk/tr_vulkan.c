@@ -773,12 +773,12 @@ static void CreateSwapChain()
         rtDesc.sampleCount = 1;
         rtDesc.allowedStates = RHI_ResourceState_RenderTargetBit | RHI_ResourceState_PresentBit;
         rtDesc.initialState = RHI_ResourceState_PresentBit;
-        
         for(int i = 0; i < imageCount; ++i)
         {
             rtDesc.nativeImage = (uint64_t)images[i];
             rtDesc.nativeFormat = SURFACE_FORMAT_RGBA;
             rtDesc.nativeLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            rtDesc.longLifetime = qtrue;
             rtDesc.name = va("swap chain render target #%d", i + 1);
             vk.swapChainImages[i] = images[i];
             vk.swapChainRenderTargets[i] = RHI_CreateTexture(&rtDesc);
