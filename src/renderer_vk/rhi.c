@@ -9,6 +9,14 @@
 #define GET_DESCRIPTORSET(handle) ((DescriptorSet*)Pool_Get(&vk.descriptorSetPool, handle.h))
 #define GET_SAMPLER(handle) ((Sampler*)Pool_Get(&vk.samplerPool, handle.h))
 
+static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger)
+{
+    PFN_vkDestroyDebugUtilsMessengerEXT func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    if(func != NULL){
+        func(instance, messenger, NULL);
+    }
+}
+
 void RHI_Shutdown(qboolean destroyWindow)
 {
     vkDeviceWaitIdle(vk.device);
@@ -25,7 +33,7 @@ void RHI_Shutdown(qboolean destroyWindow)
     while(Pool_Iterate(&vk.bufferPool, &it)){
         Buffer *buffer = (Buffer*)it.value;
         if(!buffer->desc.longLifetime || destroyWindow){
-            vmaDestroyBuffer(vk.allocator, buffer->buffer, NULL);
+            vmaDestroyBuffer(vk.allocator, buffer->buffer, buffer->allocation);
             Pool_Remove(&vk.bufferPool, it.handle);
         }
     }
@@ -96,6 +104,9 @@ void RHI_Shutdown(qboolean destroyWindow)
         vmaDestroyAllocator(vk.allocator);
         vkDestroyDevice(vk.device, NULL);
         vkDestroySurfaceKHR(vk.instance, vk.surface, NULL);
+        if (vk.ext.EXT_debug_utils){
+            DestroyDebugUtilsMessengerEXT(vk.instance, vk.ext.debugMessenger);
+        }
         vkDestroyInstance(vk.instance, NULL);
         vk.initialized = qfalse;
     }
