@@ -6,7 +6,6 @@ void Pool_Clear(memoryPool* pool) {
 	for (int i = 0; i < pool->itemCount + 1; i++) {
 		pool->lookupData[i].inUse = 0;
 		pool->lookupData[i].nextFreeIndex = i < (pool->itemCount - 1) ? i + 1 : 0;
-		pool->lookupData[i].generation = 0;
 	}
 }
 
@@ -14,9 +13,17 @@ void Pool_Init(memoryPool *pool, const uint32_t itemCount, const uint32_t typeSi
 	pool->poolType = type;
 	pool->typeSize = typeSize;
 	pool->itemCount = itemCount;
-	pool->poolData = (uint8_t*)malloc((itemCount + 1) * typeSize);
-	pool->lookupData = (memoryPoolItem*)malloc((itemCount + 1) * sizeof(memoryPoolItem));
+	if(pool->poolData == NULL){
+		assert(pool->lookupData == NULL);
+		pool->poolData = (uint8_t*)malloc((itemCount + 1) * typeSize);
+		pool->lookupData = (memoryPoolItem*)malloc((itemCount + 1) * sizeof(memoryPoolItem));
+		//@TODO: ri.fatal error if malloc returned null
+		for (int i = 0; i < pool->itemCount + 1; i++) {
+			pool->lookupData[i].generation = 0;
+		}
+	}
 	Pool_Clear(pool);
+	
 }
 
 uint64_t ComposeHandle(uint32_t index, uint16_t generation,uint16_t type){
@@ -49,9 +56,7 @@ uint64_t Pool_Add(memoryPool *pool, void *rawItem){
 }
 
 static void HandleChecks(DecomposedHandle item, memoryPool* pool, const char* operation){
-	if (pool->lookupData[item.index].inUse == qfalse) {
-		ri.Error(ERR_FATAL, "(%s)Invalid handle index (not in use)\n", operation);
-	}
+	
 
 	if(item.type != pool->poolType){
 		ri.Error(ERR_FATAL, "(%s)Wrong pool type\n", operation);
@@ -69,7 +74,9 @@ static void HandleChecks(DecomposedHandle item, memoryPool* pool, const char* op
 		ri.Error(ERR_FATAL, "(%s)Invalid handle generation (too new)\n", operation);
 	}
 
-	
+	if (pool->lookupData[item.index].inUse == qfalse) {
+		ri.Error(ERR_FATAL, "(%s)Invalid handle index (not in use)\n", operation);
+	}
 }
 
 void Pool_Remove(memoryPool *pool, uint64_t handle){
