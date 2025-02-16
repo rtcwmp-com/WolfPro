@@ -1419,6 +1419,11 @@ void RB_AddCachedPipeline(uint32_t hash, cachedPipeline *cache){
 
 }
 
+void RB_ClearPipelineCache(void){
+	pipelineCount = 0;
+	memset(pipelineHash, 0, sizeof(pipelineHash));
+}
+
 void RB_CreateGraphicsPipeline(shader_t *newShader){
 	
 	
