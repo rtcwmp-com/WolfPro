@@ -433,5 +433,6 @@ void RHI_BeginTextureUpload(rhiTextureUpload *textureUpload, rhiTexture handle);
 void RHI_EndTextureUpload();
 void RHI_GetUploadSemaphore(); //(semaphore handle, value to wait on)
 
+void RHI_PrintPools(void);
 
 #endif

@@ -42,6 +42,7 @@ void Pool_Remove(memoryPool *pool, uint64_t handle);
 void* Pool_Get(memoryPool *pool, uint64_t handle);
 PoolIterator Pool_BeginIteration(void);
 qboolean Pool_Iterate(memoryPool *pool, PoolIterator *it);
+uint64_t Pool_Size(memoryPool *pool);
 
 
 #endif

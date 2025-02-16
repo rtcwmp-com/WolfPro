@@ -1158,6 +1158,7 @@ void R_Register( void ) {
 	ri.Cmd_AddCommand( "screenshotJPEG", R_ScreenShotJPEG_f );
 	ri.Cmd_AddCommand( "gfxinfo", GfxInfo_f );
 	ri.Cmd_AddCommand( "taginfo", R_TagInfo_f );
+	ri.Cmd_AddCommand("printpools", RHI_PrintPools);
 
 	// Ridah
 	{
@@ -1315,6 +1316,7 @@ void RE_Shutdown( qboolean destroyWindow ) {
 
 	RHI_Shutdown(destroyWindow);
 	R_ClearFrame();
+	RB_ClearPipelineCache();
 	tr.registered = qfalse;
 }
 

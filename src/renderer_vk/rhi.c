@@ -1178,3 +1178,15 @@ void RHI_EndTextureUpload()
 void RHI_GetUploadSemaphore()
 {
 }
+
+void RHI_PrintPools(void){
+    ri.Printf(PRINT_ALL, "%d in vk.commandBufferPool\n", Pool_Size(&vk.commandBufferPool));
+    ri.Printf(PRINT_ALL, "%d in vk.semaphorePool\n", Pool_Size(&vk.semaphorePool));
+    ri.Printf(PRINT_ALL, "%d in vk.texturePool\n", Pool_Size(&vk.texturePool));
+    ri.Printf(PRINT_ALL, "%d in vk.bufferPool\n", Pool_Size(&vk.bufferPool));
+    ri.Printf(PRINT_ALL, "%d in vk.descriptorSetLayoutPool\n", Pool_Size(&vk.descriptorSetLayoutPool));
+    ri.Printf(PRINT_ALL, "%d in vk.descriptorSetPool\n", Pool_Size(&vk.descriptorSetPool));
+    ri.Printf(PRINT_ALL, "%d in vk.pipelinePool\n", Pool_Size(&vk.pipelinePool));
+    ri.Printf(PRINT_ALL, "%d in vk.samplerPool\n", Pool_Size(&vk.samplerPool));
+}
+

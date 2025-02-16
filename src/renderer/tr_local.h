@@ -1628,6 +1628,7 @@ RENDERER BACK END FUNCTIONS
 
 void RB_ExecuteRenderCommands( const void *data );
 void RB_CreateGraphicsPipeline(shader_t *newShader);
+void RB_ClearPipelineCache(void);
 
 /*
 =============================================================

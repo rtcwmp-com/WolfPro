@@ -49,10 +49,19 @@ uint64_t Pool_Add(memoryPool *pool, void *rawItem){
 	uint8_t *poolLocation = pool->poolData + (freeSpot * pool->typeSize);
 	memcpy(poolLocation, rawItem, pool->typeSize);
 	pool->lookupData[freeSpot].inUse = qtrue;
-	pool->lookupData[freeSpot].generation++;
 	pool->firstFree = pool->lookupData[freeSpot].nextFreeIndex;
 	
 	return ComposeHandle(freeSpot, pool->lookupData[freeSpot].generation, pool->poolType);
+}
+
+uint64_t Pool_Size(memoryPool *pool){
+	int64_t inUseCount = 0;
+	for(int i = 0; i < pool->itemCount; i++){
+		if(pool->lookupData[i].inUse){
+			inUseCount++;
+		}
+	}
+	return inUseCount;
 }
 
 static void HandleChecks(DecomposedHandle item, memoryPool* pool, const char* operation){
@@ -84,6 +93,7 @@ void Pool_Remove(memoryPool *pool, uint64_t handle){
 	HandleChecks(item, pool, "Pool_Remove");
 	pool->lookupData[item.index].nextFreeIndex = pool->firstFree;
 	pool->lookupData[item.index].inUse = 0;
+	pool->lookupData[item.index].generation++;
 	pool->firstFree = item.index;
 }
 
