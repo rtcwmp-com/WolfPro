@@ -103,10 +103,12 @@ void RHI_Shutdown(qboolean destroyWindow)
         vkDestroySwapchainKHR(vk.device, vk.swapChain, NULL);
         vmaDestroyAllocator(vk.allocator);
         vkDestroyDevice(vk.device, NULL);
+        vkDestroySurfaceKHR(vk.instance, vk.surface, NULL);
         if (vk.ext.EXT_debug_utils){
             DestroyDebugUtilsMessengerEXT(vk.instance, vk.ext.debugMessenger);
         }
-        Sys_Vulkan_Shutdown(vk.instance, vk.surface);
+        vkDestroyInstance(vk.instance, NULL);
+        Sys_Vulkan_Shutdown();
         vk.initialized = qfalse;
     }
 

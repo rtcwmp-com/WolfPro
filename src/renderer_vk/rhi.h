@@ -17,6 +17,7 @@
 // - filling up the right glconfig fields (see glconfig_t definition)
 // returns the surface handle
 uint64_t Sys_Vulkan_Init(void* vkInstance);
+void Sys_Vulkan_Shutdown(void);
 
 typedef uint64_t rhiHandle;
 

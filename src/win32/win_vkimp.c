@@ -319,9 +319,9 @@ uint64_t Sys_Vulkan_Init( void* vkInstance )
 	return (uint64_t)surface;
 }
 
-void Sys_Vulkan_Shutdown( VkInstance vkInstance, VkSurfaceKHR surface)
+void Sys_Vulkan_Shutdown(void)
 {
-	if ( !vk_wv.hWnd ) {
+	if ( vk_wv.hWnd ) {
 		ri.Printf( PRINT_ALL, "...destroying window\n" );
 		ShowWindow( vk_wv.hWnd, SW_HIDE );
 		DestroyWindow( vk_wv.hWnd );
@@ -335,7 +335,5 @@ void Sys_Vulkan_Shutdown( VkInstance vkInstance, VkSurfaceKHR surface)
 		ri.Printf( PRINT_DEVELOPER, "...resetting display\n" );
 		VKW_ResetDisplaySettings( qtrue );
 	}
-	vkDestroySurfaceKHR(vkInstance, surface, NULL);
-	vkDestroyInstance(vkInstance, NULL);
-	
+
 }
