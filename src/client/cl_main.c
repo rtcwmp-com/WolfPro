@@ -1056,6 +1056,10 @@ CL_Disconnect_f
 ==================
 */
 void CL_Disconnect_f( void ) {
+	if ( Cvar_VariableValue( "sv_running" ) ) {
+		Cvar_Set( "sv_killserver", "1" );
+		return;
+	}
 	SCR_StopCinematic();
 	if ( cls.state != CA_DISCONNECTED && cls.state != CA_CINEMATIC ) {
 		Com_Error( ERR_DISCONNECT, "Disconnected from server" );
