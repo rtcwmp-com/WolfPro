@@ -313,7 +313,7 @@ for each RE_EndFrame
 */
 void RE_BeginFrame( stereoFrame_t stereoFrame ) {
 	drawBufferCommand_t *cmd;
-
+	
 	if ( !tr.registered ) {
 		return;
 	}
@@ -405,6 +405,8 @@ void RE_BeginFrame( stereoFrame_t stereoFrame ) {
 	//
 	// draw buffer stuff
 	//
+	backEndData->commands.used = 0;
+	//Sys_DebugPrintf("backEndData->commands.used = %d\n", backEndData->commands.used);
 	cmd = R_GetCommandBuffer( sizeof( *cmd ) );
 	if ( !cmd ) {
 		return;

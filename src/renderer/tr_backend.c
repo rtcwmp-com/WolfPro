@@ -1220,67 +1220,7 @@ const void  *RB_BeginFrame( const void *data ) {
 	return (const void *)( cmd + 1 );
 }
 
-/*
-===============
-RB_ShowImages
 
-Draw all the images to the screen, on top of whatever
-was there.  This is used to test for texture thrashing.
-
-Also called by RE_EndRegistration
-===============
-*/
-void RB_ShowImages( void ) {
-	int i;
-	image_t *image;
-	float x, y, w, h;
-	int start, end;
-
-	if ( !backEnd.projection2D ) {
-		RB_SetGL2D();
-	}
-
-	qglClear( GL_COLOR_BUFFER_BIT );
-
-	qglFinish();
-
-
-	start = ri.Milliseconds();
-
-	for ( i = 0 ; i < tr.numImages ; i++ ) {
-		image = tr.images[i];
-
-		w = glConfig.vidWidth / 40;
-		h = glConfig.vidHeight / 30;
-
-		x = i % 40 * w;
-		y = i / 30 * h;
-
-		// show in proportional size in mode 2
-		if ( r_showImages->integer == 2 ) {
-			w *= image->uploadWidth / 512.0f;
-			h *= image->uploadHeight / 512.0f;
-		}
-
-		GL_Bind( image );
-		qglBegin( GL_QUADS );
-		qglTexCoord2f( 0, 0 );
-		qglVertex2f( x, y );
-		qglTexCoord2f( 1, 0 );
-		qglVertex2f( x + w, y );
-		qglTexCoord2f( 1, 1 );
-		qglVertex2f( x + w, y + h );
-		qglTexCoord2f( 0, 1 );
-		qglVertex2f( x, y + h );
-		qglEnd();
-	}
-
-	qglFinish();
-
-	end = ri.Milliseconds();
-	ri.Printf( PRINT_ALL, "%i msec to draw all images\n", end - start );
-
-}
 
 
 /*
@@ -1297,10 +1237,6 @@ const void  *RB_EndFrame( const void *data ) {
 		RB_EndSurface();
 	}
 
-	// texture swapping test
-	if ( r_showImages->integer ) {
-		RB_ShowImages();
-	}
 
 	cmd = (const swapBuffersCommand_t *)data;
 
@@ -1419,6 +1355,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 
 			break;
 		case RC_END_FRAME:
+			begun = qfalse;
 			data = RB_EndFrame( data );
 			//stop recording to command buffer
 			//submit to graphics queue

@@ -532,8 +532,9 @@ void SCR_UpdateScreen( void ) {
 		return;             // not initialized yet
 	}
 
-	if ( ++recursive > 2 ) {
-		Com_Error( ERR_FATAL, "SCR_UpdateScreen: recursively called" );
+	if ( ++recursive >= 2 ) {
+		return;
+		//Com_Error( ERR_FATAL, "SCR_UpdateScreen: recursively called" );
 	}
 	recursive = 1;
 

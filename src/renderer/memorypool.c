@@ -49,6 +49,10 @@ uint64_t Pool_Add(memoryPool *pool, void *rawItem){
 }
 
 static void HandleChecks(DecomposedHandle item, memoryPool* pool, const char* operation){
+	if (pool->lookupData[item.index].inUse == qfalse) {
+		ri.Error(ERR_FATAL, "(%s)Invalid handle index (not in use)\n", operation);
+	}
+
 	if(item.type != pool->poolType){
 		ri.Error(ERR_FATAL, "(%s)Wrong pool type\n", operation);
 	}
@@ -65,9 +69,7 @@ static void HandleChecks(DecomposedHandle item, memoryPool* pool, const char* op
 		ri.Error(ERR_FATAL, "(%s)Invalid handle generation (too new)\n", operation);
 	}
 
-	if(pool->lookupData[item.index].inUse == qfalse){
-		ri.Error(ERR_FATAL, "(%s)Invalid handle index (not in use)\n", operation);
-	}
+	
 }
 
 void Pool_Remove(memoryPool *pool, uint64_t handle){

@@ -160,7 +160,6 @@ cvar_t  *r_mapOverBrightBits;
 cvar_t  *r_debugSurface;
 cvar_t  *r_simpleMipMaps;
 
-cvar_t  *r_showImages;
 
 cvar_t  *r_ambientScale;
 cvar_t  *r_directedScale;
@@ -1085,7 +1084,6 @@ void R_Register( void ) {
 	//
 	// temporary variables that can change at any time
 	//
-	r_showImages = ri.Cvar_Get( "r_showImages", "0", CVAR_TEMP );
 
 	r_debugLight = ri.Cvar_Get( "r_debuglight", "0", CVAR_TEMP );
 	r_debugSort = ri.Cvar_Get( "r_debugSort", "0", CVAR_CHEAT );
@@ -1316,7 +1314,7 @@ void RE_Shutdown( qboolean destroyWindow ) {
 	}
 
 	RHI_Shutdown(destroyWindow);
-
+	R_ClearFrame();
 	tr.registered = qfalse;
 }
 
@@ -1329,9 +1327,6 @@ Touch all images to make sure they are resident
 =============
 */
 void RE_EndRegistration( void ) {
-	if ( !Sys_LowPhysicalMemory() ) {
-		RB_ShowImages();
-	}
 }
 
 
