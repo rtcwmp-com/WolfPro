@@ -319,3 +319,23 @@ uint64_t Sys_Vulkan_Init( void* vkInstance )
 	return (uint64_t)surface;
 }
 
+void Sys_Vulkan_Shutdown( VkInstance vkInstance, VkSurfaceKHR surface)
+{
+	if ( !vk_wv.hWnd ) {
+		ri.Printf( PRINT_ALL, "...destroying window\n" );
+		ShowWindow( vk_wv.hWnd, SW_HIDE );
+		DestroyWindow( vk_wv.hWnd );
+		vk_wv.hWnd = NULL;
+		vkw_state.pixelFormatSet = qfalse;
+	}
+
+	// reset display settings
+	if ( vkw_state.cdsDevModeValid )
+	{
+		ri.Printf( PRINT_DEVELOPER, "...resetting display\n" );
+		VKW_ResetDisplaySettings( qtrue );
+	}
+	vkDestroySurfaceKHR(vkInstance, surface, NULL);
+	vkDestroyInstance(vkInstance, NULL);
+	
+}
