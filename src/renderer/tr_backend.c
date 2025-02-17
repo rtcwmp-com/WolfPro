@@ -787,6 +787,7 @@ Used for cinematics.
 =============
 */
 void RE_StretchRaw( int x, int y, int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty ) {
+	#if 0
 	int i, j;
 	int start, end;
 
@@ -849,6 +850,7 @@ void RE_StretchRaw( int x, int y, int w, int h, int cols, int rows, const byte *
 	qglTexCoord2f( 0.5f / cols, ( rows - 0.5f ) / rows );
 	qglVertex2f( x, y + h );
 	qglEnd();
+	#endif
 }
 
 
