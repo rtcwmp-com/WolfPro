@@ -214,6 +214,7 @@ typedef struct rhiBufferDesc
 	uint32_t byteCount;
 	RHI_ResourceState initialState;
 	RHI_MemoryUsage memoryUsage;
+	RHI_ResourceState allowedStates;
 	qbool longLifetime;
 } rhiBufferDesc;
 
@@ -400,6 +401,8 @@ void RHI_EndCommandBuffer( void );
 
 void RHI_BeginRendering(const RHI_RenderPass *renderPass); //bind render targets
 void RHI_EndRendering( void );
+qboolean RHI_IsRenderingActive(void);
+RHI_RenderPass* RHI_CurrentRenderPass(void);
 
 void RHI_CmdBindPipeline(rhiPipeline pipeline); //create pipeline layout here
 void RHI_CmdBindDescriptorSet(rhiPipeline pipeline, rhiDescriptorSet descriptorSet);
@@ -416,7 +419,7 @@ void RHI_CmdEndBarrier( void );
 void RHI_CmdTextureBarrier(rhiTexture handle, RHI_ResourceState flag); //pass handle to this
 void RHI_CmdBufferBarrier(rhiBuffer handle, RHI_ResourceState state); //pass handle to this //(not for 2d)
 
-void RHI_CmdCopyBuffer();
+void RHI_CmdCopyBuffer(rhiBuffer dstBuffer, uint32_t dstOffset, rhiBuffer srcBuffer, uint32_t srcOffset, uint32_t size);
 void RHI_CmdCopyBufferRegions();
 void RHI_CmdInsertDebugLabel();
 void RHI_CmdBeginDebugLabel();

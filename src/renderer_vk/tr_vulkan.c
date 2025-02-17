@@ -2142,6 +2142,8 @@ VkAccessFlags2 GetVkAccessFlagsFromResource(RHI_ResourceState state)
             return VK_ACCESS_2_INDEX_READ_BIT;
         case RHI_ResourceState_StorageBufferBit:
             return VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_SHADER_WRITE_BIT;
+        case RHI_ResourceState_UniformBufferBit:
+            return VK_ACCESS_2_SHADER_READ_BIT;
         default:
             assert(!"Unhandled resource state access flags");
             return 0;
@@ -2161,6 +2163,8 @@ VkPipelineStageFlags2 GetVkStageFlagsFromResource(RHI_ResourceState state)
         case RHI_ResourceState_IndexBufferBit:
             return VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT;
         case RHI_ResourceState_StorageBufferBit:
+            return VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
+        case RHI_ResourceState_UniformBufferBit:
             return VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
         default:
             assert(!"Unhandled resource state stage flags");
@@ -2281,6 +2285,7 @@ static void CreateUploadManager(){
     textureStagingBufferDesc.memoryUsage = RHI_MemoryUsage_Upload;
     textureStagingBufferDesc.byteCount = 2048 * 2048 * 4 * 2; //x * y * RGBA * alignment
     textureStagingBufferDesc.longLifetime = qtrue;
+    textureStagingBufferDesc.allowedStates = RHI_ResourceState_CopySourceBit;
 
     vk.uploadBuffer = RHI_CreateBuffer(&textureStagingBufferDesc);
 

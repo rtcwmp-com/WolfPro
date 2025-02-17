@@ -175,6 +175,9 @@ rhiBuffer RHI_CreateBuffer(const rhiBufferDesc *desc)
     assert(desc);
     assert(desc->byteCount > 0);
     assert(desc->name);
+    assert(desc->allowedStates != 0);
+    assert(__popcnt(desc->initialState) == 1);
+    assert((desc->initialState & desc->allowedStates) != 0);
     VmaAllocationCreateInfo allocCreateInfo = {};
     allocCreateInfo.usage = GetVmaMemoryUsage(desc->memoryUsage); 
 
@@ -182,7 +185,7 @@ rhiBuffer RHI_CreateBuffer(const rhiBufferDesc *desc)
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     bufferInfo.size = desc->byteCount;
-    bufferInfo.usage = GetVkBufferUsageFlags(desc->initialState);
+    bufferInfo.usage = GetVkBufferUsageFlags(desc->allowedStates);
 
     VmaAllocation vmaAlloc = VK_NULL_HANDLE;
     VmaAllocationInfo allocInfo = {};
@@ -424,8 +427,10 @@ void RHI_UpdateDescriptorSet(rhiDescriptorSet descriptorHandle, uint32_t binding
     write.dstArrayElement = offset;
 
     static VkDescriptorImageInfo imageInfo[MAX_DRAWIMAGES];
+    static VkDescriptorBufferInfo bufferInfo[64];
 
     if(type == RHI_DescriptorType_ReadOnlyTexture){
+        assert(descriptorCount <= ARRAY_LEN(imageInfo));
         const rhiTexture *textureHandle = (const rhiTexture*)handles;
         for(int i = 0; i < descriptorCount; i++){
             Texture *texture = GET_TEXTURE(textureHandle[i]);
@@ -437,6 +442,7 @@ void RHI_UpdateDescriptorSet(rhiDescriptorSet descriptorHandle, uint32_t binding
         vkUpdateDescriptorSets(vk.device, 1, &write, 0, NULL);
     } 
     else if(type == RHI_DescriptorType_Sampler){
+        assert(descriptorCount <= ARRAY_LEN(imageInfo));
         const rhiSampler *samplerHandle = (const rhiSampler*)handles;
         for(int i = 0; i < descriptorCount; i++){
             imageInfo[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -446,7 +452,20 @@ void RHI_UpdateDescriptorSet(rhiDescriptorSet descriptorHandle, uint32_t binding
         write.pImageInfo = imageInfo;
         vkUpdateDescriptorSets(vk.device, 1, &write, 0, NULL);
     }
-
+    else if(type == RHI_DescriptorType_ReadOnlyBuffer){
+        assert(descriptorCount <= ARRAY_LEN(bufferInfo));
+        const rhiBuffer *bufferHandle = (const rhiBuffer*)handles;
+        for(int i = 0; i < descriptorCount; i++){
+            bufferInfo[i].buffer = GET_BUFFER(bufferHandle[i])->buffer;
+            bufferInfo[i].offset = 0;
+            bufferInfo[i].range = VK_WHOLE_SIZE;
+        }
+       
+        write.pBufferInfo = bufferInfo;
+        vkUpdateDescriptorSets(vk.device, 1, &write, 0, NULL);
+    }else{
+        assert(!"Unhandled descriptor type");
+    }
 
 
 
@@ -866,12 +885,23 @@ void RHI_BeginRendering(const RHI_RenderPass* renderPass)
     renderingInfo.renderArea.extent.width = glConfig.vidWidth;
 
     vkCmdBeginRendering(vk.activeCommandBuffer, &renderingInfo);
+    vk.renderingActive = qtrue;
+    vk.currentRenderPass = *renderPass;
     
 }
 
-void RHI_EndRendering()
+qboolean RHI_IsRenderingActive(void){
+    return vk.renderingActive;
+}
+
+RHI_RenderPass* RHI_CurrentRenderPass(void){
+    return &vk.currentRenderPass;
+}
+
+void RHI_EndRendering(void)
 {
     vkCmdEndRendering(vk.activeCommandBuffer);
+    vk.renderingActive = qfalse;
 }
 
 void RHI_CmdBindPipeline(rhiPipeline pipeline)
@@ -1072,9 +1102,16 @@ void RHI_CmdBufferBarrier(rhiBuffer handle, RHI_ResourceState state)
     vk.bufferBarriers[idx] = handle;
 }
 
-void RHI_CmdCopyBuffer()
+void RHI_CmdCopyBuffer(rhiBuffer dstBuffer, uint32_t dstOffset, rhiBuffer srcBuffer, uint32_t srcOffset, uint32_t size)
 {
+    VkBufferCopy region = {};
+    region.dstOffset = dstOffset;
+    region.srcOffset = srcOffset;
+    region.size = size;
 
+    
+    
+    vkCmdCopyBuffer(vk.activeCommandBuffer, GET_BUFFER(srcBuffer)->buffer, GET_BUFFER(dstBuffer)->buffer, 1, &region);
 }
 
 void RHI_CmdCopyBufferRegions()

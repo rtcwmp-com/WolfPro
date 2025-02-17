@@ -259,6 +259,9 @@ typedef struct Vulkan
 		qbool EXT_debug_utils;
 		VkDebugUtilsMessengerEXT debugMessenger; // EXT_debug_utils
 	} ext;
+
+	qboolean renderingActive;
+    RHI_RenderPass currentRenderPass;
 } Vulkan;
 
 extern Vulkan vk;

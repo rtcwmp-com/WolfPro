@@ -1175,14 +1175,7 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 		memcpy(colorBufferData + (vb->vertexFirst * sizeof(tess.svars.colors[0])), tess.svars.colors, tess.numVertexes * sizeof(tess.svars.colors[0]));
 		RHI_UnmapBuffer(vb->color[i]);
 
-		float w = glConfig.vidWidth;
-		float h = glConfig.vidHeight;
-		float projectionMatrix[16] = {
-			2.0f/w, 0.0f, 0.0f, 0.0f,
-			0.0f, 2.0f/h, 0.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 0.0f,
-			-1.0f, -1.0f, 0.0f, 1.0f
-		};
+		
 
 		float modelViewMatrix[16] = {
 			1.0f, 0.0f, 0.0f, 0.0f,

@@ -680,7 +680,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 				R_TransformDlights( backEnd.refdef.num_dlights, backEnd.refdef.dlights, &backEnd.or );
 			}
 
-			qglLoadMatrixf( backEnd.or.modelMatrix );
+			qglLoadMatrixf( backEnd.or.modelMatrix ); //model view matrix (object to camera space)
 
 			//
 			// change depthrange if needed
@@ -750,9 +750,6 @@ RB_SetGL2D
 void    RB_SetGL2D( void ) {
 	backEnd.projection2D = qtrue;
 
-	RHI_CmdSetScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
-	RHI_CmdSetViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight, 0.0f, 1.0f );
-
 	// set 2D virtual screen size
 	qglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 	qglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
@@ -774,6 +771,52 @@ void    RB_SetGL2D( void ) {
 	// set time for 2D shaders
 	backEnd.refdef.time = ri.Milliseconds();
 	backEnd.refdef.floatTime = backEnd.refdef.time * 0.001f;
+
+	RHI_CmdSetScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+	RHI_CmdSetViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight, 0.0f, 1.0f );
+
+	float w = glConfig.vidWidth;
+	float h = glConfig.vidHeight;
+	SceneView sceneView = {};
+	
+	float projectionMatrix[16] = {
+		2.0f/w, 0.0f, 0.0f, 0.0f,
+		0.0f, 2.0f/h, 0.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 0.0f,
+		-1.0f, -1.0f, 0.0f, 1.0f
+	};
+	
+	memcpy(sceneView.projectionMatrix, projectionMatrix, sizeof(projectionMatrix));
+
+	rhiBuffer currentScene = backEnd.sceneViewUploadBuffers[backEnd.currentFrameIndex];
+	assert(backEnd.sceneViewCount < SCENEVIEW_MAX);
+
+	byte* mappedBuffer = RHI_MapBuffer(currentScene);
+	memcpy(mappedBuffer + backEnd.sceneViewCount * sizeof(sceneView), &sceneView, sizeof(sceneView));
+	RHI_UnmapBuffer(currentScene);
+
+	qboolean renderingActive = RHI_IsRenderingActive();
+	if(renderingActive){
+		RHI_EndRendering();
+	}
+
+	//Schedule the GPU copy and transition the layout
+	RHI_CmdBeginBarrier();
+	RHI_CmdBufferBarrier(backEnd.sceneViewGPUBuffer, RHI_ResourceState_CopyDestinationBit);
+	RHI_CmdEndBarrier();
+
+	RHI_CmdCopyBuffer(backEnd.sceneViewGPUBuffer, 0, currentScene, backEnd.sceneViewCount * sizeof(sceneView), sizeof(sceneView));
+	
+	RHI_CmdBeginBarrier();
+	RHI_CmdBufferBarrier(backEnd.sceneViewGPUBuffer, RHI_ResourceState_UniformBufferBit);
+	RHI_CmdEndBarrier();
+
+	if(renderingActive){
+		RHI_BeginRendering(RHI_CurrentRenderPass());
+	}
+
+	backEnd.sceneViewCount++;
+
 }
 
 

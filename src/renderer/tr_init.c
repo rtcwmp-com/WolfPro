@@ -315,11 +315,12 @@ static void InitVulkan( void ) {
 	rhiBufferDesc vertexBufferDesc = {};
 	vertexBufferDesc.initialState = RHI_ResourceState_VertexBufferBit;
 	vertexBufferDesc.memoryUsage = RHI_MemoryUsage_Upload;
+	
 
 	rhiBufferDesc uniformBufferDesc = {};
 	uniformBufferDesc.initialState = RHI_ResourceState_CopySourceBit;
 	uniformBufferDesc.memoryUsage = RHI_MemoryUsage_Upload;
-	
+	uniformBufferDesc.allowedStates = RHI_ResourceState_CopySourceBit;
 
 	for(int i = 0; i < RHI_FRAMES_IN_FLIGHT; i++){
 		uniformBufferDesc.name = va("%s %d", "Scene View Upload", i);
@@ -329,22 +330,26 @@ static void InitVulkan( void ) {
 		backEnd.commandBuffers[i] = RHI_CreateCommandBuffer(qfalse);
 
 		vertexBufferDesc.initialState = RHI_ResourceState_VertexBufferBit;
+		vertexBufferDesc.allowedStates = RHI_ResourceState_VertexBufferBit;
 		vertexBufferDesc.name = va("%s %d", "Position Buffer", i);
 		vertexBufferDesc.byteCount = VBA_MAX * sizeof(tess.xyz[0]);
 		backEnd.vertexBuffers[i].position = RHI_CreateBuffer(&vertexBufferDesc);
 
 		vertexBufferDesc.initialState = RHI_ResourceState_IndexBufferBit;
+		vertexBufferDesc.allowedStates = RHI_ResourceState_IndexBufferBit;
 		vertexBufferDesc.name = va("%s %d", "Index Buffer", i);
 		vertexBufferDesc.byteCount = IDX_MAX * sizeof(tess.indexes[0]);
 		backEnd.vertexBuffers[i].index = RHI_CreateBuffer(&vertexBufferDesc);
 
 		for(int stage = 0; stage < MAX_SHADER_STAGES; stage++){
 			vertexBufferDesc.initialState = RHI_ResourceState_VertexBufferBit;
+			vertexBufferDesc.allowedStates = RHI_ResourceState_VertexBufferBit;
 			vertexBufferDesc.name = va("%s %d #%d", "Texture Coordinates Buffer", i, stage+1);
 			vertexBufferDesc.byteCount = VBA_MAX * sizeof(tess.texCoords[0][0]);
 			backEnd.vertexBuffers[i].textureCoord[stage] = RHI_CreateBuffer(&vertexBufferDesc);
 
 			vertexBufferDesc.initialState = RHI_ResourceState_VertexBufferBit;
+			vertexBufferDesc.allowedStates = RHI_ResourceState_VertexBufferBit;
 			vertexBufferDesc.name = va("%s %d #%d", "Color Buffer", i, stage+1);
 			vertexBufferDesc.byteCount = VBA_MAX * sizeof(tess.vertexColors[0]);
 			backEnd.vertexBuffers[i].color[stage] = RHI_CreateBuffer(&vertexBufferDesc);
@@ -352,7 +357,8 @@ static void InitVulkan( void ) {
 
 	}
 
-	uniformBufferDesc.initialState = RHI_ResourceState_UniformBufferBit;
+	uniformBufferDesc.initialState = RHI_ResourceState_CopyDestinationBit;
+	uniformBufferDesc.allowedStates = RHI_ResourceState_UniformBufferBit | RHI_ResourceState_CopyDestinationBit;
 	uniformBufferDesc.memoryUsage = RHI_MemoryUsage_DeviceLocal;
 	uniformBufferDesc.name = "Scene View GPU";
 	uniformBufferDesc.byteCount = sizeof(SceneView);
