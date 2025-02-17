@@ -247,6 +247,7 @@ typedef struct Vulkan
 
 	rhiBuffer uploadBuffer;
 	rhiTexture uploadTextureHandle;
+	uint32_t uploadTextureMipLevel;
 
 	rhiCommandBuffer uploadCmdBuffer;
 	//

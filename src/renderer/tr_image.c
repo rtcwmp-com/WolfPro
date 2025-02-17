@@ -602,6 +602,17 @@ byte mipBlendColors[16][4] = {
 };
 
 
+static int R_ComputeMipCount(int w, int h){
+	int mipCount = 1;
+	while ( w > 1 || h > 1 ) {
+		w = max( w >> 1, 1 );
+		h = max( h >> 1, 1 );
+		++mipCount;
+	}
+
+	return mipCount;
+}
+
 /*
 ===============
 Upload32
@@ -756,7 +767,7 @@ static void Upload32(   unsigned *data,
 	imageDesc.height = scaled_height;
 	imageDesc.width = scaled_width;
 	imageDesc.name = image->imgName;
-	imageDesc.mipCount = 1;
+	imageDesc.mipCount = mipmap? R_ComputeMipCount(scaled_width, scaled_height): 1;
 	imageDesc.format = R8G8B8A8_UNorm;
 	imageDesc.initialState = RHI_ResourceState_ShaderInputBit;
 	imageDesc.allowedStates = RHI_ResourceState_ShaderInputBit | RHI_ResourceState_CopyDestinationBit;
@@ -781,7 +792,7 @@ static void Upload32(   unsigned *data,
 				
 
 				rhiTextureUpload textureUpload = {};
-				RHI_BeginTextureUpload(&textureUpload, image->handle );
+				RHI_BeginTextureUpload(&textureUpload, image->handle, 0 );
 			
 				for(int i = 0; i < textureUpload.height; i++ ){
 					memcpy(textureUpload.data + textureUpload.rowPitch * i, (byte*)data + textureUpload.width * 4 * i, textureUpload.width * 4);
@@ -819,6 +830,16 @@ static void Upload32(   unsigned *data,
 	*format = internalFormat;
 
 	qglTexImage2D( GL_TEXTURE_2D, 0, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
+	
+	if(internalFormat == GL_RGBA8){
+		rhiTextureUpload textureUpload = {};
+		RHI_BeginTextureUpload(&textureUpload, image->handle, 0 );
+	
+		for(int i = 0; i < textureUpload.height; i++ ){
+			memcpy(textureUpload.data + textureUpload.rowPitch * i, (byte*)scaledBuffer + textureUpload.width * 4 * i, textureUpload.width * 4);
+		}
+		RHI_EndTextureUpload();
+	}
 
 	if ( mipmap ) {
 		int miplevel;
@@ -842,6 +863,19 @@ static void Upload32(   unsigned *data,
 			}
 
 			qglTexImage2D( GL_TEXTURE_2D, miplevel, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
+			
+			if(internalFormat == GL_RGBA8){
+				
+
+				rhiTextureUpload textureUpload = {};
+				RHI_BeginTextureUpload(&textureUpload, image->handle, miplevel );
+				assert(textureUpload.width == scaled_width);
+				assert(textureUpload.height == scaled_height);
+				for(int i = 0; i < textureUpload.height; i++ ){
+					memcpy(textureUpload.data + textureUpload.rowPitch * i, (byte*)scaledBuffer + textureUpload.width * 4 * i, textureUpload.width * 4);
+				}
+				RHI_EndTextureUpload();
+			}
 		}
 	}
 done:

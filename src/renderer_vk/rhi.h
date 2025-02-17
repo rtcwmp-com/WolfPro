@@ -429,7 +429,7 @@ void RHI_ResolveDurationQuery();
 //upload manager
 void RHI_BeginBufferUpload();
 void RHI_EndBufferUpload();
-void RHI_BeginTextureUpload(rhiTextureUpload *textureUpload, rhiTexture handle);
+void RHI_BeginTextureUpload(rhiTextureUpload *textureUpload, rhiTexture handle, uint32_t mipLevel);
 void RHI_EndTextureUpload();
 void RHI_GetUploadSemaphore(); //(semaphore handle, value to wait on)
 
