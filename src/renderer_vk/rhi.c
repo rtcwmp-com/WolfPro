@@ -1119,7 +1119,6 @@ void RHI_EndBufferUpload()
 {
 }
 
-void RHI_BeginTextureUpload(rhiTextureUpload *textureUpload, rhiTexture handle)
 void RHI_BeginTextureUpload(rhiTextureUpload *textureUpload, rhiTexture handle, uint32_t mipLevel)
 {
     assert(vk.uploadTextureHandle.h == 0);
