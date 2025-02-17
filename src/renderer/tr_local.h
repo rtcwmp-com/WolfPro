@@ -543,6 +543,7 @@ typedef struct {
 	int viewportX, viewportY, viewportWidth, viewportHeight;
 	float fovX, fovY;
 	float projectionMatrix[16];
+	float vulkanProjectionMatrix[16];
 	cplane_t frustum[4];
 	vec3_t visBounds[2];
 	float zFar;

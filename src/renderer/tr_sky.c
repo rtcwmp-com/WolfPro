@@ -843,6 +843,8 @@ void RB_DrawSun( void ) {
 
 	// farthest depth range
 	qglDepthRange( 1.0, 1.0 );
+	RHI_CmdSetViewport( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
+		backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight, 1.0f, 1.0f );
 
 	color[0] = color[1] = color[2] = color[3] = 255;
 
@@ -936,6 +938,8 @@ void RB_DrawSun( void ) {
 
 	// back to normal depth range
 	qglDepthRange( 0.0, 1.0 );
+	RHI_CmdSetViewport( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
+		backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight, 0.0f, 1.0f );
 }
 
 
@@ -986,8 +990,12 @@ void RB_StageIteratorSky( void ) {
 	// much sky is getting sucked in
 	if ( r_showsky->integer ) {
 		qglDepthRange( 0.0, 0.0 );
+		RHI_CmdSetViewport( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
+			backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight, 0.0f, 0.0f );
 	} else {
 		qglDepthRange( 1.0, 1.0 );
+		RHI_CmdSetViewport( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
+			backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight, 1.0f, 1.0f );
 	}
 
 	// draw the outer skybox
@@ -1026,6 +1034,8 @@ void RB_StageIteratorSky( void ) {
 
 	// back to normal depth range
 	qglDepthRange( 0.0, 1.0 );
+	RHI_CmdSetViewport( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
+		backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight, 0.0f, 1.0f );
 
 	backEnd.refdef.rdflags &= ~RDF_DRAWINGSKY;
 

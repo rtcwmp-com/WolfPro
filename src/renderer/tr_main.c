@@ -811,6 +811,27 @@ void R_SetupProjection( void ) {
 	tr.viewParms.projectionMatrix[7] = 0;
 	tr.viewParms.projectionMatrix[11] = -1;
 	tr.viewParms.projectionMatrix[15] = 0;
+
+	tr.viewParms.vulkanProjectionMatrix[0] = 2 * zNear / width;
+	tr.viewParms.vulkanProjectionMatrix[4] = 0;
+	tr.viewParms.vulkanProjectionMatrix[8] = ( xmax + xmin ) / width; // normally 0
+	tr.viewParms.vulkanProjectionMatrix[12] = 0;
+
+	tr.viewParms.vulkanProjectionMatrix[1] = 0;
+	tr.viewParms.vulkanProjectionMatrix[5] = -2 * zNear / height;
+	tr.viewParms.vulkanProjectionMatrix[9] = ( ymax + ymin ) / height;    // normally 0
+	tr.viewParms.vulkanProjectionMatrix[13] = 0;
+
+	tr.viewParms.vulkanProjectionMatrix[2] = 0;
+	tr.viewParms.vulkanProjectionMatrix[6] = 0;
+	tr.viewParms.vulkanProjectionMatrix[10] = -( zFar + zNear ) / depth;
+	tr.viewParms.vulkanProjectionMatrix[14] = -2 * zFar * zNear / depth;
+
+	tr.viewParms.vulkanProjectionMatrix[3] = 0;
+	tr.viewParms.vulkanProjectionMatrix[7] = 0;
+	tr.viewParms.vulkanProjectionMatrix[11] = -1;
+	tr.viewParms.vulkanProjectionMatrix[15] = 0;
+
 }
 
 /*

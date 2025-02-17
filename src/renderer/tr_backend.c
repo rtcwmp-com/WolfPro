@@ -413,6 +413,7 @@ to actually render the visible surfaces for this view
 */
 void RB_BeginDrawingView( void ) {
 	int clearBits = 0;
+	vec4_t clearColor = {};
 
 	// sync with gl if needed
 	if ( r_finish->integer == 1 && !glState.finishCalled ) {
@@ -459,16 +460,20 @@ void RB_BeginDrawingView( void ) {
 				clearBits |= GL_COLOR_BUFFER_BIT;
 				if ( glfogsettings[FOG_PORTALVIEW].registered ) {
 					qglClearColor( glfogsettings[FOG_PORTALVIEW].color[0], glfogsettings[FOG_PORTALVIEW].color[1], glfogsettings[FOG_PORTALVIEW].color[2], glfogsettings[FOG_PORTALVIEW].color[3] );
+					Vector4Set(clearColor, glfogsettings[FOG_PORTALVIEW].color[0], glfogsettings[FOG_PORTALVIEW].color[1], glfogsettings[FOG_PORTALVIEW].color[2], glfogsettings[FOG_PORTALVIEW].color[3] );
 				} else if ( glfogNum > FOG_NONE && glfogsettings[FOG_CURRENT].registered )      {
 					qglClearColor( glfogsettings[FOG_CURRENT].color[0], glfogsettings[FOG_CURRENT].color[1], glfogsettings[FOG_CURRENT].color[2], glfogsettings[FOG_CURRENT].color[3] );
+					Vector4Set(clearColor, glfogsettings[FOG_CURRENT].color[0], glfogsettings[FOG_CURRENT].color[1], glfogsettings[FOG_CURRENT].color[2], glfogsettings[FOG_CURRENT].color[3] );
 				} else {
 //					qglClearColor ( 1.0, 0.0, 0.0, 1.0 );	// red clear for testing portal sky clear
 					qglClearColor( 0.5, 0.5, 0.5, 1.0 );
+					Vector4Set(clearColor, 0.5, 0.5, 0.5, 1.0);
+					
 				}
 			} else {                                                    // rendered sky (either clear color or draw quake sky)
 				if ( glfogsettings[FOG_PORTALVIEW].registered ) {
 					qglClearColor( glfogsettings[FOG_PORTALVIEW].color[0], glfogsettings[FOG_PORTALVIEW].color[1], glfogsettings[FOG_PORTALVIEW].color[2], glfogsettings[FOG_PORTALVIEW].color[3] );
-
+					Vector4Set(clearColor, glfogsettings[FOG_PORTALVIEW].color[0], glfogsettings[FOG_PORTALVIEW].color[1], glfogsettings[FOG_PORTALVIEW].color[2], glfogsettings[FOG_PORTALVIEW].color[3] );
 					if ( glfogsettings[FOG_PORTALVIEW].clearscreen ) {    // portal fog requests a screen clear (distance fog rather than quake sky)
 						clearBits |= GL_COLOR_BUFFER_BIT;
 					}
@@ -490,6 +495,7 @@ void RB_BeginDrawingView( void ) {
 				}
 
 				qglClearColor( glfogsettings[FOG_CURRENT].color[0], glfogsettings[FOG_CURRENT].color[1], glfogsettings[FOG_CURRENT].color[2], glfogsettings[FOG_CURRENT].color[3] );
+				Vector4Set(clearColor, glfogsettings[FOG_CURRENT].color[0], glfogsettings[FOG_CURRENT].color[1], glfogsettings[FOG_CURRENT].color[2], glfogsettings[FOG_CURRENT].color[3] );
 			}
 		}
 	} else {                                              // world scene with no portal sky
@@ -506,14 +512,16 @@ void RB_BeginDrawingView( void ) {
 
 			if ( glfogsettings[FOG_CURRENT].registered ) { // try to clear fastsky with current fog color
 				qglClearColor( glfogsettings[FOG_CURRENT].color[0], glfogsettings[FOG_CURRENT].color[1], glfogsettings[FOG_CURRENT].color[2], glfogsettings[FOG_CURRENT].color[3] );
+				Vector4Set(clearColor, glfogsettings[FOG_CURRENT].color[0], glfogsettings[FOG_CURRENT].color[1], glfogsettings[FOG_CURRENT].color[2], glfogsettings[FOG_CURRENT].color[3] );
 			} else {
 //				qglClearColor ( 0.0, 0.0, 1.0, 1.0 );	// blue clear for testing world sky clear
 				qglClearColor( 0.05, 0.05, 0.05, 1.0 );  // JPW NERVE changed per id req was 0.5s
+				Vector4Set(clearColor, 0.05, 0.05, 0.05, 1.0 ); 
 			}
 		} else {        // world scene, no portal sky, not fastsky, clear color if fog says to, otherwise, just set the clearcolor
 			if ( glfogsettings[FOG_CURRENT].registered ) { // try to clear fastsky with current fog color
 				qglClearColor( glfogsettings[FOG_CURRENT].color[0], glfogsettings[FOG_CURRENT].color[1], glfogsettings[FOG_CURRENT].color[2], glfogsettings[FOG_CURRENT].color[3] );
-
+				Vector4Set(clearColor, glfogsettings[FOG_CURRENT].color[0], glfogsettings[FOG_CURRENT].color[1], glfogsettings[FOG_CURRENT].color[2], glfogsettings[FOG_CURRENT].color[3] );
 				if ( glfogsettings[FOG_CURRENT].clearscreen ) {   // world fog requests a screen clear (distance fog rather than quake sky)
 					clearBits |= GL_COLOR_BUFFER_BIT;
 				}
@@ -561,11 +569,11 @@ void RB_BeginDrawingView( void ) {
 		qglEnable( GL_CLIP_PLANE0 );
 
 		//@TODO: flip plane
-		RB_UploadSceneView(backEnd.viewParms.projectionMatrix, plane2);
+		RB_UploadSceneView(backEnd.viewParms.vulkanProjectionMatrix, plane2);
 	} else {
 		qglDisable( GL_CLIP_PLANE0 );
 		vec4_t zeroPlane = {0};
-		RB_UploadSceneView(backEnd.viewParms.projectionMatrix, zeroPlane);
+		RB_UploadSceneView(backEnd.viewParms.vulkanProjectionMatrix, zeroPlane);
 	}
 
 	if(RHI_IsRenderingActive()){
@@ -578,11 +586,13 @@ void RB_BeginDrawingView( void ) {
 	RHI_CmdEndBarrier();
 
 	RHI_RenderPass renderPass = {};
+
 	renderPass.colorTexture = backEnd.swapChainTextures[backEnd.swapChainImageIndex];
 	renderPass.depthTexture = backEnd.depthBuffer;
 	renderPass.depth = 1.0f;
-	renderPass.depthLoad = RHI_LoadOp_Clear;
-	renderPass.colorLoad = RHI_LoadOp_Clear; //@TODO: pick the correct op and color
+	Vector4Copy(clearColor, renderPass.color);
+	renderPass.depthLoad = (clearBits & GL_DEPTH_BUFFER_BIT)? RHI_LoadOp_Clear : RHI_LoadOp_Load; 
+	renderPass.colorLoad = (clearBits & GL_COLOR_BUFFER_BIT)? RHI_LoadOp_Clear : RHI_LoadOp_Load; 
 	RHI_BeginRendering(&renderPass);
 	
 }
@@ -711,8 +721,12 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 			if ( oldDepthRange != depthRange ) {
 				if ( depthRange ) {
 					qglDepthRange( 0, 0.3 );
+					RHI_CmdSetViewport( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
+						backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight, 0.0f, 0.3f );
 				} else {
 					qglDepthRange( 0, 1 );
+					RHI_CmdSetViewport( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
+						backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight, 0.0f, 1.0f );
 				}
 				oldDepthRange = depthRange;
 			}
@@ -738,6 +752,8 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	qglLoadMatrixf( backEnd.viewParms.world.modelMatrix );
 	if ( depthRange ) {
 		qglDepthRange( 0, 1 );
+		RHI_CmdSetViewport( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
+			backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight, 0.0f, 1.0f );
 	}
 
 	// (SA) draw sun
