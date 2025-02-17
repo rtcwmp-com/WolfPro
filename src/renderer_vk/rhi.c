@@ -624,8 +624,8 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
 
     VkFormat color_rendering_format = SURFACE_FORMAT_RGBA;
     pipeline_create.pColorAttachmentFormats = &color_rendering_format;
-    //pipeline_create.depthAttachmentFormat   = depth_format;
-    //pipeline_create.stencilAttachmentFormat = depth_format;
+    pipeline_create.depthAttachmentFormat   = GetVkFormat(D32_SFloat);
+    pipeline_create.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
 
   
     VkVertexInputAttributeDescription vertexAttributes[ARRAY_LEN(graphicsDesc->attributes)];

@@ -398,6 +398,18 @@ static void InitVulkan( void ) {
 	RHI_UpdateDescriptorSet(backEnd.descriptorSet, 1, RHI_DescriptorType_Sampler, 0, 1, &backEnd.sampler);
 	RHI_UpdateDescriptorSet(backEnd.descriptorSet, 2, RHI_DescriptorType_ReadOnlyBuffer, 0, 1, &backEnd.sceneViewGPUBuffer);
 
+	rhiTextureDesc depthTextureDesc = {};
+	depthTextureDesc.allowedStates = RHI_ResourceState_DepthWriteBit;
+	depthTextureDesc.format = D32_SFloat;
+	depthTextureDesc.height = glConfig.vidHeight;
+	depthTextureDesc.initialState = RHI_ResourceState_DepthWriteBit;
+	depthTextureDesc.longLifetime = qfalse;
+	depthTextureDesc.mipCount = 1;
+	depthTextureDesc.name = "Depth Buffer";
+	depthTextureDesc.sampleCount = 1;
+	depthTextureDesc.width = glConfig.vidWidth;
+	backEnd.depthBuffer = RHI_CreateTexture(&depthTextureDesc);
+	
 }
 
 /*

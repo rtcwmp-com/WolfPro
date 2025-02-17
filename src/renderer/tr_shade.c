@@ -1175,15 +1175,6 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 		memcpy(colorBufferData + (vb->vertexFirst * sizeof(tess.svars.colors[0])), tess.svars.colors, tess.numVertexes * sizeof(tess.svars.colors[0]));
 		RHI_UnmapBuffer(vb->color[i]);
 
-		
-
-		float modelViewMatrix[16] = {
-			1.0f, 0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 1.0f
-		};
-
 		typedef struct pushConstants {
 			uint32_t textureIndex;
 			uint32_t samplerIndex;
@@ -1206,7 +1197,7 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 		RHI_CmdBindVertexBuffers(buffers, ARRAY_LEN(buffers));
 		
 
-		RHI_CmdPushConstants(pStage->pipeline, RHI_Shader_Vertex, modelViewMatrix,sizeof(modelViewMatrix));
+		RHI_CmdPushConstants(pStage->pipeline, RHI_Shader_Vertex, backEnd.or.modelMatrix,sizeof(backEnd.or.modelMatrix));
 		RHI_CmdPushConstants(pStage->pipeline, RHI_Shader_Pixel, &pc, sizeof(pc));
 
 		RHI_CmdDrawIndexed(tess.numIndexes, vb->indexFirst, vb->vertexFirst);

@@ -973,6 +973,8 @@ typedef struct {
 	//Handle to the current frame's pipeline and descriptor set
 	rhiPipeline previousPipeline;
 	rhiDescriptorSet currentDescriptorSet;
+
+	rhiTexture depthBuffer;
 } backEndState_t;
 
 /*
@@ -1325,7 +1327,7 @@ void    GL_Cull( int cullType );
 #define     GLS_ATEST_BITS                      0x70000000
 
 #define GLS_DEFAULT         GLS_DEPTHMASK_TRUE
-
+void    RB_UploadSceneView(const float *projectionMatrix, const float *clipPlane);
 void    RE_StretchRaw( int x, int y, int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty );
 void    RE_UploadCinematic( int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty );
 

@@ -2047,6 +2047,10 @@ VkPipelineStageFlags2 GetVkStageFlags(VkImageLayout state)
 		VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT |
 		VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
 
+    const VkPipelineStageFlags2 fragmentTests =
+        VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT |
+        VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;
+
     switch(state){
         case VK_IMAGE_LAYOUT_UNDEFINED:
             return VK_PIPELINE_STAGE_2_NONE;
@@ -2060,6 +2064,8 @@ VkPipelineStageFlags2 GetVkStageFlags(VkImageLayout state)
             return VK_PIPELINE_STAGE_2_TRANSFER_BIT;
         case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
             return vertexFragmentCompute;
+        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+            return fragmentTests;
         default:
             assert(!"Unhandled image layout for stage flags");
             return VK_PIPELINE_STAGE_2_NONE;
@@ -2104,7 +2110,9 @@ VkAccessFlags2 GetVkAccessFlags(VkImageLayout state)
         case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
             return VK_ACCESS_2_TRANSFER_READ_BIT;
         case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-            return VK_ACCESS_SHADER_READ_BIT;
+            return VK_ACCESS_2_SHADER_READ_BIT;
+        case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+            return VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
         default:
             assert(!"Unhandled image layout");
             return VK_ACCESS_2_NONE;
@@ -2206,7 +2214,8 @@ VkImageLayout GetVkImageLayout(RHI_ResourceState state)
         { RHI_ResourceState_RenderTargetBit, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL},
         { RHI_ResourceState_ShaderInputBit, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
         { RHI_ResourceState_CopySourceBit, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL },
-     	{ RHI_ResourceState_CopyDestinationBit, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL }
+     	{ RHI_ResourceState_CopyDestinationBit, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL },
+        { RHI_ResourceState_DepthWriteBit, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL }
     };
 
     for(int i = 0; i < ARRAY_LEN(pairs); i++){

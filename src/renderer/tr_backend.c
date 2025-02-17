@@ -559,9 +559,32 @@ void RB_BeginDrawingView( void ) {
 		qglLoadMatrixf( s_flipMatrix );
 		qglClipPlane( GL_CLIP_PLANE0, plane2 );
 		qglEnable( GL_CLIP_PLANE0 );
+
+		//@TODO: flip plane
+		RB_UploadSceneView(backEnd.viewParms.projectionMatrix, plane2);
 	} else {
 		qglDisable( GL_CLIP_PLANE0 );
+		vec4_t zeroPlane = {0};
+		RB_UploadSceneView(backEnd.viewParms.projectionMatrix, zeroPlane);
 	}
+
+	if(RHI_IsRenderingActive()){
+		RHI_EndRendering();
+	}
+
+	RHI_CmdBeginBarrier();
+	RHI_CmdTextureBarrier(backEnd.depthBuffer, RHI_ResourceState_DepthWriteBit);
+	RHI_CmdTextureBarrier(backEnd.swapChainTextures[backEnd.swapChainImageIndex], RHI_ResourceState_RenderTargetBit);
+	RHI_CmdEndBarrier();
+
+	RHI_RenderPass renderPass = {};
+	renderPass.colorTexture = backEnd.swapChainTextures[backEnd.swapChainImageIndex];
+	renderPass.depthTexture = backEnd.depthBuffer;
+	renderPass.depth = 1.0f;
+	renderPass.depthLoad = RHI_LoadOp_Clear;
+	renderPass.colorLoad = RHI_LoadOp_Clear; //@TODO: pick the correct op and color
+	RHI_BeginRendering(&renderPass);
+	
 }
 
 #define MAC_EVENT_PUMP_MSEC     5
@@ -777,7 +800,7 @@ void    RB_SetGL2D( void ) {
 
 	float w = glConfig.vidWidth;
 	float h = glConfig.vidHeight;
-	SceneView sceneView = {};
+	
 	
 	float projectionMatrix[16] = {
 		2.0f/w, 0.0f, 0.0f, 0.0f,
@@ -786,7 +809,24 @@ void    RB_SetGL2D( void ) {
 		-1.0f, -1.0f, 0.0f, 1.0f
 	};
 	
-	memcpy(sceneView.projectionMatrix, projectionMatrix, sizeof(projectionMatrix));
+	vec4_t zeroPlane = {0};
+	RB_UploadSceneView(projectionMatrix, zeroPlane);
+
+	float modelViewMatrix[16] = {
+		1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f
+	};
+
+	memcpy(backEnd.or.modelMatrix, modelViewMatrix, sizeof(backEnd.or.modelMatrix));
+
+}
+
+void RB_UploadSceneView(const float *projectionMatrix, const float *clipPlane){
+	SceneView sceneView = {};
+	memcpy(sceneView.projectionMatrix, projectionMatrix, sizeof(sceneView.projectionMatrix));
+	memcpy(sceneView.clipPlane, clipPlane, sizeof(sceneView.clipPlane));
 
 	rhiBuffer currentScene = backEnd.sceneViewUploadBuffers[backEnd.currentFrameIndex];
 	assert(backEnd.sceneViewCount < SCENEVIEW_MAX);
@@ -812,13 +852,14 @@ void    RB_SetGL2D( void ) {
 	RHI_CmdEndBarrier();
 
 	if(renderingActive){
-		RHI_BeginRendering(RHI_CurrentRenderPass());
+		RHI_RenderPass rp = *RHI_CurrentRenderPass();
+		rp.colorLoad = RHI_LoadOp_Load;
+		rp.depthLoad = RHI_LoadOp_Load;
+		RHI_BeginRendering(&rp);
 	}
 
 	backEnd.sceneViewCount++;
-
 }
-
 
 /*
 =============
