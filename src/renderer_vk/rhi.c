@@ -1120,6 +1120,7 @@ void RHI_EndBufferUpload()
 }
 
 void RHI_BeginTextureUpload(rhiTextureUpload *textureUpload, rhiTexture handle)
+void RHI_BeginTextureUpload(rhiTextureUpload *textureUpload, rhiTexture handle, uint32_t mipLevel)
 {
     assert(vk.uploadTextureHandle.h == 0);
     //use vk.deviceProperties.limits.optimalBufferCopyRowPitchAlignment
@@ -1127,10 +1128,11 @@ void RHI_BeginTextureUpload(rhiTextureUpload *textureUpload, rhiTexture handle)
     Texture *texture = GET_TEXTURE(handle);
 
     textureUpload->data = RHI_MapBuffer(vk.uploadBuffer);
-    textureUpload->width = texture->desc.width;
-    textureUpload->height = texture->desc.height;
-    textureUpload->rowPitch = texture->desc.width * GetByteCountsPerPixel(texture->format); 
+    textureUpload->width = max(texture->desc.width >> mipLevel, 1);
+    textureUpload->height = max(texture->desc.height >> mipLevel, 1);
+    textureUpload->rowPitch = textureUpload->width * GetByteCountsPerPixel(texture->format); 
     vk.uploadTextureHandle = handle;
+    vk.uploadTextureMipLevel = mipLevel;
 
 }
 
@@ -1149,13 +1151,13 @@ void RHI_EndTextureUpload()
     // copy from the staging buffer into the texture mip
     VkBufferImageCopy region = {};
     region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region.imageSubresource.mipLevel = 0;
+    region.imageSubresource.mipLevel = vk.uploadTextureMipLevel;
     region.imageSubresource.layerCount = 1;
     region.imageOffset.x = 0;
     region.imageOffset.y = 0;
     region.imageOffset.z = 0;
-    region.imageExtent.width = texture->desc.width;
-    region.imageExtent.height = texture->desc.height;
+    region.imageExtent.width = max(texture->desc.width >> vk.uploadTextureMipLevel, 1);
+    region.imageExtent.height = max(texture->desc.height >> vk.uploadTextureMipLevel, 1);
     region.imageExtent.depth = 1;
 
     vkCmdCopyBufferToImage(vk.activeCommandBuffer, GET_BUFFER(vk.uploadBuffer)->buffer, texture->image,
