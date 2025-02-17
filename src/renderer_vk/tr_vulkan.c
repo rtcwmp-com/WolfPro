@@ -2256,8 +2256,8 @@ VkBufferUsageFlags GetVkBufferUsageFlags(RHI_ResourceState state)
 		{ RHI_ResourceState_IndexBufferBit, VK_BUFFER_USAGE_INDEX_BUFFER_BIT },
 		{ RHI_ResourceState_CopySourceBit, VK_BUFFER_USAGE_TRANSFER_SRC_BIT },
 		{ RHI_ResourceState_CopyDestinationBit, VK_BUFFER_USAGE_TRANSFER_DST_BIT },
+        { RHI_ResourceState_UniformBufferBit, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT },
 		// { galResourceState::IndirectCommandBit, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT },
-		// { galResourceState::UniformBufferBit, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT },
 		{ RHI_ResourceState_StorageBufferBit, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT }
 	};
 

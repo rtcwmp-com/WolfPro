@@ -921,8 +921,16 @@ typedef struct {
 	uint32_t vertexFirst; //first vertex of the draw call
 } VertexBuffers;
 
+#pragma pack(push,1)
+typedef struct SceneView {
+	float projectionMatrix[16];
+	float clipPlane[4];
+} SceneView;
+#pragma pack(pop)
+
 #define VBA_MAX 64000
 #define IDX_MAX (VBA_MAX * 8)
+#define SCENEVIEW_MAX 16
 
 // all state modified by the back end is seperated
 // from the front end state
@@ -958,6 +966,9 @@ typedef struct {
 	rhiSampler sampler;
 
 	VertexBuffers vertexBuffers[RHI_FRAMES_IN_FLIGHT];
+	rhiBuffer sceneViewUploadBuffers[RHI_FRAMES_IN_FLIGHT];
+	rhiBuffer sceneViewGPUBuffer;
+	uint32_t sceneViewCount;
 
 	//Handle to the current frame's pipeline and descriptor set
 	rhiPipeline previousPipeline;

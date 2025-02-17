@@ -1171,6 +1171,7 @@ RB_BeginFrame
 const void  *RB_BeginFrame( const void *data ) {
 	backEnd.currentFrameIndex = (backEnd.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT;
 
+	backEnd.sceneViewCount = 0;
 	backEnd.previousPipeline.h = 0;
 	backEnd.currentDescriptorSet.h = 0;
 	

@@ -13,7 +13,7 @@ struct VOut
 
 struct RootConstants
 {
-	matrix projectionMatrix;
+	matrix modelViewMatrix;
 };
 [[vk::push_constant]] RootConstants rc;
 
@@ -24,10 +24,17 @@ struct VIn
     [[vk::location(2)]] float2 tc : TEXCOORD0;
 };
 
+struct SceneView
+{
+  matrix projectionMatrix;
+  float4 clipPlane;
+};
+[[vk::binding(2)]] ConstantBuffer<SceneView> sceneView;
+
 VOut vs(VIn input)
 {
     VOut output;
-	output.position = mul(rc.projectionMatrix, float4(input.position.xyz, 1.0));
+	output.position = mul(sceneView.projectionMatrix, mul(rc.modelViewMatrix, float4(input.position.xyz, 1.0)));
     output.color = input.color;
     output.tc = input.tc;
 

@@ -316,11 +316,18 @@ static void InitVulkan( void ) {
 	vertexBufferDesc.initialState = RHI_ResourceState_VertexBufferBit;
 	vertexBufferDesc.memoryUsage = RHI_MemoryUsage_Upload;
 
+	rhiBufferDesc uniformBufferDesc = {};
+	uniformBufferDesc.initialState = RHI_ResourceState_CopySourceBit;
+	uniformBufferDesc.memoryUsage = RHI_MemoryUsage_Upload;
+	
+
 	for(int i = 0; i < RHI_FRAMES_IN_FLIGHT; i++){
+		uniformBufferDesc.name = va("%s %d", "Scene View Upload", i);
+		uniformBufferDesc.byteCount = SCENEVIEW_MAX * sizeof(SceneView);
+		backEnd.sceneViewUploadBuffers[i] = RHI_CreateBuffer(&uniformBufferDesc);
+
 		backEnd.commandBuffers[i] = RHI_CreateCommandBuffer(qfalse);
-		
-		
-		
+
 		vertexBufferDesc.initialState = RHI_ResourceState_VertexBufferBit;
 		vertexBufferDesc.name = va("%s %d", "Position Buffer", i);
 		vertexBufferDesc.byteCount = VBA_MAX * sizeof(tess.xyz[0]);
@@ -342,10 +349,14 @@ static void InitVulkan( void ) {
 			vertexBufferDesc.byteCount = VBA_MAX * sizeof(tess.vertexColors[0]);
 			backEnd.vertexBuffers[i].color[stage] = RHI_CreateBuffer(&vertexBufferDesc);
 		}
-		
-		
-		
+
 	}
+
+	uniformBufferDesc.initialState = RHI_ResourceState_UniformBufferBit;
+	uniformBufferDesc.memoryUsage = RHI_MemoryUsage_DeviceLocal;
+	uniformBufferDesc.name = "Scene View GPU";
+	uniformBufferDesc.byteCount = sizeof(SceneView);
+	backEnd.sceneViewGPUBuffer = RHI_CreateBuffer(&uniformBufferDesc);
 
 	backEnd.renderComplete = RHI_CreateTimelineSemaphore();
 	backEnd.renderCompleteBinary = RHI_CreateBinarySemaphore();
@@ -355,7 +366,7 @@ static void InitVulkan( void ) {
 
 	rhiDescriptorSetLayoutDesc descSetLayoutDesc = {};
 	descSetLayoutDesc.name = "Shared Game Textures";
-	descSetLayoutDesc.bindingCount = 2;
+	
 	descSetLayoutDesc.bindings[0].descriptorCount = MAX_DRAWIMAGES;
 	descSetLayoutDesc.bindings[0].descriptorType = RHI_DescriptorType_ReadOnlyTexture;
 	descSetLayoutDesc.bindings[0].stageFlags = RHI_PipelineStage_PixelBit;
@@ -364,6 +375,12 @@ static void InitVulkan( void ) {
 	descSetLayoutDesc.bindings[1].descriptorType = RHI_DescriptorType_Sampler;
 	descSetLayoutDesc.bindings[1].stageFlags = RHI_PipelineStage_PixelBit;
 
+	descSetLayoutDesc.bindings[2].descriptorCount = 1;
+	descSetLayoutDesc.bindings[2].descriptorType = RHI_DescriptorType_ReadOnlyBuffer;
+	descSetLayoutDesc.bindings[2].stageFlags = RHI_PipelineStage_VertexBit;
+
+
+	descSetLayoutDesc.bindingCount = 3;
 	backEnd.descriptorSetLayout = RHI_CreateDescriptorSetLayout(&descSetLayoutDesc);
 
 
@@ -373,7 +390,7 @@ static void InitVulkan( void ) {
 	backEnd.sampler = RHI_CreateSampler("Trilinear", RHI_TextureAddressing_Repeat, 0);
 
 	RHI_UpdateDescriptorSet(backEnd.descriptorSet, 1, RHI_DescriptorType_Sampler, 0, 1, &backEnd.sampler);
-	
+	RHI_UpdateDescriptorSet(backEnd.descriptorSet, 2, RHI_DescriptorType_ReadOnlyBuffer, 0, 1, &backEnd.sceneViewGPUBuffer);
 
 }
 
