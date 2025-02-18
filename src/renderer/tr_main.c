@@ -454,11 +454,11 @@ void R_TransformClipToWindow( const vec4_t clip, const viewParms_t *view, vec4_t
 
 /*
 ==========================
-myGlMultMatrix
+R_MultMatrix
 
 ==========================
 */
-void myGlMultMatrix( const float *a, const float *b, float *out ) {
+static void R_MultMatrix( const float *a, const float *b, float *out ) {
 	int i, j;
 
 	for ( i = 0 ; i < 4 ; i++ ) {
@@ -518,7 +518,7 @@ void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms,
 	glMatrix[11] = 0;
 	glMatrix[15] = 1;
 
-	myGlMultMatrix( glMatrix, viewParms->world.modelMatrix, or->modelMatrix );
+	R_MultMatrix( glMatrix, viewParms->world.modelMatrix, or->modelMatrix );
 
 	// calculate the viewer origin in the model's space
 	// needed for fog, specular, and environment mapping
@@ -583,7 +583,7 @@ void R_RotateForViewer( void ) {
 
 	// convert from our coordinate system (looking down X)
 	// to OpenGL's coordinate system (looking down -Z)
-	myGlMultMatrix( viewerMatrix, s_flipMatrix, tr.or.modelMatrix );
+	R_MultMatrix( viewerMatrix, s_flipMatrix, tr.or.modelMatrix );
 
 	tr.viewParms.world = tr.or;
 
@@ -812,25 +812,15 @@ void R_SetupProjection( void ) {
 	tr.viewParms.projectionMatrix[11] = -1;
 	tr.viewParms.projectionMatrix[15] = 0;
 
-	tr.viewParms.vulkanProjectionMatrix[0] = 2 * zNear / width;
-	tr.viewParms.vulkanProjectionMatrix[4] = 0;
-	tr.viewParms.vulkanProjectionMatrix[8] = ( xmax + xmin ) / width; // normally 0
-	tr.viewParms.vulkanProjectionMatrix[12] = 0;
+	// correction matrix for Vulkan clip space (flipped Y, half-range Z)
+	float c[16] = {};
+    c[0] = 1.0f;
+    c[5] = -1.0f;
+    c[10] = 0.5f;
+    c[14] = 0.5f;
+    c[15] = 1.0f;
 
-	tr.viewParms.vulkanProjectionMatrix[1] = 0;
-	tr.viewParms.vulkanProjectionMatrix[5] = -2 * zNear / height;
-	tr.viewParms.vulkanProjectionMatrix[9] = ( ymax + ymin ) / height;    // normally 0
-	tr.viewParms.vulkanProjectionMatrix[13] = 0;
-
-	tr.viewParms.vulkanProjectionMatrix[2] = 0;
-	tr.viewParms.vulkanProjectionMatrix[6] = 0;
-	tr.viewParms.vulkanProjectionMatrix[10] = -( zFar + zNear ) / depth;
-	tr.viewParms.vulkanProjectionMatrix[14] = -2 * zFar * zNear / depth;
-
-	tr.viewParms.vulkanProjectionMatrix[3] = 0;
-	tr.viewParms.vulkanProjectionMatrix[7] = 0;
-	tr.viewParms.vulkanProjectionMatrix[11] = -1;
-	tr.viewParms.vulkanProjectionMatrix[15] = 0;
+	R_MultMatrix(tr.viewParms.projectionMatrix, c, tr.viewParms.vulkanProjectionMatrix);
 
 }
 
