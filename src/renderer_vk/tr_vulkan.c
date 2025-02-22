@@ -395,8 +395,27 @@ static qbool FindSuitableQueueFamilies(Queues* queues, VkPhysicalDevice physical
 
     return graphicsFound && presentFound;
 }
+void R_Gpulist_f(void){
+    uint32_t deviceCount = 0;
+    VK(vkEnumeratePhysicalDevices(vk.instance, &deviceCount, NULL));
+    if(deviceCount == 0)
+    {
+        return;
+    }
 
-void PickPhysicalDevice()
+    VkPhysicalDevice *devices = (VkPhysicalDevice*)ri.Hunk_AllocateTempMemory(deviceCount * sizeof(VkPhysicalDevice));
+
+    VK(vkEnumeratePhysicalDevices(vk.instance, &deviceCount, devices));
+    for(int d = 0; d < deviceCount; ++d)
+    {
+        VkPhysicalDeviceProperties properties;
+        vkGetPhysicalDeviceProperties(devices[d], &properties);
+        ri.Printf(PRINT_ALL, "%d: %s\n", d+1, properties.deviceName);
+    }
+    ri.Hunk_FreeTempMemory(devices);
+}
+
+void PickPhysicalDevice(void)
 {
 // TODO: add cvar to use r_gpu and add /gpulist
 
@@ -415,6 +434,9 @@ void PickPhysicalDevice()
         int highestScore = 0;
         for(int d = 0; d < deviceCount; ++d)
         {
+            if(r_gpu->integer > 0 && r_gpu->integer <= deviceCount && r_gpu->integer != d+1){
+                continue;
+            }
             const VkPhysicalDevice physicalDevice = devices[d];
 
             VkPhysicalDeviceProperties deviceProperties;

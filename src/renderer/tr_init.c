@@ -194,6 +194,8 @@ int max_polys;
 cvar_t  *r_maxpolyverts;
 int max_polyverts;
 
+cvar_t  *r_gpu;
+
 
 void ( APIENTRY * qglMultiTexCoord2fARB )( GLenum texture, GLfloat s, GLfloat t );
 void ( APIENTRY * qglActiveTextureARB )( GLenum texture );
@@ -1182,6 +1184,9 @@ void R_Register( void ) {
 	r_maxpolyverts = ri.Cvar_Get( "r_maxpolyverts", va( "%d", MAX_POLYVERTS ), 0 );
 
 	r_highQualityVideo = ri.Cvar_Get( "r_highQualityVideo", "1", CVAR_ARCHIVE );
+
+	r_gpu = ri.Cvar_Get( "r_gpu", "0", CVAR_ARCHIVE | CVAR_LATCH);
+
 	// make sure all the commands added here are also
 	// removed in R_Shutdown
 	ri.Cmd_AddCommand( "imagelist", R_ImageList_f );
@@ -1194,6 +1199,7 @@ void R_Register( void ) {
 	ri.Cmd_AddCommand( "gfxinfo", GfxInfo_f );
 	ri.Cmd_AddCommand( "taginfo", R_TagInfo_f );
 	ri.Cmd_AddCommand("printpools", RHI_PrintPools);
+	ri.Cmd_AddCommand("gpulist", R_Gpulist_f);
 
 	// Ridah
 	{

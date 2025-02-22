@@ -1246,6 +1246,8 @@ extern cvar_t   *r_wolffog;
 // done
 
 extern cvar_t  *r_highQualityVideo;
+
+extern cvar_t *r_gpu;
 //====================================================================
 
 float R_NoiseGet4f( float x, float y, float z, float t );
@@ -1895,5 +1897,7 @@ typedef struct pixelShaderPushConstants {
 	uint32_t samplerIndex;
 	uint32_t alphaTest;
 } pixelShaderPushConstants;
+
+void R_Gpulist_f(void);
 
 #endif //TR_LOCAL_H (THIS MUST BE LAST!!)
