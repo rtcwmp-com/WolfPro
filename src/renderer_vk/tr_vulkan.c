@@ -687,8 +687,10 @@ static void CreateSwapChain()
     uint32_t presentModeCount;
     VK(vkGetPhysicalDeviceSurfacePresentModesKHR(vk.physicalDevice, vk.surface, &presentModeCount, NULL));
 
-    qbool presentModeFound = qfalse;
     VkPresentModeKHR selectedPresentMode = VK_PRESENT_MODE_MAX_ENUM_KHR;
+    qboolean immediateAvailable = qfalse; //no vsync, no queue
+    qboolean fifoRelaxedAvailable = qfalse; //adaptive vsync, has queue
+    qboolean mailboxAvailable = qfalse; //vsync, no queue
     if(presentModeCount > 0)
     {
         VkPresentModeKHR *presentModes = (VkPresentModeKHR*)ri.Hunk_AllocateTempMemory(presentModeCount * sizeof(VkPresentModeKHR));
@@ -700,26 +702,48 @@ static void CreateSwapChain()
             {
                 if(presentModes[p] == VK_PRESENT_MODE_IMMEDIATE_KHR)
                 {
-                    selectedPresentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
-                    presentModeFound = qtrue;
+                    immediateAvailable = qtrue;
+                }
+                if(presentModes[p] == VK_PRESENT_MODE_FIFO_RELAXED_KHR)
+                {
+                    fifoRelaxedAvailable = qtrue;
+                }
+                if(presentModes[p] == VK_PRESENT_MODE_MAILBOX_KHR)
+                {
+                    mailboxAvailable = qtrue;
                 }
             }
-
-        /*
-        @TODO:add support for all these with correct preference orders
-        VK_PRESENT_MODE_IMMEDIATE_KHR <-- no V-sync choice
-        VK_PRESENT_MODE_FIFO_KHR <-- V-sync choice #2
-        VK_PRESENT_MODE_FIFO_RELAXED_KHR <-- adaptive V-sync
-        VK_PRESENT_MODE_MAILBOX_KHR <-- V-sync choice #1
-        */
         }
         ri.Hunk_FreeTempMemory(presentModes);
     }
 
-    if(!presentModeFound)
-    {
-        ri.Error(ERR_FATAL, "No suitable presentation mode found\n");
+    if(r_swapInterval->integer){
+        if(!mailboxAvailable){
+            ri.Printf(PRINT_ALL, "Present mode selected: VK_PRESENT_MODE_MAILBOX_KHR\n");
+            selectedPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+        }else if (fifoRelaxedAvailable){
+            ri.Printf(PRINT_ALL, "Present mode selected: VK_PRESENT_MODE_FIFO_RELAXED_KHR\n");
+            selectedPresentMode = VK_PRESENT_MODE_FIFO_RELAXED_KHR;
+            Cvar_Set("com_maxfps", va("%d",glConfig.displayFrequency)); //@TODO: change to re.vsyncMsec in com_frame
+
+        }else{
+            ri.Printf(PRINT_ALL, "Present mode selected: VK_PRESENT_MODE_FIFO_KHR\n");
+            selectedPresentMode = VK_PRESENT_MODE_FIFO_KHR;
+            Cvar_Set("com_maxfps", va("%d",glConfig.displayFrequency)); //@TODO: change to re.vsyncMsec in com_frame
+        }
+    }else{
+        if (immediateAvailable){
+            ri.Printf(PRINT_ALL, "Present mode selected: VK_PRESENT_MODE_IMMEDIATE_KHR\n");
+            selectedPresentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+        }else{
+            ri.Printf(PRINT_ALL, "Present mode selected: VK_PRESENT_MODE_FIFO_KHR\n");
+            ri.Printf(PRINT_WARNING, "V-Sync was forced on, check for the latest graphics driver\n");
+            selectedPresentMode = VK_PRESENT_MODE_FIFO_KHR;
+            Cvar_Set("com_maxfps", va("%d",glConfig.displayFrequency)); //@TODO: change to re.vsyncMsec in com_frame
+        }
     }
+
+
 
     // @NOTE: VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT is the only image usage flag
     // that is guaranteed to be available

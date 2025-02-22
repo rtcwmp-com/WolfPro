@@ -1127,7 +1127,8 @@ void GLimp_EndFrame( void ) {
 
 		if ( !glConfig.stereoEnabled ) {    // why?
 			if ( qwglSwapIntervalEXT ) {
-				qwglSwapIntervalEXT( r_swapInterval->integer );
+				//qwglSwapIntervalEXT( r_swapInterval->integer );
+				qwglSwapIntervalEXT( 0 );
 			}
 		}
 	}
