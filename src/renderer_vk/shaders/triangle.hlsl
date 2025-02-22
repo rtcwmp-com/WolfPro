@@ -50,17 +50,40 @@ struct RootConstants
     [[vk::offset(64)]]
 	uint textureIndex;
     uint samplerIndex;
+    uint alphaTest;
 };
 [[vk::push_constant]] RootConstants rc;
 
 [[vk::binding(0)]] Texture2D texture[2048];
 [[vk::binding(1)]] SamplerState mySampler[6];
 
+bool failsAlphaTest(uint alphaTest, float alpha){
+    if(alphaTest == 1){
+        if(alpha == 0){
+            return true;
+        }
+    }
+    if(alphaTest == 2){
+        if(alpha >= 0.5){
+            return true;
+        }
+    }
+    if(alphaTest == 3){
+        if(alpha < 0.5){
+            return true;
+        }
+    }
+    return false;
+}
 
 float4 ps(VOut input) : SV_Target
 {
-    float4 texColor = texture[rc.textureIndex].Sample(mySampler[rc.samplerIndex], input.tc);
-    return texColor * input.color;
+    
+    float4 color = input.color * texture[rc.textureIndex].Sample(mySampler[rc.samplerIndex], input.tc);
+    if(failsAlphaTest(rc.alphaTest, color.a)){
+        discard;
+    }
+    return color;
 }
 
 #endif

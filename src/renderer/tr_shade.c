@@ -1132,6 +1132,20 @@ void SetIteratorFog( void ) {
 	}
 }
 
+static uint32_t AlphaTestMode(uint32_t stateBits){
+	switch(stateBits & GLS_ATEST_BITS){
+		case GLS_ATEST_GT_0:
+			return 1;
+		case GLS_ATEST_LT_80:
+			return 2;
+		case GLS_ATEST_GE_80:
+			return 3;
+		default:
+			return 0;
+	}
+
+}
+
 static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 	
 	VertexBuffers *vb = &backEnd.vertexBuffers[backEnd.currentFrameIndex];
@@ -1175,14 +1189,12 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 		memcpy(colorBufferData + (vb->vertexFirst * sizeof(tess.svars.colors[0])), tess.svars.colors, tess.numVertexes * sizeof(tess.svars.colors[0]));
 		RHI_UnmapBuffer(vb->color[i]);
 
-		typedef struct pushConstants {
-			uint32_t textureIndex;
-			uint32_t samplerIndex;
-		} pushConstants;
+		
 
-		pushConstants pc; 
+		pixelShaderPushConstants pc; 
 		pc.samplerIndex = 0;
 		pc.textureIndex = R_GetAnimatedImageSafe(&pStage->bundle[0])->descriptorIndex;
+		pc.alphaTest = AlphaTestMode(pStage->stateBits);
 		
 		if(backEnd.previousPipeline.h != pStage->pipeline.h){
 			RHI_CmdBindPipeline(pStage->pipeline);

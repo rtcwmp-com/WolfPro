@@ -1890,4 +1890,10 @@ void	RE_ConfigureVideoMode( int desktopWidth, int desktopHeight );	// writes to 
 void RHI_BeginFrame();
 void RHI_EndFrame();
 
+typedef struct pixelShaderPushConstants {
+	uint32_t textureIndex;
+	uint32_t samplerIndex;
+	uint32_t alphaTest;
+} pixelShaderPushConstants;
+
 #endif //TR_LOCAL_H (THIS MUST BE LAST!!)

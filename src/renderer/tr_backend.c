@@ -1542,7 +1542,7 @@ void RB_CreateGraphicsPipeline(shader_t *newShader){
 		// graphicsDesc.name = newShader->name;
 		graphicsDesc.descLayout = backEnd.descriptorSetLayout;
 		graphicsDesc.pushConstants.vsBytes = 64;
-		graphicsDesc.pushConstants.psBytes = 8;
+		graphicsDesc.pushConstants.psBytes = sizeof(pixelShaderPushConstants);
 		
 		graphicsDesc.vertexShader.data = triangle_vs;
 		graphicsDesc.vertexShader.byteCount = sizeof(triangle_vs);
