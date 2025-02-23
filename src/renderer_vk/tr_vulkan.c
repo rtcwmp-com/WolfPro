@@ -417,8 +417,6 @@ void R_Gpulist_f(void){
 
 void PickPhysicalDevice(void)
 {
-// TODO: add cvar to use r_gpu and add /gpulist
-
     uint32_t deviceCount = 0;
     VK(vkEnumeratePhysicalDevices(vk.instance, &deviceCount, NULL));
     if(deviceCount == 0)
@@ -451,7 +449,7 @@ void PickPhysicalDevice(void)
                 deviceFeatures.shaderSampledImageArrayDynamicIndexing && //TODO is this the right variable? want dynamic uniform indexing vs nonuniform indexing
                 deviceFeatures.samplerAnisotropy &&
                 deviceProperties.limits.timestampComputeAndGraphics &&
-                deviceProperties.limits.maxDescriptorSetSampledImages >= MAX_SAMPLER_DESCRIPTORS)
+                deviceProperties.limits.maxDescriptorSetSampledImages >= MAX_IMAGE_DESCRIPTORS)
             {
                 // score the physical device based on specifics that aren't requirements
                 
@@ -1942,9 +1940,10 @@ VkCullModeFlags GetVkCullModeFlags(cullType_t cullType)
 static void CreateDescriptorPool(){
     const VkDescriptorPoolSize poolSizes[] =
 	{
-		// @TODO:
-		{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1 },
-        { VK_DESCRIPTOR_TYPE_SAMPLER, 1 }
+        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, MAX_IMAGE_DESCRIPTORS * 2 },
+        { VK_DESCRIPTOR_TYPE_SAMPLER, 16 * 2 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 16 * 2 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 16 * 2 }
 	};
 
     VkDescriptorPoolCreateInfo poolInfo = {};
