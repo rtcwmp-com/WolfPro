@@ -1234,3 +1234,6 @@ void RHI_PrintPools(void){
     ri.Printf(PRINT_ALL, "%d in vk.samplerPool\n", Pool_Size(&vk.samplerPool));
 }
 
+rhiTextureFormatId RHI_GetSwapChainFormat(void) {
+    return B8G8R8A8_UNorm; //@TODO: 
+}

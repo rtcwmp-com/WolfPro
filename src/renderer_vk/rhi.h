@@ -389,6 +389,7 @@ void RHI_CreateComputePipeline();
 
 rhiTexture* RHI_GetSwapChainImages( void );
 uint32_t RHI_GetSwapChainImageCount( void );
+rhiTextureFormatId RHI_GetSwapChainFormat(void);
 
 void RHI_AcquireNextImage(uint32_t* outImageIndex, rhiSemaphore signalSemaphore);
 
@@ -440,5 +441,6 @@ void RHI_EndTextureUpload();
 void RHI_GetUploadSemaphore(); //(semaphore handle, value to wait on)
 
 void RHI_PrintPools(void);
+
 
 #endif

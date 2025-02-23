@@ -816,7 +816,7 @@ void Field_Paste( field_t *edit ) {
 		Field_CharEvent( edit, cbd[i] );
 	}
 
-	free( cbd );
+	Z_Free( cbd );
 }
 
 /*

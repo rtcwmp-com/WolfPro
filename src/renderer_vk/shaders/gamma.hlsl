@@ -16,7 +16,7 @@ VOut vs(uint id : SV_VertexID)
 	output.position.z = 0.0;
 	output.position.w = 1.0;
 	output.texCoords.x = (float)(id / 2) * 2.0;
-	output.texCoords.y = 1.0 - (float)(id % 2) * 2.0;
+	output.texCoords.y = (float)(id % 2) * 2.0;
 
 	return output;
 }
@@ -29,19 +29,21 @@ VOut vs(uint id : SV_VertexID)
 // X3571: pow(f, e) won't work if f is negative
 #pragma warning(disable : 3571)
 
-cbuffer RootConstants
+struct RootConstants
 {
 	float invGamma;
 	float brightness;
 };
 
-Texture2D texture0 : register(t0);
-SamplerState sampler0 : register(s0);
+[[vk::push_constant]] RootConstants rc;
+
+[[vk::binding(0)]] Texture2D texture0;
+[[vk::binding(1)]] SamplerState sampler0;
 
 float4 ps(VOut input) : SV_Target
 {
 	float3 base = texture0.Sample(sampler0, input.texCoords).rgb;
-	float3 gc = pow(base, invGamma) * brightness;
+	float3 gc = pow(base, rc.invGamma) * rc.brightness;
 
 	return float4(gc, 1.0);
 }

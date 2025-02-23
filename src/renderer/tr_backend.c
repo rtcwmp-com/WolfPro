@@ -1381,6 +1381,8 @@ const void  *RB_EndFrame( const void *data ) {
 	// RHI_BeginRendering(&renderPass);
 	RHI_EndRendering();
 
+	RB_DrawGamma(backEnd.swapChainTextures[backEnd.swapChainImageIndex]);
+
 
 	RHI_CmdBeginBarrier();
 	RHI_CmdTextureBarrier(backEnd.swapChainTextures[backEnd.swapChainImageIndex], RHI_ResourceState_PresentBit);

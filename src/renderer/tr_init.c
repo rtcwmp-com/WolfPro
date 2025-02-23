@@ -423,6 +423,8 @@ static void InitVulkan( void ) {
 	colorTextureDesc.sampleCount = 1;
 	colorTextureDesc.width = glConfig.vidWidth;
 	backEnd.colorBuffer = RHI_CreateTexture(&colorTextureDesc);
+
+	RB_InitGamma(backEnd.colorBuffer, backEnd.sampler);
 	
 }
 

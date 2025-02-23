@@ -1902,4 +1902,7 @@ typedef struct pixelShaderPushConstants {
 
 void R_Gpulist_f(void);
 
+void RB_InitGamma(rhiTexture texture, rhiSampler sampler);
+void RB_DrawGamma(rhiTexture swapChainImage);
+
 #endif //TR_LOCAL_H (THIS MUST BE LAST!!)
