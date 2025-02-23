@@ -615,7 +615,7 @@ VkImageUsageFlags GetVkImageUsageFlags(RHI_ResourceState state)
 
 VkFormat GetVkFormat(rhiTextureFormatId format)
 {
-    assert((unsigned int)format < Count);
+    assert((unsigned int)format < RHI_TextureFormat_Count);
 
     switch(format)
     {

@@ -976,6 +976,8 @@ typedef struct {
 	rhiDescriptorSet currentDescriptorSet;
 
 	rhiTexture depthBuffer;
+	
+	rhiTexture colorBuffer;
 } backEndState_t;
 
 /*

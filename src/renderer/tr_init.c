@@ -411,6 +411,18 @@ static void InitVulkan( void ) {
 	depthTextureDesc.sampleCount = 1;
 	depthTextureDesc.width = glConfig.vidWidth;
 	backEnd.depthBuffer = RHI_CreateTexture(&depthTextureDesc);
+
+	rhiTextureDesc colorTextureDesc = {};
+	colorTextureDesc.allowedStates = RHI_ResourceState_RenderTargetBit | RHI_ResourceState_ShaderInputBit;
+	colorTextureDesc.format = R8G8B8A8_UNorm;
+	colorTextureDesc.height = glConfig.vidHeight;
+	colorTextureDesc.initialState = RHI_ResourceState_RenderTargetBit;
+	colorTextureDesc.longLifetime = qfalse;
+	colorTextureDesc.mipCount = 1;
+	colorTextureDesc.name = "Color Buffer";
+	colorTextureDesc.sampleCount = 1;
+	colorTextureDesc.width = glConfig.vidWidth;
+	backEnd.colorBuffer = RHI_CreateTexture(&colorTextureDesc);
 	
 }
 

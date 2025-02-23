@@ -31,7 +31,6 @@
 // CS     VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
 // FORMAT VK_FORMAT_B8G8R8A8_SRGB
 #define SURFACE_FORMAT_RGBA VK_FORMAT_B8G8R8A8_UNORM
-#define GAL_SURFACE_FORMAT  galTextureFormat::B8G8R8A8_UNorm
 
 // Nvidia Nsight Systems 2020.2 is supposed to support Vulkan 1.2
 // on my PC, it only captures with Vulkan 1.1 :-(

@@ -247,12 +247,14 @@ rhiTexture RHI_CreateTexture(const rhiTextureDesc *desc)
     assert(__popcnt(desc->initialState) == 1);
     assert((desc->initialState & desc->allowedStates) != 0);
 
-    VkFormat format = GetVkFormat(desc->format);
     const qbool ownsImage = desc->nativeImage == VK_NULL_HANDLE;
+    
 
     VkImage image = VK_NULL_HANDLE;
     VmaAllocation allocation = VK_NULL_HANDLE;
     VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkFormat format = VK_FORMAT_UNDEFINED;
+
     if(!ownsImage)
     {
         image = (VkImage)desc->nativeImage;
@@ -261,6 +263,8 @@ rhiTexture RHI_CreateTexture(const rhiTextureDesc *desc)
     }
     else
     {
+        format = GetVkFormat(desc->format);
+
 		VmaAllocationCreateInfo allocCreateInfo = {};
 		allocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
 
@@ -487,6 +491,9 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
 {
     assert((graphicsDesc->srcBlend & (~GLS_SRCBLEND_BITS)) == 0);
     assert((graphicsDesc->dstBlend & (~GLS_DSTBLEND_BITS)) == 0);
+    assert(graphicsDesc->colorFormat != RHI_TextureFormat_Invalid);
+    assert(graphicsDesc->colorFormat < RHI_TextureFormat_Count);
+    assert(graphicsDesc->colorFormat > 0);
     DescriptorSetLayout *descriptorSetLayout = GET_LAYOUT(graphicsDesc->descLayout);
 
     
@@ -621,9 +628,8 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
     pipeline_create.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
     pipeline_create.pNext                   = VK_NULL_HANDLE;
     pipeline_create.colorAttachmentCount    = 1;
-
-    VkFormat color_rendering_format = SURFACE_FORMAT_RGBA;
-    pipeline_create.pColorAttachmentFormats = &color_rendering_format;
+    VkFormat colorFormat = GetVkFormat(graphicsDesc->colorFormat);
+    pipeline_create.pColorAttachmentFormats = &colorFormat;
     pipeline_create.depthAttachmentFormat   = GetVkFormat(D32_SFloat);
     pipeline_create.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
 

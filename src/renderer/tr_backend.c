@@ -582,12 +582,12 @@ void RB_BeginDrawingView( void ) {
 
 	RHI_CmdBeginBarrier();
 	RHI_CmdTextureBarrier(backEnd.depthBuffer, RHI_ResourceState_DepthWriteBit);
-	RHI_CmdTextureBarrier(backEnd.swapChainTextures[backEnd.swapChainImageIndex], RHI_ResourceState_RenderTargetBit);
+	RHI_CmdTextureBarrier(backEnd.colorBuffer, RHI_ResourceState_RenderTargetBit);
 	RHI_CmdEndBarrier();
 
 	RHI_RenderPass renderPass = {};
 
-	renderPass.colorTexture = backEnd.swapChainTextures[backEnd.swapChainImageIndex];
+	renderPass.colorTexture = backEnd.colorBuffer;
 	renderPass.depthTexture = backEnd.depthBuffer;
 	renderPass.depth = 1.0f;
 	Vector4Copy(clearColor, renderPass.color);
@@ -1300,7 +1300,7 @@ const void  *RB_BeginFrame( const void *data ) {
 
 
 	RHI_CmdBeginBarrier();
-	RHI_CmdTextureBarrier(backEnd.swapChainTextures[backEnd.swapChainImageIndex], RHI_ResourceState_RenderTargetBit);
+	RHI_CmdTextureBarrier(backEnd.colorBuffer, RHI_ResourceState_RenderTargetBit);
 	RHI_CmdEndBarrier();
 
 
@@ -1308,7 +1308,7 @@ const void  *RB_BeginFrame( const void *data ) {
 	Vector4Set(renderPass.color, 1.0f, 0.0f, 0.0f, 1.0f);
 	
 	renderPass.colorLoad = RHI_LoadOp_Clear;
-	renderPass.colorTexture = backEnd.swapChainTextures[backEnd.swapChainImageIndex];
+	renderPass.colorTexture = backEnd.colorBuffer;
 
 	RHI_BeginRendering(&renderPass);
 	// RHI_CmdBindPipeline(backEnd.pipeline);
@@ -1566,6 +1566,7 @@ void RB_CreateGraphicsPipeline(shader_t *newShader){
 		graphicsDesc.attributes[2].elementCount = 2;
 		graphicsDesc.attributes[2].elementFormat = RHI_VertexFormat_Float32;
 		graphicsDesc.attributes[2].stride = 2 * sizeof(float);
+		graphicsDesc.colorFormat = R8G8B8A8_UNorm;
 
 		uint32_t hash = RB_HashPipeline(&graphicsDesc);
 		cachedPipeline cached = {};

@@ -104,6 +104,7 @@ typedef struct RHI_RenderPass {
 
 typedef enum rhiTextureFormatId
 {
+	RHI_TextureFormat_Invalid,
 	R8G8B8A8_UNorm,
 	B8G8R8A8_UNorm,
 	B8G8R8A8_sRGB,
@@ -111,7 +112,7 @@ typedef enum rhiTextureFormatId
 	D32_SFloat,
 	//D24_UNorm_S8_UInt, // this is not well supported (:wave: AMD)
 	R32_UInt,
-	Count
+	RHI_TextureFormat_Count
 } rhiTextureFormatId;
 
 typedef struct rhiTextureDesc
@@ -341,6 +342,7 @@ typedef struct rhiGraphicsPipelineDesc {
 	rhiVertexAttributeDesc attributes[8];
 	uint32_t attributeCount;
 	qbool longLifetime;
+	rhiTextureFormatId colorFormat;
 
 } rhiGraphicsPipelineDesc;
 
