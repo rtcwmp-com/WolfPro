@@ -1181,6 +1181,11 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 		ComputeColors( pStage );
 		ComputeTexCoords( pStage );
 
+		if ( pStage->bundle[1].image[0] != 0 ) {
+			
+			//DrawMultitextured( input, stage );
+		}
+
 		byte *tcBufferData = RHI_MapBuffer(vb->textureCoord[i]);
 		memcpy(tcBufferData + (vb->vertexFirst * sizeof(float) * 2), tess.svars.texcoords, tess.numVertexes * sizeof(float) * 2);
 		RHI_UnmapBuffer(vb->textureCoord[i]);
@@ -1192,7 +1197,7 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 		
 
 		pixelShaderPushConstants pc; 
-		pc.samplerIndex = 0;
+		pc.samplerIndex = 0; //@TODO
 		pc.textureIndex = R_GetAnimatedImageSafe(&pStage->bundle[0])->descriptorIndex;
 		pc.alphaTest = AlphaTestMode(pStage->stateBits);
 		
@@ -1240,7 +1245,6 @@ static void RB_IterateStagesGeneric( shaderCommands_t *input ) {
 			qglColorPointer( 4, GL_UNSIGNED_BYTE, 0, input->svars.colors );
 		}
 
-		//
 		// do multitexture
 		//
 		if ( pStage->bundle[1].image[0] != 0 ) {

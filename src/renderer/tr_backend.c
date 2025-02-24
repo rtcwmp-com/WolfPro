@@ -1478,8 +1478,8 @@ void RB_ExecuteRenderCommands( const void *data ) {
 
 }
 
-#include "../renderer_vk/shaders/triangle_ps.h"
-#include "../renderer_vk/shaders/triangle_vs.h"
+#include "../renderer_vk/shaders/generic_ps.h"
+#include "../renderer_vk/shaders/generic_vs.h"
 
 typedef struct cachedPipeline {
 	rhiGraphicsPipelineDesc desc;
@@ -1546,10 +1546,10 @@ void RB_CreateGraphicsPipeline(shader_t *newShader){
 		graphicsDesc.pushConstants.vsBytes = 64;
 		graphicsDesc.pushConstants.psBytes = sizeof(pixelShaderPushConstants);
 		
-		graphicsDesc.vertexShader.data = triangle_vs;
-		graphicsDesc.vertexShader.byteCount = sizeof(triangle_vs);
-		graphicsDesc.pixelShader.data = triangle_ps;
-		graphicsDesc.pixelShader.byteCount = sizeof(triangle_ps);
+		graphicsDesc.vertexShader.data = generic_vs;
+		graphicsDesc.vertexShader.byteCount = sizeof(generic_vs);
+		graphicsDesc.pixelShader.data = generic_ps;
+		graphicsDesc.pixelShader.byteCount = sizeof(generic_ps);
 		graphicsDesc.cullType = newShader->cullType;
 		graphicsDesc.polygonOffset = newShader->polygonOffset;
 		graphicsDesc.srcBlend = stage->stateBits & GLS_SRCBLEND_BITS;
