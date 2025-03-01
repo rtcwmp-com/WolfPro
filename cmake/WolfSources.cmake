@@ -49,6 +49,19 @@ elseif(WIN32)
 	LIST(APPEND PLATFORM_SHARED_SRC "src/win32/winquake.rc")
 endif()
 
+#if(FEATURE_RENDERER_VULKAN)
+#	LIST(REMOVE_ITEM PLATFORM_CLIENT_SRC
+#		"src/win32/win_glimp.c"
+#		"src/win32/win_qgl.c"
+#		"src/win32/win_gamma.c"
+#	)
+#endif()
+if(FEATURE_RENDERER_GL1)
+	LIST(REMOVE_ITEM PLATFORM_CLIENT_SRC
+		"src/win32/win_vkimp.c"
+	)
+endif()
+
 FILE(GLOB SERVER_SRC
 	"src/server/*.c"
 	"src/server/*.h"
@@ -148,20 +161,20 @@ FILE(GLOB JPEG_FILES
 
 FILE(GLOB RENDERER_COMMON
 	"src/game/q_shared.h"
+	"src/renderer_common/*.h"
 )
 
-LIST(REMOVE_ITEM RENDERER_COMMON )
-
-
 FILE(GLOB RENDERER_FILES
-	"src/renderer/*.c"
-	"src/renderer/*.h"
+	"src/renderer_gl/*.c"
+	"src/renderer_gl/*.h"
 )
 
 FILE(GLOB RENDERER_VK_FILES
 	"src/renderer_vk/*.c"
 	"src/renderer_vk/*.h"
 )
+LIST(REMOVE_ITEM RENDERER_COMMON "src/renderer_vk/qgl*")
+
 
 FILE(GLOB RENDERER_VK_VMA_FILES
 	"src/renderer_vk/vk_vma_alloc.cpp"

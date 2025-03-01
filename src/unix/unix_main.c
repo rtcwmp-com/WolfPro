@@ -59,7 +59,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "../game/q_shared.h"
 #include "../qcommon/qcommon.h"
-#include "../renderer/tr_public.h"
+#include "../renderer_common/tr_public.h"
 
 #include "linux_local.h" // bk001204
 

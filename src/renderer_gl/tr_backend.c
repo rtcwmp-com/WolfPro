@@ -28,10 +28,8 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "tr_local.h"
 
-backEndData_t   *backEndData;
+backEndData_t   *backEndData[SMP_FRAMES];
 backEndState_t backEnd;
-
-int totalPipelines = 0;
 
 
 static float s_flipMatrix[16] = {
@@ -395,13 +393,7 @@ static void SetViewportAndScissor( void ) {
 				 backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight );
 	qglScissor( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
 				backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight );
-	RHI_CmdSetScissor( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
-				backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight );
-	RHI_CmdSetViewport( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
-				 backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight, 0.0f, 1.0f );
-
 }
-
 
 /*
 =================
@@ -413,7 +405,6 @@ to actually render the visible surfaces for this view
 */
 void RB_BeginDrawingView( void ) {
 	int clearBits = 0;
-	vec4_t clearColor = {};
 
 	// sync with gl if needed
 	if ( r_finish->integer == 1 && !glState.finishCalled ) {
@@ -460,20 +451,16 @@ void RB_BeginDrawingView( void ) {
 				clearBits |= GL_COLOR_BUFFER_BIT;
 				if ( glfogsettings[FOG_PORTALVIEW].registered ) {
 					qglClearColor( glfogsettings[FOG_PORTALVIEW].color[0], glfogsettings[FOG_PORTALVIEW].color[1], glfogsettings[FOG_PORTALVIEW].color[2], glfogsettings[FOG_PORTALVIEW].color[3] );
-					Vector4Set(clearColor, glfogsettings[FOG_PORTALVIEW].color[0], glfogsettings[FOG_PORTALVIEW].color[1], glfogsettings[FOG_PORTALVIEW].color[2], glfogsettings[FOG_PORTALVIEW].color[3] );
 				} else if ( glfogNum > FOG_NONE && glfogsettings[FOG_CURRENT].registered )      {
 					qglClearColor( glfogsettings[FOG_CURRENT].color[0], glfogsettings[FOG_CURRENT].color[1], glfogsettings[FOG_CURRENT].color[2], glfogsettings[FOG_CURRENT].color[3] );
-					Vector4Set(clearColor, glfogsettings[FOG_CURRENT].color[0], glfogsettings[FOG_CURRENT].color[1], glfogsettings[FOG_CURRENT].color[2], glfogsettings[FOG_CURRENT].color[3] );
 				} else {
 //					qglClearColor ( 1.0, 0.0, 0.0, 1.0 );	// red clear for testing portal sky clear
 					qglClearColor( 0.5, 0.5, 0.5, 1.0 );
-					Vector4Set(clearColor, 0.5, 0.5, 0.5, 1.0);
-					
 				}
 			} else {                                                    // rendered sky (either clear color or draw quake sky)
 				if ( glfogsettings[FOG_PORTALVIEW].registered ) {
 					qglClearColor( glfogsettings[FOG_PORTALVIEW].color[0], glfogsettings[FOG_PORTALVIEW].color[1], glfogsettings[FOG_PORTALVIEW].color[2], glfogsettings[FOG_PORTALVIEW].color[3] );
-					Vector4Set(clearColor, glfogsettings[FOG_PORTALVIEW].color[0], glfogsettings[FOG_PORTALVIEW].color[1], glfogsettings[FOG_PORTALVIEW].color[2], glfogsettings[FOG_PORTALVIEW].color[3] );
+
 					if ( glfogsettings[FOG_PORTALVIEW].clearscreen ) {    // portal fog requests a screen clear (distance fog rather than quake sky)
 						clearBits |= GL_COLOR_BUFFER_BIT;
 					}
@@ -495,7 +482,6 @@ void RB_BeginDrawingView( void ) {
 				}
 
 				qglClearColor( glfogsettings[FOG_CURRENT].color[0], glfogsettings[FOG_CURRENT].color[1], glfogsettings[FOG_CURRENT].color[2], glfogsettings[FOG_CURRENT].color[3] );
-				Vector4Set(clearColor, glfogsettings[FOG_CURRENT].color[0], glfogsettings[FOG_CURRENT].color[1], glfogsettings[FOG_CURRENT].color[2], glfogsettings[FOG_CURRENT].color[3] );
 			}
 		}
 	} else {                                              // world scene with no portal sky
@@ -512,16 +498,14 @@ void RB_BeginDrawingView( void ) {
 
 			if ( glfogsettings[FOG_CURRENT].registered ) { // try to clear fastsky with current fog color
 				qglClearColor( glfogsettings[FOG_CURRENT].color[0], glfogsettings[FOG_CURRENT].color[1], glfogsettings[FOG_CURRENT].color[2], glfogsettings[FOG_CURRENT].color[3] );
-				Vector4Set(clearColor, glfogsettings[FOG_CURRENT].color[0], glfogsettings[FOG_CURRENT].color[1], glfogsettings[FOG_CURRENT].color[2], glfogsettings[FOG_CURRENT].color[3] );
 			} else {
 //				qglClearColor ( 0.0, 0.0, 1.0, 1.0 );	// blue clear for testing world sky clear
 				qglClearColor( 0.05, 0.05, 0.05, 1.0 );  // JPW NERVE changed per id req was 0.5s
-				Vector4Set(clearColor, 0.05, 0.05, 0.05, 1.0 ); 
 			}
 		} else {        // world scene, no portal sky, not fastsky, clear color if fog says to, otherwise, just set the clearcolor
 			if ( glfogsettings[FOG_CURRENT].registered ) { // try to clear fastsky with current fog color
 				qglClearColor( glfogsettings[FOG_CURRENT].color[0], glfogsettings[FOG_CURRENT].color[1], glfogsettings[FOG_CURRENT].color[2], glfogsettings[FOG_CURRENT].color[3] );
-				Vector4Set(clearColor, glfogsettings[FOG_CURRENT].color[0], glfogsettings[FOG_CURRENT].color[1], glfogsettings[FOG_CURRENT].color[2], glfogsettings[FOG_CURRENT].color[3] );
+
 				if ( glfogsettings[FOG_CURRENT].clearscreen ) {   // world fog requests a screen clear (distance fog rather than quake sky)
 					clearBits |= GL_COLOR_BUFFER_BIT;
 				}
@@ -567,34 +551,9 @@ void RB_BeginDrawingView( void ) {
 		qglLoadMatrixf( s_flipMatrix );
 		qglClipPlane( GL_CLIP_PLANE0, plane2 );
 		qglEnable( GL_CLIP_PLANE0 );
-
-		//@TODO: flip plane
-		RB_UploadSceneView(backEnd.viewParms.vulkanProjectionMatrix, plane2);
 	} else {
 		qglDisable( GL_CLIP_PLANE0 );
-		vec4_t zeroPlane = {0};
-		RB_UploadSceneView(backEnd.viewParms.vulkanProjectionMatrix, zeroPlane);
 	}
-
-	if(RHI_IsRenderingActive()){
-		RHI_EndRendering();
-	}
-
-	RHI_CmdBeginBarrier();
-	RHI_CmdTextureBarrier(backEnd.depthBuffer, RHI_ResourceState_DepthWriteBit);
-	RHI_CmdTextureBarrier(backEnd.colorBuffer, RHI_ResourceState_RenderTargetBit);
-	RHI_CmdEndBarrier();
-
-	RHI_RenderPass renderPass = {};
-
-	renderPass.colorTexture = backEnd.colorBuffer;
-	renderPass.depthTexture = backEnd.depthBuffer;
-	renderPass.depth = 1.0f;
-	Vector4Copy(clearColor, renderPass.color);
-	renderPass.depthLoad = (clearBits & GL_DEPTH_BUFFER_BIT)? RHI_LoadOp_Clear : RHI_LoadOp_Load; 
-	renderPass.colorLoad = (clearBits & GL_COLOR_BUFFER_BIT)? RHI_LoadOp_Clear : RHI_LoadOp_Load; 
-	RHI_BeginRendering(&renderPass);
-	
 }
 
 #define MAC_EVENT_PUMP_MSEC     5
@@ -713,7 +672,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 				R_TransformDlights( backEnd.refdef.num_dlights, backEnd.refdef.dlights, &backEnd.or );
 			}
 
-			qglLoadMatrixf( backEnd.or.modelMatrix ); //model view matrix (object to camera space)
+			qglLoadMatrixf( backEnd.or.modelMatrix );
 
 			//
 			// change depthrange if needed
@@ -721,12 +680,8 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 			if ( oldDepthRange != depthRange ) {
 				if ( depthRange ) {
 					qglDepthRange( 0, 0.3 );
-					RHI_CmdSetViewport( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
-						backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight, 0.0f, 0.3f );
 				} else {
 					qglDepthRange( 0, 1 );
-					RHI_CmdSetViewport( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
-						backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight, 0.0f, 1.0f );
 				}
 				oldDepthRange = depthRange;
 			}
@@ -752,8 +707,6 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	qglLoadMatrixf( backEnd.viewParms.world.modelMatrix );
 	if ( depthRange ) {
 		qglDepthRange( 0, 1 );
-		RHI_CmdSetViewport( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
-			backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight, 0.0f, 1.0f );
 	}
 
 	// (SA) draw sun
@@ -795,8 +748,6 @@ void    RB_SetGL2D( void ) {
 	qglMatrixMode( GL_PROJECTION );
 	qglLoadIdentity();
 	qglOrtho( 0, glConfig.vidWidth, glConfig.vidHeight, 0, 0, 1 );
-	float m[16];
-	qglGetFloatv(GL_PROJECTION_MATRIX, m);
 	qglMatrixMode( GL_MODELVIEW );
 	qglLoadIdentity();
 
@@ -810,72 +761,8 @@ void    RB_SetGL2D( void ) {
 	// set time for 2D shaders
 	backEnd.refdef.time = ri.Milliseconds();
 	backEnd.refdef.floatTime = backEnd.refdef.time * 0.001f;
-
-	RHI_CmdSetScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
-	RHI_CmdSetViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight, 0.0f, 1.0f );
-
-	float w = glConfig.vidWidth;
-	float h = glConfig.vidHeight;
-	
-	
-	float projectionMatrix[16] = {
-		2.0f/w, 0.0f, 0.0f, 0.0f,
-		0.0f, 2.0f/h, 0.0f, 0.0f,
-		0.0f, 0.0f, 0.0f, 0.0f,
-		-1.0f, -1.0f, 0.0f, 1.0f
-	};
-	
-	vec4_t zeroPlane = {0};
-	RB_UploadSceneView(projectionMatrix, zeroPlane);
-
-	float modelViewMatrix[16] = {
-		1.0f, 0.0f, 0.0f, 0.0f,
-		0.0f, 1.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 1.0f, 0.0f,
-		0.0f, 0.0f, 0.0f, 1.0f
-	};
-
-	memcpy(backEnd.or.modelMatrix, modelViewMatrix, sizeof(backEnd.or.modelMatrix));
-
 }
 
-void RB_UploadSceneView(const float *projectionMatrix, const float *clipPlane){
-	SceneView sceneView = {};
-	memcpy(sceneView.projectionMatrix, projectionMatrix, sizeof(sceneView.projectionMatrix));
-	memcpy(sceneView.clipPlane, clipPlane, sizeof(sceneView.clipPlane));
-
-	rhiBuffer currentScene = backEnd.sceneViewUploadBuffers[backEnd.currentFrameIndex];
-	assert(backEnd.sceneViewCount < SCENEVIEW_MAX);
-
-	byte* mappedBuffer = RHI_MapBuffer(currentScene);
-	memcpy(mappedBuffer + backEnd.sceneViewCount * sizeof(sceneView), &sceneView, sizeof(sceneView));
-	RHI_UnmapBuffer(currentScene);
-
-	qboolean renderingActive = RHI_IsRenderingActive();
-	if(renderingActive){
-		RHI_EndRendering();
-	}
-
-	//Schedule the GPU copy and transition the layout
-	RHI_CmdBeginBarrier();
-	RHI_CmdBufferBarrier(backEnd.sceneViewGPUBuffer, RHI_ResourceState_CopyDestinationBit);
-	RHI_CmdEndBarrier();
-
-	RHI_CmdCopyBuffer(backEnd.sceneViewGPUBuffer, 0, currentScene, backEnd.sceneViewCount * sizeof(sceneView), sizeof(sceneView));
-	
-	RHI_CmdBeginBarrier();
-	RHI_CmdBufferBarrier(backEnd.sceneViewGPUBuffer, RHI_ResourceState_UniformBufferBit);
-	RHI_CmdEndBarrier();
-
-	if(renderingActive){
-		RHI_RenderPass rp = *RHI_CurrentRenderPass();
-		rp.colorLoad = RHI_LoadOp_Load;
-		rp.depthLoad = RHI_LoadOp_Load;
-		RHI_BeginRendering(&rp);
-	}
-
-	backEnd.sceneViewCount++;
-}
 
 /*
 =============
@@ -887,13 +774,13 @@ Used for cinematics.
 =============
 */
 void RE_StretchRaw( int x, int y, int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty ) {
-	#if 0
 	int i, j;
 	int start, end;
 
 	if ( !tr.registered ) {
 		return;
 	}
+	R_SyncRenderThread();
 
 	// we definately want to sync every frame for the cinematics
 	qglFinish();
@@ -950,7 +837,6 @@ void RE_StretchRaw( int x, int y, int w, int h, int cols, int rows, const byte *
 	qglTexCoord2f( 0.5f / cols, ( rows - 0.5f ) / rows );
 	qglVertex2f( x, y + h );
 	qglEnd();
-	#endif
 }
 
 
@@ -1028,7 +914,6 @@ const void *RB_StretchPic( const void *data ) {
 	tess.numVertexes += 4;
 	tess.numIndexes += 6;
 
-	//the quad vertices (4 vertices / 3 indices per triangle 2 vertices are reused)
 	tess.indexes[ numIndexes ] = numVerts + 3;
 	tess.indexes[ numIndexes + 1 ] = numVerts + 0;
 	tess.indexes[ numIndexes + 2 ] = numVerts + 2;
@@ -1264,24 +1149,11 @@ const void  *RB_DrawSurfs( const void *data ) {
 
 /*
 =============
-RB_BeginFrame
+RB_DrawBuffer
 
 =============
 */
-const void  *RB_BeginFrame( const void *data ) {
-	backEnd.currentFrameIndex = (backEnd.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT;
-
-	backEnd.sceneViewCount = 0;
-	backEnd.previousPipeline.h = 0;
-	backEnd.currentDescriptorSet.h = 0;
-	
-	backEnd.vertexBuffers[backEnd.currentFrameIndex].indexCount = 0; 
-	backEnd.vertexBuffers[backEnd.currentFrameIndex].indexFirst = 0; 
-	backEnd.vertexBuffers[backEnd.currentFrameIndex].vertexCount = 0; 
-	backEnd.vertexBuffers[backEnd.currentFrameIndex].vertexFirst = 0; 
-
-	RHI_BeginFrame();
-
+const void  *RB_DrawBuffer( const void *data ) {
 	const drawBufferCommand_t   *cmd;
 
 	cmd = (const drawBufferCommand_t *)data;
@@ -1293,46 +1165,80 @@ const void  *RB_BeginFrame( const void *data ) {
 		qglClearColor( 1, 0, 0.5, 1 );
 		qglClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	}
-	RHI_WaitOnSemaphore(backEnd.renderComplete, backEnd.renderCompleteCounter);
-	RHI_AcquireNextImage(&backEnd.swapChainImageIndex, backEnd.imageAcquiredBinary);
-	RHI_BindCommandBuffer(backEnd.commandBuffers[backEnd.currentFrameIndex]);
-	RHI_BeginCommandBuffer();
-
-
-	RHI_CmdBeginBarrier();
-	RHI_CmdTextureBarrier(backEnd.colorBuffer, RHI_ResourceState_RenderTargetBit);
-	RHI_CmdEndBarrier();
-
-
-	RHI_RenderPass renderPass = {};
-	Vector4Set(renderPass.color, 1.0f, 0.0f, 0.0f, 1.0f);
-	
-	renderPass.colorLoad = RHI_LoadOp_Clear;
-	renderPass.colorTexture = backEnd.colorBuffer;
-
-	RHI_BeginRendering(&renderPass);
-	// RHI_CmdBindPipeline(backEnd.pipeline);
-	// RHI_CmdBindDescriptorSet(backEnd.pipeline, backEnd.descriptorSet);
-	RHI_CmdBindIndexBuffer(backEnd.vertexBuffers[backEnd.currentFrameIndex].index);
-	/*rhiBuffer buffers[3] = {backEnd.vertexBuffers[backEnd.currentFrameIndex].position, 
-	backEnd.vertexBuffers[backEnd.currentFrameIndex].color,
-	backEnd.vertexBuffers[backEnd.currentFrameIndex].textureCoord};
-	RHI_CmdBindVertexBuffers(buffers, ARRAY_LEN(buffers));*/
-
 
 	return (const void *)( cmd + 1 );
 }
 
+/*
+===============
+RB_ShowImages
 
+Draw all the images to the screen, on top of whatever
+was there.  This is used to test for texture thrashing.
+
+Also called by RE_EndRegistration
+===============
+*/
+void RB_ShowImages( void ) {
+	int i;
+	image_t *image;
+	float x, y, w, h;
+	int start, end;
+
+	if ( !backEnd.projection2D ) {
+		RB_SetGL2D();
+	}
+
+	qglClear( GL_COLOR_BUFFER_BIT );
+
+	qglFinish();
+
+
+	start = ri.Milliseconds();
+
+	for ( i = 0 ; i < tr.numImages ; i++ ) {
+		image = tr.images[i];
+
+		w = glConfig.vidWidth / 40;
+		h = glConfig.vidHeight / 30;
+
+		x = i % 40 * w;
+		y = i / 30 * h;
+
+		// show in proportional size in mode 2
+		if ( r_showImages->integer == 2 ) {
+			w *= image->uploadWidth / 512.0f;
+			h *= image->uploadHeight / 512.0f;
+		}
+
+		GL_Bind( image );
+		qglBegin( GL_QUADS );
+		qglTexCoord2f( 0, 0 );
+		qglVertex2f( x, y );
+		qglTexCoord2f( 1, 0 );
+		qglVertex2f( x + w, y );
+		qglTexCoord2f( 1, 1 );
+		qglVertex2f( x + w, y + h );
+		qglTexCoord2f( 0, 1 );
+		qglVertex2f( x, y + h );
+		qglEnd();
+	}
+
+	qglFinish();
+
+	end = ri.Milliseconds();
+	ri.Printf( PRINT_ALL, "%i msec to draw all images\n", end - start );
+
+}
 
 
 /*
 =============
-RB_EndFrame
+RB_SwapBuffers
 
 =============
 */
-const void  *RB_EndFrame( const void *data ) {
+const void  *RB_SwapBuffers( const void *data ) {
 	const swapBuffersCommand_t  *cmd;
 
 	// finish any 2D drawing if needed
@@ -1340,6 +1246,10 @@ const void  *RB_EndFrame( const void *data ) {
 		RB_EndSurface();
 	}
 
+	// texture swapping test
+	if ( r_showImages->integer ) {
+		RB_ShowImages();
+	}
 
 	cmd = (const swapBuffersCommand_t *)data;
 
@@ -1366,46 +1276,8 @@ const void  *RB_EndFrame( const void *data ) {
 		qglFinish();
 	}
 
-	GLimp_LogComment( "***************** RB_EndFrame *****************\n\n\n" );
+	GLimp_LogComment( "***************** RB_SwapBuffers *****************\n\n\n" );
 
-	// RHI_CmdBeginBarrier();
-	// RHI_CmdTextureBarrier(backEnd.swapChainTextures[backEnd.swapChainImageIndex], RHI_ResourceState_RenderTargetBit);
-	// RHI_CmdEndBarrier();
-
-	// RHI_RenderPass renderPass = {};
-	// Vector4Set(renderPass.color, 1.0f, 1.0f, 0.0f, 1.0f);
-	
-	// renderPass.colorLoad = RHI_LoadOp_Clear;
-	// renderPass.colorTexture = backEnd.swapChainTextures[backEnd.swapChainImageIndex];
-
-	// RHI_BeginRendering(&renderPass);
-	RHI_EndRendering();
-
-	RB_DrawGamma(backEnd.swapChainTextures[backEnd.swapChainImageIndex]);
-
-
-	RHI_CmdBeginBarrier();
-	RHI_CmdTextureBarrier(backEnd.swapChainTextures[backEnd.swapChainImageIndex], RHI_ResourceState_PresentBit);
-	RHI_CmdEndBarrier();
-
-	
-	
-	RHI_EndCommandBuffer();
-
-	backEnd.renderCompleteCounter++;
-	rhiSubmitGraphicsDesc graphicsDesc = {};
-	RHI_SubmitGraphicsDesc_Signal(&graphicsDesc, backEnd.renderCompleteBinary, 0);
-	RHI_SubmitGraphicsDesc_Signal(&graphicsDesc, backEnd.renderComplete, backEnd.renderCompleteCounter);
-	RHI_SubmitGraphicsDesc_Wait(&graphicsDesc, backEnd.imageAcquiredBinary);
-
-
-	
-	RHI_SubmitGraphics(&graphicsDesc);
-	RHI_SubmitPresent(backEnd.renderCompleteBinary, backEnd.swapChainImageIndex);
-	
-
-	RHI_EndFrame();
-	
 	GLimp_EndFrame();
 
 	backEnd.projection2D = qfalse;
@@ -1426,10 +1298,11 @@ void RB_ExecuteRenderCommands( const void *data ) {
 
 	t1 = ri.Milliseconds();
 
-	static qbool begun = qfalse;
-	static int counter = 0;
-	counter++;
-
+	if ( !r_smp->integer || data == backEndData[0]->commands.cmds ) {
+		backEnd.smpFrame = 0;
+	} else {
+		backEnd.smpFrame = 1;
+	}
 
 	while ( 1 ) {
 		switch ( *(const int *)data ) {
@@ -1437,9 +1310,6 @@ void RB_ExecuteRenderCommands( const void *data ) {
 			data = RB_SetColor( data );
 			break;
 		case RC_STRETCH_PIC:
-			if (!begun) {
-				__debugbreak();
-			}
 			data = RB_StretchPic( data );
 			break;
 		case RC_ROTATED_PIC:
@@ -1451,20 +1321,11 @@ void RB_ExecuteRenderCommands( const void *data ) {
 		case RC_DRAW_SURFS:
 			data = RB_DrawSurfs( data );
 			break;
-		case RC_BEGIN_FRAME:
-			begun = qtrue;
-			data = RB_BeginFrame( data );
-			//wait for swap chain acquire
-			//start recording command buffer
-			//N frames in flight n command buffers 
-
+		case RC_DRAW_BUFFER:
+			data = RB_DrawBuffer( data );
 			break;
-		case RC_END_FRAME:
-			begun = qfalse;
-			data = RB_EndFrame( data );
-			//stop recording to command buffer
-			//submit to graphics queue
-			//submit to present queue
+		case RC_SWAP_BUFFERS:
+			data = RB_SwapBuffers( data );
 			break;
 
 		case RC_END_OF_LIST:
@@ -1478,115 +1339,29 @@ void RB_ExecuteRenderCommands( const void *data ) {
 
 }
 
-#include "../renderer_vk/shaders/generic_ps.h"
-#include "../renderer_vk/shaders/generic_vs.h"
 
-typedef struct cachedPipeline {
-	rhiGraphicsPipelineDesc desc;
-	rhiPipeline pipeline;
-	uint32_t hash;
-	struct cachedPipeline *next;
-} cachedPipeline;
+/*
+================
+RB_RenderThread
+================
+*/
+void RB_RenderThread( void ) {
+	const void  *data;
 
-cachedPipeline pipelineCache[4096];
-cachedPipeline *pipelineHash[256];
-int pipelineCount = 0;
+	// wait for either a rendering command or a quit command
+	while ( 1 ) {
+		// sleep until we have work to do
+		data = GLimp_RendererSleep();
 
-uint32_t RB_HashPipeline(rhiGraphicsPipelineDesc *desc){
-	uint32_t crc = 0;
-	CRC32_Begin(&crc);
-	CRC32_ProcessBlock(&crc, desc, sizeof(rhiGraphicsPipelineDesc));
-	CRC32_End(&crc);
-	return crc;
-}
-
-qboolean RB_GetCachedPipeline(uint32_t hash, rhiPipeline *pipeline, rhiGraphicsPipelineDesc *desc){
-	cachedPipeline *head = pipelineHash[hash & (ARRAY_LEN(pipelineHash)-1)];
-	for(; head; head = head->next){
-		if(head->hash == hash && (memcmp(desc, &head->desc, sizeof(rhiGraphicsPipelineDesc))==0)){
-			*pipeline = head->pipeline;
-			return qtrue;
-		}
-	}
-	return qfalse;
-}
-
-void RB_AddCachedPipeline(uint32_t hash, cachedPipeline *cache){
-	if(pipelineCount >= ARRAY_LEN(pipelineCache)){
-		assert(!"Pipeline cache is full");
-		return;
-	}
-	cachedPipeline *currentPipeline = &pipelineCache[pipelineCount++];
-	cachedPipeline *head = pipelineHash[hash & (ARRAY_LEN(pipelineHash)-1)];
-	*currentPipeline = *cache;
-	currentPipeline->next = head;
-	pipelineHash[hash & (ARRAY_LEN(pipelineHash)-1)] = currentPipeline;
-
-}
-
-void RB_ClearPipelineCache(void){
-	pipelineCount = 0;
-	memset(pipelineHash, 0, sizeof(pipelineHash));
-}
-
-void RB_CreateGraphicsPipeline(shader_t *newShader){
-	
-	
-	for(int i = 0; i < MAX_SHADER_STAGES; i++){
-		
-		shaderStage_t *stage = newShader->stages[i];
-		if (stage == NULL || !stage->active) {
-			continue;
+		if ( !data ) {
+			return; // all done, renderer is shutting down
 		}
 
-		rhiGraphicsPipelineDesc graphicsDesc;
-		memset(&graphicsDesc, 0, sizeof(rhiGraphicsPipelineDesc));
-		// graphicsDesc.name = newShader->name;
-		graphicsDesc.descLayout = backEnd.descriptorSetLayout;
-		graphicsDesc.pushConstants.vsBytes = 64;
-		graphicsDesc.pushConstants.psBytes = sizeof(pixelShaderPushConstants);
-		
-		graphicsDesc.vertexShader.data = generic_vs;
-		graphicsDesc.vertexShader.byteCount = sizeof(generic_vs);
-		graphicsDesc.pixelShader.data = generic_ps;
-		graphicsDesc.pixelShader.byteCount = sizeof(generic_ps);
-		graphicsDesc.cullType = newShader->cullType;
-		graphicsDesc.polygonOffset = newShader->polygonOffset;
-		graphicsDesc.srcBlend = stage->stateBits & GLS_SRCBLEND_BITS;
-		graphicsDesc.dstBlend = stage->stateBits & GLS_DSTBLEND_BITS;
-		graphicsDesc.depthTest = (stage->stateBits & GLS_DEPTHTEST_DISABLE) == 0;
-		graphicsDesc.depthWrite = (stage->stateBits & GLS_DEPTHMASK_TRUE) != 0;
-		graphicsDesc.depthTestEqual = (stage->stateBits & GLS_DEPTHFUNC_EQUAL) != 0;
-		graphicsDesc.wireframe = (stage->stateBits & GLS_POLYMODE_LINE) != 0;
-		graphicsDesc.attributeCount = 3; //position, color, tc
-		graphicsDesc.attributes[0].elementCount = 4;
-		graphicsDesc.attributes[0].elementFormat = RHI_VertexFormat_Float32;
-		graphicsDesc.attributes[0].stride = 4 * sizeof(float);
-		graphicsDesc.attributes[1].elementCount = 4;
-		graphicsDesc.attributes[1].elementFormat = RHI_VertexFormat_UNorm8;
-		graphicsDesc.attributes[1].stride = 4 * sizeof(byte);
-		graphicsDesc.attributes[2].elementCount = 2;
-		graphicsDesc.attributes[2].elementFormat = RHI_VertexFormat_Float32;
-		graphicsDesc.attributes[2].stride = 2 * sizeof(float);
-		graphicsDesc.colorFormat = R8G8B8A8_UNorm;
+		renderThreadActive = qtrue;
 
-		uint32_t hash = RB_HashPipeline(&graphicsDesc);
-		cachedPipeline cached = {};
-		
-		if(!RB_GetCachedPipeline(hash, &cached.pipeline, &graphicsDesc)){
-			graphicsDesc.name = newShader->name;
-			cached.pipeline = RHI_CreateGraphicsPipeline(&graphicsDesc);
-			
-			graphicsDesc.name = NULL;
-			cached.desc = graphicsDesc;
-			cached.hash = hash;
-			RB_AddCachedPipeline(hash, &cached);
-			totalPipelines++;
-		}
-		assert(cached.pipeline.h != 0);
-		stage->pipeline = cached.pipeline;
+		RB_ExecuteRenderCommands( data );
 
-		
+		renderThreadActive = qfalse;
 	}
-	
 }
+

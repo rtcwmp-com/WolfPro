@@ -3,9 +3,9 @@
 //#pragma once
 
 #include <vulkan/vulkan.h>
-#include "../renderer/tr_local.h"
+#include "tr_local.h"
 #include <vma/vk_mem_alloc.h>
-#include "../renderer/memorypool.h"
+#include "memorypool.h"
 
 
 

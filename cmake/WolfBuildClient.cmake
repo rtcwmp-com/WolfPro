@@ -28,8 +28,11 @@ elseif(CMAKE_CROSSCOMPILE)
 	message("CMAKE_CROSSCOMPILE")
 	set(WOLF_COMPILE_DEF "USE_ICON;BOTLIB;__i386__")
 else()
-	
 	set(WOLF_COMPILE_DEF "USE_ICON;BOTLIB;__i386__")
+	if(FEATURE_RENDERER_VULKAN)
+		LIST(APPEND WOLF_COMPILE_DEF "VK")
+	endif()
+		
 endif()
 
 set_target_properties(wolfmp PROPERTIES

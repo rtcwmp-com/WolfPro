@@ -62,7 +62,7 @@ If you have questions concerning this license or the applicable additional terms
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "../renderer/tr_local.h"
+#include "../renderer_common/tr_local.h"
 #include "../client/client.h"
 #include "linux_local.h" // bk001130
 

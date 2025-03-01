@@ -36,7 +36,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "../qcommon/qcommon.h"
 #include "tr_public.h"
 #include "qgl.h"
-#include "../renderer_vk/rhi.h"
 
 #define GL_INDEX_TYPE       GL_UNSIGNED_INT
 typedef unsigned int glIndex_t;
@@ -48,6 +47,11 @@ long myftol( float f );
 #define myftol( x ) ( (int)( x ) )
 #endif
 
+
+// everything that is needed by the backend needs
+// to be double buffered to allow it to run in
+// parallel on a dual cpu machine
+#define SMP_FRAMES      2
 
 #define MAX_SHADERS             8192
 
@@ -87,9 +91,6 @@ typedef struct image_s {
 	int uploadWidth, uploadHeight;          // after power of two and picmip but not including clamp to MAX_TEXTURE_SIZE
 	GLuint texnum;                      // gl texture binding
 
-	rhiTexture handle;
-	uint32_t descriptorIndex;
-
 	int frameUsed;                  // for texture usage in frame statistics
 
 	int internalFormat;
@@ -102,8 +103,6 @@ typedef struct image_s {
 	int hash;           // for fast building of the backupHash
 
 	struct image_s* next;
-
-	
 } image_t;
 
 //===============================================================================
@@ -325,7 +324,6 @@ typedef struct {
 
 	qboolean isDetail;
 	qboolean isFogged;              // used only for shaders that have fog disabled, so we can enable it for individual stages
-	rhiPipeline pipeline;
 } shaderStage_t;
 
 struct shaderCommands_s;
@@ -338,8 +336,7 @@ struct shaderCommands_s;
 typedef enum {
 	CT_FRONT_SIDED,
 	CT_BACK_SIDED,
-	CT_TWO_SIDED,
-	CT_COUNT
+	CT_TWO_SIDED
 } cullType_t;
 
 typedef enum {
@@ -543,7 +540,6 @@ typedef struct {
 	int viewportX, viewportY, viewportWidth, viewportHeight;
 	float fovX, fovY;
 	float projectionMatrix[16];
-	float vulkanProjectionMatrix[16];
 	cplane_t frustum[4];
 	vec3_t visBounds[2];
 	float zFar;
@@ -618,7 +614,7 @@ typedef struct srfGridMesh_s {
 	surfaceType_t surfaceType;
 
 	// dynamic lighting information
-	int dlightBits;
+	int dlightBits[SMP_FRAMES];
 
 	// culling information
 	vec3_t meshBounds[2];
@@ -648,7 +644,7 @@ typedef struct {
 	cplane_t plane;
 
 	// dynamic lighting information
-	int dlightBits;
+	int dlightBits[SMP_FRAMES];
 
 	// triangle definitions (no normals at points)
 	int numPoints;
@@ -664,7 +660,7 @@ typedef struct {
 	surfaceType_t surfaceType;
 
 	// dynamic lighting information
-	int dlightBits;
+	int dlightBits[SMP_FRAMES];
 
 	// culling information (FIXME: use this!)
 	vec3_t bounds[2];
@@ -911,28 +907,6 @@ typedef struct {
 	int msec;               // total msec for backend run
 } backEndCounters_t;
 
-typedef struct {
-	rhiBuffer position;
-	rhiBuffer index;
-	rhiBuffer color[MAX_SHADER_STAGES];
-	rhiBuffer textureCoord[MAX_SHADER_STAGES];
-	uint32_t indexCount; //total indices written this frame
-	uint32_t indexFirst; //first index of the draw call
-	uint32_t vertexCount; //total vertices written this frame
-	uint32_t vertexFirst; //first vertex of the draw call
-} VertexBuffers;
-
-#pragma pack(push,1)
-typedef struct SceneView {
-	float projectionMatrix[16];
-	float clipPlane[4];
-} SceneView;
-#pragma pack(pop)
-
-#define VBA_MAX 64000
-#define IDX_MAX (VBA_MAX * 8)
-#define SCENEVIEW_MAX 16
-
 // all state modified by the back end is seperated
 // from the front end state
 typedef struct {
@@ -949,35 +923,6 @@ typedef struct {
 	byte color2D[4];
 	qboolean vertexes2D;        // shader needs to be finished
 	trRefEntity_t entity2D;     // currentEntity will point at this when doing 2D rendering
-
-	uint32_t currentFrameIndex;
-	rhiCommandBuffer commandBuffers[RHI_FRAMES_IN_FLIGHT];
-	rhiSemaphore renderComplete;
-	uint64_t renderCompleteCounter;
-	rhiSemaphore renderCompleteBinary;
-	rhiSemaphore imageAcquiredBinary;
-
-	uint32_t swapChainImageIndex;
-	rhiTexture* swapChainTextures;
-	uint32_t swapChainTextureCount;
-
-	rhiDescriptorSetLayout descriptorSetLayout;
-	rhiDescriptorSet descriptorSet;
-
-	rhiSampler sampler;
-
-	VertexBuffers vertexBuffers[RHI_FRAMES_IN_FLIGHT];
-	rhiBuffer sceneViewUploadBuffers[RHI_FRAMES_IN_FLIGHT];
-	rhiBuffer sceneViewGPUBuffer;
-	uint32_t sceneViewCount;
-
-	//Handle to the current frame's pipeline and descriptor set
-	rhiPipeline previousPipeline;
-	rhiDescriptorSet currentDescriptorSet;
-
-	rhiTexture depthBuffer;
-	
-	rhiTexture colorBuffer;
 } backEndState_t;
 
 /*
@@ -1193,7 +1138,8 @@ extern cvar_t  *r_glDriver;
 extern cvar_t  *r_glIgnoreWicked3D;
 extern cvar_t  *r_swapInterval;
 extern cvar_t  *r_textureMode;
-
+extern cvar_t  *r_offsetFactor;
+extern cvar_t  *r_offsetUnits;
 
 //extern	cvar_t	*r_fullbright;					// avoid lightmap pass // JPW NERVE removed per atvi request
 extern cvar_t  *r_lightmap;                     // render lightmaps only
@@ -1218,6 +1164,8 @@ extern cvar_t  *r_portalOnly;
 
 extern cvar_t  *r_subdivisions;
 extern cvar_t  *r_lodCurveError;
+extern cvar_t  *r_smp;
+extern cvar_t  *r_showSmp;
 extern cvar_t  *r_skipBackEnd;
 
 extern cvar_t  *r_ignoreGLErrors;
@@ -1228,6 +1176,7 @@ extern cvar_t  *r_mapOverBrightBits;
 extern cvar_t  *r_debugSurface;
 extern cvar_t  *r_simpleMipMaps;
 
+extern cvar_t  *r_showImages;
 extern cvar_t  *r_debugSort;
 
 extern cvar_t  *r_printShaders;
@@ -1248,8 +1197,6 @@ extern cvar_t   *r_wolffog;
 // done
 
 extern cvar_t  *r_highQualityVideo;
-
-extern cvar_t *r_gpu;
 //====================================================================
 
 float R_NoiseGet4f( float x, float y, float z, float t );
@@ -1332,7 +1279,7 @@ void    GL_Cull( int cullType );
 #define     GLS_ATEST_BITS                      0x70000000
 
 #define GLS_DEFAULT         GLS_DEPTHMASK_TRUE
-void    RB_UploadSceneView(const float *projectionMatrix, const float *clipPlane);
+
 void    RE_StretchRaw( int x, int y, int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty );
 void    RE_UploadCinematic( int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty );
 
@@ -1405,6 +1352,11 @@ void        GLimp_Init( void );
 void        GLimp_Shutdown( void );
 void        GLimp_EndFrame( void );
 
+qboolean GLimp_SpawnRenderThread( void ( *function )( void ) );
+void        *GLimp_RendererSleep( void );
+void        GLimp_FrontEndSleep( void );
+void        GLimp_WakeRenderer( void *data );
+
 void        GLimp_LogComment( char *comment );
 
 void GLimp_SetGamma( unsigned char red[256],
@@ -1471,6 +1423,7 @@ void RB_AddQuadStamp( vec3_t origin, vec3_t left, vec3_t up, byte *color );
 void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, byte *color, float s1, float t1, float s2, float t2 );
 void RB_AddQuadStampFadingCornersExt( vec3_t origin, vec3_t left, vec3_t up, byte *color, float s1, float t1, float s2, float t2 );
 
+void RB_ShowImages( void );
 
 
 /*
@@ -1575,7 +1528,7 @@ SCENE GENERATION
 ============================================================
 */
 
-void R_ClearFrame( void );
+void R_ToggleSmpFrame( void );
 
 void RE_ClearScene( void );
 void RE_AddRefEntityToScene( const refEntity_t *ent );
@@ -1644,9 +1597,8 @@ RENDERER BACK END FUNCTIONS
 =============================================================
 */
 
+void RB_RenderThread( void );
 void RB_ExecuteRenderCommands( const void *data );
-void RB_CreateGraphicsPipeline(shader_t *newShader);
-void RB_ClearPipelineCache(void);
 
 /*
 =============================================================
@@ -1718,8 +1670,8 @@ typedef enum {
 	RC_ROTATED_PIC,
 	RC_STRETCH_PIC_GRADIENT,    // (SA) added
 	RC_DRAW_SURFS,
-	RC_BEGIN_FRAME,
-	RC_END_FRAME
+	RC_DRAW_BUFFER,
+	RC_SWAP_BUFFERS
 } renderCommand_t;
 
 
@@ -1751,15 +1703,20 @@ typedef struct {
 extern int max_polys;
 extern int max_polyverts;
 
-extern backEndData_t   *backEndData;    // the second one may not be allocated
+extern backEndData_t   *backEndData[SMP_FRAMES];    // the second one may not be allocated
 
 extern volatile renderCommandList_t    *renderCommandList;
 
+extern volatile qboolean renderThreadActive;
 
 
 void *R_GetCommandBuffer( int bytes );
 void RB_ExecuteRenderCommands( const void *data );
 
+void R_InitCommandBuffers( void );
+void R_ShutdownCommandBuffers( void );
+
+void R_SyncRenderThread( void );
 
 void R_AddDrawSurfCmd( drawSurf_t *drawSurfs, int numDrawSurfs );
 
@@ -1889,20 +1846,6 @@ typedef struct glinfo_s {
 
 extern glinfo_t glInfo;
 
-void	RE_ConfigureVideoMode( int desktopWidth, int desktopHeight );	// writes to glConfig and glInfo
-
-void RHI_BeginFrame();
-void RHI_EndFrame();
-
-typedef struct pixelShaderPushConstants {
-	uint32_t textureIndex;
-	uint32_t samplerIndex;
-	uint32_t alphaTest;
-} pixelShaderPushConstants;
-
-void R_Gpulist_f(void);
-
-void RB_InitGamma(rhiTexture texture, rhiSampler sampler);
-void RB_DrawGamma(rhiTexture swapChainImage);
+void	R_ConfigureVideoMode( int desktopWidth, int desktopHeight );	// writes to glConfig and glInfo
 
 #endif //TR_LOCAL_H (THIS MUST BE LAST!!)

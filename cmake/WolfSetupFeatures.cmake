@@ -9,7 +9,7 @@ set(SRC "${PROJECT_SOURCE_DIR}/src")
 # Client features
 #-----------------------------------------------------------------
 if(BUILD_CLIENT)
-	#if(FEATURE_RENDERER_GL1)
+	if(FEATURE_RENDERER_GL1)
 		# ghost target to link all opengl renderer libraries
 		add_library(opengl_renderer_libs INTERFACE)
 
@@ -25,7 +25,7 @@ if(BUILD_CLIENT)
 		target_include_directories(opengl_renderer_libs INTERFACE ${OPENGL_INCLUDE_DIR})
 
 		target_link_libraries(renderer_gl1_libraries INTERFACE opengl_renderer_libs)
-	#endif()
+	endif()
 
 	if(FEATURE_RENDERER_VULKAN)
 		# ghost target to link all opengl renderer libraries

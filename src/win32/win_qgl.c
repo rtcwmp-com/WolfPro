@@ -37,7 +37,7 @@ If you have questions concerning this license or the applicable additional terms
 ** QGL_Shutdown() - unloads libraries, NULLs function pointers
 */
 #include <float.h>
-#include "../renderer/tr_local.h"
+#include "../renderer_common/tr_local.h"
 #include "glw_win.h"
 
 void QGL_EnableLogging( qboolean enable );

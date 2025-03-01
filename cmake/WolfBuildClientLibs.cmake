@@ -1,7 +1,7 @@
 #-----------------------------------------------------------------
 # Build Renderer
 #-----------------------------------------------------------------
-#if(FEATURE_RENDERER_GL1)
+if(FEATURE_RENDERER_GL1)
 	add_library(renderer STATIC ${RENDERER_FILES} ${RENDERER_COMMON})
 
 	target_link_libraries(renderer renderer_gl1_libraries renderer_libraries)
@@ -12,17 +12,17 @@
 	endif()
 
 	target_link_libraries(client_libraries INTERFACE renderer)
-#endif()
+endif()
 
 #-----------------------------------------------------------------
 # Build Vulkan Renderer
 #-----------------------------------------------------------------
 if(FEATURE_RENDERER_VULKAN)
-	add_library(renderer_vk STATIC ${RENDERER_FILES} ${RENDERER_VK_FILES} ${RENDERER_COMMON})
+	add_library(renderer_vk STATIC ${RENDERER_VK_FILES} ${RENDERER_COMMON})
 	add_library(vk_vma_alloc STATIC ${RENDERER_VK_VMA_FILES})
 	target_include_directories(vk_vma_alloc PRIVATE ${Vulkan_INCLUDE_DIR})
 
-	target_link_libraries(renderer_vk renderer_vk_libraries renderer_libraries vk_vma_alloc)
+	target_link_libraries(renderer_vk renderer_vk_libraries renderer_gl1_libraries renderer_libraries vk_vma_alloc)
 	target_include_directories(renderer_vk PRIVATE src/renderer_vk)
 
 

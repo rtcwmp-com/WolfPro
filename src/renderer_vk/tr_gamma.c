@@ -1,4 +1,4 @@
-#include "../renderer/tr_local.h"
+#include "tr_local.h"
 #include "rhi.h"
 #include "shaders/gamma_ps.h"
 #include "shaders/gamma_vs.h"

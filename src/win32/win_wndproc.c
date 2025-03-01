@@ -29,7 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "../client/client.h"
 #include "win_local.h"
-#include "../renderer/tr_public.h"
+#include "../renderer_common/tr_public.h"
 
 WinVars_t g_wv;
 

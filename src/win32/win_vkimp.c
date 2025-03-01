@@ -1,5 +1,5 @@
 #include <assert.h>
-#include "../renderer/tr_local.h"
+#include "../renderer_common/tr_local.h"
 #include "../qcommon/qcommon.h"
 #include "resource.h"
 #include "glw_win.h"

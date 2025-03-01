@@ -37,7 +37,7 @@ along with RtcwPro. If not, see <https://www.gnu.org/licenses/>.
 
 #include <dlfcn.h>
 
-#include "../renderer/tr_local.h"
+#include "../renderer_common/tr_local.h"
 #include "linux_local.h"
 
 #include "unix_glw.h"
