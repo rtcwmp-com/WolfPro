@@ -56,10 +56,7 @@ option(FEATURE_RENDERER_GL1		"Enable opengl1 renderer"					OFF)
 
 cmake_dependent_option(FEATURE_WINDOWS_CONSOLE	"Build win32 executables with Windows console"	OFF "WIN32" OFF)
 
-set(INSTALL_DEFAULT_BASEDIR "." CACHE STRING "" FORCE)
-set(INSTALL_DEFAULT_BINDIR "C:\\rtcw_vk" CACHE STRING "" FORCE)
-set(INSTALL_DEFAULT_SHAREDIR "." CACHE STRING "" FORCE)
-set(INSTALL_DEFAULT_MODDIR "C:\\rtcw_vk\\rtcwmod" CACHE STRING "" FORCE)
+set(INSTALL_DEFAULT_BASEDIR "" CACHE STRING "")
 
 #-----------------------------------------------------------------
 # Setup
