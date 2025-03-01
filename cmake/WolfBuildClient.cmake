@@ -18,6 +18,7 @@ if(WIN32)
 			 set_property(TARGET wolfmp PROPERTY
              MSVC_RUNTIME_LIBRARY "MultiThreaded")
 	endif()
+	set_property(TARGET wolfmp PROPERTY VS_STARTUP_PROJECT INSTALL)
 	
 else()
 	add_executable(wolfmp ${COMMON_SRC} ${CLIENT_SRC} ${PLATFORM_SHARED_SRC} ${PLATFORM_CLIENT_SRC})
