@@ -82,6 +82,12 @@ elseif(WIN32)
 
 	target_link_libraries(os_libraries INTERFACE wsock32 ws2_32 psapi winmm user32 gdi32 advapi32 shell32)
 
+	if(CMAKE_BUILD_TYPE MATCHES "Debug")
+		target_link_libraries(os_libraries INTERFACE libcmtd)
+	else()
+		target_link_libraries(os_libraries INTERFACE libcmt)
+	endif()
+	
 	if(BUNDLED_SDL)
 		# Libraries for Win32 native and MinGW required by static SDL2 build
 		target_link_libraries(os_libraries INTERFACE user32 gdi32 imm32 ole32 oleaut32 version uuid hid setupapi)

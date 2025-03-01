@@ -93,10 +93,7 @@ endif()
 # If we are in windows clean these so the packaging is cleaner
 # these need to be set before any other processing happens!
 if(WIN32)
-	set(INSTALL_DEFAULT_BASEDIR ".")
-	set(INSTALL_DEFAULT_BINDIR ".")
-	set(INSTALL_DEFAULT_SHAREDIR ".")
-	set(INSTALL_DEFAULT_MODDIR ".")
+	
 else()
 	set(INSTALL_DEFAULT_BASEDIR ""					CACHE STRING "Appended to CMAKE_INSTALL_PREFIX")
 	set(INSTALL_DEFAULT_BINDIR "bin"				CACHE STRING "Appended to CMAKE_INSTALL_PREFIX")
