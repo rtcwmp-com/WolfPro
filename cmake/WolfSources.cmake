@@ -86,6 +86,12 @@ FILE(GLOB CLIENT_SRC
 	"src/botlib/l_*.h"
 )
 
+if(FEATURE_RENDERER_GL1)
+	LIST(REMOVE_ITEM CLIENT_SRC
+		"src/client/cl_imgui.c"
+	)
+endif()
+
 LIST(APPEND CLIENT_SRC ${QCOMMON})
 
 # These files are shared with the CGAME from the UI library
@@ -180,3 +186,10 @@ FILE(GLOB RENDERER_VK_VMA_FILES
 	"src/renderer_vk/vk_vma_alloc.cpp"
 )
 
+FILE(GLOB RENDERER_CIMGUI_FILES
+	"src/cimgui/*.cpp"
+	"src/cimgui/*.h"
+	"src/cimgui/imgui/*.cpp"
+	"src/cimgui/imgui/*.h"
+
+)

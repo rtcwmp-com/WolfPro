@@ -2322,9 +2322,9 @@ static shader_t *FinishShader( void ) {
 	//
 	// look for multitexture potential
 	//
-	if ( stage > 1 && CollapseMultitexture() ) {
-		stage--;
-	}
+	// if ( stage > 1 && CollapseMultitexture() ) { //@TODO re-enable
+	// 	stage--;
+	// }
 
 	if ( shader.lightmapIndex >= 0 && !hasLightmapStage ) {
 		if ( vertexLightmap ) {

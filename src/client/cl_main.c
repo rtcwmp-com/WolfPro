@@ -27,7 +27,7 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 // cl_main.c  -- client main loop
-
+#include "cl_imgui.h"
 #include "client.h"
 #include <limits.h>
 
@@ -3000,6 +3000,8 @@ void CL_Init( void ) {
 	CL_InitTranslation();   // NERVE - SMF - localization
 #endif
 
+	CL_ImGUI_Init();
+
 	Com_Printf( "----- Client Initialization Complete -----\n" );
 }
 
@@ -3061,6 +3063,8 @@ void CL_Shutdown( void ) {
 	Cvar_Set( "cl_running", "0" );
 
 	recursive = qfalse;
+
+	CL_ImGUI_Shutdown();
 
 	memset( &cls, 0, sizeof( cls ) );
 

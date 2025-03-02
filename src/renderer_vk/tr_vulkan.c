@@ -146,8 +146,7 @@ static VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugU
 
 static qbool UseValidationLayer()
 {
-    // @TODO:
-#if defined(ENABLE_VALIDATION)
+#if defined(_DEBUG)
     return qtrue;
 #else
     return qfalse;

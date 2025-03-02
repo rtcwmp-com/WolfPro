@@ -29,6 +29,9 @@ target_link_libraries(wolfmp
 	engine_libraries
 	os_libraries
 )
+if(FEATURE_RENDERER_VULKAN)
+	target_link_libraries(wolfmp cimgui)
+endif()
 
 message(STATUS CMAKE_BUILD_TYPE)
 
