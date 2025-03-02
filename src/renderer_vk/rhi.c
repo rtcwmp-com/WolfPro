@@ -662,7 +662,7 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
     vertexInputInfo.pVertexAttributeDescriptions = vertexAttributes;
     vertexInputInfo.pVertexBindingDescriptions = vertexBindings;
     vertexInputInfo.vertexAttributeDescriptionCount = graphicsDesc->attributeCount;
-    vertexInputInfo.vertexBindingDescriptionCount = graphicsDesc->attributeCount;
+    vertexInputInfo.vertexBindingDescriptionCount = graphicsDesc->vertexBufferCount;
 
     VkPipelineMultisampleStateCreateInfo multiSampling = {};
 	multiSampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;

@@ -2,6 +2,16 @@
 #include "rhi.h"
 #include "tr_local.h"
 
+#include "shaders/imgui_ps.h"
+#include "shaders/imgui_vs.h"
+
+#define MAX_IMGUI_VERTS (1<<16)
+#define MAX_IMGUI_INDICES (MAX_IMGUI_VERTS * 3)
+
+rhiPipeline ImGUIpipeline;
+rhiBuffer imGUIvertexBuffers[RHI_FRAMES_IN_FLIGHT];
+rhiBuffer imGUIindexBuffers[RHI_FRAMES_IN_FLIGHT];
+int imGUIfontAtlasIndex;
 
 void RB_ImGUI_Init(void){
     ImGuiIO* io = igGetIO();
@@ -10,7 +20,83 @@ void RB_ImGUI_Init(void){
     io->BackendRendererName = "Wolfenstein";
     io->BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
     
-    //RHI_CreateGraphicsPipeline(desc);
+    rhiGraphicsPipelineDesc desc = {};
+    desc.name = "ImGUI";
+    desc.attributeCount = 3;
+    desc.attributes[0].bufferBinding = 0;
+    desc.attributes[1].bufferBinding = 0;
+    desc.attributes[2].bufferBinding = 0;
+    desc.attributes[0].elementCount = 2;
+    desc.attributes[1].elementCount = 2;
+    desc.attributes[2].elementCount = 4;
+    desc.attributes[0].elementFormat = RHI_VertexFormat_Float32;
+    desc.attributes[1].elementFormat = RHI_VertexFormat_Float32;
+    desc.attributes[2].elementFormat = RHI_VertexFormat_UNorm8;
+    desc.attributes[0].offset = offsetof(ImDrawVert, pos);
+    desc.attributes[1].offset = offsetof(ImDrawVert, uv);
+    desc.attributes[2].offset = offsetof(ImDrawVert, col);
+    desc.vertexBufferCount = 1;
+    desc.vertexBuffers[0].stride = sizeof(ImDrawVert);
+
+    desc.colorFormat = R8G8B8A8_UNorm;
+    desc.cullType = CT_TWO_SIDED;
+
+    desc.dstBlend = GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA;
+    desc.srcBlend = GLS_SRCBLEND_SRC_ALPHA;
+
+    desc.pixelShader.data = imgui_ps;
+    desc.pixelShader.byteCount = sizeof(imgui_ps);
+    desc.vertexShader.data = imgui_vs;
+    desc.vertexShader.byteCount = sizeof(imgui_vs);
+
+    desc.pushConstants.vsBytes = 64;
+    desc.pushConstants.psBytes = 8;
+
+    desc.descLayout = backEnd.descriptorSetLayout;
+
+    ImGUIpipeline = RHI_CreateGraphicsPipeline(&desc);
+
+    for(int i = 0; i < RHI_FRAMES_IN_FLIGHT; i++){
+        rhiBufferDesc vertexBufferDesc = {};
+        vertexBufferDesc.allowedStates = RHI_ResourceState_VertexBufferBit;
+        vertexBufferDesc.byteCount = MAX_IMGUI_VERTS * sizeof(ImDrawVert);
+        vertexBufferDesc.initialState = RHI_ResourceState_VertexBufferBit;
+        vertexBufferDesc.memoryUsage = RHI_MemoryUsage_Upload;
+        vertexBufferDesc.name = "ImGUI";
+        imGUIvertexBuffers[i] = RHI_CreateBuffer(&vertexBufferDesc);
+
+        rhiBufferDesc indexBufferDesc = {};
+        indexBufferDesc.allowedStates = RHI_ResourceState_IndexBufferBit;
+        indexBufferDesc.byteCount = MAX_IMGUI_INDICES * sizeof(ImDrawIdx);
+        indexBufferDesc.initialState = RHI_ResourceState_IndexBufferBit;
+        indexBufferDesc.memoryUsage = RHI_MemoryUsage_Upload;
+        indexBufferDesc.name = "ImGUI";
+        imGUIindexBuffers[i] = RHI_CreateBuffer(&indexBufferDesc);
+    }
+    unsigned char *pixels;
+    int width, height;
+    ImFontAtlas_GetTexDataAsRGBA32(io->Fonts, &pixels, &width, &height, NULL);
+
+    rhiTextureDesc textureDesc = {};
+    textureDesc.allowedStates = RHI_ResourceState_CopyDestinationBit | RHI_ResourceState_ShaderInputBit;
+    textureDesc.initialState = RHI_ResourceState_CopyDestinationBit;
+    textureDesc.format = R8G8B8A8_UNorm;
+    textureDesc.height = height;
+    textureDesc.width = width;
+    textureDesc.mipCount = 1;
+    textureDesc.name = "Font Atlas";
+    textureDesc.sampleCount = 1;
+
+    rhiTexture imGUIfontAtlas = RHI_CreateTexture(&textureDesc);
+    rhiTextureUpload textureUpload;
+    RHI_BeginTextureUpload(&textureUpload, imGUIfontAtlas, 0);
+    for(int i = 0; i < height; i++){
+        memcpy(textureUpload.data + textureUpload.rowPitch * i, pixels + width * 4, width * 4);
+    }
+    RHI_EndTextureUpload();
+    imGUIfontAtlasIndex = tr.textureDescriptorCount++;
+    RHI_UpdateDescriptorSet(backEnd.descriptorSet, 0, RHI_DescriptorType_ReadOnlyTexture, imGUIfontAtlasIndex, 1, &imGUIfontAtlas);
+
 }
 
 void RB_ImGUI_BeginFrame(void){

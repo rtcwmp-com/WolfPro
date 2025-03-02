@@ -628,7 +628,7 @@ static void Upload32(   unsigned *data,
 						int *pUploadWidth, int *pUploadHeight,
 						qboolean noCompress,
 						image_t *image,
-						int imageIndex) {
+						int descriptorIndex) {
 	int samples;
 	int scaled_width, scaled_height;
 	unsigned    *scaledBuffer = NULL;
@@ -774,8 +774,8 @@ static void Upload32(   unsigned *data,
 	imageDesc.sampleCount = 1;
 
 	image->handle = RHI_CreateTexture(&imageDesc);
-	image->descriptorIndex = imageIndex;
-	RHI_UpdateDescriptorSet(backEnd.descriptorSet, 0, RHI_DescriptorType_ReadOnlyTexture, imageIndex, 1, &image->handle);
+	image->descriptorIndex = descriptorIndex;
+	RHI_UpdateDescriptorSet(backEnd.descriptorSet, 0, RHI_DescriptorType_ReadOnlyTexture, descriptorIndex, 1, &image->handle);
 
 	// copy or resample data as appropriate for first MIP level
 	if ( ( scaled_width == width ) &&
@@ -937,7 +937,7 @@ image_t *R_CreateImage( const char *name, const byte *pic, int width, int height
 
 	// Ridah
 	image = tr.images[tr.numImages] = R_CacheImageAlloc( sizeof( image_t ) );
-	int imageIndex = tr.numImages;
+	int descriptorIndex = tr.textureDescriptorCount++;
 
 	image->texnum = 1024 + tr.numImages;
 
@@ -985,7 +985,7 @@ image_t *R_CreateImage( const char *name, const byte *pic, int width, int height
 			  &image->uploadHeight,
 			  noCompress,
 			  image,
-			  imageIndex);
+			  descriptorIndex);
 
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glWrapClampMode );
 	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, glWrapClampMode );

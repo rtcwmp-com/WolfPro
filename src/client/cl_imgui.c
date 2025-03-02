@@ -13,12 +13,14 @@ static void AddFont()
 {
     ImGuiIO* io = igGetIO();
     int height = 13;
-    ImFontConfig config;
+    ImFontConfig config = {};
     config.FontDataOwnedByAtlas = false;
     config.OversampleH = 1;
     config.OversampleV = 1;
     config.PixelSnapH = true;
     config.SizePixels = height;
+    config.RasterizerDensity = 1.0f;
+
     Com_sprintf(config.Name, sizeof(config.Name), "%s (%dpx)", "Banschrift", height);
     ImFontAtlas_AddFontFromMemoryTTF(io->Fonts, bahnschrift_ttf, sizeof(bahnschrift_ttf), config.SizePixels, &config, codepointRanges);
 }

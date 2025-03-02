@@ -1090,6 +1090,8 @@ typedef struct {
 	// RF, temp var used while parsing shader only
 	int allowCompress;
 
+	int textureDescriptorCount;
+
 } trGlobals_t;
 
 extern backEndState_t backEnd;
