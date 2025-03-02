@@ -425,6 +425,7 @@ static void InitVulkan( void ) {
 	backEnd.colorBuffer = RHI_CreateTexture(&colorTextureDesc);
 
 	RB_InitGamma(backEnd.colorBuffer, backEnd.sampler);
+	RB_ImGUI_Init();
 	
 }
 

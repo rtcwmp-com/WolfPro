@@ -1905,4 +1905,9 @@ void R_Gpulist_f(void);
 void RB_InitGamma(rhiTexture texture, rhiSampler sampler);
 void RB_DrawGamma(rhiTexture swapChainImage);
 
+void RB_ImGUI_Init(void);
+void RB_ImGUI_BeginFrame(void);
+void RB_ImGUI_EndFrame(void);
+void RB_ImGUI_Draw(void);
+
 #endif //TR_LOCAL_H (THIS MUST BE LAST!!)

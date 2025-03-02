@@ -1319,6 +1319,7 @@ const void  *RB_BeginFrame( const void *data ) {
 	backEnd.vertexBuffers[backEnd.currentFrameIndex].textureCoord};
 	RHI_CmdBindVertexBuffers(buffers, ARRAY_LEN(buffers));*/
 
+	RB_ImGUI_BeginFrame();
 
 	return (const void *)( cmd + 1 );
 }
@@ -1379,7 +1380,13 @@ const void  *RB_EndFrame( const void *data ) {
 	// renderPass.colorTexture = backEnd.swapChainTextures[backEnd.swapChainImageIndex];
 
 	// RHI_BeginRendering(&renderPass);
-	RHI_EndRendering();
+	RB_ImGUI_Draw();
+	RB_ImGUI_EndFrame();
+
+	if(RHI_IsRenderingActive()){
+		RHI_EndRendering();
+	}
+	
 
 	RB_DrawGamma(backEnd.swapChainTextures[backEnd.swapChainImageIndex]);
 
