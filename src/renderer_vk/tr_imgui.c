@@ -91,7 +91,7 @@ void RB_ImGUI_Init(void){
     rhiTextureUpload textureUpload;
     RHI_BeginTextureUpload(&textureUpload, imGUIfontAtlas, 0);
     for(int i = 0; i < height; i++){
-        memcpy(textureUpload.data + textureUpload.rowPitch * i, pixels + width * 4, width * 4);
+        memcpy(textureUpload.data + textureUpload.rowPitch * i, pixels + width * 4 * i, width * 4);
     }
     RHI_EndTextureUpload();
     imGUIfontAtlasIndex = tr.textureDescriptorCount++;
