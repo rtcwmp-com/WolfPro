@@ -34,7 +34,8 @@ static void AddFont()
 void CL_ImGUI_Init(void){
     igCreateContext(NULL);
     ImGuiIO *ioptr = igGetIO();
-    ioptr->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    ioptr->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NoMouseCursorChange;
+    ioptr->MouseDrawCursor = false;
     igStyleColorsDark(NULL);
     AddFont();
 }
