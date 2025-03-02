@@ -1909,7 +1909,6 @@ void RB_DrawGamma(rhiTexture swapChainImage);
 
 void RB_ImGUI_Init(void);
 void RB_ImGUI_BeginFrame(void);
-void RB_ImGUI_EndFrame(void);
 void RB_ImGUI_Draw(void);
 
 #endif //TR_LOCAL_H (THIS MUST BE LAST!!)

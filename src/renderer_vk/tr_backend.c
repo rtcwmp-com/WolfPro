@@ -1381,7 +1381,7 @@ const void  *RB_EndFrame( const void *data ) {
 
 	// RHI_BeginRendering(&renderPass);
 	RB_ImGUI_Draw();
-	RB_ImGUI_EndFrame();
+	
 
 	if(RHI_IsRenderingActive()){
 		RHI_EndRendering();

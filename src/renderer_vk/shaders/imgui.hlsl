@@ -5,30 +5,31 @@
 struct VOut
 {
     [[vk::location(0)]] float4 position : SV_Position;
-    [[vk::location(1)]] float4 color : COLOR0;
-    [[vk::location(2)]] float2 tc : TEXCOORD0;
+    [[vk::location(1)]] float2 tc : TEXCOORD0;
+    [[vk::location(2)]] float4 color : COLOR0;
 };
 
 #if VS
 
 struct RootConstants
 {
-	matrix mvpMatrix;
+    float2 scale;
+    float2 bias;
 };
 [[vk::push_constant]] RootConstants rc;
 
 struct VIn
 {
     [[vk::location(0)]] float2 position : SV_Position;
-    [[vk::location(1)]] float4 color : COLOR0;
-    [[vk::location(2)]] float2 tc : TEXCOORD0;
+    [[vk::location(1)]] float2 tc : TEXCOORD0;
+    [[vk::location(2)]] float4 color : COLOR0;
 };
 
 
 VOut vs(VIn input)
 {
     VOut output;
-	output.position = mul(rc.mvpMatrix, float4(input.position.xy, 0.0, 1.0));
+	output.position = float4(input.position.xy * rc.scale + rc.bias, 0.0, 1.0);
     output.color = input.color;
     output.tc = input.tc;
 
@@ -41,7 +42,7 @@ VOut vs(VIn input)
 
 struct RootConstants
 {
-    [[vk::offset(64)]]
+    [[vk::offset(16)]]
 	uint textureIndex;
     uint samplerIndex;
 };

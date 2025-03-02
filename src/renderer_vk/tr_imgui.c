@@ -13,6 +13,18 @@ rhiBuffer imGUIvertexBuffers[RHI_FRAMES_IN_FLIGHT];
 rhiBuffer imGUIindexBuffers[RHI_FRAMES_IN_FLIGHT];
 int imGUIfontAtlasIndex;
 
+#pragma pack(push,1)
+typedef struct vertexPC {
+    vec2_t scale;
+    vec2_t bias;
+} vertexPC;
+
+typedef struct pixelPC {
+    uint32_t texIndex;
+    uint32_t samplerIndex;
+} pixelPC;
+#pragma pack(pop)
+
 void RB_ImGUI_Init(void){
     ImGuiIO* io = igGetIO();
     io->DisplaySize.x = glConfig.vidWidth;
@@ -49,8 +61,8 @@ void RB_ImGUI_Init(void){
     desc.vertexShader.data = imgui_vs;
     desc.vertexShader.byteCount = sizeof(imgui_vs);
 
-    desc.pushConstants.vsBytes = 64;
-    desc.pushConstants.psBytes = 8;
+    desc.pushConstants.vsBytes = sizeof(vertexPC);
+    desc.pushConstants.psBytes = sizeof(pixelPC);
 
     desc.descLayout = backEnd.descriptorSetLayout;
 
@@ -100,16 +112,97 @@ void RB_ImGUI_Init(void){
 }
 
 void RB_ImGUI_BeginFrame(void){
-    //igNewFrame();
+    igNewFrame();
 }
 
-void RB_ImGUI_EndFrame(void){
-    //igEndFrame();
-}
 
 void RB_ImGUI_Draw(void){
-    //igShowDemoWindow(NULL);
-    //igRender();
+    
+    igShowDemoWindow(NULL);
+
+    ImGuiIO* io = igGetIO();
+    io->DisplaySize.x = glConfig.vidWidth;
+    io->DisplaySize.y = glConfig.vidHeight;
+   
+    igEndFrame();
+    igRender();
+    ImDrawData *drawData = igGetDrawData();
+    if(drawData->DisplaySize.x <= 0.0f || drawData->DisplaySize.y <= 0.0f ){
+        return;
+    }
+
+    rhiBuffer currentVB = imGUIvertexBuffers[backEnd.currentFrameIndex];
+    rhiBuffer currentIB = imGUIindexBuffers[backEnd.currentFrameIndex];
+    ImDrawVert* vertices = (ImDrawVert*)RHI_MapBuffer(currentVB);
+    ImDrawIdx* indices = (ImDrawIdx*)RHI_MapBuffer(currentIB);
+
+    for(int i = 0; i < drawData->CmdListsCount; i++){
+
+        ImDrawList *draw = drawData->CmdLists.Data[i];
+
+        memcpy(vertices, draw->VtxBuffer.Data,  draw->VtxBuffer.Size * sizeof(ImDrawVert));
+        memcpy(indices, draw->IdxBuffer.Data,  draw->IdxBuffer.Size * sizeof(ImDrawIdx));
+        vertices += draw->VtxBuffer.Size;
+        indices += draw->IdxBuffer.Size;
+    }
+    RHI_UnmapBuffer(currentVB);
+    RHI_UnmapBuffer(currentIB);
+
+    RHI_CmdBeginBarrier();
+    RHI_CmdTextureBarrier(backEnd.colorBuffer, RHI_ResourceState_RenderTargetBit);
+    RHI_CmdEndBarrier();
+    RHI_RenderPass renderPass = {};
+    renderPass.colorLoad = RHI_LoadOp_Load;
+    renderPass.colorTexture = backEnd.colorBuffer;
+    
+    RHI_BeginRendering(&renderPass);
+    
+    RHI_CmdBindPipeline(ImGUIpipeline);
+    RHI_CmdBindVertexBuffers(&currentVB, 1);
+    RHI_CmdBindIndexBuffer(currentIB);
+    RHI_CmdSetViewport(0,0,glConfig.vidWidth, glConfig.vidHeight, 0.0f, 1.0f);
+
+    vertexPC vPC;
+    vPC.scale[0] = 2.0f / drawData->DisplaySize.x;
+    vPC.scale[1] = 2.0f / drawData->DisplaySize.y;
+
+
+    vPC.bias[0] = -1.0f - drawData->DisplayPos.x * vPC.scale[0];
+    vPC.bias[1] = -1.0f - drawData->DisplayPos.y * vPC.scale[1];
+
+
+    RHI_CmdPushConstants(ImGUIpipeline, RHI_Shader_Vertex, &vPC, sizeof(vertexPC));
+
+    int globalVtxOffset = 0;
+    int globalIdxOffset = 0;
+    ImVec2 clipOff = drawData->DisplayPos;
+
+    for(int i = 0; i < drawData->CmdListsCount; i++){
+
+        ImDrawList *draw = drawData->CmdLists.Data[i];
+        for(int c = 0; c < draw->CmdBuffer.Size; c++){
+            ImDrawCmd *cmd = &draw->CmdBuffer.Data[c];
+            ImVec2 clip_min = { cmd->ClipRect.x - clipOff.x, cmd->ClipRect.y - clipOff.y };
+            ImVec2 clip_max = { cmd->ClipRect.z - clipOff.x, cmd->ClipRect.w - clipOff.y };
+            if(clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
+            {
+                continue;
+            }
+            RHI_CmdSetScissor(clip_min.x, clip_min.y, clip_max.x - clip_min.x, clip_max.y - clip_min.y);
+            pixelPC pPC;
+            pPC.samplerIndex = 0; //@TODO
+            pPC.texIndex = imGUIfontAtlasIndex;
+            RHI_CmdPushConstants(ImGUIpipeline, RHI_Shader_Pixel, &pPC, sizeof(pPC));
+            RHI_CmdDrawIndexed(cmd->ElemCount, cmd->IdxOffset + globalIdxOffset, cmd->VtxOffset + globalVtxOffset);
+            
+        }
+        globalIdxOffset += draw->IdxBuffer.Size;
+        globalVtxOffset += draw->VtxBuffer.Size;
+
+    }
+
+    RHI_EndRendering();
+    
 }
 
 
