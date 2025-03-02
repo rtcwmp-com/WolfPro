@@ -14,16 +14,16 @@ void RB_ImGUI_Init(void){
 }
 
 void RB_ImGUI_BeginFrame(void){
-    igNewFrame();
+    //igNewFrame();
 }
 
 void RB_ImGUI_EndFrame(void){
-    igEndFrame();
+    //igEndFrame();
 }
 
 void RB_ImGUI_Draw(void){
-    igShowDemoWindow(NULL);
-    igRender();
+    //igShowDemoWindow(NULL);
+    //igRender();
 }
 
 

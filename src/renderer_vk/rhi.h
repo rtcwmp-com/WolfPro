@@ -320,10 +320,15 @@ typedef enum RHI_VertexFormat {
 } RHI_VertexFormat;
 
 typedef struct rhiVertexAttributeDesc {
-	uint32_t stride;
 	uint32_t elementCount;
 	RHI_VertexFormat elementFormat;
+	uint32_t offset;
+	uint32_t bufferBinding;
 } rhiVertexAttributeDesc;
+
+typedef struct rhiVertexBufferBindingDesc {
+	uint32_t stride;
+} rhiVertexBufferBindingDesc;
 
 typedef struct rhiGraphicsPipelineDesc {
 	const char *name;
@@ -340,6 +345,8 @@ typedef struct rhiGraphicsPipelineDesc {
 	qboolean depthTestEqual;
 	qboolean wireframe;
 	rhiVertexAttributeDesc attributes[8];
+	rhiVertexBufferBindingDesc vertexBuffers[8];
+	uint32_t vertexBufferCount;
 	uint32_t attributeCount;
 	qbool longLifetime;
 	rhiTextureFormatId colorFormat;

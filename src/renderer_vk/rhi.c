@@ -637,21 +637,24 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
     VkVertexInputAttributeDescription vertexAttributes[ARRAY_LEN(graphicsDesc->attributes)];
     VkVertexInputBindingDescription vertexBindings[ARRAY_LEN(graphicsDesc->attributes)];
     for(int i = 0; i < graphicsDesc->attributeCount; i++){
-        VkVertexInputBindingDescription vertexBindingInfo = {};
-        vertexBindingInfo.binding = i; //shader binding point
-        vertexBindingInfo.stride = graphicsDesc->attributes[i].stride; //only has vertex positions (XYZW)
-        vertexBindingInfo.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-        vertexBindings[i] = vertexBindingInfo;
 
         VkVertexInputAttributeDescription vertexAttributeInfo = {};
         //a binding can have multiple attributes (interleaved vertex format)
         vertexAttributeInfo.location = i; //shader bindings / shader input location (vk::location in HLSL) 
-        vertexAttributeInfo.binding = i; //buffer bindings / vertex buffer index (CmdBindVertexBuffers in C)
+        vertexAttributeInfo.binding = graphicsDesc->attributes[i].bufferBinding; //buffer bindings / vertex buffer index (CmdBindVertexBuffers in C)
         vertexAttributeInfo.format = GetVkFormatFromVertexFormat(graphicsDesc->attributes[i].elementFormat, graphicsDesc->attributes[i].elementCount);
-        vertexAttributeInfo.offset = 0; //attribute byte offset
+        vertexAttributeInfo.offset = graphicsDesc->attributes[i].offset; //attribute byte offset
 
         vertexAttributes[i] = vertexAttributeInfo;
+    }
+
+    for(int i = 0; i < graphicsDesc->vertexBufferCount; i++){
+        VkVertexInputBindingDescription vertexBindingInfo = {};
+        vertexBindingInfo.binding = i; //shader binding point
+        vertexBindingInfo.stride = graphicsDesc->vertexBuffers[i].stride; 
+        vertexBindingInfo.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+        vertexBindings[i] = vertexBindingInfo;
     }
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};

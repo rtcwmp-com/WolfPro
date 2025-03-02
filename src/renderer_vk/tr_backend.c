@@ -1568,14 +1568,18 @@ void RB_CreateGraphicsPipeline(shader_t *newShader){
 		graphicsDesc.attributeCount = 3; //position, color, tc
 		graphicsDesc.attributes[0].elementCount = 4;
 		graphicsDesc.attributes[0].elementFormat = RHI_VertexFormat_Float32;
-		graphicsDesc.attributes[0].stride = 4 * sizeof(float);
+		graphicsDesc.attributes[0].bufferBinding = 0;
 		graphicsDesc.attributes[1].elementCount = 4;
 		graphicsDesc.attributes[1].elementFormat = RHI_VertexFormat_UNorm8;
-		graphicsDesc.attributes[1].stride = 4 * sizeof(byte);
+		graphicsDesc.attributes[1].bufferBinding = 1;
 		graphicsDesc.attributes[2].elementCount = 2;
 		graphicsDesc.attributes[2].elementFormat = RHI_VertexFormat_Float32;
-		graphicsDesc.attributes[2].stride = 2 * sizeof(float);
+		graphicsDesc.attributes[2].bufferBinding = 2;
 		graphicsDesc.colorFormat = R8G8B8A8_UNorm;
+		graphicsDesc.vertexBufferCount = 3;
+		graphicsDesc.vertexBuffers[0].stride = 4 * sizeof(float);
+		graphicsDesc.vertexBuffers[1].stride = 4 * sizeof(byte);
+		graphicsDesc.vertexBuffers[2].stride = 2 * sizeof(float);
 
 		uint32_t hash = RB_HashPipeline(&graphicsDesc);
 		cachedPipeline cached = {};
