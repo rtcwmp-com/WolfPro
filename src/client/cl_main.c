@@ -27,7 +27,7 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 // cl_main.c  -- client main loop
-#include "cl_imgui.h"
+
 #include "client.h"
 #include <limits.h>
 
