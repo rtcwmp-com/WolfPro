@@ -154,10 +154,14 @@ void RB_ImGUI_Draw(void){
     RHI_RenderPass renderPass = {};
     renderPass.colorLoad = RHI_LoadOp_Load;
     renderPass.colorTexture = backEnd.colorBuffer;
-    
+
+    if(RHI_IsRenderingActive()){
+        RHI_EndRendering();
+    }
     RHI_BeginRendering(&renderPass);
     
     RHI_CmdBindPipeline(ImGUIpipeline);
+    RHI_CmdBindDescriptorSet(ImGUIpipeline, backEnd.descriptorSet);
     RHI_CmdBindVertexBuffers(&currentVB, 1);
     RHI_CmdBindIndexBuffer(currentIB);
     RHI_CmdSetViewport(0,0,glConfig.vidWidth, glConfig.vidHeight, 0.0f, 1.0f);
