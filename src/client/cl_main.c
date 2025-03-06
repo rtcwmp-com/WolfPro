@@ -2229,6 +2229,9 @@ void CL_Frame( int msec ) {
 		SCR_DebugGraph( cls.realFrametime * 0.25, 0 );
 	}
 
+	// update the client's own GUI
+	CL_ImGUI_Frame();
+
 	// see if we need to update any userinfo
 	CL_CheckUserinfo();
 

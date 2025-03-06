@@ -117,6 +117,9 @@ typedef struct {
 
 	// sets up glConfig etc. based on r_fullscreen, r_mode, r_width, r_height
 	void	(*ConfigureVideoMode)( int desktopWidth, int desktopHeight );
+	
+	// transforms window (client rect) coordinates into render target coordinates
+	void	(*ComputeCursorPosition)( int* x, int* y );
 } refexport_t;
 
 //

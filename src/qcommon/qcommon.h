@@ -1237,5 +1237,8 @@ void CRC32_Begin( unsigned int* crc );
 void CRC32_ProcessBlock( unsigned int* crc, const void* buffer, unsigned int length );
 void CRC32_End( unsigned int* crc );
 
+// relative to window's client rectangle
+void	Sys_GetCursorPosition( int* x, int* y );
+
 #endif // _QCOMMON_H_
 

@@ -435,6 +435,7 @@ void CL_MouseEvent( int dx, int dy, int time ) {
 		cl.mouseDx[cl.mouseIndex] += dx;
 		cl.mouseDy[cl.mouseIndex] += dy;
 	}
+	CL_ImGUI_MouseEvent(dx, dy, time);
 }
 
 /*

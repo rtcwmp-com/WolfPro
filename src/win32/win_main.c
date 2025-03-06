@@ -1240,3 +1240,13 @@ void Sys_DebugPrintf( PRINTF_FORMAT_STRING const char* fmt, ... )
 
     OutputDebugStringA(buffer);
 }
+
+
+void Sys_GetCursorPosition( int* x, int* y )
+{
+	POINT point;
+	GetCursorPos( &point );
+	ScreenToClient( g_wv.hWnd, &point );
+	*x = point.x;
+	*y = point.y;
+}

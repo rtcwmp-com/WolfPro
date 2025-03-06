@@ -1387,6 +1387,15 @@ Touch all images to make sure they are resident
 void RE_EndRegistration( void ) {
 }
 
+void R_ComputeCursorPosition( int* x, int* y )
+{ 
+	const float sx = (float)glConfig.vidWidth / (float)glInfo.winWidth;
+	const float sy = (float)glConfig.vidHeight / (float)glInfo.winHeight;
+	*x *= sx;
+	*y *= sy;
+
+}
+
 
 /*
 @@@@@@@@@@@@@@@@@@@@@
@@ -1454,6 +1463,7 @@ refexport_t *GetRefAPI( int apiVersion, refimport_t *rimp ) {
 	re.RemapShader      = R_RemapShader;
 	re.GetEntityToken   = R_GetEntityToken;
 	re.ConfigureVideoMode = RE_ConfigureVideoMode;
+	re.ComputeCursorPosition = R_ComputeCursorPosition;
 
 	return &re;
 }
