@@ -8,6 +8,8 @@
 #define MAX_IMGUI_VERTS (1<<16)
 #define MAX_IMGUI_INDICES (MAX_IMGUI_VERTS * 3)
 
+_Static_assert(sizeof(ImDrawIdx) == 4, "sizeof(ImDrawIdx) must be 4");
+
 rhiPipeline ImGUIpipeline;
 rhiBuffer imGUIvertexBuffers[RHI_FRAMES_IN_FLIGHT];
 rhiBuffer imGUIindexBuffers[RHI_FRAMES_IN_FLIGHT];
@@ -74,7 +76,7 @@ void RB_ImGUI_Init(void){
         vertexBufferDesc.byteCount = MAX_IMGUI_VERTS * sizeof(ImDrawVert);
         vertexBufferDesc.initialState = RHI_ResourceState_VertexBufferBit;
         vertexBufferDesc.memoryUsage = RHI_MemoryUsage_Upload;
-        vertexBufferDesc.name = "ImGUI";
+        vertexBufferDesc.name = va("ImGUI vertex %d", i);
         imGUIvertexBuffers[i] = RHI_CreateBuffer(&vertexBufferDesc);
 
         rhiBufferDesc indexBufferDesc = {};
@@ -82,7 +84,7 @@ void RB_ImGUI_Init(void){
         indexBufferDesc.byteCount = MAX_IMGUI_INDICES * sizeof(ImDrawIdx);
         indexBufferDesc.initialState = RHI_ResourceState_IndexBufferBit;
         indexBufferDesc.memoryUsage = RHI_MemoryUsage_Upload;
-        indexBufferDesc.name = "ImGUI";
+        indexBufferDesc.name = va("ImGUI index %d", i);
         imGUIindexBuffers[i] = RHI_CreateBuffer(&indexBufferDesc);
     }
     unsigned char *pixels;
@@ -135,29 +137,32 @@ void RB_ImGUI_Draw(void){
     rhiBuffer currentIB = imGUIindexBuffers[backEnd.currentFrameIndex];
     ImDrawVert* vertices = (ImDrawVert*)RHI_MapBuffer(currentVB);
     ImDrawIdx* indices = (ImDrawIdx*)RHI_MapBuffer(currentIB);
+    ImDrawVert* verticesEnd = vertices + MAX_IMGUI_VERTS;
+    ImDrawIdx* indicesEnd = indices + MAX_IMGUI_INDICES;
 
     for(int i = 0; i < drawData->CmdListsCount; i++){
-
         ImDrawList *draw = drawData->CmdLists.Data[i];
-
-        memcpy(vertices, draw->VtxBuffer.Data,  draw->VtxBuffer.Size * sizeof(ImDrawVert));
-        memcpy(indices, draw->IdxBuffer.Data,  draw->IdxBuffer.Size * sizeof(ImDrawIdx));
+        assert(vertices + draw->VtxBuffer.Size <= verticesEnd);
+        assert(indices  + draw->IdxBuffer.Size <= indicesEnd);
+        memcpy(vertices, draw->VtxBuffer.Data, draw->VtxBuffer.Size * sizeof(ImDrawVert));
+        memcpy(indices,  draw->IdxBuffer.Data, draw->IdxBuffer.Size * sizeof(ImDrawIdx));
         vertices += draw->VtxBuffer.Size;
         indices += draw->IdxBuffer.Size;
     }
     RHI_UnmapBuffer(currentVB);
     RHI_UnmapBuffer(currentIB);
 
-    RHI_CmdBeginBarrier();
-    RHI_CmdTextureBarrier(backEnd.colorBuffer, RHI_ResourceState_RenderTargetBit);
-    RHI_CmdEndBarrier();
-    RHI_RenderPass renderPass = {};
-    renderPass.colorLoad = RHI_LoadOp_Load;
-    renderPass.colorTexture = backEnd.colorBuffer;
-
     if(RHI_IsRenderingActive()){
         RHI_EndRendering();
     }
+
+    RHI_CmdBeginBarrier();
+    RHI_CmdTextureBarrier(backEnd.colorBuffer, RHI_ResourceState_RenderTargetBit);
+    RHI_CmdEndBarrier();
+
+    RHI_RenderPass renderPass = {};
+    renderPass.colorLoad = RHI_LoadOp_Load;
+    renderPass.colorTexture = backEnd.colorBuffer;
     RHI_BeginRendering(&renderPass);
     
     RHI_CmdBindPipeline(ImGUIpipeline);
@@ -198,7 +203,6 @@ void RB_ImGUI_Draw(void){
             pPC.texIndex = imGUIfontAtlasIndex;
             RHI_CmdPushConstants(ImGUIpipeline, RHI_Shader_Pixel, &pPC, sizeof(pPC));
             RHI_CmdDrawIndexed(cmd->ElemCount, cmd->IdxOffset + globalIdxOffset, cmd->VtxOffset + globalVtxOffset);
-            
         }
         globalIdxOffset += draw->IdxBuffer.Size;
         globalVtxOffset += draw->VtxBuffer.Size;

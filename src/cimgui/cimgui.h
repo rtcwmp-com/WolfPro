@@ -215,7 +215,7 @@ typedef int ImGuiTreeNodeFlags;
 typedef int ImGuiViewportFlags;
 typedef int ImGuiWindowFlags;
 typedef ImU64 ImTextureID;
-typedef unsigned short ImDrawIdx;
+typedef unsigned int ImDrawIdx;
 typedef unsigned int ImWchar32;
 typedef unsigned short ImWchar16;
 
