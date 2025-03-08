@@ -102,6 +102,8 @@ void RB_ImGUI_Init(void){
     textureDesc.sampleCount = 1;
 
     rhiTexture imGUIfontAtlas = RHI_CreateTexture(&textureDesc);
+    
+    
     rhiTextureUpload textureUpload;
     RHI_BeginTextureUpload(&textureUpload, imGUIfontAtlas, 0);
     for(int i = 0; i < height; i++){
@@ -110,6 +112,8 @@ void RB_ImGUI_Init(void){
     RHI_EndTextureUpload();
     imGUIfontAtlasIndex = tr.textureDescriptorCount++;
     RHI_UpdateDescriptorSet(backEnd.descriptorSet, 0, RHI_DescriptorType_ReadOnlyTexture, imGUIfontAtlasIndex, 1, &imGUIfontAtlas);
+
+    ImFontAtlas_SetTexID(io->Fonts, (ImTextureID)imGUIfontAtlasIndex);
 
 }
 
@@ -120,7 +124,31 @@ void RB_ImGUI_BeginFrame(void){
 
 void RB_ImGUI_Draw(void){
     
-    igShowDemoWindow(NULL);
+   // igShowDemoWindow(NULL);
+    // if(igBegin("imgui",NULL,0)){
+        
+    //     // ImVec2 imageSize = {64,64};
+    //     // ImVec2 uv1 = {0,0};
+    //     igImage(tr.images[tr.numImages -1]->descriptorIndex,(ImVec2){64,64}, (ImVec2) {0,0}, (ImVec2) {1,1}, (ImVec4) {1,1,1,1}, (ImVec4) {0,0,0,0});
+    //     static bool check;
+        
+    //     igCheckbox("checkbox", &check);
+    //     igText("%s %d","hello world",(int)check);
+    //     if(check){
+    //         for(int i = 0; i < 5; i++){
+    //             igPushID_Int(i);
+    //             igArrowButton("arrow",ImGuiDir_Down);
+    //             igSameLine(0,-1);
+    //             igText("%s %d","item", i);
+                
+        
+                
+    //             igPopID();
+    //         }
+            
+    //     }
+    // }
+    // igEnd();
 
     ImGuiIO* io = igGetIO();
     io->DisplaySize.x = glConfig.vidWidth;
@@ -191,6 +219,7 @@ void RB_ImGUI_Draw(void){
         ImDrawList *draw = drawData->CmdLists.Data[i];
         for(int c = 0; c < draw->CmdBuffer.Size; c++){
             ImDrawCmd *cmd = &draw->CmdBuffer.Data[c];
+            
             ImVec2 clip_min = { cmd->ClipRect.x - clipOff.x, cmd->ClipRect.y - clipOff.y };
             ImVec2 clip_max = { cmd->ClipRect.z - clipOff.x, cmd->ClipRect.w - clipOff.y };
             if(clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
@@ -200,7 +229,7 @@ void RB_ImGUI_Draw(void){
             RHI_CmdSetScissor(clip_min.x, clip_min.y, clip_max.x - clip_min.x, clip_max.y - clip_min.y);
             pixelPC pPC;
             pPC.samplerIndex = 0; //@TODO
-            pPC.texIndex = imGUIfontAtlasIndex;
+            pPC.texIndex = (uint32_t)cmd->TextureId;
             RHI_CmdPushConstants(ImGUIpipeline, RHI_Shader_Pixel, &pPC, sizeof(pPC));
             RHI_CmdDrawIndexed(cmd->ElemCount, cmd->IdxOffset + globalIdxOffset, cmd->VtxOffset + globalVtxOffset);
         }
