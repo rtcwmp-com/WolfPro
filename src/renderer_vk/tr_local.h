@@ -978,6 +978,7 @@ typedef struct {
 	rhiTexture depthBuffer;
 	
 	rhiTexture colorBuffer;
+	rhiDurationQuery frameDuration[RHI_FRAMES_IN_FLIGHT];
 } backEndState_t;
 
 /*

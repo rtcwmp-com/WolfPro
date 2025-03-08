@@ -481,6 +481,17 @@ void PickPhysicalDevice(void)
     ri.Printf(PRINT_ALL, "Physical device selected: %s\n", vk.deviceProperties.deviceName);
 }
 
+static void CreateQueryPool(){
+    for(int i = 0; i < RHI_FRAMES_IN_FLIGHT; i++){
+        VkQueryPoolCreateInfo query_pool_info = {};
+        query_pool_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+        query_pool_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
+        query_pool_info.queryCount = MAX_DURATION_QUERIES * 2;
+        VK(vkCreateQueryPool(vk.device, &query_pool_info, NULL, &vk.queryPool[i]));
+    }
+    
+}
+
 static void CreateDevice()
 {
     uint32_t queueCount = 0;
@@ -1221,8 +1232,8 @@ static void CreateCommandPool()
 
 
 void RHI_BeginFrame() {
-    //vk.currentFrameIndex = (vk.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT;
-
+    vk.currentFrameIndex = (vk.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT;
+    vk.durationQueryCount[vk.currentFrameIndex] = 0;
     // VkSemaphoreWaitInfo waitInfo = {};
     // waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
     // waitInfo.pNext = NULL;
@@ -2455,6 +2466,8 @@ void RHI_Init( void ) {
     CreateDescriptorPool();
 
     CreateUploadManager();
+
+    CreateQueryPool();
     
     
 

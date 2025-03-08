@@ -1297,7 +1297,8 @@ const void  *RB_BeginFrame( const void *data ) {
 	RHI_AcquireNextImage(&backEnd.swapChainImageIndex, backEnd.imageAcquiredBinary);
 	RHI_BindCommandBuffer(backEnd.commandBuffers[backEnd.currentFrameIndex]);
 	RHI_BeginCommandBuffer();
-
+	RHI_DurationQueryReset();
+	backEnd.frameDuration[backEnd.currentFrameIndex] = RHI_CmdBeginDurationQuery();
 
 	RHI_CmdBeginBarrier();
 	RHI_CmdTextureBarrier(backEnd.colorBuffer, RHI_ResourceState_RenderTargetBit);
@@ -1396,6 +1397,11 @@ const void  *RB_EndFrame( const void *data ) {
 	RHI_CmdEndBarrier();
 
 	
+	RHI_CmdEndDurationQuery(backEnd.frameDuration[backEnd.currentFrameIndex]);
+
+	uint32_t duration = RHI_GetDurationUs(backEnd.frameDuration[(backEnd.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT]);
+	Sys_DebugPrintf("duration: %.03f\n", duration/1000.0f);
+
 	
 	RHI_EndCommandBuffer();
 
@@ -1410,7 +1416,7 @@ const void  *RB_EndFrame( const void *data ) {
 	RHI_SubmitGraphics(&graphicsDesc);
 	RHI_SubmitPresent(backEnd.renderCompleteBinary, backEnd.swapChainImageIndex);
 	
-
+	
 	RHI_EndFrame();
 	
 	GLimp_EndFrame();

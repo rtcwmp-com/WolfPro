@@ -45,6 +45,8 @@ RHI_HANDLE_TYPE(rhiBuffer) //raw data in gpu space (vertex/index can be specaili
 RHI_HANDLE_TYPE(rhiDescriptorSet)
 RHI_HANDLE_TYPE(rhiSampler)
 
+RHI_HANDLE_TYPE(rhiDurationQuery)
+
 
 
 
@@ -435,10 +437,10 @@ void RHI_CmdBeginDebugLabel(const char * scope);
 void RHI_CmdEndDebugLabel(void);
 void RHI_CmdInsertDebugLabel(const char * label);
 
-void RHI_CmdBeginDurationQuery();
-void RHI_CmdEndDurationQuery();
-void RHI_CmdResetDurationQueries();
-void RHI_ResolveDurationQuery();
+rhiDurationQuery RHI_CmdBeginDurationQuery(void);
+void RHI_CmdEndDurationQuery(rhiDurationQuery handle);
+uint32_t RHI_GetDurationUs(rhiDurationQuery query);
+void RHI_DurationQueryReset(void);
 
 //upload manager
 void RHI_BeginBufferUpload();

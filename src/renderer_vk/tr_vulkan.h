@@ -261,6 +261,9 @@ typedef struct Vulkan
 
 	qboolean renderingActive;
     RHI_RenderPass currentRenderPass;
+	VkQueryPool queryPool[RHI_FRAMES_IN_FLIGHT];
+	uint32_t currentFrameIndex;
+	uint32_t durationQueryCount[RHI_FRAMES_IN_FLIGHT];
 } Vulkan;
 
 extern Vulkan vk;

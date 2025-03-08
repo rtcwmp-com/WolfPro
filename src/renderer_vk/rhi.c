@@ -1127,22 +1127,67 @@ void RHI_CmdCopyBufferRegions()
 {
 }
 
+typedef struct DurationQuery {
+    uint32_t frameIndex;
+    uint32_t durationQueryIndex;
+} DurationQuery;
 
-
-void RHI_CmdBeginDurationQuery()
-{
+DurationQuery DecodeDurationQuery(rhiDurationQuery handle){
+    DurationQuery query;
+    query.frameIndex = handle.h >> 32;
+    query.durationQueryIndex = handle.h & 0xffffffff;
+    return query;
 }
 
-void RHI_CmdEndDurationQuery()
-{
+rhiDurationQuery EncodeDurationQuery(uint32_t frameIndex, uint32_t durationQueryIndex){
+    rhiDurationQuery handle;
+    handle.h = (uint64_t)frameIndex << 32;
+    handle.h |= (uint64_t)durationQueryIndex & 0xffffffff;
+    return handle;
 }
 
-void RHI_CmdResetDurationQueries()
+rhiDurationQuery RHI_CmdBeginDurationQuery(void)
 {
+    assert(vk.durationQueryCount[vk.currentFrameIndex] < MAX_DURATION_QUERIES);
+
+    uint32_t durationQueryIndex = vk.durationQueryCount[vk.currentFrameIndex]++;
+    rhiDurationQuery durationQuery = EncodeDurationQuery(vk.currentFrameIndex, durationQueryIndex);
+    vkCmdWriteTimestamp2(vk.activeCommandBuffer, VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, vk.queryPool[vk.currentFrameIndex], durationQueryIndex * 2);
+    return durationQuery;
 }
 
-void RHI_ResolveDurationQuery()
+void RHI_CmdEndDurationQuery(rhiDurationQuery handle)
 {
+    
+    DurationQuery query = DecodeDurationQuery(handle);
+    assert(query.frameIndex == vk.currentFrameIndex);
+    assert(query.durationQueryIndex < vk.durationQueryCount[vk.currentFrameIndex]);
+    vkCmdWriteTimestamp2(vk.activeCommandBuffer, VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT, vk.queryPool[vk.currentFrameIndex], query.durationQueryIndex * 2 + 1);
+}
+
+uint32_t RHI_GetDurationUs(rhiDurationQuery handle){
+    DurationQuery query = DecodeDurationQuery(handle);
+    assert(query.durationQueryIndex < MAX_DURATION_QUERIES);
+    assert(query.frameIndex == (vk.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT);
+    //for previous frame
+    //return actual duration in us
+    uint64_t timestamps[2];
+    vkGetQueryPoolResults(
+        vk.device,
+        vk.queryPool[query.frameIndex],
+        query.durationQueryIndex,
+        2,
+        2 * sizeof(uint64_t),
+        timestamps,
+        sizeof(uint64_t),
+        VK_QUERY_RESULT_64_BIT);
+
+    return ((float)(timestamps[1] - timestamps[0]) * vk.deviceProperties.limits.timestampPeriod) / 1000.0f;
+    
+}
+
+void RHI_DurationQueryReset(void){
+    vkResetQueryPool(vk.device, vk.queryPool[vk.currentFrameIndex],0, MAX_DURATION_QUERIES);
 }
 
 void RHI_BeginBufferUpload()
