@@ -431,9 +431,9 @@ void RHI_CmdBufferBarrier(rhiBuffer handle, RHI_ResourceState state); //pass han
 
 void RHI_CmdCopyBuffer(rhiBuffer dstBuffer, uint32_t dstOffset, rhiBuffer srcBuffer, uint32_t srcOffset, uint32_t size);
 void RHI_CmdCopyBufferRegions();
-void RHI_CmdInsertDebugLabel();
-void RHI_CmdBeginDebugLabel();
-void RHI_CmdEndDebugLabel();
+void RHI_CmdBeginDebugLabel(const char * scope);
+void RHI_CmdEndDebugLabel(void);
+void RHI_CmdInsertDebugLabel(const char * label);
 
 void RHI_CmdBeginDurationQuery();
 void RHI_CmdEndDurationQuery();

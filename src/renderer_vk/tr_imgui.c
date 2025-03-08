@@ -157,7 +157,7 @@ void RB_ImGUI_Draw(void){
     igEndFrame();
     igRender();
     ImDrawData *drawData = igGetDrawData();
-    if(drawData->DisplaySize.x <= 0.0f || drawData->DisplaySize.y <= 0.0f ){
+    if(drawData->DisplaySize.x <= 0.0f || drawData->DisplaySize.y <= 0.0f || drawData->CmdListsCount <= 0 ){
         return;
     }
 
@@ -192,6 +192,7 @@ void RB_ImGUI_Draw(void){
     renderPass.colorLoad = RHI_LoadOp_Load;
     renderPass.colorTexture = backEnd.colorBuffer;
     RHI_BeginRendering(&renderPass);
+    RHI_CmdBeginDebugLabel("ImGUI RenderPass");
     
     RHI_CmdBindPipeline(ImGUIpipeline);
     RHI_CmdBindDescriptorSet(ImGUIpipeline, backEnd.descriptorSet);
@@ -206,7 +207,6 @@ void RB_ImGUI_Draw(void){
 
     vPC.bias[0] = -1.0f - drawData->DisplayPos.x * vPC.scale[0];
     vPC.bias[1] = -1.0f - drawData->DisplayPos.y * vPC.scale[1];
-
 
     RHI_CmdPushConstants(ImGUIpipeline, RHI_Shader_Vertex, &vPC, sizeof(vertexPC));
 
@@ -237,7 +237,7 @@ void RB_ImGUI_Draw(void){
         globalVtxOffset += draw->VtxBuffer.Size;
 
     }
-
+    RHI_CmdEndDebugLabel();
     RHI_EndRendering();
     
 }

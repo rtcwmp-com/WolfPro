@@ -1128,18 +1128,6 @@ void RHI_CmdCopyBufferRegions()
 }
 
 
-void RHI_CmdInsertDebugLabel()
-{
-    
-}
-
-void RHI_CmdBeginDebugLabel()
-{
-}
-
-void RHI_CmdEndDebugLabel()
-{
-}
 
 void RHI_CmdBeginDurationQuery()
 {
@@ -1239,4 +1227,34 @@ void RHI_PrintPools(void){
 
 rhiTextureFormatId RHI_GetSwapChainFormat(void) {
     return B8G8R8A8_UNorm; //@TODO: 
+}
+
+void RHI_CmdBeginDebugLabel(const char * scope){
+    PFN_vkCmdBeginDebugUtilsLabelEXT pfnvkCmdBeginDebugUtilsLabelEXT= (PFN_vkCmdBeginDebugUtilsLabelEXT)vkGetDeviceProcAddr(vk.device, "vkCmdBeginDebugUtilsLabelEXT");
+    if(pfnvkCmdBeginDebugUtilsLabelEXT){
+        VkDebugUtilsLabelEXT labelInfo = {};
+        Vector4Set(labelInfo.color, 1.0f, 1.0f, 1.0f, 1.0f);
+        labelInfo.pLabelName = scope;
+        labelInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+        pfnvkCmdBeginDebugUtilsLabelEXT(vk.activeCommandBuffer, &labelInfo);
+    }
+}
+
+void RHI_CmdEndDebugLabel(void){
+    PFN_vkCmdEndDebugUtilsLabelEXT pfnvkCmdEndDebugUtilsLabelEXT = (PFN_vkCmdEndDebugUtilsLabelEXT)vkGetDeviceProcAddr(vk.device, "vkCmdEndDebugUtilsLabelEXT");
+    if(pfnvkCmdEndDebugUtilsLabelEXT){
+        pfnvkCmdEndDebugUtilsLabelEXT(vk.activeCommandBuffer);
+    }
+}
+
+void RHI_CmdInsertDebugLabel(const char * label){
+    PFN_vkCmdInsertDebugUtilsLabelEXT pfnvkCmdInsertDebugUtilsLabelEXT = (PFN_vkCmdInsertDebugUtilsLabelEXT)vkGetDeviceProcAddr(vk.device, "vkCmdInsertDebugUtilsLabelEXT");
+    if(pfnvkCmdInsertDebugUtilsLabelEXT){
+        VkDebugUtilsLabelEXT labelInfo = {};
+        Vector4Set(labelInfo.color, 1.0f, 1.0f, 1.0f, 1.0f);
+        labelInfo.pLabelName = label;
+        labelInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+        pfnvkCmdInsertDebugUtilsLabelEXT(vk.activeCommandBuffer, &labelInfo);
+    }
+    
 }
