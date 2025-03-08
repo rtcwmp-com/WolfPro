@@ -79,6 +79,11 @@ void CL_ImGUI_MouseEvent(int dx, int dy, int time){
     ImGuiIO_AddMousePosEvent(ioptr,(float) dx,(float) dy);
 }
 
+void CL_ImGUI_CharEvent(int key){
+	ImGuiIO *ioptr = igGetIO();
+	ImGuiIO_AddInputCharacter(ioptr, key);
+}
+
 void CL_ImGUI_KeyEvent(int key, qboolean down) {
     ImGuiIO *ioptr = igGetIO();
     unsigned int imguiKey;

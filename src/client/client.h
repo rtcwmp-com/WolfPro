@@ -638,6 +638,7 @@ qboolean CL_Netchan_Process( netchan_t *chan, msg_t *msg );
 void CL_ImGUI_Init(void);
 void CL_ImGUI_Shutdown(void);
 void CL_ImGUI_KeyEvent(int k, qboolean down);
+void CL_ImGUI_CharEvent(int key);
 void CL_ImGUI_MouseEvent(int dx, int dy, int time);
 void CL_ImGUI_Frame(void);
 #endif

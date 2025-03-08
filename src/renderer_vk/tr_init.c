@@ -1389,10 +1389,7 @@ void RE_EndRegistration( void ) {
 
 void R_ComputeCursorPosition( int* x, int* y )
 { 
-	const float sx = (float)glConfig.vidWidth / (float)glInfo.winWidth;
-	const float sy = (float)glConfig.vidHeight / (float)glInfo.winHeight;
-	*x *= sx;
-	*y *= sy;
+	//rendering coordinates and display coordinates are the same currently
 
 }
 
