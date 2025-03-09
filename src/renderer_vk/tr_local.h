@@ -932,6 +932,14 @@ typedef struct SceneView {
 #define VBA_MAX 64000
 #define IDX_MAX (VBA_MAX * 8)
 #define SCENEVIEW_MAX 16
+#define MAX_RENDERPASSES 64 
+
+typedef struct renderPass {
+	char name[64];
+	uint32_t nameHash;
+	uint32_t durationUs;
+	rhiDurationQuery query;
+} renderPass;
 
 // all state modified by the back end is seperated
 // from the front end state
@@ -979,6 +987,8 @@ typedef struct {
 	
 	rhiTexture colorBuffer;
 	rhiDurationQuery frameDuration[RHI_FRAMES_IN_FLIGHT];
+	renderPass renderPasses[RHI_FRAMES_IN_FLIGHT][MAX_RENDERPASSES];
+	uint32_t renderPassCount[RHI_FRAMES_IN_FLIGHT];
 } backEndState_t;
 
 /*
@@ -1650,6 +1660,8 @@ RENDERER BACK END FUNCTIONS
 void RB_ExecuteRenderCommands( const void *data );
 void RB_CreateGraphicsPipeline(shader_t *newShader);
 void RB_ClearPipelineCache(void);
+void RB_BeginRenderPass(const char* name, const RHI_RenderPass* rp);
+void RB_EndRenderPass(void);
 
 /*
 =============================================================

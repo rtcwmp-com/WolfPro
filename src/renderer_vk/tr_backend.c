@@ -549,6 +549,11 @@ void RB_BeginDrawingView( void ) {
 	// we will only draw a sun if there was sky rendered in this view
 	backEnd.skyRenderedThisView = qfalse;
 
+
+	if(RHI_IsRenderingActive()){
+		RHI_EndRendering();
+	}
+
 	// clip to the plane of the portal
 	if ( backEnd.viewParms.isPortal ) {
 		float plane[4];
@@ -576,9 +581,6 @@ void RB_BeginDrawingView( void ) {
 		RB_UploadSceneView(backEnd.viewParms.vulkanProjectionMatrix, zeroPlane);
 	}
 
-	if(RHI_IsRenderingActive()){
-		RHI_EndRendering();
-	}
 
 	RHI_CmdBeginBarrier();
 	RHI_CmdTextureBarrier(backEnd.depthBuffer, RHI_ResourceState_DepthWriteBit);
@@ -851,10 +853,6 @@ void RB_UploadSceneView(const float *projectionMatrix, const float *clipPlane){
 	memcpy(mappedBuffer + backEnd.sceneViewCount * sizeof(sceneView), &sceneView, sizeof(sceneView));
 	RHI_UnmapBuffer(currentScene);
 
-	qboolean renderingActive = RHI_IsRenderingActive();
-	if(renderingActive){
-		RHI_EndRendering();
-	}
 
 	//Schedule the GPU copy and transition the layout
 	RHI_CmdBeginBarrier();
@@ -866,13 +864,6 @@ void RB_UploadSceneView(const float *projectionMatrix, const float *clipPlane){
 	RHI_CmdBeginBarrier();
 	RHI_CmdBufferBarrier(backEnd.sceneViewGPUBuffer, RHI_ResourceState_UniformBufferBit);
 	RHI_CmdEndBarrier();
-
-	if(renderingActive){
-		RHI_RenderPass rp = *RHI_CurrentRenderPass();
-		rp.colorLoad = RHI_LoadOp_Load;
-		rp.depthLoad = RHI_LoadOp_Load;
-		RHI_BeginRendering(&rp);
-	}
 
 	backEnd.sceneViewCount++;
 }
@@ -1270,6 +1261,7 @@ RB_BeginFrame
 */
 const void  *RB_BeginFrame( const void *data ) {
 	backEnd.currentFrameIndex = (backEnd.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT;
+	backEnd.renderPassCount[backEnd.currentFrameIndex] = 0;
 
 	backEnd.sceneViewCount = 0;
 	backEnd.previousPipeline.h = 0;
@@ -1606,4 +1598,33 @@ void RB_CreateGraphicsPipeline(shader_t *newShader){
 		
 	}
 	
+}
+
+
+void RB_BeginRenderPass(const char* name, const RHI_RenderPass* rp){
+	if(RHI_IsRenderingActive()){
+		RB_EndRenderPass();
+	}
+	RHI_BeginRendering(rp);
+	
+	if(backEnd.renderPassCount[backEnd.currentFrameIndex] < MAX_RENDERPASSES){
+		uint32_t i = backEnd.renderPassCount[backEnd.currentFrameIndex]++;
+		renderPass *currentPass = &backEnd.renderPasses[backEnd.currentFrameIndex][i];
+		currentPass->query = RHI_CmdBeginDurationQuery();
+		Q_strncpyz(currentPass->name, name, sizeof(currentPass->name));
+		uint32_t nameHash = 0;
+		CRC32_Begin(&nameHash);
+		CRC32_ProcessBlock(&nameHash, name, strlen(name));
+		CRC32_End(&nameHash);
+		currentPass->nameHash = nameHash;
+	}
+
+	RHI_CmdBeginDebugLabel(name);
+
+}
+
+void RB_EndRenderPass(void){
+	//RHI_CmdEndDurationQuery(handle);
+	RHI_CmdEndDebugLabel();
+	RHI_EndRendering();
 }

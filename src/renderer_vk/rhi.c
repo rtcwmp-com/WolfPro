@@ -1168,7 +1168,7 @@ void RHI_CmdEndDurationQuery(rhiDurationQuery handle)
 uint32_t RHI_GetDurationUs(rhiDurationQuery handle){
     DurationQuery query = DecodeDurationQuery(handle);
     assert(query.durationQueryIndex < MAX_DURATION_QUERIES);
-    assert(query.frameIndex == (vk.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT);
+    assert(query.frameIndex == (vk.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT); //@TODO renderdoc not asserting
     //for previous frame
     //return actual duration in us
     uint64_t timestamps[2];
