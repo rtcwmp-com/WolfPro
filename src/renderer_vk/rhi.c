@@ -862,6 +862,8 @@ void RHI_EndCommandBuffer()
 
 void RHI_BeginRendering(const RHI_RenderPass* renderPass)
 {
+    assert(vk.renderingActive == qfalse);
+
     Texture* colorTexture = GET_TEXTURE(renderPass->colorTexture);
     VkRenderingAttachmentInfo colorAttachmentInfo = {};
     colorAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
@@ -909,6 +911,7 @@ RHI_RenderPass* RHI_CurrentRenderPass(void){
 
 void RHI_EndRendering(void)
 {
+    assert(vk.renderingActive == qtrue);
     vkCmdEndRendering(vk.activeCommandBuffer);
     vk.renderingActive = qfalse;
 }
@@ -1168,7 +1171,7 @@ void RHI_CmdEndDurationQuery(rhiDurationQuery handle)
 uint32_t RHI_GetDurationUs(rhiDurationQuery handle){
     DurationQuery query = DecodeDurationQuery(handle);
     assert(query.durationQueryIndex < MAX_DURATION_QUERIES);
-    assert(query.frameIndex == (vk.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT); //@TODO renderdoc not asserting
+    //assert(query.frameIndex == (vk.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT); //@TODO renderdoc not asserting
     //for previous frame
     //return actual duration in us
     uint64_t timestamps[2];

@@ -839,6 +839,8 @@ void    RB_SetGL2D( void ) {
 
 	memcpy(backEnd.or.modelMatrix, modelViewMatrix, sizeof(backEnd.or.modelMatrix));
 
+	//@TODO: start renderpass
+
 }
 
 void RB_UploadSceneView(const float *projectionMatrix, const float *clipPlane){
@@ -1297,13 +1299,7 @@ const void  *RB_BeginFrame( const void *data ) {
 	RHI_CmdEndBarrier();
 
 
-	RHI_RenderPass renderPass = {};
-	Vector4Set(renderPass.color, 1.0f, 0.0f, 0.0f, 1.0f);
-	
-	renderPass.colorLoad = RHI_LoadOp_Clear;
-	renderPass.colorTexture = backEnd.colorBuffer;
 
-	RHI_BeginRendering(&renderPass);
 	// RHI_CmdBindPipeline(backEnd.pipeline);
 	// RHI_CmdBindDescriptorSet(backEnd.pipeline, backEnd.descriptorSet);
 	RHI_CmdBindIndexBuffer(backEnd.vertexBuffers[backEnd.currentFrameIndex].index);
