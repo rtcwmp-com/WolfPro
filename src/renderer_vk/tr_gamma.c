@@ -57,9 +57,6 @@ void RB_InitGamma(rhiTexture texture, rhiSampler sampler){
 }
 
 void RB_DrawGamma(rhiTexture swapChainImage){
-    if(RHI_IsRenderingActive()){
-        RHI_EndRendering();
-    }
 
     RHI_CmdBeginBarrier();
     RHI_CmdTextureBarrier(swapChainImage, RHI_ResourceState_RenderTargetBit);
@@ -69,8 +66,7 @@ void RB_DrawGamma(rhiTexture swapChainImage){
     RHI_RenderPass renderPass = {};
     renderPass.colorLoad = RHI_LoadOp_Discard;
     renderPass.colorTexture = swapChainImage;
-
-    RHI_BeginRendering(&renderPass);
+    RB_BeginRenderPass("Gamma", &renderPass);
 
     GammaPC gammaPC;
     gammaPC.brightness = 1.0f;
@@ -84,5 +80,5 @@ void RB_DrawGamma(rhiTexture swapChainImage){
     RHI_CmdBindDescriptorSet(gammaPipeline, gammaDescSet);
     RHI_CmdDraw(3, 0);
 
-    RHI_EndRendering();
+    RB_EndRenderPass();
 }

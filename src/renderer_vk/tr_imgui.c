@@ -124,32 +124,6 @@ void RB_ImGUI_BeginFrame(void){
 
 void RB_ImGUI_Draw(void){
     
-   // igShowDemoWindow(NULL);
-    // if(igBegin("imgui",NULL,0)){
-        
-    //     // ImVec2 imageSize = {64,64};
-    //     // ImVec2 uv1 = {0,0};
-    //     igImage(tr.images[tr.numImages -1]->descriptorIndex,(ImVec2){64,64}, (ImVec2) {0,0}, (ImVec2) {1,1}, (ImVec4) {1,1,1,1}, (ImVec4) {0,0,0,0});
-    //     static bool check;
-        
-    //     igCheckbox("checkbox", &check);
-    //     igText("%s %d","hello world",(int)check);
-    //     if(check){
-    //         for(int i = 0; i < 5; i++){
-    //             igPushID_Int(i);
-    //             igArrowButton("arrow",ImGuiDir_Down);
-    //             igSameLine(0,-1);
-    //             igText("%s %d","item", i);
-                
-        
-                
-    //             igPopID();
-    //         }
-            
-    //     }
-    // }
-    // igEnd();
-
     ImGuiIO* io = igGetIO();
     io->DisplaySize.x = glConfig.vidWidth;
     io->DisplaySize.y = glConfig.vidHeight;
@@ -180,10 +154,6 @@ void RB_ImGUI_Draw(void){
     RHI_UnmapBuffer(currentVB);
     RHI_UnmapBuffer(currentIB);
 
-    if(RHI_IsRenderingActive()){
-        RHI_EndRendering();
-    }
-
     RHI_CmdBeginBarrier();
     RHI_CmdTextureBarrier(backEnd.colorBuffer, RHI_ResourceState_RenderTargetBit);
     RHI_CmdEndBarrier();
@@ -191,9 +161,8 @@ void RB_ImGUI_Draw(void){
     RHI_RenderPass renderPass = {};
     renderPass.colorLoad = RHI_LoadOp_Load;
     renderPass.colorTexture = backEnd.colorBuffer;
-    RHI_BeginRendering(&renderPass);
-    RHI_CmdBeginDebugLabel("ImGUI RenderPass");
-    
+    RB_BeginRenderPass("ImGUI", &renderPass);
+
     RHI_CmdBindPipeline(ImGUIpipeline);
     RHI_CmdBindDescriptorSet(ImGUIpipeline, backEnd.descriptorSet);
     RHI_CmdBindVertexBuffers(&currentVB, 1);
@@ -237,8 +206,7 @@ void RB_ImGUI_Draw(void){
         globalVtxOffset += draw->VtxBuffer.Size;
 
     }
-    RHI_CmdEndDebugLabel();
-    RHI_EndRendering();
+    RB_EndRenderPass();
     
 }
 

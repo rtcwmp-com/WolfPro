@@ -27,6 +27,7 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 #include "tr_local.h"
+#include "../client/cl_imgui.h"
 
 backEndData_t   *backEndData;
 backEndState_t backEnd;
@@ -428,10 +429,6 @@ void RB_BeginDrawingView( void ) {
 	// 2D images again
 	backEnd.projection2D = qfalse;
 
-	//
-	// set the modelview matrix for the viewer
-	//
-	SetViewportAndScissor();
 
 	// ensures that depth writes are enabled for the depth clear
 	GL_State( GLS_DEFAULT );
@@ -549,11 +546,7 @@ void RB_BeginDrawingView( void ) {
 	// we will only draw a sun if there was sky rendered in this view
 	backEnd.skyRenderedThisView = qfalse;
 
-
-	if(RHI_IsRenderingActive()){
-		RHI_EndRendering();
-	}
-
+	RB_EndRenderPass();
 	// clip to the plane of the portal
 	if ( backEnd.viewParms.isPortal ) {
 		float plane[4];
@@ -595,7 +588,9 @@ void RB_BeginDrawingView( void ) {
 	Vector4Copy(clearColor, renderPass.color);
 	renderPass.depthLoad = (clearBits & GL_DEPTH_BUFFER_BIT)? RHI_LoadOp_Clear : RHI_LoadOp_Load; 
 	renderPass.colorLoad = (clearBits & GL_COLOR_BUFFER_BIT)? RHI_LoadOp_Clear : RHI_LoadOp_Load; 
-	RHI_BeginRendering(&renderPass);
+	RB_BeginRenderPass("3D", &renderPass);
+
+	SetViewportAndScissor();
 	
 }
 
@@ -813,9 +808,6 @@ void    RB_SetGL2D( void ) {
 	backEnd.refdef.time = ri.Milliseconds();
 	backEnd.refdef.floatTime = backEnd.refdef.time * 0.001f;
 
-	RHI_CmdSetScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
-	RHI_CmdSetViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight, 0.0f, 1.0f );
-
 	float w = glConfig.vidWidth;
 	float h = glConfig.vidHeight;
 	
@@ -828,6 +820,8 @@ void    RB_SetGL2D( void ) {
 	};
 	
 	vec4_t zeroPlane = {0};
+
+	RB_EndRenderPass();
 	RB_UploadSceneView(projectionMatrix, zeroPlane);
 
 	float modelViewMatrix[16] = {
@@ -839,7 +833,14 @@ void    RB_SetGL2D( void ) {
 
 	memcpy(backEnd.or.modelMatrix, modelViewMatrix, sizeof(backEnd.or.modelMatrix));
 
-	//@TODO: start renderpass
+	RHI_RenderPass renderPass = {};
+	renderPass.colorLoad = RHI_LoadOp_Load;
+	renderPass.colorTexture = backEnd.colorBuffer;
+
+	RB_BeginRenderPass("2D", &renderPass);
+
+	RHI_CmdSetScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+	RHI_CmdSetViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight, 0.0f, 1.0f );
 
 }
 
@@ -1358,27 +1359,21 @@ const void  *RB_EndFrame( const void *data ) {
 
 	GLimp_LogComment( "***************** RB_EndFrame *****************\n\n\n" );
 
-	// RHI_CmdBeginBarrier();
-	// RHI_CmdTextureBarrier(backEnd.swapChainTextures[backEnd.swapChainImageIndex], RHI_ResourceState_RenderTargetBit);
-	// RHI_CmdEndBarrier();
 
-	// RHI_RenderPass renderPass = {};
-	// Vector4Set(renderPass.color, 1.0f, 1.0f, 0.0f, 1.0f);
-	
-	// renderPass.colorLoad = RHI_LoadOp_Clear;
-	// renderPass.colorTexture = backEnd.swapChainTextures[backEnd.swapChainImageIndex];
-
-	// RHI_BeginRendering(&renderPass);
+	if(igBegin("Renderpasses", NULL, 0)){
+		int f = (backEnd.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT;
+		for(int i = 0; i < backEnd.renderPassCount[f]; i++){
+		
+			igText("%s", backEnd.renderPasses[f][i].name);
+		}
+		
+	}
+	igEnd();
 	RB_ImGUI_Draw();
 	
 
-	if(RHI_IsRenderingActive()){
-		RHI_EndRendering();
-	}
-	
-
 	RB_DrawGamma(backEnd.swapChainTextures[backEnd.swapChainImageIndex]);
-
+	RB_EndRenderPass();
 
 	RHI_CmdBeginBarrier();
 	RHI_CmdTextureBarrier(backEnd.swapChainTextures[backEnd.swapChainImageIndex], RHI_ResourceState_PresentBit);
@@ -1601,6 +1596,7 @@ void RB_BeginRenderPass(const char* name, const RHI_RenderPass* rp){
 	if(RHI_IsRenderingActive()){
 		RB_EndRenderPass();
 	}
+	RHI_CmdBeginDebugLabel(name);
 	RHI_BeginRendering(rp);
 	
 	if(backEnd.renderPassCount[backEnd.currentFrameIndex] < MAX_RENDERPASSES){
@@ -1615,12 +1611,14 @@ void RB_BeginRenderPass(const char* name, const RHI_RenderPass* rp){
 		currentPass->nameHash = nameHash;
 	}
 
-	RHI_CmdBeginDebugLabel(name);
+	
 
 }
 
 void RB_EndRenderPass(void){
 	//RHI_CmdEndDurationQuery(handle);
-	RHI_CmdEndDebugLabel();
-	RHI_EndRendering();
+	if(RHI_IsRenderingActive()){
+		RHI_EndRendering();
+		RHI_CmdEndDebugLabel();
+	}
 }

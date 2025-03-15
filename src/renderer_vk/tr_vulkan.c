@@ -517,9 +517,14 @@ static void CreateDevice()
         "VK_KHR_swapchain"
     };
 
+    VkPhysicalDeviceVulkan12Features vk12f = {};
+    vk12f.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+    vk12f.hostQueryReset = VK_TRUE;
+
     VkPhysicalDeviceTimelineSemaphoreFeatures timelineFeatures = {};
     timelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
     timelineFeatures.timelineSemaphore = VK_TRUE;
+    timelineFeatures.pNext = &vk12f;
 
     VkPhysicalDeviceVulkan13Features vk13f = {};
     vk13f.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
