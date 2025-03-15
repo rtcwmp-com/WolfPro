@@ -1240,5 +1240,7 @@ void CRC32_End( unsigned int* crc );
 // relative to window's client rectangle
 void	Sys_GetCursorPosition( int* x, int* y );
 
+qbool Sys_IsMinimized(void);
+
 #endif // _QCOMMON_H_
 

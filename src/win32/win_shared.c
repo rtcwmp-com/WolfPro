@@ -130,3 +130,7 @@ char *Sys_GetCurrentUser( void ) {
 
 	return s_userName;
 }
+
+qbool Sys_IsMinimized(void){
+	return !!IsIconic(vk_wv.hWnd);
+}

@@ -2657,6 +2657,10 @@ int CL_ScaledMilliseconds( void ) {
 	return Sys_Milliseconds() * com_timescale->value;
 }
 
+qbool CL_IsRecordingVideo(void){
+	return !!cl_avidemo->integer;
+}
+
 /*
 ============
 CL_InitRef
@@ -2707,6 +2711,8 @@ void CL_InitRef( void ) {
 	ri.CIN_UploadCinematic = CIN_UploadCinematic;
 	ri.CIN_PlayCinematic = CIN_PlayCinematic;
 	ri.CIN_RunCinematic = CIN_RunCinematic;
+
+	ri.IsRecordingVideo = CL_IsRecordingVideo;
 
 	ret = GetRefAPI( REF_API_VERSION, &ri );
 

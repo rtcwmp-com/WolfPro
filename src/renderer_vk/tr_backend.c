@@ -1402,12 +1402,8 @@ const void  *RB_EndFrame( const void *data ) {
 	RHI_SubmitGraphicsDesc_Signal(&graphicsDesc, backEnd.renderCompleteBinary, 0);
 	RHI_SubmitGraphicsDesc_Signal(&graphicsDesc, backEnd.renderComplete, backEnd.renderCompleteCounter);
 	RHI_SubmitGraphicsDesc_Wait(&graphicsDesc, backEnd.imageAcquiredBinary);
-
-
-	
 	RHI_SubmitGraphics(&graphicsDesc);
 	RHI_SubmitPresent(backEnd.renderCompleteBinary, backEnd.swapChainImageIndex);
-	
 	
 	RHI_EndFrame();
 	
@@ -1427,6 +1423,9 @@ smp extensions, or asynchronously by another thread.
 ====================
 */
 void RB_ExecuteRenderCommands( const void *data ) {
+	if(Sys_IsMinimized() && !ri.IsRecordingVideo()){
+		return;
+	}
 	int t1, t2;
 
 	t1 = ri.Milliseconds();

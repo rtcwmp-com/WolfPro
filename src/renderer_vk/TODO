@@ -1,3 +1,28 @@
 2/16/25 disconnect should shutdown the renderer
 
-revisit vsync when opengl is separated
+
+remove r_cache/r_cacheshaders
+
+handle swapchain becoming invalid (minimize)
+keep rendering when recording videos
+filter GPU performance of all named render passes
+nuke the GL window
+test & validate full-screen mode
+generate all possible samplers (repeat, clamp) x (linear, anisotropic) and assign them to our main game texture descriptor set
+WIP v-sync (better sleep method for modes with no queue discard)
+only call CmdBindVertexBuffers when the buffer bindings actually change
+proper upload manager for textures (linear allocation + CPU waits are moved out)
+sort draw surfaces by pipeline ID of shader stage 0
+multi-stage shaders
+add support for (and use) an extra clip plane for portal/mirror views
+fog
+dynamic lights
+compute pipelines
+Dear ImGUI input routing using a dedicated key catcher so you don't need to have the console down
+
+
+vid_restart variations:
+    vid_restart -> full
+    full-screen toggle -> full
+    CGame load/unload -> partial
+    Client exit -> full
