@@ -1152,33 +1152,44 @@ rhiDurationQuery EncodeDurationQuery(uint32_t frameIndex, uint32_t durationQuery
 rhiDurationQuery RHI_CmdBeginDurationQuery(void)
 {
     assert(vk.durationQueryCount[vk.currentFrameIndex] < MAX_DURATION_QUERIES);
-
+    if(vk.durationQueryCount[vk.currentFrameIndex] == 0){
+        vk.durationQueryCount[vk.currentFrameIndex]++;
+    }
     uint32_t durationQueryIndex = vk.durationQueryCount[vk.currentFrameIndex]++;
     rhiDurationQuery durationQuery = EncodeDurationQuery(vk.currentFrameIndex, durationQueryIndex);
     vkCmdWriteTimestamp2(vk.activeCommandBuffer, VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, vk.queryPool[vk.currentFrameIndex], durationQueryIndex * 2);
+    vk.query[vk.currentFrameIndex][durationQueryIndex] |= 1;
     return durationQuery;
 }
 
 void RHI_CmdEndDurationQuery(rhiDurationQuery handle)
 {
-    
+    if(handle.h == 0){
+        return;
+    }
     DurationQuery query = DecodeDurationQuery(handle);
     assert(query.frameIndex == vk.currentFrameIndex);
     assert(query.durationQueryIndex < vk.durationQueryCount[vk.currentFrameIndex]);
     vkCmdWriteTimestamp2(vk.activeCommandBuffer, VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT, vk.queryPool[vk.currentFrameIndex], query.durationQueryIndex * 2 + 1);
+    vk.query[query.frameIndex][query.durationQueryIndex] |= 2;
 }
 
 uint32_t RHI_GetDurationUs(rhiDurationQuery handle){
+    if(handle.h == 0){
+        return 0;
+    }
     DurationQuery query = DecodeDurationQuery(handle);
     assert(query.durationQueryIndex < MAX_DURATION_QUERIES);
+    assert(vk.query[query.frameIndex][query.durationQueryIndex] == 3);
     //assert(query.frameIndex == (vk.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT); //@TODO renderdoc not asserting
     //for previous frame
     //return actual duration in us
     uint64_t timestamps[2];
+    
     vkGetQueryPoolResults(
         vk.device,
         vk.queryPool[query.frameIndex],
-        query.durationQueryIndex,
+        query.durationQueryIndex * 2,
         2,
         2 * sizeof(uint64_t),
         timestamps,
@@ -1191,6 +1202,7 @@ uint32_t RHI_GetDurationUs(rhiDurationQuery handle){
 
 void RHI_DurationQueryReset(void){
     vkResetQueryPool(vk.device, vk.queryPool[vk.currentFrameIndex],0, MAX_DURATION_QUERIES);
+    memset(vk.query[vk.currentFrameIndex], 0, sizeof(vk.query[vk.currentFrameIndex]));
 }
 
 void RHI_BeginBufferUpload()

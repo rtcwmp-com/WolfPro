@@ -1359,13 +1359,26 @@ const void  *RB_EndFrame( const void *data ) {
 
 	GLimp_LogComment( "***************** RB_EndFrame *****************\n\n\n" );
 
+	
 
+
+	int f = (backEnd.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT;
+	for(int i = 0; i < backEnd.renderPassCount[f]; i++){
+		renderPass *currentRenderPass = &backEnd.renderPasses[f][i];
+		currentRenderPass->durationUs = RHI_GetDurationUs(currentRenderPass->query);
+	}
+	
+	uint32_t duration = RHI_GetDurationUs(backEnd.frameDuration[(backEnd.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT]);
+	
 	if(igBegin("Renderpasses", NULL, 0)){
-		int f = (backEnd.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT;
+		int32_t renderPassDuration = 0;
+		igText("Entire Frame %d", (int)duration);
 		for(int i = 0; i < backEnd.renderPassCount[f]; i++){
-		
-			igText("%s", backEnd.renderPasses[f][i].name);
+			renderPass *currentRenderPass = &backEnd.renderPasses[f][i];
+			igText("%s %d", currentRenderPass->name, (int)currentRenderPass->durationUs);
+			renderPassDuration += currentRenderPass->durationUs;
 		}
+		igText("Overhead %d", (int)duration - (int)renderPassDuration);
 		
 	}
 	igEnd();
@@ -1382,10 +1395,6 @@ const void  *RB_EndFrame( const void *data ) {
 	
 	RHI_CmdEndDurationQuery(backEnd.frameDuration[backEnd.currentFrameIndex]);
 
-	uint32_t duration = RHI_GetDurationUs(backEnd.frameDuration[(backEnd.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT]);
-	Sys_DebugPrintf("duration: %.03f\n", duration/1000.0f);
-
-	
 	RHI_EndCommandBuffer();
 
 	backEnd.renderCompleteCounter++;
@@ -1616,8 +1625,12 @@ void RB_BeginRenderPass(const char* name, const RHI_RenderPass* rp){
 }
 
 void RB_EndRenderPass(void){
-	//RHI_CmdEndDurationQuery(handle);
+	
 	if(RHI_IsRenderingActive()){
+		assert(backEnd.renderPassCount[backEnd.currentFrameIndex] > 0);
+		uint32_t i = backEnd.renderPassCount[backEnd.currentFrameIndex] - 1;
+		renderPass *currentPass = &backEnd.renderPasses[backEnd.currentFrameIndex][i];
+		RHI_CmdEndDurationQuery(currentPass->query);
 		RHI_EndRendering();
 		RHI_CmdEndDebugLabel();
 	}
