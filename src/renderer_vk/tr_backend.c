@@ -1423,9 +1423,12 @@ smp extensions, or asynchronously by another thread.
 ====================
 */
 void RB_ExecuteRenderCommands( const void *data ) {
-	// if(Sys_IsMinimized() && !ri.IsRecordingVideo()){
-	// 	return;
-	// }
+	if(Sys_IsMinimized()){
+		if(ri.IsRecordingVideo()){
+			ri.Printf(PRINT_WARNING, "Recording video while minimized is not supported\n");
+		}
+		return;
+	}
 	int t1, t2;
 
 	t1 = ri.Milliseconds();

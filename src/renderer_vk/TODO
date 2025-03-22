@@ -6,8 +6,6 @@ Dear ImGUI input routing using a dedicated key catcher so you don't need to have
 
 
 
-handle swapchain becoming invalid (minimize)
-keep rendering when recording videos
 filter GPU performance of all named render passes
 nuke the GL window
 test & validate full-screen mode

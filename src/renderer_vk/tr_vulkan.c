@@ -856,7 +856,6 @@ static void CreateSwapChain()
 }
 
 void RecreateSwapchain(void){
-    Sys_DebugPrintf("RecreateSwapChain\n");
     vkDeviceWaitIdle(vk.device);
     vkDestroySwapchainKHR(vk.device, vk.swapChain, NULL);
     for(int i = 0; i < vk.swapChainImageCount; i++){
