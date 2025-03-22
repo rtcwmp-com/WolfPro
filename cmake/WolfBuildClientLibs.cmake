@@ -1,59 +1,59 @@
 #-----------------------------------------------------------------
 # Build Renderer
 #-----------------------------------------------------------------
-if(FEATURE_RENDERER_GL1)
-	add_library(renderer STATIC ${RENDERER_FILES} ${RENDERER_COMMON})
 
-	target_link_libraries(renderer renderer_gl1_libraries renderer_libraries)
-	target_include_directories(renderer PRIVATE src/renderer)
+add_library(renderer STATIC ${RENDERER_FILES} ${RENDERER_COMMON})
 
-	if(NOT MSVC)
-		target_link_libraries(renderer m)
-	endif()
+target_link_libraries(renderer renderer_gl1_libraries renderer_libraries)
+target_include_directories(renderer PRIVATE src/renderer)
 
-	target_link_libraries(client_libraries INTERFACE renderer)
+if(NOT MSVC)
+	target_link_libraries(renderer m)
 endif()
+
+target_link_libraries(client_libraries_gl INTERFACE renderer)
+
 
 #-----------------------------------------------------------------
 # Build Vulkan Renderer
 #-----------------------------------------------------------------
-if(FEATURE_RENDERER_VULKAN)
-	add_library(renderer_vk STATIC ${RENDERER_VK_FILES} ${RENDERER_COMMON})
-	add_library(vk_vma_alloc STATIC ${RENDERER_VK_VMA_FILES})
-	target_include_directories(vk_vma_alloc PRIVATE ${Vulkan_INCLUDE_DIR})
-	add_library(cimgui STATIC ${RENDERER_CIMGUI_FILES})
-	target_include_directories(cimgui PRIVATE src/cimgui)
 
-	target_link_libraries(renderer_vk renderer_vk_libraries renderer_gl1_libraries renderer_libraries vk_vma_alloc)
-	target_include_directories(renderer_vk PRIVATE src/renderer_vk)
+add_library(renderer_vk STATIC ${RENDERER_VK_FILES} ${RENDERER_COMMON})
+add_library(vk_vma_alloc STATIC ${RENDERER_VK_VMA_FILES})
+target_include_directories(vk_vma_alloc PRIVATE ${Vulkan_INCLUDE_DIR})
+add_library(cimgui STATIC ${RENDERER_CIMGUI_FILES})
+target_include_directories(cimgui PRIVATE src/cimgui)
 
-	set_target_properties(renderer_vk PROPERTIES
-		COMPILE_DEFINITIONS "${WOLF_COMPILE_DEF}"
-		RUNTIME_OUTPUT_DIRECTORY "${WOLF_OUTPUT_DIR}"
-		RUNTIME_OUTPUT_DIRECTORY_DEBUG "${WOLF_OUTPUT_DIR}"
-		RUNTIME_OUTPUT_DIRECTORY_RELEASE "${WOLF_OUTPUT_DIR}"
-	)
-	set_target_properties(vk_vma_alloc PROPERTIES
-		COMPILE_DEFINITIONS "${WOLF_COMPILE_DEF}"
-		RUNTIME_OUTPUT_DIRECTORY "${WOLF_OUTPUT_DIR}"
-		RUNTIME_OUTPUT_DIRECTORY_DEBUG "${WOLF_OUTPUT_DIR}"
-		RUNTIME_OUTPUT_DIRECTORY_RELEASE "${WOLF_OUTPUT_DIR}"
-	)
-	message(STATUS "Compile defs: " ${WOLF_COMPILE_DEF})
-	set_target_properties(cimgui PROPERTIES
-		COMPILE_DEFINITIONS "${WOLF_COMPILE_DEF}"
-		RUNTIME_OUTPUT_DIRECTORY "${WOLF_OUTPUT_DIR}"
-		RUNTIME_OUTPUT_DIRECTORY_DEBUG "${WOLF_OUTPUT_DIR}"
-		RUNTIME_OUTPUT_DIRECTORY_RELEASE "${WOLF_OUTPUT_DIR}"
-	)
+target_link_libraries(renderer_vk renderer_vk_libraries renderer_libraries vk_vma_alloc)
+target_include_directories(renderer_vk PRIVATE src/renderer_vk)
+
+set_target_properties(renderer_vk PROPERTIES
+	COMPILE_DEFINITIONS "${WOLF_COMPILE_DEF}"
+	RUNTIME_OUTPUT_DIRECTORY "${WOLF_OUTPUT_DIR}"
+	RUNTIME_OUTPUT_DIRECTORY_DEBUG "${WOLF_OUTPUT_DIR}"
+	RUNTIME_OUTPUT_DIRECTORY_RELEASE "${WOLF_OUTPUT_DIR}"
+)
+set_target_properties(vk_vma_alloc PROPERTIES
+	COMPILE_DEFINITIONS "${WOLF_COMPILE_DEF}"
+	RUNTIME_OUTPUT_DIRECTORY "${WOLF_OUTPUT_DIR}"
+	RUNTIME_OUTPUT_DIRECTORY_DEBUG "${WOLF_OUTPUT_DIR}"
+	RUNTIME_OUTPUT_DIRECTORY_RELEASE "${WOLF_OUTPUT_DIR}"
+)
+message(STATUS "Compile defs: " ${WOLF_COMPILE_DEF})
+set_target_properties(cimgui PROPERTIES
+	COMPILE_DEFINITIONS "${WOLF_COMPILE_DEF}"
+	RUNTIME_OUTPUT_DIRECTORY "${WOLF_OUTPUT_DIR}"
+	RUNTIME_OUTPUT_DIRECTORY_DEBUG "${WOLF_OUTPUT_DIR}"
+	RUNTIME_OUTPUT_DIRECTORY_RELEASE "${WOLF_OUTPUT_DIR}"
+)
 
 
-	if(NOT MSVC)
-		target_link_libraries(renderer_vk m)
-	endif()
-
-	target_link_libraries(client_libraries INTERFACE renderer_vk)
+if(NOT MSVC)
+	target_link_libraries(renderer_vk m)
 endif()
+
+target_link_libraries(client_libraries_vk INTERFACE renderer_vk)
+
 
 #-----------------------------------------------------------------
 # Build JPEG

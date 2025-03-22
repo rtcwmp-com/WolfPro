@@ -51,9 +51,6 @@ option(FORCE_DEBUG				"Force enable debug macros"								OFF)
 option(ENABLE_ASAN				"Enable AddressSanitizer on clang"						OFF)
 option(ENABLE_MULTI_BUILD		"Enable binary names to include arch"					ON)
 
-option(FEATURE_RENDERER_VULKAN		"Enable vulkan renderer"					ON)
-option(FEATURE_RENDERER_GL1		"Enable opengl1 renderer"					OFF)
-
 cmake_dependent_option(FEATURE_WINDOWS_CONSOLE	"Build win32 executables with Windows console"	OFF "WIN32" OFF)
 
 set(INSTALL_DEFAULT_BASEDIR "" CACHE STRING "")

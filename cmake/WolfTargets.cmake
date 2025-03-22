@@ -4,7 +4,8 @@
 add_library(shared_libraries INTERFACE)
 
 # All client only libraries
-add_library(client_libraries INTERFACE)
+add_library(client_libraries_vk INTERFACE)
+add_library(client_libraries_gl INTERFACE)
 
 # All server only libraries
 add_library(server_libraries INTERFACE)

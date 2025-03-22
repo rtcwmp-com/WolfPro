@@ -2711,8 +2711,9 @@ void CL_InitRef( void ) {
 	ri.CIN_UploadCinematic = CIN_UploadCinematic;
 	ri.CIN_PlayCinematic = CIN_PlayCinematic;
 	ri.CIN_RunCinematic = CIN_RunCinematic;
-
+	#ifdef RTCW_VULKAN
 	ri.IsRecordingVideo = CL_IsRecordingVideo;
+	#endif
 
 	ret = GetRefAPI( REF_API_VERSION, &ri );
 

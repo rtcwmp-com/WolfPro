@@ -3,9 +3,9 @@
 #-----------------------------------------------------------------
 
 if(WIN32)
-	add_executable(wolfded WIN32 ${COMMON_SRC} ${SERVER_SRC} ${PLATFORM_SHARED_SRC} ${PLATFORM_SERVER_SRC})
+	add_executable(wolfded WIN32 ${COMMON_SRC} ${SERVER_SRC})
 else()
-	add_executable(wolfded ${COMMON_SRC} ${SERVER_SRC} ${PLATFORM_SHARED_SRC} ${PLATFORM_SERVER_SRC})
+	add_executable(wolfded ${COMMON_SRC} ${SERVER_SRC})
 	target_link_options(wolfded PRIVATE "LINKER:-melf_i386")
 endif()
 target_link_libraries(wolfded

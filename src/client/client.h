@@ -633,7 +633,7 @@ void CL_Netchan_Transmit( netchan_t *chan, msg_t* msg ); //int length, const byt
 void CL_Netchan_TransmitNextFragment( netchan_t *chan );
 qboolean CL_Netchan_Process( netchan_t *chan, msg_t *msg );
 
-
+#ifdef RTCW_VULKAN
 //cl_imgui.c
 void CL_ImGUI_Init(void);
 void CL_ImGUI_Shutdown(void);
@@ -641,4 +641,12 @@ void CL_ImGUI_KeyEvent(int k, qboolean down);
 void CL_ImGUI_CharEvent(int key);
 void CL_ImGUI_MouseEvent(int dx, int dy, int time);
 void CL_ImGUI_Frame(void);
+#else
+inline void CL_ImGUI_Init(void) {}
+inline void CL_ImGUI_Shutdown(void) {}
+inline void CL_ImGUI_KeyEvent(int k, qboolean down) {}
+inline void CL_ImGUI_CharEvent(int key) {}
+inline void CL_ImGUI_MouseEvent(int dx, int dy, int time) {}
+inline void CL_ImGUI_Frame(void) {}
+#endif
 #endif
