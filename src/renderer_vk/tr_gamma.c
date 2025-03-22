@@ -57,6 +57,7 @@ void RB_InitGamma(rhiTexture texture, rhiSampler sampler){
 }
 
 void RB_DrawGamma(rhiTexture swapChainImage){
+    RB_EndRenderPass();
 
     RHI_CmdBeginBarrier();
     RHI_CmdTextureBarrier(swapChainImage, RHI_ResourceState_RenderTargetBit);

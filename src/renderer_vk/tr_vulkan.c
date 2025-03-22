@@ -520,24 +520,15 @@ static void CreateDevice()
     VkPhysicalDeviceVulkan12Features vk12f = {};
     vk12f.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
     vk12f.hostQueryReset = VK_TRUE;
-
-    VkPhysicalDeviceTimelineSemaphoreFeatures timelineFeatures = {};
-    timelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
-    timelineFeatures.timelineSemaphore = VK_TRUE;
-    timelineFeatures.pNext = &vk12f;
+    vk12f.descriptorBindingUpdateUnusedWhilePending = VK_TRUE;
+    vk12f.descriptorBindingPartiallyBound = VK_TRUE;
+    vk12f.timelineSemaphore = VK_TRUE;
 
     VkPhysicalDeviceVulkan13Features vk13f = {};
     vk13f.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
     vk13f.synchronization2 = VK_TRUE;
     vk13f.dynamicRendering = VK_TRUE;
-    vk13f.pNext = &timelineFeatures;
-
-    VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures = {};
-    indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
-    indexingFeatures.descriptorBindingUpdateUnusedWhilePending = VK_TRUE;
-    indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
-    indexingFeatures.descriptorBindingUpdateUnusedWhilePending = VK_TRUE;
-    indexingFeatures.pNext = &vk13f;
+    vk13f.pNext = &vk12f;
 
     // @TODO: copy over results from vk.deviceFeatures when they're optional
     VkPhysicalDeviceFeatures2 features2 = {};
@@ -546,7 +537,7 @@ static void CreateDevice()
     features2.features.samplerAnisotropy = VK_TRUE;
     //features2.features.shaderClipDistance = VK_TRUE;
     //features2.pNext = &featuresExt;
-    features2.pNext = &indexingFeatures;
+    features2.pNext = &vk13f;
 
     VkDeviceCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -681,7 +672,7 @@ static void CreateSwapChain()
     if(glConfig.vidWidth < caps.minImageExtent.width ||
        glConfig.vidWidth > caps.maxImageExtent.width ||
        glConfig.vidHeight < caps.minImageExtent.height ||
-       glConfig.vidHeight > caps.minImageExtent.height)
+       glConfig.vidHeight > caps.maxImageExtent.height)
     {
         ri.Error(ERR_FATAL, "Can't create a swap chain of the requested dimensions (%d x %d)\n",
                  glConfig.vidWidth, glConfig.vidHeight);
@@ -862,6 +853,14 @@ static void CreateSwapChain()
     //     SetObjectName(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)view, "ImageView");
     //     vk.swapChainImageViews[i] = view;
     // }
+}
+
+void RecreateSwapchain(void){
+    vkDeviceWaitIdle(vk.device);
+    vkDestroySwapchainKHR(vk.device, vk.swapChain, NULL);
+    // vk.swapChainImages[i] = images[i];
+    // vk.swapChainRenderTargets[i] = RHI_CreateTexture(&rtDesc);
+    CreateSwapChain();
 }
 
 

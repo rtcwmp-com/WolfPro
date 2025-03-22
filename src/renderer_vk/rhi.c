@@ -737,15 +737,18 @@ void RHI_AcquireNextImage(uint32_t* outImageIndex, rhiSemaphore signalSemaphore)
     assert(signal->signaled == qfalse);
 
     const VkResult r = vkAcquireNextImageKHR(vk.device, vk.swapChain, UINT64_MAX, signal->semaphore, VK_NULL_HANDLE, outImageIndex); 
-    // @TODO: when r is VK_ERROR_OUT_OF_DATE_KHR, recreate the swap chain
     if(r == VK_SUCCESS || r == VK_SUBOPTIMAL_KHR)
     {
         signal->signaled = qtrue;
     }
     else
     {
-        //Check(r, "vkAcquireNextImageKHR");
         signal->signaled = qfalse;
+        if(r == VK_ERROR_OUT_OF_DATE_KHR){
+            RecreateSwapchain();
+        }else{
+            Check(r, "vkAcquireNextImageKHR");
+        }
     }
 }
 
@@ -818,7 +821,13 @@ void RHI_SubmitPresent(rhiSemaphore waitSemaphore, uint32_t swapChainImageIndex)
     assert(semaphore->signaled == qtrue);
     semaphore->signaled = qfalse;
 
-    vkQueuePresentKHR(vk.queues.present, &presentInfo);    
+    const VkResult r = vkQueuePresentKHR(vk.queues.present, &presentInfo);  
+    if(r == VK_ERROR_OUT_OF_DATE_KHR){
+        RecreateSwapchain();
+    }else if(r != VK_SUCCESS && r != VK_SUBOPTIMAL_KHR){
+        Check(r, "vkQueuePresentKHR");
+    }
+
 }
 
 rhiCommandBuffer RHI_CreateCommandBuffer( qboolean longLifetime)

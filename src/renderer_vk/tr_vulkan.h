@@ -290,5 +290,6 @@ VkShaderStageFlags GetVkShaderStageFlagsFromShader(RHI_Shader stage);
 VkBlendFactor GetSourceColorBlendFactor(unsigned int bits);
 VkBlendFactor GetDestinationColorBlendFactor(unsigned int bits);
 VkFormat GetVkFormatFromVertexFormat(RHI_VertexFormat format, uint32_t elementCount);
+void RecreateSwapchain(void);
 
 #endif
