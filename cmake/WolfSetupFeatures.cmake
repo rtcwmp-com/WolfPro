@@ -5,6 +5,28 @@
 # Helper to src folder
 set(SRC "${PROJECT_SOURCE_DIR}/src")
 
+if(FEATURE_WINDOWS_CONSOLE AND WIN32)
+	set(WOLF_COMPILE_DEF "USE_ICON;USE_WINDOWS_CONSOLE;BOTLIB;WIN32")
+	message("FEATURE_WINDOWS_CONSOLE AND WIN32")
+elseif(CMAKE_CROSSCOMPILE)
+	set(CMAKE_RC_FLAGS "/I ${CMAKE_SOURCE_DIR}/deps/xwin/sdk/include/um /I ${CMAKE_SOURCE_DIR}/deps/xwin/sdk/include/shared")
+	message("CMAKE_CROSSCOMPILE")
+	set(WOLF_COMPILE_DEF "USE_ICON;BOTLIB;__i386__")
+else()
+	set(WOLF_COMPILE_DEF "USE_ICON;BOTLIB;__i386__")
+	if(FEATURE_RENDERER_VULKAN)
+		LIST(APPEND WOLF_COMPILE_DEF "RTCW_VULKAN")
+	endif()
+	if(CMAKE_BUILD_TYPE MATCHES "Debug")
+		message(STATUS "Using DEBUG")
+		LIST(APPEND WOLF_COMPILE_DEF "_DEBUG;DEBUG")
+	else()
+		message(STATUS "Using NDEBUG")
+		LIST(APPEND WOLF_COMPILE_DEF "NDEBUG")
+	endif()
+		
+endif()
+
 #-----------------------------------------------------------------
 # Client features
 #-----------------------------------------------------------------

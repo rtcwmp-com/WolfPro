@@ -27,6 +27,26 @@ if(FEATURE_RENDERER_VULKAN)
 	target_link_libraries(renderer_vk renderer_vk_libraries renderer_gl1_libraries renderer_libraries vk_vma_alloc)
 	target_include_directories(renderer_vk PRIVATE src/renderer_vk)
 
+	set_target_properties(renderer_vk PROPERTIES
+		COMPILE_DEFINITIONS "${WOLF_COMPILE_DEF}"
+		RUNTIME_OUTPUT_DIRECTORY "${WOLF_OUTPUT_DIR}"
+		RUNTIME_OUTPUT_DIRECTORY_DEBUG "${WOLF_OUTPUT_DIR}"
+		RUNTIME_OUTPUT_DIRECTORY_RELEASE "${WOLF_OUTPUT_DIR}"
+	)
+	set_target_properties(vk_vma_alloc PROPERTIES
+		COMPILE_DEFINITIONS "${WOLF_COMPILE_DEF}"
+		RUNTIME_OUTPUT_DIRECTORY "${WOLF_OUTPUT_DIR}"
+		RUNTIME_OUTPUT_DIRECTORY_DEBUG "${WOLF_OUTPUT_DIR}"
+		RUNTIME_OUTPUT_DIRECTORY_RELEASE "${WOLF_OUTPUT_DIR}"
+	)
+	message(STATUS "Compile defs: " ${WOLF_COMPILE_DEF})
+	set_target_properties(cimgui PROPERTIES
+		COMPILE_DEFINITIONS "${WOLF_COMPILE_DEF}"
+		RUNTIME_OUTPUT_DIRECTORY "${WOLF_OUTPUT_DIR}"
+		RUNTIME_OUTPUT_DIRECTORY_DEBUG "${WOLF_OUTPUT_DIR}"
+		RUNTIME_OUTPUT_DIRECTORY_RELEASE "${WOLF_OUTPUT_DIR}"
+	)
+
 
 	if(NOT MSVC)
 		target_link_libraries(renderer_vk m)

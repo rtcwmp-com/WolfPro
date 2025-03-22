@@ -744,7 +744,7 @@ void RHI_AcquireNextImage(uint32_t* outImageIndex, rhiSemaphore signalSemaphore)
     }
     else
     {
-        Check(r, "vkAcquireNextImageKHR");
+        //Check(r, "vkAcquireNextImageKHR");
         signal->signaled = qfalse;
     }
 }
@@ -752,7 +752,6 @@ void RHI_AcquireNextImage(uint32_t* outImageIndex, rhiSemaphore signalSemaphore)
 
 void RHI_SubmitGraphics(const rhiSubmitGraphicsDesc *graphicsDesc)
 {
-
     VkTimelineSemaphoreSubmitInfo timelineInfo;
     timelineInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
     timelineInfo.pNext = NULL;
@@ -819,7 +818,7 @@ void RHI_SubmitPresent(rhiSemaphore waitSemaphore, uint32_t swapChainImageIndex)
     assert(semaphore->signaled == qtrue);
     semaphore->signaled = qfalse;
 
-    VK(vkQueuePresentKHR(vk.queues.present, &presentInfo));    
+    vkQueuePresentKHR(vk.queues.present, &presentInfo);    
 }
 
 rhiCommandBuffer RHI_CreateCommandBuffer( qboolean longLifetime)

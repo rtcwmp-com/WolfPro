@@ -1,7 +1,10 @@
 2/16/25 disconnect should shutdown the renderer
 
+fix NDEBUG in release build
+build both clients (opengl and vulkan)
+Dear ImGUI input routing using a dedicated key catcher so you don't need to have the console down
 
-remove r_cache/r_cacheshaders
+
 
 handle swapchain becoming invalid (minimize)
 keep rendering when recording videos
@@ -18,7 +21,7 @@ add support for (and use) an extra clip plane for portal/mirror views
 fog
 dynamic lights
 compute pipelines
-Dear ImGUI input routing using a dedicated key catcher so you don't need to have the console down
+remove r_cache/r_cacheshaders
 
 
 vid_restart variations:
