@@ -670,12 +670,12 @@ static void CreateSwapChain()
     VK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk.physicalDevice, vk.surface, &caps));
 
     if(glConfig.vidWidth < caps.minImageExtent.width ||
-       glConfig.vidWidth > caps.maxImageExtent.width ||
-       glConfig.vidHeight < caps.minImageExtent.height ||
-       glConfig.vidHeight > caps.maxImageExtent.height)
+      glConfig.vidWidth > caps.maxImageExtent.width ||
+      glConfig.vidHeight < caps.minImageExtent.height ||
+      glConfig.vidHeight > caps.maxImageExtent.height)
     {
-        ri.Error(ERR_FATAL, "Can't create a swap chain of the requested dimensions (%d x %d)\n",
-                 glConfig.vidWidth, glConfig.vidHeight);
+       ri.Error(ERR_FATAL, "Can't create a swap chain of the requested dimensions (%d x %d)\n",
+                glConfig.vidWidth, glConfig.vidHeight);
     }
 
     uint32_t formatCount;
@@ -856,10 +856,15 @@ static void CreateSwapChain()
 }
 
 void RecreateSwapchain(void){
+    Sys_DebugPrintf("RecreateSwapChain\n");
     vkDeviceWaitIdle(vk.device);
     vkDestroySwapchainKHR(vk.device, vk.swapChain, NULL);
-    // vk.swapChainImages[i] = images[i];
-    // vk.swapChainRenderTargets[i] = RHI_CreateTexture(&rtDesc);
+    for(int i = 0; i < vk.swapChainImageCount; i++){
+        Texture *texture = GET_TEXTURE(vk.swapChainRenderTargets[i]);
+        vkDestroyImageView(vk.device,texture->view,NULL);
+        Pool_Remove(&vk.texturePool, vk.swapChainRenderTargets[i].h);
+    }
+    
     CreateSwapChain();
 }
 

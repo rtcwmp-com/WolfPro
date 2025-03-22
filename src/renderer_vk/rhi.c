@@ -1,13 +1,6 @@
 #include "rhi.h"
 #include "tr_vulkan.h"
 
-#define GET_SEMAPHORE(handle) ((Semaphore*)Pool_Get(&vk.semaphorePool, handle.h))
-#define GET_TEXTURE(handle) ((Texture*)Pool_Get(&vk.texturePool, handle.h))
-#define GET_BUFFER(handle) ((Buffer*)Pool_Get(&vk.bufferPool, handle.h))
-#define GET_LAYOUT(handle) ((DescriptorSetLayout*)Pool_Get(&vk.descriptorSetLayoutPool, handle.h))
-#define GET_PIPELINE(handle) ((Pipeline*)Pool_Get(&vk.pipelinePool, handle.h))
-#define GET_DESCRIPTORSET(handle) ((DescriptorSet*)Pool_Get(&vk.descriptorSetPool, handle.h))
-#define GET_SAMPLER(handle) ((Sampler*)Pool_Get(&vk.samplerPool, handle.h))
 
 static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger)
 {
@@ -98,6 +91,9 @@ void RHI_Shutdown(qboolean destroyWindow)
     
     if(destroyWindow){
         //destroy private resources
+        for(int i = 0; i < RHI_FRAMES_IN_FLIGHT; i++){
+            vkDestroyQueryPool(vk.device, vk.queryPool[i], NULL);
+        }
         vkDestroyDescriptorPool(vk.device, vk.descriptorPool, NULL);
         vkDestroyCommandPool(vk.device, vk.commandPool, NULL);
         vkDestroySwapchainKHR(vk.device, vk.swapChain, NULL);
