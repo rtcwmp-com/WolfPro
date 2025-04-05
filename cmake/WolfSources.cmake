@@ -43,7 +43,7 @@ elseif(WIN32)
 	LIST(APPEND CLIENT_SRC "src/win32/win_snd.c")
 	LIST(APPEND CLIENT_SRC "src/win32/win_input.c")
 	LIST(APPEND COMMON_SRC "src/win32/winquake.rc")
-	LIST(APPEND COMMON_SRC "src/win32/client.manifest")
+	#LIST(APPEND COMMON_SRC "src/win32/client.manifest")
 endif()
 
 

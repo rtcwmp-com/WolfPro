@@ -1155,14 +1155,22 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 		return 0;
 	}
 
+	// no abort/retry/fail errors
+	SetErrorMode( SEM_FAILCRITICALERRORS );
+
+	SetProcessDPIAware();
+
+	// DPI_AWARENESS_CONTEXT dpiContext;
+	// SetProcessDpiAwarenessContext(dpiContext);
+
+
 	g_wv.hInstance = hInstance;
 	Q_strncpyz( sys_cmdline, lpCmdLine, sizeof( sys_cmdline ) );
 
 	// done before Com/Sys_Init since we need this for error output
 	Sys_CreateConsole();
 
-	// no abort/retry/fail errors
-	SetErrorMode( SEM_FAILCRITICALERRORS );
+
 
 	// get the initial time base
 	Sys_Milliseconds();
