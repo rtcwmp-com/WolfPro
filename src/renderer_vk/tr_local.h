@@ -999,6 +999,7 @@ typedef struct {
 	renderPass renderPasses[RHI_FRAMES_IN_FLIGHT][MAX_RENDERPASSES];
 	uint32_t renderPassCount[RHI_FRAMES_IN_FLIGHT];
 	uint32_t pipelineChangeCount;
+	qbool clearColor;
 } backEndState_t;
 
 /*

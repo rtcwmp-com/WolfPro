@@ -214,8 +214,10 @@ void RB_BeginDrawingView( void ) {
 	renderPass.depth = 1.0f;
 	Vector4Copy(clearColor, renderPass.color);
 	renderPass.depthLoad = (clearBits & GL_DEPTH_BUFFER_BIT)? RHI_LoadOp_Clear : RHI_LoadOp_Load; 
-	renderPass.colorLoad = (clearBits & GL_COLOR_BUFFER_BIT)? RHI_LoadOp_Clear : RHI_LoadOp_Load; 
+	renderPass.colorLoad = (clearBits & GL_COLOR_BUFFER_BIT) || backEnd.clearColor ? RHI_LoadOp_Clear : RHI_LoadOp_Load; 
 	RB_BeginRenderPass("3D", &renderPass);
+
+	backEnd.clearColor = qfalse;
 
 	SetViewportAndScissor(); //@TODO is this correct to call after renderpass has started
 	
@@ -437,8 +439,10 @@ void    RB_SetGL2D( void ) {
 	memcpy(backEnd.or.modelMatrix, modelViewMatrix, sizeof(backEnd.or.modelMatrix));
 
 	RHI_RenderPass renderPass = {};
-	renderPass.colorLoad = RHI_LoadOp_Load;
+	
+	renderPass.colorLoad = backEnd.clearColor ? RHI_LoadOp_Clear : RHI_LoadOp_Load;
 	renderPass.colorTexture = backEnd.colorBuffer;
+	backEnd.clearColor = qfalse;
 
 	RB_BeginRenderPass("2D", &renderPass);
 
@@ -787,6 +791,7 @@ RB_BeginFrame
 const void  *RB_BeginFrame( const void *data ) {
 	backEnd.currentFrameIndex = (backEnd.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT;
 	backEnd.renderPassCount[backEnd.currentFrameIndex] = 0;
+	backEnd.clearColor = qtrue;
 
 	backEnd.sceneViewCount = 0;
 	backEnd.previousPipeline.h = 0;
@@ -881,6 +886,12 @@ const void  *RB_EndFrame( const void *data ) {
 		igText("PSO changes: %d", (int)backEnd.pipelineChangeCount);
 		igText("Textures loaded: %d", (int)tr.numImages);
 
+		static int previousSceneCount;
+		static int previousViewCount;
+		igText("Scenes: %d", tr.sceneCount - previousSceneCount);
+		igText("Views: %d", tr.viewCount - previousViewCount);
+		previousSceneCount = tr.sceneCount;
+		previousViewCount = tr.viewCount;
 
 
 		int64_t currentTime = Sys_Microseconds();

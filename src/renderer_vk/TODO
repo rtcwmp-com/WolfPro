@@ -1,4 +1,5 @@
 2/16/25 disconnect should shutdown the renderer
+fix loading map twice infinite loading
 
 multi-stage shaders
 sort draw surfaces by pipeline ID of shader stage 0
