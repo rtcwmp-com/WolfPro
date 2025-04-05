@@ -35,11 +35,34 @@ If you have questions concerning this license or the applicable additional terms
 #include "../qcommon/qfiles.h"
 #include "../qcommon/qcommon.h"
 #include "tr_public.h"
-#include "qgl.h"
 #include "rhi.h"
 
 #define GL_INDEX_TYPE       GL_UNSIGNED_INT
 typedef unsigned int glIndex_t;
+#define GL_EXP 1
+#define GL_LINEAR 2
+#define GL_DONT_CARE 3
+
+#define GL_FRONT 7
+#define GL_BACK 8
+#define GL_BACK_LEFT 9
+#define GL_BACK_RIGHT 10
+#define GL_CLAMP 11
+#define GL_REPEAT 12
+enum {
+	GL_NEAREST = 13,
+	GL_NEAREST_MIPMAP_NEAREST,
+	GL_LINEAR_MIPMAP_NEAREST,
+	GL_NEAREST_MIPMAP_LINEAR,
+	GL_LINEAR_MIPMAP_LINEAR,
+	GL_MODULATE,
+	GL_ADD,
+	GL_DECAL
+};
+
+#define GL_COLOR_BUFFER_BIT 1
+#define GL_DEPTH_BUFFER_BIT 2
+#define GL_STENCIL_BUFFER_BIT 4
 
 // fast float to int conversion
 #if id386 && !( ( defined __linux__ || defined __FreeBSD__ ) && ( defined __i386__ ) ) // rb010123
@@ -47,6 +70,7 @@ long myftol( float f );
 #else
 #define myftol( x ) ( (int)( x ) )
 #endif
+
 
 
 #define MAX_SHADERS             8192
@@ -85,15 +109,11 @@ typedef struct image_s {
 	char imgName[MAX_QPATH];            // game path, including extension
 	int width, height;                      // source image
 	int uploadWidth, uploadHeight;          // after power of two and picmip but not including clamp to MAX_TEXTURE_SIZE
-	GLuint texnum;                      // gl texture binding
 
 	rhiTexture handle;
 	uint32_t descriptorIndex;
 
 	int frameUsed;                  // for texture usage in frame statistics
-
-	int internalFormat;
-	int TMU;                        // only needed for voodoo2
 
 	qboolean mipmap;
 	qboolean allowPicmip;
@@ -601,10 +621,6 @@ typedef struct srfPoly_s {
 	polyVert_t      *verts;
 } srfPoly_t;
 
-typedef struct srfDisplayList_s {
-	surfaceType_t surfaceType;
-	int listNum;
-} srfDisplayList_t;
 
 
 typedef struct srfFlare_s {
@@ -815,7 +831,8 @@ void        R_Modellist_f( void );
 //====================================================
 extern refimport_t ri;
 
-#define MAX_DRAWIMAGES          2048
+#define MAX_DRAWIMAGES          1024
+#define MAX_IMAGEDESCRIPTORS    1200
 #define MAX_LIGHTMAPS           256
 #define MAX_SKINS               1024
 
@@ -885,16 +902,6 @@ typedef struct {
 #define FUNCTABLE_SIZE2     10
 #define FUNCTABLE_MASK      ( FUNCTABLE_SIZE - 1 )
 
-
-// the renderer front end should never modify glstate_t
-typedef struct {
-	int currenttextures[2];
-	int currenttmu;
-	qboolean finishCalled;
-	int texEnv[2];
-	int faceCulling;
-	unsigned long glStateBits;
-} glstate_t;
 
 
 typedef struct {
@@ -986,9 +993,12 @@ typedef struct {
 	rhiTexture depthBuffer;
 	
 	rhiTexture colorBuffer;
+	rhiTexture colorBuffer2; //ping pong between render targets
+	
 	rhiDurationQuery frameDuration[RHI_FRAMES_IN_FLIGHT];
 	renderPass renderPasses[RHI_FRAMES_IN_FLIGHT][MAX_RENDERPASSES];
 	uint32_t renderPassCount[RHI_FRAMES_IN_FLIGHT];
+	uint32_t pipelineChangeCount;
 } backEndState_t;
 
 /*
@@ -1108,7 +1118,7 @@ typedef struct {
 extern backEndState_t backEnd;
 extern trGlobals_t tr;
 extern glconfig_t glConfig;         // outside of TR since it shouldn't be cleared during ref re-init
-extern glstate_t glState;           // outside of TR since it shouldn't be cleared during ref re-init
+
 
 
 //
@@ -1128,25 +1138,12 @@ extern cvar_t   *r_ignoreFastPath;      // allows us to ignore our Tess fast pat
 extern cvar_t   *r_znear;               // near Z clip plane
 extern cvar_t   *r_zfar;                // far Z clip plane
 
-extern cvar_t   *r_stencilbits;         // number of desired stencil bits
-extern cvar_t   *r_depthbits;           // number of desired depth bits
-extern cvar_t   *r_colorbits;           // number of desired color bits, only relevant for fullscreen
 extern cvar_t   *r_stereo;              // desired pixelformat stereo flag
-extern cvar_t   *r_texturebits;         // number of desired texture bits
-										// 0 = use framebuffer depth
-										// 16 = use 16-bit textures
-										// 32 = use 32-bit textures
-										// all else = error
 
-extern cvar_t   *r_measureOverdraw;     // enables stencil buffer overdraw measurement
 
 extern cvar_t   *r_lodbias;             // push/pull LOD transitions
 extern cvar_t   *r_lodscale;
 
-extern cvar_t   *r_primitives;          // "0" = based on compiled vertex array existance
-										// "1" = glDrawElemet tristrips
-										// "2" = glDrawElements triangles
-										// "-1" = no drawing
 
 extern cvar_t   *r_inGameVideo;             // controls whether in game video should be draw
 extern cvar_t   *r_fastsky;             // controls whether sky should be cleared or drawn
@@ -1171,28 +1168,10 @@ extern cvar_t  *r_showcluster;
 extern cvar_t   *r_mode;                // video mode
 extern cvar_t   *r_gamma;
 extern cvar_t   *r_displayRefresh;      // optional display refresh option
-extern cvar_t   *r_ignorehwgamma;       // overrides hardware gamma capabilities
 
-extern cvar_t   *r_allowExtensions;             // global enable/disable of OpenGL extensions
-extern cvar_t   *r_ext_compressed_textures;     // these control use of specific extensions
-extern cvar_t   *r_ext_gamma_control;
-extern cvar_t   *r_ext_texenv_op;
-extern cvar_t   *r_ext_multitexture;
-extern cvar_t   *r_ext_compiled_vertex_array;
-extern cvar_t   *r_ext_texture_env_add;
 extern cvar_t   *r_ext_texture_filter_anisotropic;  //DAJ from EF
 
-//----(SA)	added
-extern cvar_t   *r_ext_NV_fog_dist;
-extern cvar_t   *r_nv_fogdist_mode;
 
-extern cvar_t   *r_ext_ATI_pntriangles;
-extern cvar_t   *r_ati_truform_tess;        //
-extern cvar_t   *r_ati_truform_normalmode;  // linear/quadratic
-extern cvar_t   *r_ati_truform_pointmode;   // linear/cubic
-//----(SA)	end
-
-extern cvar_t   *r_ati_fsaa_samples;                //DAJ
 
 extern cvar_t  *r_nobind;                       // turns off binding to appropriate textures
 extern cvar_t  *r_singleShader;                 // make most world faces use default shader
@@ -1200,10 +1179,6 @@ extern cvar_t  *r_roundImagesDown;
 extern cvar_t  *r_rmse;                         // reduces textures to this root mean square error
 extern cvar_t  *r_colorMipLevels;               // development aid to see texture mip usage
 extern cvar_t  *r_picmip;                       // controls picmip values
-extern cvar_t  *r_finish;
-extern cvar_t  *r_drawBuffer;
-extern cvar_t  *r_glDriver;
-extern cvar_t  *r_glIgnoreWicked3D;
 extern cvar_t  *r_swapInterval;
 extern cvar_t  *r_textureMode;
 
@@ -1233,7 +1208,6 @@ extern cvar_t  *r_subdivisions;
 extern cvar_t  *r_lodCurveError;
 extern cvar_t  *r_skipBackEnd;
 
-extern cvar_t  *r_ignoreGLErrors;
 
 extern cvar_t  *r_overBrightBits;
 extern cvar_t  *r_mapOverBrightBits;
@@ -1263,6 +1237,11 @@ extern cvar_t   *r_wolffog;
 extern cvar_t  *r_highQualityVideo;
 
 extern cvar_t *r_gpu;
+
+extern cvar_t *r_debugUI;
+extern cvar_t *r_debugInput;
+
+extern cvar_t   *r_fullscreenDesktop;
 //====================================================================
 
 float R_NoiseGet4f( float x, float y, float z, float t );
@@ -1405,25 +1384,6 @@ shader_t *R_FindShaderByName( const char *name );
 void        R_InitShaders( void );
 void        R_ShaderList_f( void );
 void    R_RemapShader( const char *oldShader, const char *newShader, const char *timeOffset );
-
-/*
-====================================================================
-
-IMPLEMENTATION SPECIFIC FUNCTIONS
-
-====================================================================
-*/
-
-void        GLimp_Init( void );
-void        GLimp_Shutdown( void );
-void        GLimp_EndFrame( void );
-
-void        GLimp_LogComment( char *comment );
-
-void GLimp_SetGamma( unsigned char red[256],
-					 unsigned char green[256],
-					 unsigned char blue[256] );
-
 
 /*
 ====================================================================
@@ -1889,17 +1849,8 @@ void R_FreeImageBuffer( void );
 typedef struct glinfo_s {
 	// used by platform layer
 	qbool winFullscreen;			// the window takes the entire screen
-	qbool vidFullscreen;			// change the video mode
-	int displayFrequency;
 	int winWidth, winHeight;
-
-	// used by renderer
-	int maxTextureSize;
-	int maxAnisotropy;
-	qbool depthFadeSupport;
-	qbool mipGenSupport;
-	qbool alphaToCoverageSupport;
-	int msaaSampleCount;		// active number of samples, can differ from r_msaa->integer
+	int displayFrequency;
 } glinfo_t;
 
 extern glinfo_t glInfo;
@@ -1918,7 +1869,10 @@ typedef struct pixelShaderPushConstants {
 void R_Gpulist_f(void);
 
 void RB_InitGamma(rhiTexture texture, rhiSampler sampler);
-void RB_DrawGamma(rhiTexture swapChainImage);
+void RB_DrawGamma(rhiTexture renderTarget);
+
+void RB_InitBlit(rhiTexture texture, rhiSampler sampler);
+void RB_DrawBlit(rhiTexture renderTarget);
 
 void RB_ImGUI_Init(void);
 void RB_ImGUI_BeginFrame(void);

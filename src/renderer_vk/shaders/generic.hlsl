@@ -54,7 +54,7 @@ struct RootConstants
 };
 [[vk::push_constant]] RootConstants rc;
 
-[[vk::binding(0)]] Texture2D texture[2048];
+[[vk::binding(0)]] Texture2D texture[1200];
 [[vk::binding(1)]] SamplerState mySampler[6];
 
 bool failsAlphaTest(uint alphaTest, float alpha){

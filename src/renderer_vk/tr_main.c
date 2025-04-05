@@ -94,49 +94,7 @@ void R_Fog( glfog_t *curfog ) {
 
 	// only send changes if necessary
 
-//	if(curfog->mode != setfog.mode || !setfog.registered) {
-	qglFogi( GL_FOG_MODE, curfog->mode );
-//		setfog.mode = curfog->mode;
-//	}
-//	if(curfog->color[0] != setfog.color[0] || curfog->color[1] != setfog.color[1] || curfog->color[2] != setfog.color[2] || !setfog.registered) {
-	qglFogfv( GL_FOG_COLOR, curfog->color );
-//		VectorCopy(setfog.color, curfog->color);
-//	}
-//	if(curfog->density != setfog.density || !setfog.registered) {
-	qglFogf( GL_FOG_DENSITY, curfog->density );
-//		setfog.density = curfog->density;
-//	}
-//	if(curfog->hint != setfog.hint || !setfog.registered) {
-	qglHint( GL_FOG_HINT, curfog->hint );
-//		setfog.hint = curfog->hint;
-//	}
-//	if(curfog->start != setfog.start || !setfog.registered) {
-	qglFogf( GL_FOG_START, curfog->start );
-//		setfog.start = curfog->start;
-//	}
-
-	if ( r_zfar->value ) {             // (SA) allow override for helping level designers test fog distances
-//		if(setfog.end != r_zfar->value || !setfog.registered) {
-		qglFogf( GL_FOG_END, r_zfar->value );
-//			setfog.end = r_zfar->value;
-//		}
-	} else {
-//		if(curfog->end != setfog.end || !setfog.registered) {
-		qglFogf( GL_FOG_END, curfog->end );
-//			setfog.end = curfog->end;
-//		}
-	}
-
-// TTimo - from SP NV fog code
-	// NV fog mode
-	if ( glConfig.NVFogAvailable ) {
-		qglFogi( GL_FOG_DISTANCE_MODE_NV, glConfig.NVFogMode );
-	}
-// end
-
 	setfog.registered = qtrue;
-
-	qglClearColor( curfog->color[0], curfog->color[1], curfog->color[2], curfog->color[3] );
 
 
 }
@@ -146,7 +104,6 @@ void R_FogOff( void ) {
 	if ( !fogIsOn ) {
 		return;
 	}
-	qglDisable( GL_FOG );
 	fogIsOn = qfalse;
 }
 
@@ -177,7 +134,6 @@ void R_FogOn( void ) {
 		return;
 	}
 
-	qglEnable( GL_FOG );
 	fogIsOn = qtrue;
 }
 // done.
@@ -1720,29 +1676,7 @@ R_DebugPolygon
 ================
 */
 void R_DebugPolygon( int color, int numPoints, float *points ) {
-	int i;
-
-	GL_State( GLS_DEPTHMASK_TRUE | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE );
-
-	// draw solid shade
-
-	qglColor3f( color & 1, ( color >> 1 ) & 1, ( color >> 2 ) & 1 );
-	qglBegin( GL_POLYGON );
-	for ( i = 0 ; i < numPoints ; i++ ) {
-		qglVertex3fv( points + i * 3 );
-	}
-	qglEnd();
-
-	// draw wireframe outline
-	GL_State( GLS_POLYMODE_LINE | GLS_DEPTHMASK_TRUE | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE );
-	qglDepthRange( 0, 0 );
-	qglColor3f( 1, 1, 1 );
-	qglBegin( GL_POLYGON );
-	for ( i = 0 ; i < numPoints ; i++ ) {
-		qglVertex3fv( points + i * 3 );
-	}
-	qglEnd();
-	qglDepthRange( 0, 1 );
+	//@TODO 
 }
 
 /*
@@ -1759,9 +1693,6 @@ void R_DebugGraphics( void ) {
 
 	R_FogOff(); // moved this in here to keep from /always/ doing the fog state change
 
-
-	GL_Bind( tr.whiteImage );
-	GL_Cull( CT_FRONT_SIDED );
 	ri.CM_DrawDebugSurface( R_DebugPolygon );
 }
 

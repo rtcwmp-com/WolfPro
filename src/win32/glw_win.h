@@ -59,9 +59,6 @@ typedef struct
 	// because the window class has the CS_OWNDC style set (for OpenGL).
 	HDC			hDC;
 	HGLRC		hGLRC;
-	HINSTANCE	hinstOpenGL;
-	qbool		cdsDevModeValid;
-	DEVMODE		cdsDevMode;			// Custom device mode for full-screen with r_mode 1.
 	qbool		pixelFormatSet;
 	int			nPendingPF;
 } vkwstate_t;

@@ -123,7 +123,10 @@ void RB_ImGUI_BeginFrame(void){
 
 
 void RB_ImGUI_Draw(void){
-    
+    if(r_debugUI->integer == 0){
+        igEndFrame();
+        return;
+    }
     ImGuiIO* io = igGetIO();
     io->DisplaySize.x = glConfig.vidWidth;
     io->DisplaySize.y = glConfig.vidHeight;

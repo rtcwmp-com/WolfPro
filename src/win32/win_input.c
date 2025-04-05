@@ -482,15 +482,12 @@ void IN_Frame( void ) {
 		return;
 	}
 
-	if ( cls.keyCatchers & KEYCATCH_CONSOLE ) {
-		// temporarily deactivate if not in the game and
-		// running on the desktop
-		// voodoo always counts as full screen
-		if ( Cvar_VariableValue( "r_fullscreen" ) == 0
-			 && strcmp( Cvar_VariableString( "r_glDriver" ), _3DFX_DRIVER_NAME ) ) {
-			IN_DeactivateMouse();
-			return;
-		}
+	qbool isFullscreen = Cvar_VariableIntegerValue( "r_fullscreen" ) != 0;
+	qbool releaseFullscreen = isFullscreen && (cls.keyCatchers & KEYCATCH_IMGUI);
+	qbool releaseWindowed = !isFullscreen && cls.keyCatchers & (KEYCATCH_CONSOLE | KEYCATCH_IMGUI);
+	if ( releaseWindowed || releaseFullscreen) {
+		IN_DeactivateMouse();
+		return;
 	}
 
 	if ( !in_appactive ) {

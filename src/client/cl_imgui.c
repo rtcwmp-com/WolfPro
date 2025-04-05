@@ -34,6 +34,21 @@ static void AddFont()
     //ImFontAtlas_AddFontFromMemoryTTF(io->Fonts, bahnschrift_ttf, sizeof(bahnschrift_ttf), height, NULL, codepointRanges);
 }
 
+static void ToggleGui_f()
+{
+	const bool guiActive = Cvar_VariableIntegerValue("r_debugUI") != 0;
+	const char* const newValue = guiActive ? "0" : "1";
+	Cvar_Set("r_debugUI", newValue);
+	Cvar_Set("r_debugInput", newValue);
+}
+
+static void ToggleGuiInput_f()
+{
+	Cvar_Set("r_debugInput", Cvar_VariableIntegerValue("r_debugInput") ? "0" : "1");
+}
+
+
+
 void CL_ImGUI_Init(void){
     igCreateContext(NULL);
     ImGuiIO *ioptr = igGetIO();
@@ -42,6 +57,9 @@ void CL_ImGUI_Init(void){
     igStyleColorsDark(NULL);
     AddFont();
     CL_ImGUI_ButtonMapping();
+
+	Cmd_AddCommand("togglegui", ToggleGui_f);
+	Cmd_AddCommand("toggleguiinput", ToggleGuiInput_f);
 }
 
 void CL_ImGUI_Shutdown(void){
@@ -50,14 +68,14 @@ void CL_ImGUI_Shutdown(void){
 
 void CL_ImGUI_Frame()
 {
-	// if(Cvar_VariableIntegerValue("r_debugInput"))
-	// {
-	// 	cls.keyCatchers |= KEYCATCH_IMGUI;
-	// }
-	// else
-	// {
-	// 	cls.keyCatchers &= ~KEYCATCH_IMGUI;
-	// }
+	if(Cvar_VariableIntegerValue("r_debugInput"))
+	{
+		cls.keyCatchers |= KEYCATCH_IMGUI;
+	}
+	else
+	{
+		cls.keyCatchers &= ~KEYCATCH_IMGUI;
+	}
 
 	static int64_t prevMS = 0;
 	const int64_t currMS = Sys_Milliseconds();
@@ -84,30 +102,57 @@ void CL_ImGUI_CharEvent(int key){
 	ImGuiIO_AddInputCharacter(ioptr, key);
 }
 
-void CL_ImGUI_KeyEvent(int key, qboolean down) {
-    ImGuiIO *ioptr = igGetIO();
-    unsigned int imguiKey;
-    switch(key)
+qboolean CL_ImGUI_KeyEvent(int key, qboolean down, const char* cmd) {
+
+	if(down)
+	{
+		if(cmd != NULL)
 		{
-			case K_MOUSE1:
-			case K_MOUSE2:
-			case K_MOUSE3:
-			case K_MOUSE4:
-			case K_MOUSE5:
-                ImGuiIO_AddMouseButtonEvent(ioptr, key - K_MOUSE1, !!down);
-				break;
-			case K_MWHEELDOWN:
-			case K_MWHEELUP:
-                ImGuiIO_AddMouseWheelEvent(ioptr, 0.0f, key == K_MWHEELDOWN ? -1.0f : 1.0f);
-				break;
-			default:
-				imguiKey = (unsigned int)keyMap[key];
-				if(imguiKey != 0xFFFFFFFF)
-				{
-					ImGuiIO_AddKeyEvent(ioptr, (ImGuiKey)imguiKey, !!down);
-				}
-				break;
+			const char* const prefix = "keycatchgui";
+			if(Q_stristr(cmd, prefix) == cmd)
+			{
+				Cbuf_AddText(cmd + strlen(prefix));
+				Cbuf_AddText("\n");
+				return qtrue;
+			}
 		}
+	}
+	
+	if(down && (key == '`' || key == '~'))
+	{
+		// continue displaying the GUI but route input to the console
+		Cvar_Set("r_debugInput", "0");
+		return qfalse;
+	}
+
+	if(cls.keyCatchers & KEYCATCH_IMGUI){
+		ImGuiIO *ioptr = igGetIO();
+		unsigned int imguiKey;
+		switch(key)
+			{
+				case K_MOUSE1:
+				case K_MOUSE2:
+				case K_MOUSE3:
+				case K_MOUSE4:
+				case K_MOUSE5:
+					ImGuiIO_AddMouseButtonEvent(ioptr, key - K_MOUSE1, !!down);
+					break;
+				case K_MWHEELDOWN:
+				case K_MWHEELUP:
+					ImGuiIO_AddMouseWheelEvent(ioptr, 0.0f, key == K_MWHEELDOWN ? -1.0f : 1.0f);
+					break;
+				default:
+					imguiKey = (unsigned int)keyMap[key];
+					if(imguiKey != 0xFFFFFFFF)
+					{
+						ImGuiIO_AddKeyEvent(ioptr, (ImGuiKey)imguiKey, !!down);
+					}
+					break;
+			}
+		return qtrue;
+	}
+	return qfalse;
+    
 }
 
 void CL_ImGUI_ButtonMapping(){
@@ -162,3 +207,4 @@ void CL_ImGUI_ButtonMapping(){
 		keyMap[K_F1 + i] = ImGuiKey_F1 + i;
 	}
 }
+

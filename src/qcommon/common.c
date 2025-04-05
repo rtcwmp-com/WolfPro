@@ -2793,6 +2793,9 @@ void Com_Frame( void ) {
 	} else {
 		minMsec = 1;
 	}
+	if(Cvar_VariableIntegerValue("r_swapinterval")){
+		minMsec = 0; //sleep is already happening in the driver for vsync
+	}
 	do {
 		com_frameTime = Com_EventLoop();
 		if ( lastTime > com_frameTime ) {

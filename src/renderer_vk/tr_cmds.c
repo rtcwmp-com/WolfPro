@@ -317,70 +317,10 @@ void RE_BeginFrame( stereoFrame_t stereoFrame ) {
 	if ( !tr.registered ) {
 		return;
 	}
-	glState.finishCalled = qfalse;
 
 	tr.frameCount++;
 	tr.frameSceneNum = 0;
 
-	//
-	// do overdraw measurement
-	//
-	if ( r_measureOverdraw->integer ) {
-		if ( glConfig.stencilBits < 4 ) {
-			ri.Printf( PRINT_ALL, "Warning: not enough stencil bits to measure overdraw: %d\n", glConfig.stencilBits );
-			ri.Cvar_Set( "r_measureOverdraw", "0" );
-			r_measureOverdraw->modified = qfalse;
-		} else if ( r_shadows->integer == 2 )   {
-			ri.Printf( PRINT_ALL, "Warning: stencil shadows and overdraw measurement are mutually exclusive\n" );
-			ri.Cvar_Set( "r_measureOverdraw", "0" );
-			r_measureOverdraw->modified = qfalse;
-		} else
-		{
-
-			qglEnable( GL_STENCIL_TEST );
-			qglStencilMask( ~0U );
-			qglClearStencil( 0U );
-			qglStencilFunc( GL_ALWAYS, 0U, ~0U );
-			qglStencilOp( GL_KEEP, GL_INCR, GL_INCR );
-		}
-		r_measureOverdraw->modified = qfalse;
-	} else
-	{
-		// this is only reached if it was on and is now off
-		if ( r_measureOverdraw->modified ) {
-
-			qglDisable( GL_STENCIL_TEST );
-		}
-		r_measureOverdraw->modified = qfalse;
-	}
-
-	//
-	// texturemode stuff
-	//
-	if ( r_textureMode->modified ) {
-		GL_TextureMode( r_textureMode->string );
-		r_textureMode->modified = qfalse;
-	}
-
-	//
-	// NVidia stuff
-	//
-
-	// fog control
-	if ( glConfig.NVFogAvailable && r_nv_fogdist_mode->modified ) {
-		r_nv_fogdist_mode->modified = qfalse;
-		if ( !Q_stricmp( r_nv_fogdist_mode->string, "GL_EYE_PLANE_ABSOLUTE_NV" ) ) {
-			glConfig.NVFogMode = (int)GL_EYE_PLANE_ABSOLUTE_NV;
-		} else if ( !Q_stricmp( r_nv_fogdist_mode->string, "GL_EYE_PLANE" ) ) {
-			glConfig.NVFogMode = (int)GL_EYE_PLANE;
-		} else if ( !Q_stricmp( r_nv_fogdist_mode->string, "GL_EYE_RADIAL_NV" ) ) {
-			glConfig.NVFogMode = (int)GL_EYE_RADIAL_NV;
-		} else {
-			// in case this was really 'else', store a valid value for next time
-			glConfig.NVFogMode = (int)GL_EYE_RADIAL_NV;
-			ri.Cvar_Set( "r_nv_fogdist_mode", "GL_EYE_RADIAL_NV" );
-		}
-	}
 
 	//
 	// gamma stuff
@@ -392,15 +332,6 @@ void RE_BeginFrame( stereoFrame_t stereoFrame ) {
 		R_SetColorMappings();
 	}
 
-	// check for errors
-	if ( !r_ignoreGLErrors->integer ) {
-		int err;
-
-
-		if ( ( err = qglGetError() ) != GL_NO_ERROR ) {
-			ri.Error( ERR_FATAL, "RE_BeginFrame() - glGetError() failed (0x%x)!\n", err );
-		}
-	}
 
 	//
 	// draw buffer stuff
@@ -424,11 +355,6 @@ void RE_BeginFrame( stereoFrame_t stereoFrame ) {
 	} else {
 		if ( stereoFrame != STEREO_CENTER ) {
 			ri.Error( ERR_FATAL, "RE_BeginFrame: Stereo is disabled, but stereoFrame was %i", stereoFrame );
-		}
-		if ( !Q_stricmp( r_drawBuffer->string, "GL_FRONT" ) ) {
-			cmd->buffer = (int)GL_FRONT;
-		} else {
-			cmd->buffer = (int)GL_BACK;
 		}
 	}
 }

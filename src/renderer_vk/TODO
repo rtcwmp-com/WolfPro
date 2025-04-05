@@ -1,25 +1,23 @@
 2/16/25 disconnect should shutdown the renderer
 
-fix NDEBUG in release build
-build both clients (opengl and vulkan)
-Dear ImGUI input routing using a dedicated key catcher so you don't need to have the console down
-
-
+multi-stage shaders
+sort draw surfaces by pipeline ID of shader stage 0
+only call CmdBindVertexBuffers when the buffer bindings actually change
+generate all possible samplers (repeat, clamp) x (linear, anisotropic) and assign them to our main game texture descriptor set
 
 filter GPU performance of all named render passes
-nuke the GL window
-test & validate full-screen mode
-generate all possible samplers (repeat, clamp) x (linear, anisotropic) and assign them to our main game texture descriptor set
-WIP v-sync (better sleep method for modes with no queue discard)
-only call CmdBindVertexBuffers when the buffer bindings actually change
+
 proper upload manager for textures (linear allocation + CPU waits are moved out)
-sort draw surfaces by pipeline ID of shader stage 0
-multi-stage shaders
+dynamic lights
+
 add support for (and use) an extra clip plane for portal/mirror views
 fog
-dynamic lights
+
 compute pipelines
 remove r_cache/r_cacheshaders
+remove r_measureoverdraw
+remove r_ignoreglerrors r_drawBuffer and stereo
+redo com_frame/rhi_endframe sleep mechanism _mm_pause busy loop
 
 
 vid_restart variations:

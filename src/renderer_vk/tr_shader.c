@@ -561,7 +561,7 @@ static qboolean ParseStage( shaderStage_t *stage, char **text ) {
 				continue;
 			}
 		} else if ( !Q_stricmp( token, "mapcomp" ) )    { // only use this texture if compression is enabled
-			if ( glConfig.textureCompression && r_ext_compressed_textures->integer ) {
+			if ( glConfig.textureCompression) {
 				token = "map";   // use this map
 			} else {
 				COM_ParseExt( text, qfalse );   // ignore the map
@@ -575,7 +575,7 @@ static qboolean ParseStage( shaderStage_t *stage, char **text ) {
 				continue;
 			}
 		} else if ( !Q_stricmp( token, "animmapcomp" ) )    { // only use this texture if compression is enabled
-			if ( glConfig.textureCompression && r_ext_compressed_textures->integer ) {
+			if ( glConfig.textureCompression) {
 				token = "animmap";   // use this map
 			} else {
 				while ( token[0] )
@@ -1806,22 +1806,11 @@ static qboolean CollapseMultitexture( void ) {
 	int i;
 	textureBundle_t tmpBundle;
 
-	if ( !qglActiveTextureARB ) {
-		return qfalse;
-	}
-
 	// make sure both stages are active
 	if ( !stages[0].active || !stages[1].active ) {
 		return qfalse;
 	}
 
-	// on voodoo2, don't combine different tmus
-	if ( glConfig.driverType == GLDRV_VOODOO ) {
-		if ( stages[0].bundle[0].image[0]->TMU ==
-			 stages[1].bundle[0].image[0]->TMU ) {
-			return qfalse;
-		}
-	}
 
 	abits = stages[0].stateBits;
 	bbits = stages[1].stateBits;
@@ -2350,9 +2339,9 @@ static shader_t *FinishShader( void ) {
 	ComputeStageIteratorFunc();
 
 	// RF default back to no compression for next shader
-	if ( r_ext_compressed_textures->integer == 2 ) {
-		tr.allowCompress = qfalse;
-	}
+
+	tr.allowCompress = qfalse;
+
 
 	return GeneratePermanentShader();
 }

@@ -50,11 +50,12 @@ void RHI_Shutdown(qboolean destroyWindow)
         }
     }
 
-    //it = Pool_BeginIteration();
-    //while(Pool_Iterate(&vk.descriptorSetPool, &it)){
-    //    DescriptorSet *descSet = (DescriptorSet*)it.value;
-    //    vkFreeDescriptorSets(vk.device, vk.descriptorPool, 1, &descSet->set);
-    //}
+    it = Pool_BeginIteration();
+    while(Pool_Iterate(&vk.descriptorSetPool, &it)){
+		// @TODO:
+       DescriptorSet *descSet = (DescriptorSet*)it.value;
+       vkFreeDescriptorSets(vk.device, vk.descriptorPool, 1, &descSet->set);
+    }
     Pool_Clear(&vk.descriptorSetPool);
 
     it = Pool_BeginIteration();
@@ -359,7 +360,8 @@ rhiDescriptorSetLayout RHI_CreateDescriptorSetLayout(const rhiDescriptorSetLayou
         binding->stageFlags = GetVkShaderStageFlags(desc->bindings[i].stageFlags);
         binding->pImmutableSamplers = VK_NULL_HANDLE;
 
-        bindingFlags[i] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
+        //bindingFlags[i] = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT;
+        bindingFlags[i] = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
 
     }
 
@@ -375,6 +377,7 @@ rhiDescriptorSetLayout RHI_CreateDescriptorSetLayout(const rhiDescriptorSetLayou
 	descSetCreateInfo.pNext = &descSetFlagsCreateInfo;
     descSetCreateInfo.pBindings = bindings;
     descSetCreateInfo.bindingCount = desc->bindingCount;
+	descSetCreateInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 	VK(vkCreateDescriptorSetLayout(vk.device, &descSetCreateInfo, NULL, &layout));
 
 	SetObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)layout, desc->name);
@@ -896,8 +899,15 @@ void RHI_BeginRendering(const RHI_RenderPass* renderPass)
     renderingInfo.pColorAttachments = &colorAttachmentInfo;
     renderingInfo.pDepthAttachment = pDepthAttachmentInfo;
     renderingInfo.layerCount = 1;
-    renderingInfo.renderArea.extent.height = glConfig.vidHeight;
-    renderingInfo.renderArea.extent.width = glConfig.vidWidth;
+    if(renderPass->width == 0 || renderPass->height == 0){
+        renderingInfo.renderArea.extent.height = glConfig.vidHeight;
+        renderingInfo.renderArea.extent.width = glConfig.vidWidth;
+    }else{
+        renderingInfo.renderArea.extent.height = renderPass->height;
+        renderingInfo.renderArea.extent.width = renderPass->width;
+    }
+    renderingInfo.renderArea.offset.x = renderPass->x;
+    renderingInfo.renderArea.offset.y = renderPass->y;
 
     vkCmdBeginRendering(vk.activeCommandBuffer, &renderingInfo);
     vk.renderingActive = qtrue;
@@ -1321,4 +1331,8 @@ void RHI_CmdInsertDebugLabel(const char * label){
         pfnvkCmdInsertDebugUtilsLabelEXT(vk.activeCommandBuffer, &labelInfo);
     }
     
+}
+
+const char* RHI_GetDeviceName(void){
+	return vk.deviceProperties.deviceName;
 }

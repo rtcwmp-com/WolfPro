@@ -2,8 +2,8 @@
 #include "../renderer_common/tr_local.h"
 #include "../qcommon/qcommon.h"
 #include "resource.h"
-#include "glw_win.h"
 #include "win_local.h"
+#include "glw_win.h"
 #include "../client/client.h"
 
 #define VK_USE_PLATFORM_WIN32_KHR
@@ -95,56 +95,13 @@ static void VKW_UpdateMonitorRect( const char* deviceName )
 	// DM_POSITION DM_PELSWIDTH DM_PELSHEIGHT
 	// EnumDisplaySettingsExA doesn't always set up the flags properly.
 
-	RECT rect = vk_wv.monitorRects[vk_wv.monitor];
-	rect.left = dm.dmPosition.x;
-	rect.top = dm.dmPosition.y;
-	rect.right = dm.dmPosition.x + dm.dmPelsWidth;
-	rect.bottom = dm.dmPosition.y + dm.dmPelsHeight;
+	RECT *rect = &vk_wv.monitorRects[vk_wv.monitor];
+	rect->left = dm.dmPosition.x;
+	rect->top = dm.dmPosition.y;
+	rect->right = dm.dmPosition.x + dm.dmPelsWidth;
+	rect->bottom = dm.dmPosition.y + dm.dmPelsHeight;
 }
 
-
-static qbool VKW_SetDisplaySettings( DEVMODE dm )
-{
-	const char* deviceName = VKW_GetCurrentDisplayDeviceName();
-	const int ec = ChangeDisplaySettingsExA( deviceName, &dm, NULL, CDS_FULLSCREEN, NULL );
-	if ( ec == DISP_CHANGE_SUCCESSFUL )
-	{
-		vkw_state.cdsDevMode = dm;
-		vkw_state.cdsDevModeValid = qtrue;
-		VKW_UpdateMonitorRect( deviceName );
-		return qtrue;
-	}
-
-	vkw_state.cdsDevModeValid = qfalse;
-
-	ri.Printf( PRINT_ALL, "...CDS: %ix%i (C%i) failed: ", (int)dm.dmPelsWidth, (int)dm.dmPelsHeight, (int)dm.dmBitsPerPel );
-
-#define CDS_ERROR(x) case x: ri.Printf( PRINT_ALL, #x"\n" ); break;
-	switch (ec) {
-		default:
-			ri.Printf( PRINT_ALL, "unknown error %d\n", ec );
-			break;
-		CDS_ERROR( DISP_CHANGE_RESTART );
-		CDS_ERROR( DISP_CHANGE_BADPARAM );
-		CDS_ERROR( DISP_CHANGE_BADFLAGS );
-		CDS_ERROR( DISP_CHANGE_FAILED );
-		CDS_ERROR( DISP_CHANGE_BADMODE );
-		CDS_ERROR( DISP_CHANGE_NOTUPDATED );
-	}
-//#undef CDS_ERROR
-
-	return qfalse;
-}
-
-
-static void VKW_ResetDisplaySettings( qbool invalidate )
-{
-	const char* deviceName = VKW_GetCurrentDisplayDeviceName();
-	ChangeDisplaySettingsEx( deviceName, NULL, NULL, 0, NULL );
-	VKW_UpdateMonitorRect( deviceName );
-	if ( invalidate )
-		vkw_state.cdsDevModeValid = qfalse;
-}
 
 
 static qbool VKW_CreateWindow()
@@ -258,38 +215,12 @@ static qbool VKW_SetMode()
 	const int desktopHeight = (int)(monRect.bottom - monRect.top);
 	re.ConfigureVideoMode( desktopWidth, desktopHeight );
 
+	if (!VKW_CreateWindow())
+		return qfalse;
+
 	DEVMODE dm;
 	ZeroMemory( &dm, sizeof( dm ) );
 	dm.dmSize = sizeof( dm );
-
-	if (glInfo.vidFullscreen != vkw_state.cdsDevModeValid) {
-		if (glInfo.vidFullscreen) {
-			dm.dmPelsWidth  = glConfig.vidWidth;
-			dm.dmPelsHeight = glConfig.vidHeight;
-			dm.dmFields     = DM_PELSWIDTH | DM_PELSHEIGHT;
-
-			if ( r_displayRefresh->integer ) {
-				dm.dmDisplayFrequency = r_displayRefresh->integer;
-				dm.dmFields |= DM_DISPLAYFREQUENCY;
-			}
-
-			dm.dmBitsPerPel = 32;
-			dm.dmFields |= DM_BITSPERPEL;
-
-			dm.dmPosition.x = monRect.left;
-			dm.dmPosition.y = monRect.top;
-			dm.dmFields |= DM_POSITION;
-
-			glInfo.vidFullscreen = VKW_SetDisplaySettings( dm );
-		}
-		else
-		{
-			VKW_ResetDisplaySettings( qtrue );
-		}
-	}
-
-	if (!VKW_CreateWindow())
-		return qfalse;
 
 	if (EnumDisplaySettingsA( VKW_GetCurrentDisplayDeviceName(), ENUM_CURRENT_SETTINGS, &dm ))
 		glInfo.displayFrequency = dm.dmDisplayFrequency;
@@ -327,13 +258,6 @@ void Sys_Vulkan_Shutdown(void)
 		DestroyWindow( vk_wv.hWnd );
 		vk_wv.hWnd = NULL;
 		vkw_state.pixelFormatSet = qfalse;
-	}
-
-	// reset display settings
-	if ( vkw_state.cdsDevModeValid )
-	{
-		ri.Printf( PRINT_DEVELOPER, "...resetting display\n" );
-		VKW_ResetDisplaySettings( qtrue );
 	}
 
 }

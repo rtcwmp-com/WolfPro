@@ -101,6 +101,10 @@ typedef struct RHI_RenderPass {
 	rhiTexture depthTexture;
 	vec4_t color;
 	float depth;
+	uint32_t width;
+	uint32_t height;
+	uint32_t x;
+	uint32_t y;
 } RHI_RenderPass;
 
 
@@ -450,6 +454,8 @@ void RHI_EndTextureUpload();
 void RHI_GetUploadSemaphore(); //(semaphore handle, value to wait on)
 
 void RHI_PrintPools(void);
+
+const char* RHI_GetDeviceName(void);
 
 
 #endif

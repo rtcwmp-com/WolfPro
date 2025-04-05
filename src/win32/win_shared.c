@@ -69,6 +69,22 @@ int Sys_Milliseconds( void ) {
 	return sys_curtime;
 }
 
+int64_t Sys_Microseconds(void){
+	static qbool initialized = qfalse;
+	static LARGE_INTEGER start;
+	static LARGE_INTEGER freq;
+
+	if (!initialized) {
+		initialized = qtrue;
+		QueryPerformanceFrequency(&freq);
+		QueryPerformanceCounter(&start);
+	}
+
+	LARGE_INTEGER now;
+	QueryPerformanceCounter(&now);
+
+	return ((now.QuadPart - start.QuadPart) * 1000000LL) / freq.QuadPart;
+}
 /*
 ================
 Sys_SnapVector

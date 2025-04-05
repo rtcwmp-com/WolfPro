@@ -308,6 +308,7 @@ RB_TestFlare
 ==================
 */
 void RB_TestFlare( flare_t *f ) {
+	#if 0
 //	float			depth;
 	qboolean visible;
 	float fade;
@@ -357,6 +358,7 @@ void RB_TestFlare( flare_t *f ) {
 	}
 
 	f->drawIntensity = fade;
+	#endif
 }
 
 
@@ -366,6 +368,7 @@ RB_RenderFlare
 ==================
 */
 void RB_RenderFlare( flare_t *f ) {
+	#if 0
 	float size;
 	vec3_t color;
 	int iColor[3];
@@ -443,6 +446,7 @@ void RB_RenderFlare( flare_t *f ) {
 	tess.indexes[tess.numIndexes++] = 3;
 
 	RB_EndSurface();
+	#endif
 }
 
 /*
@@ -462,6 +466,7 @@ extend past the portal edge will be overwritten.
 ==================
 */
 void RB_RenderFlares( void ) {
+	#if 0
 	flare_t     *f;
 	flare_t     **prev;
 	qboolean draw;
@@ -508,30 +513,6 @@ void RB_RenderFlares( void ) {
 	if ( !draw ) {
 		return;     // none visible
 	}
-
-	if ( backEnd.viewParms.isPortal ) {
-		qglDisable( GL_CLIP_PLANE0 );
-	}
-
-	qglPushMatrix();
-	qglLoadIdentity();
-	qglMatrixMode( GL_PROJECTION );
-	qglPushMatrix();
-	qglLoadIdentity();
-	qglOrtho( backEnd.viewParms.viewportX, backEnd.viewParms.viewportX + backEnd.viewParms.viewportWidth,
-			  backEnd.viewParms.viewportY, backEnd.viewParms.viewportY + backEnd.viewParms.viewportHeight,
-			  -99999, 99999 );
-
-	for ( f = r_activeFlares ; f ; f = f->next ) {
-		if ( f->frameSceneNum == backEnd.viewParms.frameSceneNum
-			 && f->inPortal == backEnd.viewParms.isPortal
-			 && f->drawIntensity ) {
-			RB_RenderFlare( f );
-		}
-	}
-
-	qglPopMatrix();
-	qglMatrixMode( GL_MODELVIEW );
-	qglPopMatrix();
+		#endif
 }
 

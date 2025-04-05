@@ -162,48 +162,6 @@ static long generateHashValue( const char *fname ) {
 
 /*
 ===============
-GL_TextureMode
-===============
-*/
-void GL_TextureMode( const char *string ) {
-	int i;
-	image_t *glt;
-
-	for ( i = 0 ; i < 6 ; i++ ) {
-		if ( !Q_stricmp( modes[i].name, string ) ) {
-			break;
-		}
-	}
-
-	// hack to prevent trilinear from being set on voodoo,
-	// because their driver freaks...
-	if ( i == 5 && glConfig.hardwareType == GLHW_3DFX_2D3D ) {
-		ri.Printf( PRINT_ALL, "Refusing to set trilinear on a voodoo.\n" );
-		i = 3;
-	}
-
-
-	if ( i == 6 ) {
-		ri.Printf( PRINT_ALL, "bad filter name\n" );
-		return;
-	}
-
-	gl_filter_min = modes[i].minimize;
-	gl_filter_max = modes[i].maximize;
-
-	// change all the existing mipmap texture objects
-	for ( i = 0 ; i < tr.numImages ; i++ ) {
-		glt = tr.images[ i ];
-		if ( glt->mipmap ) {
-			GL_Bind( glt );
-			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min );
-			qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max );
-		}
-	}
-}
-
-/*
-===============
 R_SumOfUsedImages
 ===============
 */
@@ -234,49 +192,17 @@ void R_ImageList_f( void ) {
 		"no ", "yes"
 	};
 
-	ri.Printf( PRINT_ALL, "\n      -w-- -h-- -mm- -TMU- -if-- wrap --name-------\n" );
+	ri.Printf( PRINT_ALL, "\n      -w-- -h-- -mm- -if-- wrap --name-------\n" );
 	texels = 0;
 
 	for ( i = 0 ; i < tr.numImages ; i++ ) {
 		image = tr.images[ i ];
 
 		texels += image->uploadWidth * image->uploadHeight;
-		ri.Printf( PRINT_ALL,  "%4i: %4i %4i  %s   %d   ",
-				   i, image->uploadWidth, image->uploadHeight, yesno[image->mipmap], image->TMU );
-		switch ( image->internalFormat ) {
-		case 1:
-			ri.Printf( PRINT_ALL, "I    " );
-			break;
-		case 2:
-			ri.Printf( PRINT_ALL, "IA   " );
-			break;
-		case 3:
-			ri.Printf( PRINT_ALL, "RGB  " );
-			break;
-		case 4:
-			ri.Printf( PRINT_ALL, "RGBA " );
-			break;
-		case GL_RGBA8:
-			ri.Printf( PRINT_ALL, "RGBA8" );
-			break;
-		case GL_RGB8:
-			ri.Printf( PRINT_ALL, "RGB8" );
-			break;
-		case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
-			ri.Printf( PRINT_ALL, "DXT5 " );
-			break;
-		case GL_RGB4_S3TC:
-			ri.Printf( PRINT_ALL, "S3TC4" );
-			break;
-		case GL_RGBA4:
-			ri.Printf( PRINT_ALL, "RGBA4" );
-			break;
-		case GL_RGB5:
-			ri.Printf( PRINT_ALL, "RGB5 " );
-			break;
-		default:
-			ri.Printf( PRINT_ALL, "???? " );
-		}
+		ri.Printf( PRINT_ALL,  "%4i: %4i %4i  %s   ",
+				   i, image->uploadWidth, image->uploadHeight, yesno[image->mipmap] );
+		ri.Printf(PRINT_ALL, "RGBA ");
+		//@TODO print image->internalFormat
 
 		switch ( image->wrapClampMode ) {
 		case GL_REPEAT:
@@ -624,19 +550,15 @@ static void Upload32(   unsigned *data,
 						qboolean mipmap,
 						qboolean picmip,
 						qboolean lightMap,
-						int *format,
 						int *pUploadWidth, int *pUploadHeight,
 						qboolean noCompress,
 						image_t *image,
 						int descriptorIndex) {
-	int samples;
+	//int samples;
 	int scaled_width, scaled_height;
 	unsigned    *scaledBuffer = NULL;
 	unsigned    *resampledBuffer = NULL;
-	int i, c;
-	byte        *scan;
-	GLenum internalFormat = GL_RGB;
-	float rMax = 0, gMax = 0, bMax = 0;
+	int i;
 	static int rmse_saved = 0;
 
 	// do the root mean square error stuff first
@@ -703,65 +625,12 @@ static void Upload32(   unsigned *data,
 		scaled_height >>= 1;
 	}
 
-	//scaledBuffer = ri.Hunk_AllocateTempMemory( sizeof( unsigned ) * scaled_width * scaled_height );
 	scaledBuffer = R_GetImageBuffer( sizeof( unsigned ) * scaled_width * scaled_height, BUFFER_SCALED );
 
 	//
 	// scan the texture for each channel's max values
 	// and verify if the alpha channel is being used or not
 	//
-	c = width * height;
-	scan = ( (byte *)data );
-	samples = 3;
-	if ( !lightMap ) {
-		for ( i = 0; i < c; i++ )
-		{
-			if ( scan[i * 4 + 0] > rMax ) {
-				rMax = scan[i * 4 + 0];
-			}
-			if ( scan[i * 4 + 1] > gMax ) {
-				gMax = scan[i * 4 + 1];
-			}
-			if ( scan[i * 4 + 2] > bMax ) {
-				bMax = scan[i * 4 + 2];
-			}
-			if ( scan[i * 4 + 3] != 255 ) {
-				samples = 4;
-				break;
-			}
-		}
-		// select proper internal format
-		if ( samples == 3 ) {
-			if ( !noCompress && glConfig.textureCompression == TC_EXT_COMP_S3TC ) {
-				// TODO: which format is best for which textures?
-				internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-			} else if ( !noCompress && glConfig.textureCompression == TC_S3TC )   {
-				internalFormat = GL_RGB4_S3TC;
-			} else if ( r_texturebits->integer == 16 )   {
-				internalFormat = GL_RGB5;
-			} else if ( r_texturebits->integer == 32 )   {
-				internalFormat = GL_RGB8;
-			} else
-			{
-				internalFormat = 3;
-			}
-		} else if ( samples == 4 )   {
-			if ( !noCompress && glConfig.textureCompression == TC_EXT_COMP_S3TC ) {
-				// TODO: which format is best for which textures?
-				internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-			} else if ( r_texturebits->integer == 16 )   {
-				internalFormat = GL_RGBA4;
-			} else if ( r_texturebits->integer == 32 )   {
-				internalFormat = GL_RGBA8;
-			} else
-			{
-				internalFormat = 4;
-			}
-		}
-	} else {
-		internalFormat = 3;
-	}
-	internalFormat = GL_RGBA8; //@TODO: ???
 
 	rhiTextureDesc imageDesc = {};
 	imageDesc.height = scaled_height;
@@ -781,29 +650,22 @@ static void Upload32(   unsigned *data,
 	if ( ( scaled_width == width ) &&
 		 ( scaled_height == height ) ) {
 		if ( !mipmap ) {
-			qglTexImage2D( GL_TEXTURE_2D, 0, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data );
 			*pUploadWidth = scaled_width;
 			*pUploadHeight = scaled_height;
-			*format = internalFormat;
 
-
-	
-			if(internalFormat == GL_RGBA8){
-				
-
-				rhiTextureUpload textureUpload = {};
-				RHI_BeginTextureUpload(&textureUpload, image->handle, 0 );
+			rhiTextureUpload textureUpload = {};
+			RHI_BeginTextureUpload(&textureUpload, image->handle, 0 );
 			
-				for(int i = 0; i < textureUpload.height; i++ ){
-					memcpy(textureUpload.data + textureUpload.rowPitch * i, (byte*)data + textureUpload.width * 4 * i, textureUpload.width * 4);
-				}
-				RHI_EndTextureUpload();
+			for(int i = 0; i < textureUpload.height; i++ ){
+				memcpy(textureUpload.data + textureUpload.rowPitch * i, (byte*)data + textureUpload.width * 4 * i, textureUpload.width * 4);
 			}
-			
+			RHI_EndTextureUpload();
 
 			
 
-			goto done;
+			
+
+			return;
 		}
 		memcpy( scaledBuffer, data, width * height * 4 );
 	} else
@@ -827,19 +689,15 @@ static void Upload32(   unsigned *data,
 
 	*pUploadWidth = scaled_width;
 	*pUploadHeight = scaled_height;
-	*format = internalFormat;
 
-	qglTexImage2D( GL_TEXTURE_2D, 0, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
+	rhiTextureUpload textureUpload = {};
+	RHI_BeginTextureUpload(&textureUpload, image->handle, 0 );
 	
-	if(internalFormat == GL_RGBA8){
-		rhiTextureUpload textureUpload = {};
-		RHI_BeginTextureUpload(&textureUpload, image->handle, 0 );
-	
-		for(int i = 0; i < textureUpload.height; i++ ){
-			memcpy(textureUpload.data + textureUpload.rowPitch * i, (byte*)scaledBuffer + textureUpload.width * 4 * i, textureUpload.width * 4);
-		}
-		RHI_EndTextureUpload();
+	for(int i = 0; i < textureUpload.height; i++ ){
+		memcpy(textureUpload.data + textureUpload.rowPitch * i, (byte*)scaledBuffer + textureUpload.width * 4 * i, textureUpload.width * 4);
 	}
+	RHI_EndTextureUpload();
+
 
 	if ( mipmap ) {
 		int miplevel;
@@ -862,39 +720,18 @@ static void Upload32(   unsigned *data,
 				R_BlendOverTexture( (byte *)scaledBuffer, scaled_width * scaled_height, mipBlendColors[miplevel] );
 			}
 
-			qglTexImage2D( GL_TEXTURE_2D, miplevel, internalFormat, scaled_width, scaled_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
-			
-			if(internalFormat == GL_RGBA8){
-				
-
-				rhiTextureUpload textureUpload = {};
-				RHI_BeginTextureUpload(&textureUpload, image->handle, miplevel );
-				assert(textureUpload.width == scaled_width);
-				assert(textureUpload.height == scaled_height);
-				for(int i = 0; i < textureUpload.height; i++ ){
-					memcpy(textureUpload.data + textureUpload.rowPitch * i, (byte*)scaledBuffer + textureUpload.width * 4 * i, textureUpload.width * 4);
-				}
-				RHI_EndTextureUpload();
+			rhiTextureUpload textureUpload = {};
+			RHI_BeginTextureUpload(&textureUpload, image->handle, miplevel );
+			assert(textureUpload.width == scaled_width);
+			assert(textureUpload.height == scaled_height);
+			for(int i = 0; i < textureUpload.height; i++ ){
+				memcpy(textureUpload.data + textureUpload.rowPitch * i, (byte*)scaledBuffer + textureUpload.width * 4 * i, textureUpload.width * 4);
 			}
+			RHI_EndTextureUpload();
+
 		}
 	}
-done:
 
-	if ( mipmap ) {
-		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min );
-		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max );
-	} else
-	{
-		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-		qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	}
-
-	GL_CheckErrors();
-
-	//if ( scaledBuffer != 0 )
-	//	ri.Hunk_FreeTempMemory( scaledBuffer );
-	//if ( resampledBuffer != 0 )
-	//	ri.Hunk_FreeTempMemory( resampledBuffer );
 }
 
 /*
@@ -925,9 +762,9 @@ image_t *R_CreateImage( const char *name, const byte *pic, int width, int height
 		noCompress = qtrue;
 	}
 	// RF, if the shader hasn't specifically asked for it, don't allow compression
-	if ( r_ext_compressed_textures->integer == 2 && ( tr.allowCompress != qtrue ) ) {
+	if ( ( tr.allowCompress != qtrue ) ) {
 		noCompress = qtrue;
-	} else if ( r_ext_compressed_textures->integer == 1 && ( tr.allowCompress < 0 ) )     {
+	} else if ( ( tr.allowCompress < 0 ) )     {
 		noCompress = qtrue;
 	}
 
@@ -938,8 +775,6 @@ image_t *R_CreateImage( const char *name, const byte *pic, int width, int height
 	// Ridah
 	image = tr.images[tr.numImages] = R_CacheImageAlloc( sizeof( image_t ) );
 	int descriptorIndex = tr.textureDescriptorCount++;
-
-	image->texnum = 1024 + tr.numImages;
 
 	// Ridah
 	if ( r_cacheShaders->integer ) {
@@ -958,43 +793,18 @@ image_t *R_CreateImage( const char *name, const byte *pic, int width, int height
 	image->height = height;
 	image->wrapClampMode = glWrapClampMode;
 
-	// lightmaps are always allocated on TMU 1
-	if ( qglActiveTextureARB && isLightmap ) {
-		image->TMU = 1;
-	} else {
-		image->TMU = 0;
-	}
-
-	if ( qglActiveTextureARB ) {
-		GL_SelectTexture( image->TMU );
-	}
-
-	GL_Bind( image );
-
-	
-
-
 
 	Upload32( (unsigned *)pic,
 			  image->width, image->height,
 			  image->mipmap,
 			  allowPicmip,
 			  isLightmap,
-			  &image->internalFormat,
 			  &image->uploadWidth,
 			  &image->uploadHeight,
 			  noCompress,
 			  image,
 			  descriptorIndex);
 
-	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glWrapClampMode );
-	qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, glWrapClampMode );
-
-	qglBindTexture( GL_TEXTURE_2D, 0 );
-
-	if ( image->TMU == 1 ) {
-		GL_SelectTexture( 0 );
-	}
 
 	hash = generateHashValue( name );
 	image->next = hashTable[hash];
@@ -2150,7 +1960,7 @@ static void R_CreateFogImage( void ) {
 	borderColor[2] = 1.0;
 	borderColor[3] = 1;
 
-	qglTexParameterfv( GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor );
+	//@TODO store sampler index for tr.fogImage
 }
 
 /*
@@ -2306,9 +2116,6 @@ void R_SetColorMappings( void ) {
 		s_intensitytable[i] = j;
 	}
 
-	if ( glConfig.deviceSupportsGamma ) {
-		GLimp_SetGamma( s_gammatable, s_gammatable, s_gammatable );
-	}
 }
 
 /*
@@ -2340,27 +2147,11 @@ R_DeleteTextures
 ===============
 */
 void R_DeleteTextures( void ) {
-	int i;
-
-	for ( i = 0; i < tr.numImages ; i++ ) {
-		qglDeleteTextures( 1, &tr.images[i]->texnum );
-	}
 	memset( tr.images, 0, sizeof( tr.images ) );
 	// Ridah
 	R_InitTexnumImages( qtrue );
 	// done.
 
-	memset( glState.currenttextures, 0, sizeof( glState.currenttextures ) );
-	if ( qglBindTexture ) {
-		if ( qglActiveTextureARB ) {
-			GL_SelectTexture( 1 );
-			qglBindTexture( GL_TEXTURE_2D, 0 );
-			GL_SelectTexture( 0 );
-			qglBindTexture( GL_TEXTURE_2D, 0 );
-		} else {
-			qglBindTexture( GL_TEXTURE_2D, 0 );
-		}
-	}
 }
 
 /*
@@ -3415,23 +3206,10 @@ R_PurgeImage
 */
 void R_PurgeImage( image_t *image ) {
 
-	texnumImages[image->texnum - 1024] = NULL;
-
-	qglDeleteTextures( 1, &image->texnum );
+	//texnumImages[image->texnum - 1024] = NULL;
 
 	R_CacheImageFree( image );
 
-	memset( glState.currenttextures, 0, sizeof( glState.currenttextures ) );
-	if ( qglBindTexture ) {
-		if ( qglActiveTextureARB ) {
-			GL_SelectTexture( 1 );
-			qglBindTexture( GL_TEXTURE_2D, 0 );
-			GL_SelectTexture( 0 );
-			qglBindTexture( GL_TEXTURE_2D, 0 );
-		} else {
-			qglBindTexture( GL_TEXTURE_2D, 0 );
-		}
-	}
 }
 
 
@@ -3498,17 +3276,6 @@ void R_BackupImages( void ) {
 	numBackupImages = tr.numImages;
 	tr.numImages = 0;
 
-	memset( glState.currenttextures, 0, sizeof( glState.currenttextures ) );
-	if ( qglBindTexture ) {
-		if ( qglActiveTextureARB ) {
-			GL_SelectTexture( 1 );
-			qglBindTexture( GL_TEXTURE_2D, 0 );
-			GL_SelectTexture( 0 );
-			qglBindTexture( GL_TEXTURE_2D, 0 );
-		} else {
-			qglBindTexture( GL_TEXTURE_2D, 0 );
-		}
-	}
 }
 
 /*
@@ -3587,7 +3354,6 @@ void R_FindFreeTexnum( image_t *inImage ) {
 		} else {
 			last_i = 0;
 		}
-		inImage->texnum = 1024 + i;
 		texnumImages[i] = inImage;
 	} else {
 		ri.Error( ERR_DROP, "R_FindFreeTexnum: MAX_DRAWIMAGES hit\n" );

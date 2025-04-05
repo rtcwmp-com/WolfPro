@@ -637,16 +637,18 @@ qboolean CL_Netchan_Process( netchan_t *chan, msg_t *msg );
 //cl_imgui.c
 void CL_ImGUI_Init(void);
 void CL_ImGUI_Shutdown(void);
-void CL_ImGUI_KeyEvent(int k, qboolean down);
+qboolean CL_ImGUI_KeyEvent(int k, qboolean down, const char* cmd);
 void CL_ImGUI_CharEvent(int key);
 void CL_ImGUI_MouseEvent(int dx, int dy, int time);
 void CL_ImGUI_Frame(void);
 #else
 inline void CL_ImGUI_Init(void) {}
 inline void CL_ImGUI_Shutdown(void) {}
-inline void CL_ImGUI_KeyEvent(int k, qboolean down) {}
+inline qboolean CL_ImGUI_KeyEvent(int k, qboolean down, const char* cmd) {}
 inline void CL_ImGUI_CharEvent(int key) {}
 inline void CL_ImGUI_MouseEvent(int dx, int dy, int time) {}
 inline void CL_ImGUI_Frame(void) {}
-#endif
+
+#endif //NO RTCW_VULKAN
+#define KEYCATCH_IMGUI          0x0010
 #endif

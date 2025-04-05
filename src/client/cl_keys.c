@@ -1649,7 +1649,10 @@ void CL_KeyEvent( int key, qboolean down, unsigned time ) {
 	char cmd[1024];
 	qboolean bypassMenu = qfalse;       // NERVE - SMF
 
-	CL_ImGUI_KeyEvent(key, down);
+	if(CL_ImGUI_KeyEvent(key, down, keys[key].binding)){
+		return;
+	}
+	
 	// update auto-repeat status and BUTTON_ANY status
 	keys[key].down = down;
 
@@ -1879,9 +1882,13 @@ void CL_CharEvent( int key ) {
 		return;
 	}
 
+	if ( cls.keyCatchers & KEYCATCH_IMGUI ) {
+		CL_ImGUI_CharEvent(key);
+		return;
+	}
+
 	// distribute the key down event to the apropriate handler
 	if ( cls.keyCatchers & KEYCATCH_CONSOLE ) {
-		CL_ImGUI_CharEvent(key);
 		Field_CharEvent( &g_consoleField, key );
 	} else if ( cls.keyCatchers & KEYCATCH_UI )   {
 		VM_Call( uivm, UI_KEY_EVENT, key | K_CHAR_FLAG, qtrue );

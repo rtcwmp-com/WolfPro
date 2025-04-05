@@ -29,6 +29,9 @@ If you have questions concerning this license or the applicable additional terms
 // tr_models.c -- model loading and caching
 
 #include "tr_local.h"
+#ifdef _WIN32
+#include <Windows.h>
+#endif
 
 #define LL( x ) x = LittleLong( x )
 

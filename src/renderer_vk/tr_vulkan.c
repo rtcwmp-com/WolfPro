@@ -1,8 +1,12 @@
 
 #include "tr_vulkan.h"
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
 
-static Vulkan vk;
+
+Vulkan vk;
 
 
 static const char* GetStringForVkObjectType(VkObjectType type)
@@ -448,7 +452,7 @@ void PickPhysicalDevice(void)
                 deviceFeatures.shaderSampledImageArrayDynamicIndexing && //TODO is this the right variable? want dynamic uniform indexing vs nonuniform indexing
                 deviceFeatures.samplerAnisotropy &&
                 deviceProperties.limits.timestampComputeAndGraphics &&
-                deviceProperties.limits.maxDescriptorSetSampledImages >= MAX_IMAGE_DESCRIPTORS)
+                deviceProperties.limits.maxDescriptorSetSampledImages >= MAX_IMAGEDESCRIPTORS)
             {
                 // score the physical device based on specifics that aren't requirements
                 
@@ -520,8 +524,10 @@ static void CreateDevice()
     VkPhysicalDeviceVulkan12Features vk12f = {};
     vk12f.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
     vk12f.hostQueryReset = VK_TRUE;
-    vk12f.descriptorBindingUpdateUnusedWhilePending = VK_TRUE;
-    vk12f.descriptorBindingPartiallyBound = VK_TRUE;
+    //vk12f.descriptorBindingUpdateUnusedWhilePending = VK_TRUE;
+    //vk12f.descriptorBindingPartiallyBound = VK_TRUE;
+	vk12f.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+	vk12f.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
     vk12f.timelineSemaphore = VK_TRUE;
 
     VkPhysicalDeviceVulkan13Features vk13f = {};
@@ -669,13 +675,17 @@ static void CreateSwapChain()
     VkSurfaceCapabilitiesKHR caps;
     VK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk.physicalDevice, vk.surface, &caps));
 
-    if(glConfig.vidWidth < caps.minImageExtent.width ||
-      glConfig.vidWidth > caps.maxImageExtent.width ||
-      glConfig.vidHeight < caps.minImageExtent.height ||
-      glConfig.vidHeight > caps.maxImageExtent.height)
+    int w, h;
+    w = glInfo.winWidth;
+    h = glInfo.winHeight;
+
+    if(w < caps.minImageExtent.width ||
+      w > caps.maxImageExtent.width ||
+      h < caps.minImageExtent.height ||
+      h > caps.maxImageExtent.height)
     {
        ri.Error(ERR_FATAL, "Can't create a swap chain of the requested dimensions (%d x %d)\n",
-                glConfig.vidWidth, glConfig.vidHeight);
+                w, h);
     }
 
     uint32_t formatCount;
@@ -744,20 +754,19 @@ static void CreateSwapChain()
     }
 
     if(r_swapInterval->integer){
+        vk.vsync = qtrue;
         if(!mailboxAvailable){
             ri.Printf(PRINT_ALL, "Present mode selected: VK_PRESENT_MODE_MAILBOX_KHR\n");
             selectedPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
         }else if (fifoRelaxedAvailable){
             ri.Printf(PRINT_ALL, "Present mode selected: VK_PRESENT_MODE_FIFO_RELAXED_KHR\n");
             selectedPresentMode = VK_PRESENT_MODE_FIFO_RELAXED_KHR;
-            Cvar_Set("com_maxfps", va("%d",glConfig.displayFrequency)); //@TODO: change to re.vsyncMsec in com_frame
-
         }else{
             ri.Printf(PRINT_ALL, "Present mode selected: VK_PRESENT_MODE_FIFO_KHR\n");
             selectedPresentMode = VK_PRESENT_MODE_FIFO_KHR;
-            Cvar_Set("com_maxfps", va("%d",glConfig.displayFrequency)); //@TODO: change to re.vsyncMsec in com_frame
         }
     }else{
+        vk.vsync = qfalse;
         if (immediateAvailable){
             ri.Printf(PRINT_ALL, "Present mode selected: VK_PRESENT_MODE_IMMEDIATE_KHR\n");
             selectedPresentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
@@ -765,7 +774,6 @@ static void CreateSwapChain()
             ri.Printf(PRINT_ALL, "Present mode selected: VK_PRESENT_MODE_FIFO_KHR\n");
             ri.Printf(PRINT_WARNING, "V-Sync was forced on, check for the latest graphics driver\n");
             selectedPresentMode = VK_PRESENT_MODE_FIFO_KHR;
-            Cvar_Set("com_maxfps", va("%d",glConfig.displayFrequency)); //@TODO: change to re.vsyncMsec in com_frame
         }
     }
 
@@ -780,8 +788,8 @@ static void CreateSwapChain()
     createInfo.minImageCount = RHI_FRAMES_IN_FLIGHT;
     createInfo.imageFormat = selectedFormat.format;
     createInfo.imageColorSpace = selectedFormat.colorSpace;
-    createInfo.imageExtent.width = glConfig.vidWidth;
-    createInfo.imageExtent.height = glConfig.vidHeight;
+    createInfo.imageExtent.width = w;
+    createInfo.imageExtent.height = h;
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT|VK_IMAGE_USAGE_TRANSFER_DST_BIT; //vk error needed to add TRANSFER_DST_BIT
     createInfo.preTransform = caps.currentTransform; // keep whatever is already going on
@@ -817,8 +825,8 @@ static void CreateSwapChain()
         VK(vkGetSwapchainImagesKHR(vk.device, vk.swapChain, &imageCount, images));
 
         rhiTextureDesc rtDesc = {};
-        rtDesc.width = glConfig.vidWidth;
-        rtDesc.height = glConfig.vidHeight;
+        rtDesc.width = w;
+        rtDesc.height = h;
         rtDesc.mipCount = 1;
         rtDesc.sampleCount = 1;
         rtDesc.allowedStates = RHI_ResourceState_RenderTargetBit | RHI_ResourceState_PresentBit;
@@ -1240,6 +1248,13 @@ static void CreateCommandPool()
 
 
 void RHI_BeginFrame() {
+    if(r_swapInterval->modified){
+        qbool currentVsync = r_swapInterval->integer != 0;
+        if(currentVsync != vk.vsync){
+            RecreateSwapchain();
+        }
+        r_swapInterval->modified = qfalse;
+    }
     vk.currentFrameIndex = (vk.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT;
     vk.durationQueryCount[vk.currentFrameIndex] = 0;
     // VkSemaphoreWaitInfo waitInfo = {};
@@ -1958,7 +1973,7 @@ VkCullModeFlags GetVkCullModeFlags(cullType_t cullType)
 static void CreateDescriptorPool(){
     const VkDescriptorPoolSize poolSizes[] =
 	{
-        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, MAX_IMAGE_DESCRIPTORS * 2 },
+        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, MAX_IMAGEDESCRIPTORS * 2 },
         { VK_DESCRIPTOR_TYPE_SAMPLER, 16 * 2 },
         { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 16 * 2 },
         { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 16 * 2 }
@@ -1969,7 +1984,7 @@ static void CreateDescriptorPool(){
 	poolInfo.poolSizeCount = ARRAY_LEN(poolSizes);
 	poolInfo.pPoolSizes = poolSizes;
 	poolInfo.maxSets = 16; 
-    poolInfo.flags = 0; // @TODO: VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT ?
+	poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     
 	VK(vkCreateDescriptorPool(vk.device, &poolInfo, NULL, &vk.descriptorPool));
 
@@ -2453,7 +2468,7 @@ void RHI_Init( void ) {
     
     Pool_Init(&vk.commandBufferPool, 64, sizeof(CommandBuffer), 0);
     Pool_Init(&vk.semaphorePool, 64, sizeof(Semaphore), 0);
-    Pool_Init(&vk.texturePool, MAX_DRAWIMAGES + 256, sizeof(Texture), 0);
+    Pool_Init(&vk.texturePool, MAX_IMAGEDESCRIPTORS, sizeof(Texture), 0);
     Pool_Init(&vk.bufferPool, 64, sizeof(Buffer), 0);
     Pool_Init(&vk.descriptorSetLayoutPool, 64, sizeof(DescriptorSetLayout), 0);
     Pool_Init(&vk.descriptorSetPool, 64, sizeof(DescriptorSet), 0);

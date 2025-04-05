@@ -34,6 +34,7 @@ If you have questions concerning this license or the applicable additional terms
 #define REF_API_VERSION     8
 extern cvar_t   *r_fullscreen;
 
+
 //
 // these are the functions exported by the refresh module
 //

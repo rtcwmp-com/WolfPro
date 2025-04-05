@@ -37,7 +37,6 @@ If you have questions concerning this license or the applicable additional terms
 
 glconfig_t glConfig;
 glinfo_t	glInfo;
-glstate_t glState;
 
 static void GfxInfo_f( void );
 
@@ -62,9 +61,6 @@ cvar_t  *r_zfar;
 
 cvar_t  *r_skipBackEnd;
 
-cvar_t  *r_ignorehwgamma;
-cvar_t  *r_measureOverdraw;
-
 cvar_t  *r_inGameVideo;
 cvar_t  *r_fastsky;
 cvar_t  *r_drawSun;
@@ -87,39 +83,17 @@ cvar_t  *r_nocurves;
 
 cvar_t  *r_allowExtensions;
 
-cvar_t  *r_ext_compressed_textures;
-cvar_t  *r_ext_gamma_control;
-cvar_t  *r_ext_multitexture;
-cvar_t  *r_ext_compiled_vertex_array;
-cvar_t  *r_ext_texture_env_add;
 
 //----(SA)	added
 cvar_t  *r_ext_texture_filter_anisotropic;
 
-cvar_t  *r_ext_NV_fog_dist;
-cvar_t  *r_nv_fogdist_mode;
-
-cvar_t  *r_ext_ATI_pntriangles;
-cvar_t  *r_ati_truform_tess;        //
-cvar_t  *r_ati_truform_normalmode;  // linear/quadratic
-cvar_t  *r_ati_truform_pointmode;   // linear/cubic
 //----(SA)	end
 
-cvar_t  *r_ati_fsaa_samples;        //DAJ valids are 1, 2, 4
-
-cvar_t  *r_ignoreGLErrors;
 cvar_t  *r_logFile;
 
-cvar_t  *r_stencilbits;
-cvar_t  *r_depthbits;
-cvar_t  *r_colorbits;
 cvar_t  *r_stereo;
 cvar_t  *r_primitives;
-cvar_t  *r_texturebits;
 
-cvar_t  *r_drawBuffer;
-cvar_t  *r_glDriver;
-cvar_t  *r_glIgnoreWicked3D;
 cvar_t  *r_lightmap;
 cvar_t  *r_vertexLight;
 cvar_t  *r_uiFullScreen;
@@ -149,10 +123,13 @@ cvar_t  *r_subdivisions;
 cvar_t  *r_lodCurveError;
 
 cvar_t  *r_fullscreen;
+cvar_t  *r_fullscreenDesktop;
 
-cvar_t  *r_customwidth;
-cvar_t  *r_customheight;
-cvar_t  *r_customaspect;
+
+cvar_t  *r_windowedWidth;
+cvar_t  *r_windowedHeight;
+cvar_t  *r_fullscreenWidth;
+cvar_t  *r_fullscreenHeight;
 
 cvar_t  *r_overBrightBits;
 cvar_t  *r_mapOverBrightBits;
@@ -196,53 +173,9 @@ int max_polyverts;
 
 cvar_t  *r_gpu;
 
+cvar_t *r_debugUI;
+cvar_t *r_debugInput;
 
-void ( APIENTRY * qglMultiTexCoord2fARB )( GLenum texture, GLfloat s, GLfloat t );
-void ( APIENTRY * qglActiveTextureARB )( GLenum texture );
-void ( APIENTRY * qglClientActiveTextureARB )( GLenum texture );
-
-void ( APIENTRY * qglLockArraysEXT )( GLint, GLint );
-void ( APIENTRY * qglUnlockArraysEXT )( void );
-
-//----(SA)	added
-void ( APIENTRY * qglPNTrianglesiATI )( GLenum pname, GLint param );
-void ( APIENTRY * qglPNTrianglesfATI )( GLenum pname, GLfloat param );
-/*
-The tessellation level and normal generation mode are specified with:
-
-	void qglPNTriangles{if}ATI(enum pname, T param)
-
-	If <pname> is:
-		GL_PN_TRIANGLES_NORMAL_MODE_ATI -
-			<param> must be one of the symbolic constants:
-				- GL_PN_TRIANGLES_NORMAL_MODE_LINEAR_ATI or
-				- GL_PN_TRIANGLES_NORMAL_MODE_QUADRATIC_ATI
-			which will select linear or quadratic normal interpolation respectively.
-		GL_PN_TRIANGLES_POINT_MODE_ATI -
-			<param> must be one of the symbolic  constants:
-				- GL_PN_TRIANGLES_POINT_MODE_LINEAR_ATI or
-				- GL_PN_TRIANGLES_POINT_MODE_CUBIC_ATI
-			which will select linear or cubic interpolation respectively.
-		GL_PN_TRIANGLES_TESSELATION_LEVEL_ATI -
-			<param> should be a value specifying the number of evaluation points on each edge.  This value must be
-			greater than 0 and less than or equal to the value given by GL_MAX_PN_TRIANGLES_TESSELATION_LEVEL_ATI.
-
-	An INVALID_VALUE error will be generated if the value for <param> is less than zero or greater than the max value.
-
-Associated 'gets':
-Get Value                               Get Command Type     Minimum Value								Attribute
----------                               ----------- ----     ------------								---------
-PN_TRIANGLES_ATI						IsEnabled   B		False                                       PN Triangles/enable
-PN_TRIANGLES_NORMAL_MODE_ATI			GetIntegerv Z2		PN_TRIANGLES_NORMAL_MODE_QUADRATIC_ATI		PN Triangles
-PN_TRIANGLES_POINT_MODE_ATI				GetIntegerv Z2		PN_TRIANGLES_POINT_MODE_CUBIC_ATI			PN Triangles
-PN_TRIANGLES_TESSELATION_LEVEL_ATI		GetIntegerv Z+		1											PN Triangles
-MAX_PN_TRIANGLES_TESSELATION_LEVEL_ATI	GetIntegerv Z+		1											-
-
-
-
-
-*/
-//----(SA)	end
 
 
 static void AssertCvarRange( cvar_t *cv, float minVal, float maxVal, qboolean shouldBeIntegral ) {
@@ -260,55 +193,6 @@ static void AssertCvarRange( cvar_t *cv, float minVal, float maxVal, qboolean sh
 		ri.Printf( PRINT_WARNING, "WARNING: cvar '%s' out of range (%f > %f)\n", cv->name, cv->value, maxVal );
 		ri.Cvar_Set( cv->name, va( "%f", maxVal ) );
 	}
-}
-
-
-/*
-** InitOpenGL
-**
-** This function is responsible for initializing a valid OpenGL subsystem.  This
-** is done by calling GLimp_Init (which gives us a working OGL subsystem) then
-** setting variables, checking GL constants, and reporting the gfx system config
-** to the user.
-*/
-static void InitOpenGL( void ) {
-	char renderer_buffer[1024];
-
-	//
-	// initialize OS specific portions of the renderer
-	//
-	// GLimp_Init directly or indirectly references the following cvars:
-	//		- r_fullscreen
-	//		- r_glDriver
-	//		- r_mode
-	//		- r_(color|depth|stencil)bits
-	//		- r_ignorehwgamma
-	//		- r_gamma
-	//
-
-	if ( glConfig.vidWidth == 0 ) {
-		GLint temp;
-
-		GLimp_Init();
-
-		strcpy( renderer_buffer, glConfig.renderer_string );
-		Q_strlwr( renderer_buffer );
-
-		// OpenGL driver constants
-		qglGetIntegerv( GL_MAX_TEXTURE_SIZE, &temp );
-		glConfig.maxTextureSize = temp;
-
-		// stubbed or broken drivers may have reported 0...
-		if ( glConfig.maxTextureSize <= 0 ) {
-			glConfig.maxTextureSize = 0;
-		}
-	}
-
-	// print info
-	GfxInfo_f();
-
-	// set default state
-	GL_SetDefaultState();
 }
 
 static void InitVulkan( void ) {
@@ -375,7 +259,7 @@ static void InitVulkan( void ) {
 	rhiDescriptorSetLayoutDesc descSetLayoutDesc = {};
 	descSetLayoutDesc.name = "Shared Game Textures";
 	
-	descSetLayoutDesc.bindings[0].descriptorCount = MAX_DRAWIMAGES;
+	descSetLayoutDesc.bindings[0].descriptorCount = MAX_IMAGEDESCRIPTORS;
 	descSetLayoutDesc.bindings[0].descriptorType = RHI_DescriptorType_ReadOnlyTexture;
 	descSetLayoutDesc.bindings[0].stageFlags = RHI_PipelineStage_PixelBit;
 
@@ -423,54 +307,15 @@ static void InitVulkan( void ) {
 	colorTextureDesc.sampleCount = 1;
 	colorTextureDesc.width = glConfig.vidWidth;
 	backEnd.colorBuffer = RHI_CreateTexture(&colorTextureDesc);
+	colorTextureDesc.name = "Color Buffer 2";
+	backEnd.colorBuffer2 = RHI_CreateTexture(&colorTextureDesc);
 
 	RB_InitGamma(backEnd.colorBuffer, backEnd.sampler);
+	RB_InitBlit(backEnd.colorBuffer2, backEnd.sampler);
 	RB_ImGUI_Init();
 	
 }
 
-/*
-==================
-GL_CheckErrors
-==================
-*/
-void GL_CheckErrors( void ) {
-	int err;
-	char s[64];
-
-	err = qglGetError();
-	if ( err == GL_NO_ERROR ) {
-		return;
-	}
-	if ( r_ignoreGLErrors->integer ) {
-		return;
-	}
-	switch ( err ) {
-	case GL_INVALID_ENUM:
-		strcpy( s, "GL_INVALID_ENUM" );
-		break;
-	case GL_INVALID_VALUE:
-		strcpy( s, "GL_INVALID_VALUE" );
-		break;
-	case GL_INVALID_OPERATION:
-		strcpy( s, "GL_INVALID_OPERATION" );
-		break;
-	case GL_STACK_OVERFLOW:
-		strcpy( s, "GL_STACK_OVERFLOW" );
-		break;
-	case GL_STACK_UNDERFLOW:
-		strcpy( s, "GL_STACK_UNDERFLOW" );
-		break;
-	case GL_OUT_OF_MEMORY:
-		strcpy( s, "GL_OUT_OF_MEMORY" );
-		break;
-	default:
-		Com_sprintf( s, sizeof( s ), "%i", err );
-		break;
-	}
-
-	ri.Error( ERR_FATAL, "GL_CheckErrors: %s", s );
-}
 
 
 /*
@@ -511,9 +356,8 @@ qboolean R_GetModeInfo( int *width, int *height, float *windowAspect, int mode )
 	}
 
 	if ( mode == -1 ) {
-		*width = r_customwidth->integer;
-		*height = r_customheight->integer;
-		*windowAspect = r_customaspect->value;
+		*width = r_windowedWidth->integer;
+		*height = r_windowedHeight->integer;
 		return qtrue;
 	}
 
@@ -555,37 +399,7 @@ R_TakeScreenshot
 ==================
 */
 void R_TakeScreenshot( int x, int y, int width, int height, char *fileName ) {
-	byte        *buffer;
-	int i, c, temp;
-
-	buffer = ri.Hunk_AllocateTempMemory( glConfig.vidWidth * glConfig.vidHeight * 3 + 18 );
-
-	memset( buffer, 0, 18 );
-	buffer[2] = 2;      // uncompressed type
-	buffer[12] = width & 255;
-	buffer[13] = width >> 8;
-	buffer[14] = height & 255;
-	buffer[15] = height >> 8;
-	buffer[16] = 24;    // pixel size
-
-	qglReadPixels( x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, buffer + 18 );
-
-	// swap rgb to bgr
-	c = 18 + width * height * 3;
-	for ( i = 18 ; i < c ; i += 3 ) {
-		temp = buffer[i];
-		buffer[i] = buffer[i + 2];
-		buffer[i + 2] = temp;
-	}
-
-	// gamma correct
-	if ( ( tr.overbrightBits > 0 ) && glConfig.deviceSupportsGamma ) {
-		R_GammaCorrect( buffer + 18, glConfig.vidWidth * glConfig.vidHeight * 3 );
-	}
-
-	ri.FS_WriteFile( fileName, buffer, c );
-
-	ri.Hunk_FreeTempMemory( buffer );
+	//@TODO: vulkan screenshots
 }
 
 /*
@@ -594,21 +408,7 @@ R_TakeScreenshotJPEG
 ==============
 */
 void R_TakeScreenshotJPEG( int x, int y, int width, int height, char *fileName ) {
-	byte        *buffer;
-
-	buffer = ri.Hunk_AllocateTempMemory( glConfig.vidWidth * glConfig.vidHeight * 4 );
-
-	qglReadPixels( x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, buffer );
-
-	// gamma correct
-	if ( ( tr.overbrightBits > 0 ) && glConfig.deviceSupportsGamma ) {
-		R_GammaCorrect( buffer, glConfig.vidWidth * glConfig.vidHeight * 4 );
-	}
-
-	ri.FS_WriteFile( fileName, buffer, 1 );     // create path
-	SaveJPG( fileName, 95, glConfig.vidWidth, glConfig.vidHeight, buffer );
-
-	ri.Hunk_FreeTempMemory( buffer );
+	//@TODO: vulkan screenshots
 }
 
 /*
@@ -670,60 +470,7 @@ the menu system, sampled down from full screen distorted images
 ====================
 */
 void R_LevelShot( void ) {
-	char checkname[MAX_OSPATH];
-	byte        *buffer;
-	byte        *source;
-	byte        *src, *dst;
-	int x, y;
-	int r, g, b;
-	float xScale, yScale;
-	int xx, yy;
-
-	sprintf( checkname, "levelshots/%s.tga", tr.world->baseName );
-
-	source = ri.Hunk_AllocateTempMemory( glConfig.vidWidth * glConfig.vidHeight * 3 );
-
-	buffer = ri.Hunk_AllocateTempMemory( 128 * 128 * 3 + 18 );
-	memset( buffer, 0, 18 );
-	buffer[2] = 2;      // uncompressed type
-	buffer[12] = 128;
-	buffer[14] = 128;
-	buffer[16] = 24;    // pixel size
-
-	qglReadPixels( 0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_RGB, GL_UNSIGNED_BYTE, source );
-
-	// resample from source
-	xScale = glConfig.vidWidth / 512.0f;
-	yScale = glConfig.vidHeight / 384.0f;
-	for ( y = 0 ; y < 128 ; y++ ) {
-		for ( x = 0 ; x < 128 ; x++ ) {
-			r = g = b = 0;
-			for ( yy = 0 ; yy < 3 ; yy++ ) {
-				for ( xx = 0 ; xx < 4 ; xx++ ) {
-					src = source + 3 * ( glConfig.vidWidth * (int)( ( y * 3 + yy ) * yScale ) + (int)( ( x * 4 + xx ) * xScale ) );
-					r += src[0];
-					g += src[1];
-					b += src[2];
-				}
-			}
-			dst = buffer + 18 + 3 * ( y * 128 + x );
-			dst[0] = b / 12;
-			dst[1] = g / 12;
-			dst[2] = r / 12;
-		}
-	}
-
-	// gamma correct
-	if ( ( tr.overbrightBits > 0 ) && glConfig.deviceSupportsGamma ) {
-		R_GammaCorrect( buffer + 18, 128 * 128 * 3 );
-	}
-
-	ri.FS_WriteFile( checkname, buffer, 128 * 128 * 3 + 18 );
-
-	ri.Hunk_FreeTempMemory( buffer );
-	ri.Hunk_FreeTempMemory( source );
-
-	ri.Printf( PRINT_ALL, "Wrote %s\n", checkname );
+	//@TODO 
 }
 
 /*
@@ -848,83 +595,6 @@ void R_ScreenShotJPEG_f( void ) {
 	}
 }
 
-//============================================================================
-
-/*
-** GL_SetDefaultState
-*/
-void GL_SetDefaultState( void ) {
-	qglClearDepth( 1.0f );
-
-	qglCullFace( GL_FRONT );
-
-	qglColor4f( 1,1,1,1 );
-
-	// initialize downstream texture unit if we're running
-	// in a multitexture environment
-	if ( qglActiveTextureARB ) {
-		GL_SelectTexture( 1 );
-		GL_TextureMode( r_textureMode->string );
-		GL_TexEnv( GL_MODULATE );
-		qglDisable( GL_TEXTURE_2D );
-		GL_SelectTexture( 0 );
-	}
-
-	qglEnable( GL_TEXTURE_2D );
-	GL_TextureMode( r_textureMode->string );
-	GL_TexEnv( GL_MODULATE );
-
-	qglShadeModel( GL_SMOOTH );
-	qglDepthFunc( GL_LEQUAL );
-
-	// the vertex array is always enabled, but the color and texture
-	// arrays are enabled and disabled around the compiled vertex array call
-	qglEnableClientState( GL_VERTEX_ARRAY );
-
-	//
-	// make sure our GL state vector is set correctly
-	//
-	glState.glStateBits = GLS_DEPTHTEST_DISABLE | GLS_DEPTHMASK_TRUE;
-
-	qglPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-	qglDepthMask( GL_TRUE );
-	qglDisable( GL_DEPTH_TEST );
-	qglEnable( GL_SCISSOR_TEST );
-	qglDisable( GL_CULL_FACE );
-	qglDisable( GL_BLEND );
-
-//----(SA)	added.
-	// ATI pn_triangles
-	if ( qglPNTrianglesiATI ) {
-		int maxtess;
-		// get max supported tesselation
-		qglGetIntegerv( GL_MAX_PN_TRIANGLES_TESSELATION_LEVEL_ATI, (GLint*)&maxtess );
-#ifdef __MACOS__
-		glConfig.ATIMaxTruformTess = 7;
-#else
-		glConfig.ATIMaxTruformTess = maxtess;
-#endif
-		// cap if necessary
-		if ( r_ati_truform_tess->value > maxtess ) {
-			ri.Cvar_Set( "r_ati_truform_tess", va( "%d", maxtess ) );
-		}
-
-		// set Wolf defaults
-		qglPNTrianglesiATI( GL_PN_TRIANGLES_TESSELATION_LEVEL_ATI, r_ati_truform_tess->value );
-	}
-
-	if ( glConfig.anisotropicAvailable ) {
-		float maxAnisotropy;
-
-		qglGetFloatv( GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAnisotropy );
-		glConfig.maxAnisotropy = maxAnisotropy;
-
-		// set when rendering
-//	   qglTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, glConfig.maxAnisotropy);
-	}
-
-//----(SA)	end
-}
 
 
 /*
@@ -967,43 +637,14 @@ void GfxInfo_f( void ) {
 	}
 	ri.Printf( PRINT_ALL, "CPU: %s\n", sys_cpustring->string );
 
-	// rendering primitives
-	{
-		int primitives;
-
-		// default is to use triangles if compiled vertex arrays are present
-		ri.Printf( PRINT_ALL, "rendering primitives: " );
-		primitives = r_primitives->integer;
-		if ( primitives == 0 ) {
-			if ( qglLockArraysEXT ) {
-				primitives = 2;
-			} else {
-				primitives = 1;
-			}
-		}
-		if ( primitives == -1 ) {
-			ri.Printf( PRINT_ALL, "none\n" );
-		} else if ( primitives == 2 ) {
-			ri.Printf( PRINT_ALL, "single glDrawElements\n" );
-		} else if ( primitives == 1 ) {
-			ri.Printf( PRINT_ALL, "multiple glArrayElement\n" );
-		} else if ( primitives == 3 ) {
-			ri.Printf( PRINT_ALL, "multiple glColor4ubv + glTexCoord2fv + glVertex3fv\n" );
-		}
-	}
 
 	ri.Printf( PRINT_ALL, "texturemode: %s\n", r_textureMode->string );
 	ri.Printf( PRINT_ALL, "picmip: %d\n", r_picmip->integer );
-	ri.Printf( PRINT_ALL, "texture bits: %d\n", r_texturebits->integer );
-	ri.Printf( PRINT_ALL, "multitexture: %s\n", enablestrings[qglActiveTextureARB != 0] );
-	ri.Printf( PRINT_ALL, "compiled vertex arrays: %s\n", enablestrings[qglLockArraysEXT != 0 ] );
 	ri.Printf( PRINT_ALL, "texenv add: %s\n", enablestrings[glConfig.textureEnvAddAvailable != 0] );
 	ri.Printf( PRINT_ALL, "compressed textures: %s\n", enablestrings[glConfig.textureCompression != TC_NONE] );
 
 	ri.Printf( PRINT_ALL, "NV distance fog: %s\n", enablestrings[glConfig.NVFogAvailable != 0] );
-	if ( glConfig.NVFogAvailable ) {
-		ri.Printf( PRINT_ALL, "Fog Mode: %s\n", r_nv_fogdist_mode->string );
-	}
+
 
 	if ( r_vertexLight->integer || glConfig.hardwareType == GLHW_PERMEDIA2 ) {
 		ri.Printf( PRINT_ALL, "HACK: using vertex lightmap approximation\n" );
@@ -1027,34 +668,8 @@ R_Register
 void R_Register( void ) {
 	//
 	// latched and archived variables
-	//
-	r_glDriver = ri.Cvar_Get( "r_glDriver", OPENGL_DRIVER_NAME, CVAR_ARCHIVE | CVAR_LATCH );
-	r_allowExtensions = ri.Cvar_Get( "r_allowExtensions", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	r_ext_compressed_textures = ri.Cvar_Get( "r_ext_compressed_textures", "1", CVAR_ARCHIVE | CVAR_LATCH );   // (SA) ew, a spelling change I missed from the missionpack
-	r_ext_gamma_control = ri.Cvar_Get( "r_ext_gamma_control", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	r_ext_multitexture = ri.Cvar_Get( "r_ext_multitexture", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	r_ext_compiled_vertex_array = ri.Cvar_Get( "r_ext_compiled_vertex_array", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	r_glIgnoreWicked3D = ri.Cvar_Get( "r_glIgnoreWicked3D", "0", CVAR_ARCHIVE | CVAR_LATCH );
-
-//----(SA)	added
-	r_ext_ATI_pntriangles           = ri.Cvar_Get( "r_ext_ATI_pntriangles", "0", CVAR_ARCHIVE | CVAR_LATCH );   //----(SA)	default to '0'
-	r_ati_truform_tess              = ri.Cvar_Get( "r_ati_truform_tess", "1", CVAR_ARCHIVE );
-	r_ati_truform_normalmode        = ri.Cvar_Get( "r_ati_truform_normalmode", "GL_PN_TRIANGLES_NORMAL_MODE_LINEAR", CVAR_ARCHIVE );
-	r_ati_truform_pointmode         = ri.Cvar_Get( "r_ati_truform_pointmode", "GL_PN_TRIANGLES_POINT_MODE_LINEAR", CVAR_ARCHIVE );
-
-	r_ati_fsaa_samples              = ri.Cvar_Get( "r_ati_fsaa_samples", "1", CVAR_ARCHIVE );       //DAJ valids are 1, 2, 4
-
 	r_ext_texture_filter_anisotropic    = ri.Cvar_Get( "r_ext_texture_filter_anisotropic", "0", CVAR_ARCHIVE );
 
-	r_ext_NV_fog_dist                   = ri.Cvar_Get( "r_ext_NV_fog_dist", "0", CVAR_ARCHIVE | CVAR_LATCH );
-	r_nv_fogdist_mode                   = ri.Cvar_Get( "r_nv_fogdist_mode", "GL_EYE_RADIAL_NV", CVAR_ARCHIVE );    // default to 'looking good'
-//----(SA)	end
-
-#ifdef __linux__ // broken on linux
-	r_ext_texture_env_add = ri.Cvar_Get( "r_ext_texture_env_add", "0", CVAR_ARCHIVE | CVAR_LATCH );
-#else
-	r_ext_texture_env_add = ri.Cvar_Get( "r_ext_texture_env_add", "1", CVAR_ARCHIVE | CVAR_LATCH );
-#endif
 
 	r_picmip = ri.Cvar_Get( "r_picmip", "1", CVAR_ARCHIVE | CVAR_LATCH ); //----(SA)	mod for DM and DK for id build.  was "1" // JPW NERVE pushed back to 1
 	r_roundImagesDown = ri.Cvar_Get( "r_roundImagesDown", "1", CVAR_ARCHIVE | CVAR_LATCH );
@@ -1062,31 +677,21 @@ void R_Register( void ) {
 	r_colorMipLevels = ri.Cvar_Get( "r_colorMipLevels", "0", CVAR_LATCH );
 	AssertCvarRange( r_picmip, 0, 16, qtrue );
 	r_detailTextures = ri.Cvar_Get( "r_detailtextures", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	r_texturebits = ri.Cvar_Get( "r_texturebits", "0", CVAR_ARCHIVE | CVAR_LATCH );
-	r_colorbits = ri.Cvar_Get( "r_colorbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_stereo = ri.Cvar_Get( "r_stereo", "0", CVAR_ARCHIVE | CVAR_LATCH );
-#ifdef __linux__
-	r_stencilbits = ri.Cvar_Get( "r_stencilbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
-#else
-	r_stencilbits = ri.Cvar_Get( "r_stencilbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
-#endif
-	r_depthbits = ri.Cvar_Get( "r_depthbits", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_overBrightBits = ri.Cvar_Get( "r_overBrightBits", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	r_ignorehwgamma = ri.Cvar_Get( "r_ignorehwgamma", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_mode = ri.Cvar_Get( "r_mode", "3", CVAR_ARCHIVE | CVAR_LATCH );
 	r_fullscreen = ri.Cvar_Get( "r_fullscreen", "1", CVAR_ARCHIVE | CVAR_LATCH );
-	r_customwidth = ri.Cvar_Get( "r_customwidth", "1600", CVAR_ARCHIVE | CVAR_LATCH );
-	r_customheight = ri.Cvar_Get( "r_customheight", "1024", CVAR_ARCHIVE | CVAR_LATCH );
-	r_customaspect = ri.Cvar_Get( "r_customaspect", "1", CVAR_ARCHIVE | CVAR_LATCH );
+	r_fullscreenDesktop = ri.Cvar_Get( "r_fullscreenDesktop", "1", CVAR_ARCHIVE | CVAR_LATCH );
+	r_windowedWidth = ri.Cvar_Get( "r_windowedWidth", "1280", CVAR_ARCHIVE | CVAR_LATCH );
+	r_windowedHeight = ri.Cvar_Get( "r_windowedHeight", "720", CVAR_ARCHIVE | CVAR_LATCH );
+	r_fullscreenWidth = ri.Cvar_Get( "r_fullscreenWidth", "1920", CVAR_ARCHIVE | CVAR_LATCH );
+	r_fullscreenHeight = ri.Cvar_Get( "r_fullscreenHeight", "1080", CVAR_ARCHIVE | CVAR_LATCH );
 	r_simpleMipMaps = ri.Cvar_Get( "r_simpleMipMaps", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_vertexLight = ri.Cvar_Get( "r_vertexLight", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_uiFullScreen = ri.Cvar_Get( "r_uifullscreen", "0", 0 );
 	r_subdivisions = ri.Cvar_Get( "r_subdivisions", "4", CVAR_ARCHIVE | CVAR_LATCH );
 	r_ignoreFastPath = ri.Cvar_Get( "r_ignoreFastPath", "1", CVAR_ARCHIVE | CVAR_LATCH );
-#if MAC_STVEF_HM || MAC_WOLF2_MP
-	r_ext_texture_filter_anisotropic = ri.Cvar_Get( "r_ext_texture_filter_anisotropic", "0", CVAR_ARCHIVE | CVAR_LATCH ); //DAJ
-	r_ati_fsaa_samples              = ri.Cvar_Get( "r_ati_fsaa_samples", "1", CVAR_ARCHIVE );       //DAJ valids are 1, 2, 4
-#endif
+
 	//
 	// temporary latched variables that can only change over a restart
 	//
@@ -1108,7 +713,6 @@ void R_Register( void ) {
 //----(SA)	added
 	r_zfar = ri.Cvar_Get( "r_zfar", "0", CVAR_CHEAT );
 //----(SA)	end
-	r_ignoreGLErrors = ri.Cvar_Get( "r_ignoreGLErrors", "1", CVAR_ARCHIVE );
 	r_fastsky = ri.Cvar_Get( "r_fastsky", "0", CVAR_ARCHIVE );
 	r_inGameVideo = ri.Cvar_Get( "r_inGameVideo", "1", CVAR_ARCHIVE );
 	r_drawSun = ri.Cvar_Get( "r_drawSun", "1", CVAR_ARCHIVE );
@@ -1117,18 +721,13 @@ void R_Register( void ) {
 	r_finish = ri.Cvar_Get( "r_finish", "0", CVAR_ARCHIVE );
 	r_textureMode = ri.Cvar_Get( "r_textureMode", "GL_LINEAR_MIPMAP_NEAREST", CVAR_ARCHIVE );
 	r_swapInterval = ri.Cvar_Get( "r_swapInterval", "0", CVAR_ARCHIVE );
-#ifdef __MACOS__
-	r_gamma = ri.Cvar_Get( "r_gamma", "1.2", CVAR_ARCHIVE );
-#else
 	r_gamma = ri.Cvar_Get( "r_gamma", "1.3", CVAR_ARCHIVE );
-#endif
+
 	r_facePlaneCull = ri.Cvar_Get( "r_facePlaneCull", "1", CVAR_ARCHIVE );
 
 	r_railWidth = ri.Cvar_Get( "r_railWidth", "16", CVAR_ARCHIVE );
 	r_railCoreWidth = ri.Cvar_Get( "r_railCoreWidth", "1", CVAR_ARCHIVE );
 	r_railSegmentLength = ri.Cvar_Get( "r_railSegmentLength", "32", CVAR_ARCHIVE );
-
-	r_primitives = ri.Cvar_Get( "r_primitives", "0", CVAR_ARCHIVE );
 
 	r_ambientScale = ri.Cvar_Get( "r_ambientScale", "0.5", CVAR_CHEAT );
 	r_directedScale = ri.Cvar_Get( "r_directedScale", "1", CVAR_CHEAT );
@@ -1145,11 +744,11 @@ void R_Register( void ) {
 	// Ridah
 	// TTimo show_bug.cgi?id=440
 	//   with r_cache enabled, non-win32 OSes were leaking 24Mb per R_Init..
-	r_cache = ri.Cvar_Get( "r_cache", "1", CVAR_LATCH );  // leaving it as this for backwards compability. but it caches models and shaders also
+	r_cache = ri.Cvar_Get( "r_cache", "0", CVAR_LATCH |CVAR_TEMP );  // leaving it as this for backwards compability. but it caches models and shaders also
 	// TTimo show_bug.cgi?id=570
-	r_cacheShaders = ri.Cvar_Get( "r_cacheShaders", "1", CVAR_LATCH );
+	r_cacheShaders = ri.Cvar_Get( "r_cacheShaders", "0", CVAR_LATCH|CVAR_TEMP );
 
-	r_cacheModels = ri.Cvar_Get( "r_cacheModels", "1", CVAR_LATCH );
+	r_cacheModels = ri.Cvar_Get( "r_cacheModels", "0", CVAR_LATCH|CVAR_TEMP );
 	r_compressModels = ri.Cvar_Get( "r_compressModels", "0", 0 );     // converts MD3 -> MDC at run-time
 	r_exportCompressedModels = ri.Cvar_Get( "r_exportCompressedModels", "0", 0 ); // saves compressed models
 	r_cacheGathering = ri.Cvar_Get( "cl_cacheGathering", "0", 0 );
@@ -1171,7 +770,6 @@ void R_Register( void ) {
 	r_flareFade = ri.Cvar_Get( "r_flareFade", "5", CVAR_CHEAT );
 	r_skipBackEnd = ri.Cvar_Get( "r_skipBackEnd", "0", CVAR_CHEAT );
 
-	r_measureOverdraw = ri.Cvar_Get( "r_measureOverdraw", "0", CVAR_CHEAT );
 	r_lodscale = ri.Cvar_Get( "r_lodscale", "5", CVAR_CHEAT );
 	r_norefresh = ri.Cvar_Get( "r_norefresh", "0", CVAR_CHEAT );
 	r_drawentities = ri.Cvar_Get( "r_drawentities", "1", CVAR_CHEAT );
@@ -1188,7 +786,6 @@ void R_Register( void ) {
 	r_showsky = ri.Cvar_Get( "r_showsky", "0", CVAR_CHEAT );
 	r_shownormals = ri.Cvar_Get( "r_shownormals", "0", CVAR_CHEAT );
 	r_clear = ri.Cvar_Get( "r_clear", "0", CVAR_CHEAT );
-	r_drawBuffer = ri.Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
 	r_lockpvs = ri.Cvar_Get( "r_lockpvs", "0", CVAR_CHEAT );
 	r_noportals = ri.Cvar_Get( "r_noportals", "0", CVAR_CHEAT );
 	r_shadows = ri.Cvar_Get( "cg_shadows", "1", 0 );
@@ -1201,6 +798,9 @@ void R_Register( void ) {
 	r_highQualityVideo = ri.Cvar_Get( "r_highQualityVideo", "1", CVAR_ARCHIVE );
 
 	r_gpu = ri.Cvar_Get( "r_gpu", "0", CVAR_ARCHIVE | CVAR_LATCH);
+
+	r_debugUI = ri.Cvar_Get( "r_debugUI", "0", CVAR_TEMP);
+	r_debugInput = ri.Cvar_Get( "r_debugInput", "0", CVAR_TEMP);
 
 	// make sure all the commands added here are also
 	// removed in R_Shutdown
@@ -1291,9 +891,32 @@ void R_Init( void ) {
 
 	backEndData = ri.Hunk_Alloc( sizeof( *backEndData ) + sizeof( srfPoly_t ) * max_polys + sizeof( polyVert_t ) * max_polyverts, h_low );
 
-	InitOpenGL();
-
 	InitVulkan();
+
+	glConfig.anisotropicAvailable = qtrue;
+	glConfig.ATIMaxTruformTess = qfalse;
+	glConfig.ATINormalMode = qfalse;
+	glConfig.ATIPointMode = qfalse;
+	glConfig.colorBits = 32;
+	glConfig.depthBits = 32;
+	glConfig.deviceSupportsGamma = qfalse; //@TODO
+	glConfig.displayFrequency = 0; //@TODO
+	glConfig.driverType = GLDRV_STANDALONE; //@TODO
+	glConfig.hardwareType = GLHW_GENERIC;
+	glConfig.isFullscreen = r_fullscreen->integer;
+	glConfig.maxActiveTextures = MAX_DRAWIMAGES;
+	glConfig.maxAnisotropy = 16;
+	glConfig.maxTextureSize = 2048;
+	glConfig.NVFogAvailable = qfalse;
+	glConfig.NVFogMode = qfalse;
+	glConfig.textureCompression = TC_NONE;
+	glConfig.stencilBits = 0;
+	glConfig.smpActive = qfalse;
+	glConfig.stereoEnabled = r_stereo->integer;
+	glConfig.textureEnvAddAvailable = qfalse;
+	glConfig.textureFilterAnisotropicAvailable = qtrue;
+
+	GfxInfo_f();
 
 	R_InitImages();
 
@@ -1305,12 +928,11 @@ void R_Init( void ) {
 
 	R_InitFreeType();
 
-	err = qglGetError();
-	if ( err != GL_NO_ERROR ) {
-		ri.Printf( PRINT_ALL, "glGetError() = 0x%x\n", err );
-	}
+
 
 	ri.Printf( PRINT_ALL, "----- finished R_Init -----\n" );
+
+
 }
 
 /*
@@ -1360,10 +982,8 @@ void RE_Shutdown( qboolean destroyWindow ) {
 
 	R_DoneFreeType();
 
-	// shut down platform specific OpenGL stuff
+	// shut down platform specific stuff
 	if ( destroyWindow ) {
-		GLimp_Shutdown();
-
 		// Ridah, release the virtual memory
 		R_Hunk_End();
 		R_FreeImageBuffer();
@@ -1389,8 +1009,10 @@ void RE_EndRegistration( void ) {
 
 void R_ComputeCursorPosition( int* x, int* y )
 { 
-	//rendering coordinates and display coordinates are the same currently
-
+	if(r_fullscreenDesktop->integer == 0 && r_fullscreen->integer == 1){
+		*x += (glConfig.vidWidth - glInfo.winWidth)/2;
+		*y += (glConfig.vidHeight - glInfo.winHeight)/2;
+	}
 }
 
 
@@ -1465,15 +1087,12 @@ refexport_t *GetRefAPI( int apiVersion, refimport_t *rimp ) {
 	return &re;
 }
 
-// r_mode
-#define VIDEOMODE_DESKTOPRES	0	// no mode change, render size = desktop size
-#define VIDEOMODE_UPSCALE		1	// no mode change, render size < desktop size
-#define VIDEOMODE_CHANGE		2	// mode change - only makes sense for CRT users
-#define VIDEOMODE_MAX			2
 
 void RE_ConfigureVideoMode( int desktopWidth, int desktopHeight )
 {
 	glInfo.winFullscreen = !!r_fullscreen->integer;
+
+#if 0
 	glInfo.vidFullscreen = r_fullscreen->integer && r_mode->integer == VIDEOMODE_CHANGE;
 
 	if (r_fullscreen->integer && r_mode->integer == VIDEOMODE_DESKTOPRES) {
@@ -1486,17 +1105,33 @@ void RE_ConfigureVideoMode( int desktopWidth, int desktopHeight )
 	}
 
 	if (r_fullscreen->integer && r_mode->integer == VIDEOMODE_UPSCALE) {
-		glConfig.vidWidth = r_customwidth->integer;
-		glConfig.vidHeight = r_customheight->integer;
+		glConfig.vidWidth = r_windowedWidth->integer;
+		glConfig.vidHeight = r_windowedHeight->integer;
 		glConfig.windowAspect = (float)glConfig.vidWidth / (float)glConfig.vidHeight;
 		glInfo.winWidth = desktopWidth;
 		glInfo.winHeight = desktopHeight;
 		return;
 	}
-		
-	glConfig.vidWidth = r_customwidth->integer;
-	glConfig.vidHeight = r_customheight->integer;
-	glConfig.windowAspect = (float)glConfig.vidWidth / (float)glConfig.vidHeight;
-	glInfo.winWidth = r_customwidth->integer;
-	glInfo.winHeight = r_customheight->integer;
+#endif	
+
+	if (r_fullscreenDesktop->integer && r_fullscreen->integer) {
+		glConfig.vidWidth = desktopWidth;
+		glConfig.vidHeight = desktopHeight;
+		glInfo.winWidth = desktopWidth;
+		glInfo.winHeight = desktopHeight;
+		return;
+	}
+
+	if (!r_fullscreenDesktop->integer && r_fullscreen->integer) {
+		glConfig.vidWidth = r_fullscreenWidth->integer;
+		glConfig.vidHeight = r_fullscreenHeight->integer;
+		glInfo.winWidth = desktopWidth;
+		glInfo.winHeight = desktopHeight;
+		return;
+	}
+
+	glConfig.vidWidth = r_windowedWidth->integer;
+	glConfig.vidHeight = r_windowedHeight->integer;
+	glInfo.winWidth = r_windowedWidth->integer;
+	glInfo.winHeight = r_windowedHeight->integer;
 }

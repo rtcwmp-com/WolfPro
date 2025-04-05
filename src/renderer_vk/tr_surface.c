@@ -441,18 +441,19 @@ void RB_SurfaceBeam( void ) {
 		VectorAdd( start_points[i], direction, end_points[i] );
 	}
 
-	GL_Bind( tr.whiteImage );
+	//@TODO
+	// GL_Bind( tr.whiteImage );
 
-	GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE );
+	// GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE );
 
-	qglColor3f( 1, 0, 0 );
+	// qglColor3f( 1, 0, 0 );
 
-	qglBegin( GL_TRIANGLE_STRIP );
-	for ( i = 0; i <= NUM_BEAM_SEGS; i++ ) {
-		qglVertex3fv( start_points[ i % NUM_BEAM_SEGS] );
-		qglVertex3fv( end_points[ i % NUM_BEAM_SEGS] );
-	}
-	qglEnd();
+	// qglBegin( GL_TRIANGLE_STRIP );
+	// for ( i = 0; i <= NUM_BEAM_SEGS; i++ ) {
+	// 	qglVertex3fv( start_points[ i % NUM_BEAM_SEGS] );
+	// 	qglVertex3fv( end_points[ i % NUM_BEAM_SEGS] );
+	// }
+	// qglEnd();
 }
 
 //================================================================================
@@ -1356,20 +1357,7 @@ Draws x/y/z lines from the origin for orientation debugging
 ===================
 */
 void RB_SurfaceAxis( void ) {
-	GL_Bind( tr.whiteImage );
-	qglLineWidth( 3 );
-	qglBegin( GL_LINES );
-	qglColor3f( 1,0,0 );
-	qglVertex3f( 0,0,0 );
-	qglVertex3f( 16,0,0 );
-	qglColor3f( 0,1,0 );
-	qglVertex3f( 0,0,0 );
-	qglVertex3f( 0,16,0 );
-	qglColor3f( 0,0,1 );
-	qglVertex3f( 0,0,0 );
-	qglVertex3f( 0,0,16 );
-	qglEnd();
-	qglLineWidth( 1 );
+	//@TODO
 }
 
 //===========================================================================
@@ -1477,11 +1465,6 @@ void RB_SurfaceFlare( srfFlare_t *surf ) {
 
 
 
-void RB_SurfaceDisplayList( srfDisplayList_t *surf ) {
-	// all apropriate state must be set in RB_BeginSurface
-	// this isn't implemented yet...
-	qglCallList( surf->listNum );
-}
 
 void RB_SurfaceSkip( void *surf ) {
 }
@@ -1499,5 +1482,5 @@ void( *rb_surfaceTable[SF_NUM_SURFACE_TYPES] ) ( void * ) = {
 	( void( * ) ( void* ) )RB_SurfaceAnim,         // SF_MDS,
 	( void( * ) ( void* ) )RB_SurfaceFlare,        // SF_FLARE,
 	( void( * ) ( void* ) )RB_SurfaceEntity,       // SF_ENTITY
-	( void( * ) ( void* ) )RB_SurfaceDisplayList   // SF_DISPLAY_LIST
+	( void( * ) ( void* ) )RB_SurfaceSkip   // SF_DISPLAY_LIST
 };

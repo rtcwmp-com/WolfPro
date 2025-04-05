@@ -22,8 +22,7 @@
 #define MAX_LAYERS 16
 #define MAX_EXTENSIONS 16
 #define MAX_SWAP_CHAIN_IMAGES 16
-#define MAX_IMAGE_DESCRIPTORS (MAX_DRAWIMAGES + 64)
-#define MAX_TEXTURES (MAX_DRAWIMAGES + 256) // needs space for render targets too
+#define MAX_TEXTURES (MAX_IMAGEDESCRIPTORS) // needs space for render targets too
 #define MAX_DURATION_QUERIES 64
 
 #define MAX_TEXTURE_SIZE 2048
@@ -272,6 +271,7 @@ typedef struct Vulkan
 	uint32_t query[RHI_FRAMES_IN_FLIGHT][MAX_DURATION_QUERIES];
 	uint32_t currentFrameIndex;
 	uint32_t durationQueryCount[RHI_FRAMES_IN_FLIGHT];
+	qboolean vsync;
 } Vulkan;
 
 extern Vulkan vk;
