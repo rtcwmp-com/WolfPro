@@ -118,6 +118,7 @@ typedef struct image_s {
 	qboolean mipmap;
 	qboolean allowPicmip;
 	int wrapClampMode;              // GL_CLAMP or GL_REPEAT
+	qboolean lightMap;
 
 	int hash;           // for fast building of the backupHash
 
@@ -979,7 +980,7 @@ typedef struct {
 	rhiDescriptorSetLayout descriptorSetLayout;
 	rhiDescriptorSet descriptorSet;
 
-	rhiSampler sampler;
+	rhiSampler sampler[4];
 
 	VertexBuffers vertexBuffers[RHI_FRAMES_IN_FLIGHT];
 	rhiBuffer sceneViewUploadBuffers[RHI_FRAMES_IN_FLIGHT];
@@ -1623,6 +1624,7 @@ void RB_CreateGraphicsPipeline(shader_t *newShader);
 void RB_ClearPipelineCache(void);
 void RB_BeginRenderPass(const char* name, const RHI_RenderPass* rp);
 void RB_EndRenderPass(void);
+int RB_GetSamplerIndex(qbool clamp, qbool anisotropy);
 
 /*
 =============================================================

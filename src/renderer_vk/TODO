@@ -1,11 +1,13 @@
 2/16/25 disconnect should shutdown the renderer
-fix loading map twice infinite loading
+loading map after a map is already loaded causes infinite loading 
 
 multi-stage shaders
 sort draw surfaces by pipeline ID of shader stage 0
 only call CmdBindVertexBuffers when the buffer bindings actually change
 generate all possible samplers (repeat, clamp) x (linear, anisotropic) and assign them to our main game texture descriptor set
+    when rendering pick the correct sampler
 
+imgui renderpass should be after gamma correction
 filter GPU performance of all named render passes
 
 proper upload manager for textures (linear allocation + CPU waits are moved out)

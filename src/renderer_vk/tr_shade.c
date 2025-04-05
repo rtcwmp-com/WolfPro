@@ -600,8 +600,12 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 		
 
 		pixelShaderPushConstants pc; 
-		pc.samplerIndex = 0; //@TODO
-		pc.textureIndex = R_GetAnimatedImageSafe(&pStage->bundle[0])->descriptorIndex;
+		image_t *currentImage = R_GetAnimatedImageSafe(&pStage->bundle[0]);
+		qbool clamp = currentImage->wrapClampMode == GL_CLAMP;
+		qbool anisotropy = r_ext_texture_filter_anisotropic->integer > 1 && !backEnd.projection2D && !currentImage->lightMap;
+
+		pc.samplerIndex = RB_GetSamplerIndex(clamp, anisotropy);
+		pc.textureIndex = currentImage->descriptorIndex;
 		pc.alphaTest = AlphaTestMode(pStage->stateBits);
 		
 		if(backEnd.previousPipeline.h != pStage->pipeline.h){

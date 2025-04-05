@@ -49,7 +49,7 @@ struct RootConstants
 [[vk::push_constant]] RootConstants rc;
 
 [[vk::binding(0)]] Texture2D texture[1200];
-[[vk::binding(1)]] SamplerState mySampler[6];
+[[vk::binding(1)]] SamplerState mySampler[4];
 
 float4 ps(VOut input) : SV_Target
 {

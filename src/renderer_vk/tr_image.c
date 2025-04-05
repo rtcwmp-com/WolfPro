@@ -792,6 +792,7 @@ image_t *R_CreateImage( const char *name, const byte *pic, int width, int height
 	image->width = width;
 	image->height = height;
 	image->wrapClampMode = glWrapClampMode;
+	image->lightMap = isLightmap;
 
 
 	Upload32( (unsigned *)pic,

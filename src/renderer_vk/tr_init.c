@@ -195,6 +195,8 @@ static void AssertCvarRange( cvar_t *cv, float minVal, float maxVal, qboolean sh
 	}
 }
 
+
+
 static void InitVulkan( void ) {
 	RHI_Init();
 
@@ -279,9 +281,16 @@ static void InitVulkan( void ) {
 
 	backEnd.descriptorSet = RHI_CreateDescriptorSet("Game Textures", backEnd.descriptorSetLayout);
 
-	backEnd.sampler = RHI_CreateSampler("Trilinear", RHI_TextureAddressing_Repeat, 0);
+	for(int a = 0; a < 2; a++){
+		for(int c = 0; c < 2; c++){
+			int i = RB_GetSamplerIndex(c, a);
+			int anisotropy = a && r_ext_texture_filter_anisotropic->integer > 1 ? r_ext_texture_filter_anisotropic->integer : 1;
+			backEnd.sampler[i] = RHI_CreateSampler(va("Sampler C:%d A:%d", c, a), c? RHI_TextureAddressing_Clamp: RHI_TextureAddressing_Repeat, anisotropy);
+		}
 
-	RHI_UpdateDescriptorSet(backEnd.descriptorSet, 1, RHI_DescriptorType_Sampler, 0, 1, &backEnd.sampler);
+	}
+	
+	RHI_UpdateDescriptorSet(backEnd.descriptorSet, 1, RHI_DescriptorType_Sampler, 0, ARRAY_LEN(backEnd.sampler), backEnd.sampler);
 	RHI_UpdateDescriptorSet(backEnd.descriptorSet, 2, RHI_DescriptorType_ReadOnlyBuffer, 0, 1, &backEnd.sceneViewGPUBuffer);
 
 	rhiTextureDesc depthTextureDesc = {};
@@ -310,8 +319,11 @@ static void InitVulkan( void ) {
 	colorTextureDesc.name = "Color Buffer 2";
 	backEnd.colorBuffer2 = RHI_CreateTexture(&colorTextureDesc);
 
-	RB_InitGamma(backEnd.colorBuffer, backEnd.sampler);
-	RB_InitBlit(backEnd.colorBuffer2, backEnd.sampler);
+	rhiSampler blitSampler = backEnd.sampler[RB_GetSamplerIndex(qtrue,qfalse)];
+	rhiSampler gammaSampler = backEnd.sampler[RB_GetSamplerIndex(qtrue,qfalse)];
+	
+	RB_InitGamma(backEnd.colorBuffer, gammaSampler);
+	RB_InitBlit(backEnd.colorBuffer2, blitSampler);
 	RB_ImGUI_Init();
 	
 }

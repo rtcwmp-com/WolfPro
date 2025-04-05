@@ -1160,3 +1160,7 @@ void RB_EndRenderPass(void){
 		RHI_CmdEndDebugLabel();
 	}
 }
+
+int RB_GetSamplerIndex(qbool clamp, qbool anisotropy){
+	return (anisotropy * 2) + clamp;
+}

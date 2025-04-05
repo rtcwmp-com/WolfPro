@@ -200,7 +200,7 @@ void RB_ImGUI_Draw(void){
             }
             RHI_CmdSetScissor(clip_min.x, clip_min.y, clip_max.x - clip_min.x, clip_max.y - clip_min.y);
             pixelPC pPC;
-            pPC.samplerIndex = 0; //@TODO
+            pPC.samplerIndex = RB_GetSamplerIndex(qfalse, qfalse);
             pPC.texIndex = (uint32_t)cmd->TextureId;
             RHI_CmdPushConstants(ImGUIpipeline, RHI_Shader_Pixel, &pPC, sizeof(pPC));
             RHI_CmdDrawIndexed(cmd->ElemCount, cmd->IdxOffset + globalIdxOffset, cmd->VtxOffset + globalVtxOffset);
