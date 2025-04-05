@@ -1140,6 +1140,7 @@ void Sys_Init( void ) {
 
 int totalMsec, countMsec;
 
+typedef BOOL (WINAPI *pfn_SetProcessDpiAwarenessContext)( _In_ DPI_AWARENESS_CONTEXT value);
 /*
 ==================
 WinMain
@@ -1158,10 +1159,25 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	// no abort/retry/fail errors
 	SetErrorMode( SEM_FAILCRITICALERRORS );
 
-	SetProcessDPIAware();
+	
 
-	// DPI_AWARENESS_CONTEXT dpiContext;
-	// SetProcessDpiAwarenessContext(dpiContext);
+	HINSTANCE libHandle = LoadLibrary("user32.dll");
+
+	if(libHandle != NULL){
+		pfn_SetProcessDpiAwarenessContext pfnDpiAware = GetProcAddress(libHandle, "SetProcessDpiAwarenessContext");
+
+		if(pfnDpiAware == NULL){
+			SetProcessDPIAware();
+		}else{
+			pfnDpiAware(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE);
+		}
+
+		FreeLibrary(libHandle);
+	}else{
+		SetProcessDPIAware();
+	}
+
+	
 
 
 	g_wv.hInstance = hInstance;
