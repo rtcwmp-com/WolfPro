@@ -870,6 +870,7 @@ void RB_StageIteratorLightmappedMultitexture( void ) {
 	pc.textureIndex2 = image[1]->descriptorIndex;
 
 	pc.alphaTest = AlphaTestMode(pStage->stateBits);
+	pc.texEnv = GL_MODULATE;
 	
 	if(backEnd.previousPipeline.h != pStage->pipeline.h){
 		RHI_CmdBindPipeline(pStage->pipeline);

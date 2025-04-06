@@ -1415,10 +1415,6 @@ void RB_StageIteratorLightmappedMultitexture( void ) {
 
 	input = &tess;
 
-	static qbool disable = qtrue;
-	if (disable) {
-		return;
-	}
 
 	//
 	// log this call
