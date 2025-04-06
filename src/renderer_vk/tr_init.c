@@ -242,6 +242,11 @@ static void InitVulkan( void ) {
 			vertexBufferDesc.byteCount = VBA_MAX * sizeof(tess.vertexColors[0]);
 			backEnd.vertexBuffers[i].color[stage] = RHI_CreateBuffer(&vertexBufferDesc);
 		}
+		vertexBufferDesc.initialState = RHI_ResourceState_VertexBufferBit;
+		vertexBufferDesc.allowedStates = RHI_ResourceState_VertexBufferBit;
+		vertexBufferDesc.name = va("%s %d", "Texture Coordinates Buffer LM", i);
+		vertexBufferDesc.byteCount = VBA_MAX * sizeof(tess.texCoords[0]);
+		backEnd.vertexBuffers[i].textureCoordLM = RHI_CreateBuffer(&vertexBufferDesc);
 
 	}
 

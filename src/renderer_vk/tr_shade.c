@@ -845,11 +845,11 @@ void RB_StageIteratorLightmappedMultitexture( void ) {
 
 	
 
-	ComputeTexCoords( pStage );
+	//ComputeTexCoords( pStage );
 
-	byte *tcBufferData = RHI_MapBuffer(vb->textureCoord[0]);
+	byte *tcBufferData = RHI_MapBuffer(vb->textureCoordLM);
 	memcpy(tcBufferData + (vb->vertexFirst * sizeof(float) * 4), tess.texCoords, tess.numVertexes * sizeof(float) * 4);
-	RHI_UnmapBuffer(vb->textureCoord[0]);
+	RHI_UnmapBuffer(vb->textureCoordLM);
 	
 
 	pixelShaderPushConstants2 pc; 
@@ -881,7 +881,7 @@ void RB_StageIteratorLightmappedMultitexture( void ) {
 		backEnd.currentDescriptorSet = backEnd.descriptorSet;
 	}
 
-	rhiBuffer buffers[] = {vb->position, vb->textureCoord[0]};
+	rhiBuffer buffers[] = {vb->position, vb->textureCoordLM};
 	RHI_CmdBindVertexBuffers(buffers, ARRAY_LEN(buffers));
 	
 

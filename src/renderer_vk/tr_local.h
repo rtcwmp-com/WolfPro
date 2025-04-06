@@ -926,6 +926,7 @@ typedef struct {
 	rhiBuffer index;
 	rhiBuffer color[MAX_SHADER_STAGES];
 	rhiBuffer textureCoord[MAX_SHADER_STAGES];
+	rhiBuffer textureCoordLM;
 	uint32_t indexCount; //total indices written this frame
 	uint32_t indexFirst; //first index of the draw call
 	uint32_t vertexCount; //total vertices written this frame
