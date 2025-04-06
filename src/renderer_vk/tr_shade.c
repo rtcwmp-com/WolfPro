@@ -820,6 +820,13 @@ void RB_StageIteratorVertexLitTexture( void ) {
 //define	REPLACE_MODE
 
 void RB_StageIteratorLightmappedMultitexture( void ) {
+	shaderStage_t *pStage = tess.xstages[0];
+
+	//if (pStage == NULL || !pStage->active) {
+	if (pStage == NULL) {
+		return;
+	}
+
 	VertexBuffers *vb = &backEnd.vertexBuffers[backEnd.currentFrameIndex];
 
 	if((vb->indexCount + tess.numIndexes) > IDX_MAX || (vb->vertexCount + tess.numVertexes) > VBA_MAX ){
@@ -836,20 +843,13 @@ void RB_StageIteratorLightmappedMultitexture( void ) {
 	RHI_UnmapBuffer(vb->position);
 
 
-	shaderStage_t *pStage = tess.xstages[0];
-
-	//if (pStage == NULL || !pStage->active) {
-	if (pStage == NULL) {
-		return;
-	}
+	
 
 	ComputeTexCoords( pStage );
 
-	for(int i = 0 ; i < 2; i++){
-		byte *tcBufferData = RHI_MapBuffer(vb->textureCoord[i]);
-		memcpy(tcBufferData + (vb->vertexFirst * sizeof(float) * 2), tess.svars.texcoords[i], tess.numVertexes * sizeof(float) * 2);
-		RHI_UnmapBuffer(vb->textureCoord[i]);
-	}
+	byte *tcBufferData = RHI_MapBuffer(vb->textureCoord[0]);
+	memcpy(tcBufferData + (vb->vertexFirst * sizeof(float) * 4), tess.texCoords, tess.numVertexes * sizeof(float) * 4);
+	RHI_UnmapBuffer(vb->textureCoord[0]);
 	
 
 	pixelShaderPushConstants2 pc; 
@@ -881,7 +881,7 @@ void RB_StageIteratorLightmappedMultitexture( void ) {
 		backEnd.currentDescriptorSet = backEnd.descriptorSet;
 	}
 
-	rhiBuffer buffers[3] = {vb->position, vb->textureCoord[0], vb->textureCoord[1]};
+	rhiBuffer buffers[] = {vb->position, vb->textureCoord[0]};
 	RHI_CmdBindVertexBuffers(buffers, ARRAY_LEN(buffers));
 	
 

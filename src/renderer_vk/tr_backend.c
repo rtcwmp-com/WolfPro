@@ -1104,12 +1104,12 @@ void RB_CreateGraphicsPipeline(shader_t *newShader){
 			a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
 			a->elementCount = 2;
 			a->elementFormat = RHI_VertexFormat_Float32;
-			a->bufferBinding = 2;
+			a->bufferBinding = 1;
+			a->offset = 2 * sizeof(float);
 			
-			graphicsDesc.vertexBufferCount = 3;
+			graphicsDesc.vertexBufferCount = 2;
 			graphicsDesc.vertexBuffers[0].stride = 4 * sizeof(float);
-			graphicsDesc.vertexBuffers[1].stride = 2 * sizeof(float);
-			graphicsDesc.vertexBuffers[2].stride = 2 * sizeof(float);
+			graphicsDesc.vertexBuffers[1].stride = 4 * sizeof(float);
 
 			
 		}else{
