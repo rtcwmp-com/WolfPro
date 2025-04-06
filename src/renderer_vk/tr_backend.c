@@ -1010,6 +1010,8 @@ void RB_ExecuteRenderCommands( const void *data ) {
 
 #include "shaders/generic_ps.h"
 #include "shaders/generic_vs.h"
+#include "shaders/generic2s_ps.h"
+#include "shaders/generic2s_vs.h"
 
 typedef struct cachedPipeline {
 	rhiGraphicsPipelineDesc desc;
@@ -1060,6 +1062,9 @@ void RB_ClearPipelineCache(void){
 }
 
 void RB_CreateGraphicsPipeline(shader_t *newShader){
+
+	qbool isMT = newShader->isMultitextured; //newShader->optimalStageIteratorFunc == RB_StageIteratorLightmappedMultitexture;
+	
 	
 	
 	for(int i = 0; i < MAX_SHADER_STAGES; i++){
@@ -1074,12 +1079,70 @@ void RB_CreateGraphicsPipeline(shader_t *newShader){
 		// graphicsDesc.name = newShader->name;
 		graphicsDesc.descLayout = backEnd.descriptorSetLayout;
 		graphicsDesc.pushConstants.vsBytes = 64;
-		graphicsDesc.pushConstants.psBytes = sizeof(pixelShaderPushConstants);
+
+
 		
-		graphicsDesc.vertexShader.data = generic_vs;
-		graphicsDesc.vertexShader.byteCount = sizeof(generic_vs);
-		graphicsDesc.pixelShader.data = generic_ps;
-		graphicsDesc.pixelShader.byteCount = sizeof(generic_ps);
+
+		if(isMT){
+			graphicsDesc.pushConstants.psBytes = sizeof(pixelShaderPushConstants2);
+			graphicsDesc.vertexShader.data = generic2s_vs;
+			graphicsDesc.vertexShader.byteCount = sizeof(generic2s_vs);
+			graphicsDesc.pixelShader.data = generic2s_ps;
+			graphicsDesc.pixelShader.byteCount = sizeof(generic2s_ps);
+
+			rhiVertexAttributeDesc *a;
+			a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
+			a->elementCount = 4;
+			a->elementFormat = RHI_VertexFormat_Float32;
+			a->bufferBinding = 0;
+
+			a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
+			a->elementCount = 2;
+			a->elementFormat = RHI_VertexFormat_Float32;
+			a->bufferBinding = 1;
+
+			a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
+			a->elementCount = 2;
+			a->elementFormat = RHI_VertexFormat_Float32;
+			a->bufferBinding = 2;
+			
+			graphicsDesc.vertexBufferCount = 3;
+			graphicsDesc.vertexBuffers[0].stride = 4 * sizeof(float);
+			graphicsDesc.vertexBuffers[1].stride = 2 * sizeof(float);
+			graphicsDesc.vertexBuffers[2].stride = 2 * sizeof(float);
+
+			
+		}else{
+			graphicsDesc.pushConstants.psBytes = sizeof(pixelShaderPushConstants2);
+			graphicsDesc.vertexShader.data = generic_vs;
+			graphicsDesc.vertexShader.byteCount = sizeof(generic_vs);
+			graphicsDesc.pixelShader.data = generic_ps;
+			graphicsDesc.pixelShader.byteCount = sizeof(generic_ps);
+
+			rhiVertexAttributeDesc *a;
+			a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
+			a->elementCount = 4;
+			a->elementFormat = RHI_VertexFormat_Float32;
+			a->bufferBinding = 0;
+
+			a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
+			a->elementCount = 4;
+			a->elementFormat = RHI_VertexFormat_UNorm8;
+			a->bufferBinding = 1;
+
+			a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
+			a->elementCount = 2;
+			a->elementFormat = RHI_VertexFormat_Float32;
+			a->bufferBinding = 2;
+			
+			graphicsDesc.vertexBufferCount = 3;
+			graphicsDesc.vertexBuffers[0].stride = 4 * sizeof(float);
+			graphicsDesc.vertexBuffers[1].stride = 4 * sizeof(byte);
+			graphicsDesc.vertexBuffers[2].stride = 2 * sizeof(float);
+		}
+
+
+		
 		graphicsDesc.cullType = newShader->cullType;
 		graphicsDesc.polygonOffset = newShader->polygonOffset;
 		graphicsDesc.srcBlend = stage->stateBits & GLS_SRCBLEND_BITS;
@@ -1088,21 +1151,8 @@ void RB_CreateGraphicsPipeline(shader_t *newShader){
 		graphicsDesc.depthWrite = (stage->stateBits & GLS_DEPTHMASK_TRUE) != 0;
 		graphicsDesc.depthTestEqual = (stage->stateBits & GLS_DEPTHFUNC_EQUAL) != 0;
 		graphicsDesc.wireframe = (stage->stateBits & GLS_POLYMODE_LINE) != 0;
-		graphicsDesc.attributeCount = 3; //position, color, tc
-		graphicsDesc.attributes[0].elementCount = 4;
-		graphicsDesc.attributes[0].elementFormat = RHI_VertexFormat_Float32;
-		graphicsDesc.attributes[0].bufferBinding = 0;
-		graphicsDesc.attributes[1].elementCount = 4;
-		graphicsDesc.attributes[1].elementFormat = RHI_VertexFormat_UNorm8;
-		graphicsDesc.attributes[1].bufferBinding = 1;
-		graphicsDesc.attributes[2].elementCount = 2;
-		graphicsDesc.attributes[2].elementFormat = RHI_VertexFormat_Float32;
-		graphicsDesc.attributes[2].bufferBinding = 2;
 		graphicsDesc.colorFormat = R8G8B8A8_UNorm;
-		graphicsDesc.vertexBufferCount = 3;
-		graphicsDesc.vertexBuffers[0].stride = 4 * sizeof(float);
-		graphicsDesc.vertexBuffers[1].stride = 4 * sizeof(byte);
-		graphicsDesc.vertexBuffers[2].stride = 2 * sizeof(float);
+
 
 		uint32_t hash = RB_HashPipeline(&graphicsDesc);
 		cachedPipeline cached = {};

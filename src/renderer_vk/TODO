@@ -2,10 +2,9 @@
 loading map after a map is already loaded causes infinite loading 
 
 multi-stage shaders
+    verify colorgen is identity for both stages when shader is collapsed
 sort draw surfaces by pipeline ID of shader stage 0
 only call CmdBindVertexBuffers when the buffer bindings actually change
-generate all possible samplers (repeat, clamp) x (linear, anisotropic) and assign them to our main game texture descriptor set
-    when rendering pick the correct sampler
 
 imgui renderpass should be after gamma correction
 filter GPU performance of all named render passes

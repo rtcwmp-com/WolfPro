@@ -820,7 +820,78 @@ void RB_StageIteratorVertexLitTexture( void ) {
 //define	REPLACE_MODE
 
 void RB_StageIteratorLightmappedMultitexture( void ) {
-	//@TODO collapse multitexture
+	VertexBuffers *vb = &backEnd.vertexBuffers[backEnd.currentFrameIndex];
+
+	if((vb->indexCount + tess.numIndexes) > IDX_MAX || (vb->vertexCount + tess.numVertexes) > VBA_MAX ){
+		assert(!"Out of vertex buffer memory");
+		return;
+	}
+
+	byte *indexBufferData = RHI_MapBuffer(vb->index);
+	memcpy(indexBufferData + (vb->indexFirst * sizeof(tess.indexes[0])), tess.indexes,	tess.numIndexes * sizeof(tess.indexes[0]));
+	RHI_UnmapBuffer(vb->index);
+
+	byte *positionBufferData = RHI_MapBuffer(vb->position);
+	memcpy(positionBufferData + (vb->vertexFirst * sizeof(tess.xyz[0])), tess.xyz, tess.numVertexes * sizeof(tess.xyz[0]));
+	RHI_UnmapBuffer(vb->position);
+
+
+	shaderStage_t *pStage = tess.xstages[0];
+
+	//if (pStage == NULL || !pStage->active) {
+	if (pStage == NULL) {
+		return;
+	}
+
+	ComputeTexCoords( pStage );
+
+	for(int i = 0 ; i < 2; i++){
+		byte *tcBufferData = RHI_MapBuffer(vb->textureCoord[i]);
+		memcpy(tcBufferData + (vb->vertexFirst * sizeof(float) * 2), tess.svars.texcoords[i], tess.numVertexes * sizeof(float) * 2);
+		RHI_UnmapBuffer(vb->textureCoord[i]);
+	}
+	
+
+	pixelShaderPushConstants2 pc; 
+	image_t *image[2];
+	qbool clamp[2];
+	qbool anisotropy[2];
+
+	for(int i = 0; i < 2; i++){
+		image[i] = R_GetAnimatedImageSafe(&pStage->bundle[i]);
+		clamp[i] = image[i]->wrapClampMode == GL_CLAMP;
+		anisotropy[i] = r_ext_texture_filter_anisotropic->integer > 1 && !backEnd.projection2D && !image[i]->lightMap;
+	}
+	
+	pc.samplerIndex1 = RB_GetSamplerIndex(clamp[0], anisotropy[0]);
+	pc.textureIndex1 = image[0]->descriptorIndex;
+
+	pc.samplerIndex2 = RB_GetSamplerIndex(clamp[1], anisotropy[1]);
+	pc.textureIndex2 = image[1]->descriptorIndex;
+
+	pc.alphaTest = AlphaTestMode(pStage->stateBits);
+	
+	if(backEnd.previousPipeline.h != pStage->pipeline.h){
+		RHI_CmdBindPipeline(pStage->pipeline);
+		backEnd.previousPipeline = pStage->pipeline;
+		backEnd.pipelineChangeCount++;
+	}
+	if(backEnd.currentDescriptorSet.h == 0){
+		RHI_CmdBindDescriptorSet(pStage->pipeline, backEnd.descriptorSet);
+		backEnd.currentDescriptorSet = backEnd.descriptorSet;
+	}
+
+	rhiBuffer buffers[3] = {vb->position, vb->textureCoord[0], vb->textureCoord[1]};
+	RHI_CmdBindVertexBuffers(buffers, ARRAY_LEN(buffers));
+	
+
+	RHI_CmdPushConstants(pStage->pipeline, RHI_Shader_Vertex, backEnd.or.modelMatrix,sizeof(backEnd.or.modelMatrix));
+	RHI_CmdPushConstants(pStage->pipeline, RHI_Shader_Pixel, &pc, sizeof(pc));
+
+	RHI_CmdDrawIndexed(tess.numIndexes, vb->indexFirst, vb->vertexFirst);
+
+	vb->indexCount += tess.numIndexes;
+	vb->vertexCount += tess.numVertexes;
 }
 
 /*

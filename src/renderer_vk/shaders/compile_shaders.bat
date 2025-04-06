@@ -10,3 +10,5 @@ del *_ps.h
 %DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T ps_6_0 -E ps %cd%\imgui.hlsl -Fh %cd%\imgui_ps.h -Vn imgui_ps -D PS
 %DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T vs_6_0 -E vs %cd%\blit.hlsl -Fh %cd%\blit_vs.h -Vn blit_vs -D VS
 %DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T ps_6_0 -E ps %cd%\blit.hlsl -Fh %cd%\blit_ps.h -Vn blit_ps -D PS
+%DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T vs_6_0 -E vs %cd%\generic2s.hlsl -Fh %cd%\generic2s_vs.h -Vn generic2s_vs -D VS
+%DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T ps_6_0 -E ps %cd%\generic2s.hlsl -Fh %cd%\generic2s_ps.h -Vn generic2s_ps -D PS

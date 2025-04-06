@@ -1,6 +1,6 @@
 //.\dxc.exe -spirv -T vs_6_0 -E vs C:\Users\Ryan\Documents\GitHub\RTCW-MP\src\renderer_vk\shaders\triangle.hlsl -Fh triangle_vs.h -Vn triangle_vs
 //.\dxc.exe -spirv -T ps_6_0 -E ps C:\Users\Ryan\Documents\GitHub\RTCW-MP\src\renderer_vk\shaders\triangle.hlsl -Fh triangle_ps.h -Vn triangle_ps
-
+#include "generic.hlsli"
 
 struct VOut
 {
@@ -24,12 +24,7 @@ struct VIn
     [[vk::location(2)]] float2 tc : TEXCOORD0;
 };
 
-struct SceneView
-{
-  matrix projectionMatrix;
-  float4 clipPlane;
-};
-[[vk::binding(2)]] ConstantBuffer<SceneView> sceneView;
+
 
 VOut vs(VIn input)
 {
@@ -54,27 +49,8 @@ struct RootConstants
 };
 [[vk::push_constant]] RootConstants rc;
 
-[[vk::binding(0)]] Texture2D texture[1200];
-[[vk::binding(1)]] SamplerState mySampler[4];
+#include "game_textures.hlsli"
 
-bool failsAlphaTest(uint alphaTest, float alpha){
-    if(alphaTest == 1){
-        if(alpha == 0){
-            return true;
-        }
-    }
-    if(alphaTest == 2){
-        if(alpha >= 0.5){
-            return true;
-        }
-    }
-    if(alphaTest == 3){
-        if(alpha < 0.5){
-            return true;
-        }
-    }
-    return false;
-}
 
 float4 ps(VOut input) : SV_Target
 {

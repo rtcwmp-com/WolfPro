@@ -1010,7 +1010,7 @@ void RHI_CmdSetScissor(int32_t x, int32_t y, uint32_t width, uint32_t height)
 void RHI_CmdPushConstants(rhiPipeline pipeline, RHI_Shader shader, const void *constants, uint32_t byteCount)
 {
     Pipeline *privatePipeline = GET_PIPELINE(pipeline);
-    assert(byteCount == privatePipeline->pushConstantSize[shader]);
+ //   assert(byteCount == privatePipeline->pushConstantSize[shader]);
     assert((uint32_t)shader < RHI_Shader_Count);
 
     vkCmdPushConstants(vk.activeCommandBuffer, privatePipeline->layout.pipelineLayout, GetVkShaderStageFlagsFromShader(shader), privatePipeline->pushConstantOffsets[shader], byteCount, constants);

@@ -55,7 +55,7 @@ enum {
 	GL_LINEAR_MIPMAP_NEAREST,
 	GL_NEAREST_MIPMAP_LINEAR,
 	GL_LINEAR_MIPMAP_LINEAR,
-	GL_MODULATE,
+	GL_MODULATE = 100,
 	GL_ADD,
 	GL_DECAL
 };
@@ -445,6 +445,8 @@ typedef struct shader_s {
 	struct shader_s *remappedShader;                    // current shader this one is remapped too
 
 	int shaderStates[MAX_STATES_PER_SHADER];            // index to valid shader states
+	
+	qboolean isMultitextured; 
 
 	struct shader_s *next;
 } shader_t;
@@ -1868,6 +1870,15 @@ typedef struct pixelShaderPushConstants {
 	uint32_t samplerIndex;
 	uint32_t alphaTest;
 } pixelShaderPushConstants;
+
+typedef struct pixelShaderPushConstants2 {
+	uint32_t textureIndex1;
+	uint32_t samplerIndex1;
+	uint32_t textureIndex2;
+	uint32_t samplerIndex2;
+	uint32_t alphaTest;
+	uint32_t texEnv;
+} pixelShaderPushConstants2;
 
 void R_Gpulist_f(void);
 
