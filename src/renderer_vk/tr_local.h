@@ -447,6 +447,7 @@ typedef struct shader_s {
 	int shaderStates[MAX_STATES_PER_SHADER];            // index to valid shader states
 	
 	qboolean isMultitextured; 
+	qboolean isAlphaTested;
 
 	struct shader_s *next;
 } shader_t;
@@ -1268,6 +1269,8 @@ void R_AddPolygonSurfaces( void );
 
 void R_DecomposeSort( unsigned sort, int *entityNum, shader_t **shader,
 					  int *fogNum, int *dlightMap );
+
+unsigned R_ComposeSort( int sortedIndex, int entityNum, int fogNum, int dlightMap );
 
 void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader, int fogIndex, int dlightMap );
 

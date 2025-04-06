@@ -1942,7 +1942,8 @@ static void FixRenderCommandList( int newShader ) {
 					sortedIndex = ( ( drawSurf->sort >> QSORT_SHADERNUM_SHIFT ) & ( MAX_SHADERS - 1 ) );
 					if ( sortedIndex >= newShader ) {
 						sortedIndex++;
-						drawSurf->sort = ( sortedIndex << QSORT_SHADERNUM_SHIFT ) | entityNum | ( fogNum << QSORT_FOGNUM_SHIFT ) | (int)dlightMap;
+						drawSurf->sort = R_ComposeSort(sortedIndex, entityNum, fogNum, dlightMap);
+						
 					}
 				}
 				curCmd = (const void *)( ds_cmd + 1 );
@@ -2191,6 +2192,8 @@ static shader_t *FinishShader( void ) {
 		shader.sort = SS_DECAL;
 	}
 
+
+	qbool isAlphaTested = qfalse;
 	//
 	// set appropriate stage information
 	//
@@ -2199,6 +2202,10 @@ static shader_t *FinishShader( void ) {
 
 		if ( !pStage->active ) {
 			break;
+		}
+
+		if(pStage->stateBits & GLS_ATEST_BITS){
+			isAlphaTested = qtrue;
 		}
 
 		// check for a missing texture
@@ -2292,6 +2299,8 @@ static shader_t *FinishShader( void ) {
 			}
 		}
 	}
+
+	shader.isAlphaTested = isAlphaTested;
 
 	// there are times when you will need to manually apply a sort to
 	// opaque alpha tested shaders that have later blend passes
