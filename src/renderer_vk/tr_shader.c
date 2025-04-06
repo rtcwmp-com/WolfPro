@@ -1714,6 +1714,7 @@ static void ComputeStageIteratorFunc( void ) {
 	//
 	// see if this can go into the vertex lit fast path
 	//
+#if 0 // @TODO: decide if this is worth having in the first place (probably not!)
 	if ( shader.numUnfoggedPasses == 1 ) {
 		if ( stages[0].rgbGen == CGEN_LIGHTING_DIFFUSE ) {
 			if ( stages[0].alphaGen == AGEN_IDENTITY ) {
@@ -1730,6 +1731,7 @@ static void ComputeStageIteratorFunc( void ) {
 			}
 		}
 	}
+#endif
 
 	//
 	// see if this can go into an optimized LM, multitextured path
