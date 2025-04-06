@@ -606,7 +606,7 @@ typedef enum {
 } surfaceType_t;
 
 typedef struct drawSurf_s {
-	unsigned sort;                      // bit combination for fast compares
+	int64_t sort;                      // bit combination for fast compares
 	surfaceType_t       *surface;       // any of surface*_t
 } drawSurf_t;
 
@@ -1267,10 +1267,10 @@ void R_TagInfo_f( void );
 
 void R_AddPolygonSurfaces( void );
 
-void R_DecomposeSort( unsigned sort, int *entityNum, shader_t **shader,
+void R_DecomposeSort( int64_t sort, int *entityNum, shader_t **shader,
 					  int *fogNum, int *dlightMap );
 
-unsigned R_ComposeSort( int sortedIndex, int entityNum, int fogNum, int dlightMap );
+int64_t R_ComposeSort( shader_t *shader, int entityNum, int fogNum, int dlightMap );
 
 void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader, int fogIndex, int dlightMap );
 

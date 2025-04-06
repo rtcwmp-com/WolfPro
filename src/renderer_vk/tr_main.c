@@ -1477,7 +1477,7 @@ void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader,
 	index = tr.refdef.numDrawSurfs & DRAWSURF_MASK;
 	// the sort data is packed into a single 32 bit value so it can be
 	// compared quickly during the qsorting process
-	tr.refdef.drawSurfs[index].sort = R_ComposeSort(shader->sortedIndex, tr.shiftedEntityNum >> QSORT_ENTITYNUM_SHIFT, fogIndex, dlightMap);
+	tr.refdef.drawSurfs[index].sort = R_ComposeSort(shader, tr.shiftedEntityNum >> QSORT_ENTITYNUM_SHIFT, fogIndex, dlightMap);
 	tr.refdef.drawSurfs[index].surface = surface;
 	tr.refdef.numDrawSurfs++;
 }
@@ -1487,7 +1487,7 @@ void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader,
 R_DecomposeSort
 =================
 */
-void R_DecomposeSort( unsigned sort, int *entityNum, shader_t **shader,
+void R_DecomposeSort( int64_t sort, int *entityNum, shader_t **shader,
 					  int *fogNum, int *dlightMap ) {
 	*fogNum = ( sort >> QSORT_FOGNUM_SHIFT ) & 31;
 	*shader = tr.sortedShaders[ ( sort >> QSORT_SHADERNUM_SHIFT ) & ( MAX_SHADERS - 1 ) ];
@@ -1495,8 +1495,15 @@ void R_DecomposeSort( unsigned sort, int *entityNum, shader_t **shader,
 	*dlightMap = sort & 3;
 }
 
-unsigned R_ComposeSort( int sortedIndex, int entityNum, int fogNum, int dlightMap ){
-	return (unsigned)(( sortedIndex << QSORT_SHADERNUM_SHIFT ) | (entityNum << QSORT_ENTITYNUM_SHIFT) | ( fogNum << QSORT_FOGNUM_SHIFT ) | dlightMap); 
+int64_t R_ComposeSort( shader_t *shader, int entityNum, int fogNum, int dlightMap ){
+	return (int64_t)(( shader->sortedIndex << QSORT_SHADERNUM_SHIFT ) | (entityNum << QSORT_ENTITYNUM_SHIFT) | ( fogNum << QSORT_FOGNUM_SHIFT ) | dlightMap); 
+}
+
+int __cdecl CompareDrawSurfs(void const *ptrA, void const *ptrB){
+	const drawSurf_t *a = (const drawSurf_t*)ptrA;
+	const drawSurf_t *b = (const drawSurf_t*)ptrB;
+
+	return (int)(a->sort - b->sort);
 }
 
 /*
@@ -1526,7 +1533,8 @@ void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	}
 
 	// sort the drawsurfs by sort type, then orientation, then shader
-	qsortFast( drawSurfs, numDrawSurfs, sizeof( drawSurf_t ) );
+	// qsortFast( drawSurfs, numDrawSurfs, sizeof( drawSurf_t ) );
+	qsort(drawSurfs,numDrawSurfs, sizeof( drawSurf_t ), CompareDrawSurfs );
 
 	// check for any pass through drawing, which
 	// may cause another view to be rendered first
