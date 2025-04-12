@@ -51,14 +51,18 @@ struct RootConstants
 
 #include "game_textures.hlsli"
 
-
+#if !AT
+[earlydepthstencil]
+#endif
 float4 ps(VOut input) : SV_Target
 {
     
     float4 color = input.color * texture[rc.textureIndex].Sample(mySampler[rc.samplerIndex], input.tc);
+    #if AT
     if(failsAlphaTest(rc.alphaTest, color.a)){
         discard;
     }
+    #endif
     return color;
 }
 

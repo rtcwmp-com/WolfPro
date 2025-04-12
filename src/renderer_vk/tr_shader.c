@@ -1824,6 +1824,18 @@ static qboolean CollapseMultitexture( void ) {
 		return qfalse;
 	}
 
+	if((abits | bbits) & GLS_ATEST_BITS){ // alpha test must be disabled
+		return qfalse;
+	}
+
+	for(int i = 0; i < 2; i++){
+		if(( stages[i].rgbGen != CGEN_IDENTITY ) || ( stages[i].alphaGen != AGEN_IDENTITY )){
+			return qfalse;
+		}
+	}
+	
+
+
 	abits &= ( GLS_DSTBLEND_BITS | GLS_SRCBLEND_BITS );
 	bbits &= ( GLS_DSTBLEND_BITS | GLS_SRCBLEND_BITS );
 

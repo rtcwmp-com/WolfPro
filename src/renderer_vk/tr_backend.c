@@ -1009,6 +1009,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 }
 
 #include "shaders/generic_ps.h"
+#include "shaders/generic_ps_at.h"
 #include "shaders/generic_vs.h"
 #include "shaders/generic2s_ps.h"
 #include "shaders/generic2s_vs.h"
@@ -1116,8 +1117,14 @@ void RB_CreateGraphicsPipeline(shader_t *newShader){
 			graphicsDesc.pushConstants.psBytes = sizeof(pixelShaderPushConstants2);
 			graphicsDesc.vertexShader.data = generic_vs;
 			graphicsDesc.vertexShader.byteCount = sizeof(generic_vs);
-			graphicsDesc.pixelShader.data = generic_ps;
-			graphicsDesc.pixelShader.byteCount = sizeof(generic_ps);
+
+			if(stage->stateBits & GLS_ATEST_BITS){
+				graphicsDesc.pixelShader.data = generic_ps_at;
+				graphicsDesc.pixelShader.byteCount = sizeof(generic_ps_at);
+			}else{
+				graphicsDesc.pixelShader.data = generic_ps;
+				graphicsDesc.pixelShader.byteCount = sizeof(generic_ps);
+			}
 
 			rhiVertexAttributeDesc *a;
 			a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];

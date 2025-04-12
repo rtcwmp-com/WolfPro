@@ -70,16 +70,10 @@ float4 texEnv(float4 p, float4 s, uint texEnv){
 }
 
 
-
+[earlydepthstencil]
 float4 ps(VOut input) : SV_Target
 {
-    
     float4 color1 = texture[rc.textureIndex1].Sample(mySampler[rc.samplerIndex1], input.tc1);
-    
-    if(failsAlphaTest(rc.alphaTest, color1.a)){
-        discard;
-    }
-
     float4 color2 = texture[rc.textureIndex2].Sample(mySampler[rc.samplerIndex2], input.tc2);
     return texEnv(color1, color2, rc.texEnv);
 }
