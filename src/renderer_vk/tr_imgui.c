@@ -122,7 +122,7 @@ void RB_ImGUI_BeginFrame(void){
 }
 
 
-void RB_ImGUI_Draw(void){
+void RB_ImGUI_Draw(rhiTexture renderTarget){
     if(r_debugUI->integer == 0){
         igEndFrame();
         return;
@@ -158,12 +158,12 @@ void RB_ImGUI_Draw(void){
     RHI_UnmapBuffer(currentIB);
 
     RHI_CmdBeginBarrier();
-    RHI_CmdTextureBarrier(backEnd.colorBuffer, RHI_ResourceState_RenderTargetBit);
+    RHI_CmdTextureBarrier(renderTarget, RHI_ResourceState_RenderTargetBit);
     RHI_CmdEndBarrier();
 
     RHI_RenderPass renderPass = {};
     renderPass.colorLoad = RHI_LoadOp_Load;
-    renderPass.colorTexture = backEnd.colorBuffer;
+    renderPass.colorTexture = renderTarget;
     RB_BeginRenderPass("ImGUI", &renderPass);
 
     RHI_CmdBindPipeline(ImGUIpipeline);

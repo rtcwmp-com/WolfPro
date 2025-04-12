@@ -1892,7 +1892,7 @@ void RB_DrawBlit(rhiTexture renderTarget);
 
 void RB_ImGUI_Init(void);
 void RB_ImGUI_BeginFrame(void);
-void RB_ImGUI_Draw(void);
+void RB_ImGUI_Draw(rhiTexture renderTarget);
 void R_ComputeCursorPosition( int* x, int* y );
 
 #endif //TR_LOCAL_H (THIS MUST BE LAST!!)

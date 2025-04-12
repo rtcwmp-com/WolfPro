@@ -941,9 +941,10 @@ const void  *RB_EndFrame( const void *data ) {
 		previousTime = currentTime;
 	}
 	igEnd();
-	RB_ImGUI_Draw();
+	
 
 	RB_DrawGamma(backEnd.colorBuffer2);
+	RB_ImGUI_Draw(backEnd.colorBuffer2);
 	RB_DrawBlit(backEnd.swapChainTextures[backEnd.swapChainImageIndex]);
 	RB_EndRenderPass();
 
