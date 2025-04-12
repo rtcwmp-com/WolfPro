@@ -840,8 +840,41 @@ const void  *RB_BeginFrame( const void *data ) {
 }
 
 
+typedef struct renderPassHistory {
+	uint32_t durationUs[64];
+	uint32_t writeIndex;
+	uint32_t count;
+	uint32_t median;
+} renderPassHistory;
 
+static renderPassHistory s_history[MAX_RENDERPASSES];
+static renderPassHistory s_fullFrameHistory;
 
+int __cdecl CompareSamples(void const *ptrA, void const *ptrB){
+	const int *a = (const int*)ptrA;
+	const int *b = (const int*)ptrB;
+	return *a - *b;
+}
+
+void AddHistory(renderPassHistory *history, uint32_t currentHash, uint32_t previousHash, uint32_t currentDuration){
+	const uint32_t n = ARRAY_LEN(history->durationUs);
+	if(currentHash != previousHash){
+		history->count = 1;
+	}else{
+		history->count = min(history->count + 1, n);
+	}
+	history->durationUs[history->writeIndex] = currentDuration;
+	history->writeIndex = (history->writeIndex + 1) % n;
+	
+	uint32_t startIndex = (history->writeIndex - history->count + n) % n;
+	uint32_t samples[n];
+	for(int i = 0; i < history->count; i++){
+		samples[i] = history->durationUs[(startIndex + i) % n];
+	}
+	qsort(samples, history->count, sizeof(uint32_t), CompareSamples);
+
+	history->median = samples[history->count / 2];
+}
 /*
 =============
 RB_EndFrame
@@ -859,16 +892,17 @@ const void  *RB_EndFrame( const void *data ) {
 
 	cmd = (const swapBuffersCommand_t *)data;
 
-	
-
-
-	int f = (backEnd.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT;
+	int f = (backEnd.currentFrameIndex - 1 + RHI_FRAMES_IN_FLIGHT) % RHI_FRAMES_IN_FLIGHT;
+	int p = (backEnd.currentFrameIndex - 2 + RHI_FRAMES_IN_FLIGHT) % RHI_FRAMES_IN_FLIGHT;
 	for(int i = 0; i < backEnd.renderPassCount[f]; i++){
 		renderPass *currentRenderPass = &backEnd.renderPasses[f][i];
+		renderPass *previousRenderPass = &backEnd.renderPasses[f][i];
 		currentRenderPass->durationUs = RHI_GetDurationUs(currentRenderPass->query);
+		AddHistory(&s_history[i], currentRenderPass->nameHash, previousRenderPass->nameHash, currentRenderPass->durationUs);
 	}
 	
 	uint32_t duration = RHI_GetDurationUs(backEnd.frameDuration[(backEnd.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT]);
+	AddHistory(&s_fullFrameHistory, 0, 0, duration);
 	
 	if(igBegin("Statistics", NULL, 0)){
 		igText("GPU: %s", RHI_GetDeviceName());
@@ -876,10 +910,10 @@ const void  *RB_EndFrame( const void *data ) {
 
 		igText("Renderpasses");
 		int32_t renderPassDuration = 0;
-		igText("Entire Frame %d", (int)duration);
+		igText("Entire Frame %d", (int)s_fullFrameHistory.median);
 		for(int i = 0; i < backEnd.renderPassCount[f]; i++){
 			renderPass *currentRenderPass = &backEnd.renderPasses[f][i];
-			igText("%s %d", currentRenderPass->name, (int)currentRenderPass->durationUs);
+			igText("%s %d", currentRenderPass->name, (int)s_history[i].median);
 			renderPassDuration += currentRenderPass->durationUs;
 		}
 		igText("Overhead %d", (int)duration - (int)renderPassDuration);
