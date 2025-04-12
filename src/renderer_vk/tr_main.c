@@ -1526,7 +1526,19 @@ int __cdecl CompareDrawSurfs(void const *ptrA, void const *ptrB){
 	const drawSurf_t *a = (const drawSurf_t*)ptrA;
 	const drawSurf_t *b = (const drawSurf_t*)ptrB;
 
-	return (int)(a->sort - b->sort);
+	shader_t *shaderA, *shaderB;
+	int entityNum, fogNum, dlightMap;
+
+	R_DecomposeSort(a->sort, &entityNum, &shaderA, &fogNum, &dlightMap);
+	R_DecomposeSort(b->sort, &entityNum, &shaderB, &fogNum, &dlightMap);
+	float keyDifference = shaderA->sort - shaderB->sort;
+
+	if(keyDifference != 0.0f){
+		return qsort_signumf(keyDifference);
+	}
+	
+	int sortDifference = a->sort - b->sort;
+	return qsort_signum(sortDifference);
 }
 
 /*
