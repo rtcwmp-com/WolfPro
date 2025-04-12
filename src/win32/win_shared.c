@@ -148,5 +148,5 @@ char *Sys_GetCurrentUser( void ) {
 }
 
 qbool Sys_IsMinimized(void){
-	return !!IsIconic(vk_wv.hWnd);
+	return !!IsIconic(g_wv.hWnd);
 }

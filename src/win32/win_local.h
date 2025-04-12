@@ -120,7 +120,7 @@ typedef struct
 } WinVars_t;
 
 extern WinVars_t g_wv;
-extern WinVars_t vk_wv;
+
 
 #ifdef DOOMSOUND    ///// (SA) DOOMSOUND
 #ifdef __cplusplus
