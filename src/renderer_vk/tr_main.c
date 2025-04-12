@@ -1479,6 +1479,7 @@ void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader,
 	// compared quickly during the qsorting process
 	tr.refdef.drawSurfs[index].sort = R_ComposeSort(shader, tr.shiftedEntityNum >> QSORT_ENTITYNUM_SHIFT, fogIndex, dlightMap);
 	tr.refdef.drawSurfs[index].surface = surface;
+	tr.refdef.drawSurfs[index].shader = shader;
 	tr.refdef.numDrawSurfs++;
 }
 
@@ -1526,12 +1527,7 @@ int __cdecl CompareDrawSurfs(void const *ptrA, void const *ptrB){
 	const drawSurf_t *a = (const drawSurf_t*)ptrA;
 	const drawSurf_t *b = (const drawSurf_t*)ptrB;
 
-	shader_t *shaderA, *shaderB;
-	int entityNum, fogNum, dlightMap;
-
-	R_DecomposeSort(a->sort, &entityNum, &shaderA, &fogNum, &dlightMap);
-	R_DecomposeSort(b->sort, &entityNum, &shaderB, &fogNum, &dlightMap);
-	float keyDifference = shaderA->sort - shaderB->sort;
+	float keyDifference = a->shader->sort - b->shader->sort;
 
 	if(keyDifference != 0.0f){
 		return qsort_signumf(keyDifference);
