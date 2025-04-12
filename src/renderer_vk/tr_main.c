@@ -1533,7 +1533,7 @@ int __cdecl CompareDrawSurfs(void const *ptrA, void const *ptrB){
 		return qsort_signumf(keyDifference);
 	}
 	
-	int sortDifference = a->sort - b->sort;
+	int64_t sortDifference = a->sort - b->sort;
 	return qsort_signum(sortDifference);
 }
 
