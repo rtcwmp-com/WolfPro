@@ -851,22 +851,6 @@ compared quickly during the qsorting process
 
 the bits are allocated as follows:
 
-(SA) modified for Wolf (11 bits of entity num)
-
-old:
-
-22 - 31	: sorted shader index
-12 - 21	: entity index
-3 - 7	: fog index
-2		: used to be clipped flag
-0 - 1	: dlightmap index
-
-#define	QSORT_SHADERNUM_SHIFT	22
-#define	QSORT_ENTITYNUM_SHIFT	12
-#define	QSORT_FOGNUM_SHIFT		3
-
-new:
-
 22 - 31	: sorted shader index
 11 - 21	: entity index
 2 - 6	: fog index
@@ -881,9 +865,22 @@ newest: (fixes shader index not having enough bytes)
 0 - 1	: dlightmap index
 
 */
+#define QSORT_ALPHATEST_SHIFT   62
+#define QSORT_LIGHTMAP_SHIFT    61 
+#define QSORT_PSONUM_SHIFT      32
 #define QSORT_SHADERNUM_SHIFT   18
 #define QSORT_ENTITYNUM_SHIFT   7
 #define QSORT_FOGNUM_SHIFT      2
+#define QSORT_DLIGHT_SHIFT      0
+
+#define QSORT_ALPHATEST_MASK  1
+#define QSORT_LIGHTMAP_MASK   1
+#define QSORT_PSONUM_MASK     0x1FFFFFFF
+#define QSORT_FOGNUM_MASK     31
+#define QSORT_SHADERNUM_MASK (MAX_SHADERS - 1 )
+#define QSORT_ENTITYNUM_MASK (MAX_GENTITIES - 1 )
+#define QSORT_DLIGHT_MASK 3
+
 
 extern int gl_filter_min, gl_filter_max;
 

@@ -1489,15 +1489,38 @@ R_DecomposeSort
 */
 void R_DecomposeSort( int64_t sort, int *entityNum, shader_t **shader,
 					  int *fogNum, int *dlightMap ) {
-	*fogNum = ( sort >> QSORT_FOGNUM_SHIFT ) & 31;
-	*shader = tr.sortedShaders[ ( sort >> QSORT_SHADERNUM_SHIFT ) & ( MAX_SHADERS - 1 ) ];
-	*entityNum = ( sort >> QSORT_ENTITYNUM_SHIFT ) & ( MAX_GENTITIES - 1 );   // (SA) uppded entity count for Wolf to 11 bits
-	*dlightMap = sort & 3;
+	*fogNum = ( sort >> QSORT_FOGNUM_SHIFT ) & QSORT_FOGNUM_MASK;
+	*shader = tr.sortedShaders[ ( sort >> QSORT_SHADERNUM_SHIFT ) & QSORT_SHADERNUM_MASK ];
+	*entityNum = ( sort >> QSORT_ENTITYNUM_SHIFT ) & QSORT_ENTITYNUM_MASK;   // (SA) uppded entity count for Wolf to 11 bits
+	*dlightMap = (sort >> QSORT_DLIGHT_SHIFT) & QSORT_DLIGHT_MASK;
 }
 
 int64_t R_ComposeSort( shader_t *shader, int entityNum, int fogNum, int dlightMap ){
-	return (int64_t)(( shader->sortedIndex << QSORT_SHADERNUM_SHIFT ) | (entityNum << QSORT_ENTITYNUM_SHIFT) | ( fogNum << QSORT_FOGNUM_SHIFT ) | dlightMap); 
+	assert(shader->stages[0]);
+	uint32_t psoIndex = shader->stages[0] ? RHI_GetIndexFromHandle(shader->stages[0]->pipeline.h) : 0;
+
+	return (int64_t)( 0
+	| ((int64_t)psoIndex << QSORT_PSONUM_SHIFT)
+	| ((int64_t)shader->isAlphaTested << QSORT_ALPHATEST_SHIFT)
+	| ((int64_t)!shader->isMultitextured << QSORT_LIGHTMAP_SHIFT)
+	| ((int64_t)shader->sortedIndex << QSORT_SHADERNUM_SHIFT ) 
+	| ((int64_t)entityNum << QSORT_ENTITYNUM_SHIFT) 
+	| ((int64_t)fogNum << QSORT_FOGNUM_SHIFT) 
+	| ((int64_t)dlightMap << QSORT_DLIGHT_SHIFT) ); 
 }
+
+// returns -1, 0 or 1
+int qsort_signumf(float x)
+{
+    return (x > 0.0f) - (x < -0.0f);
+}
+
+// returns -1, 0 or 1
+int qsort_signum(int64_t x)
+{
+    return (x > 0) - (x < 0);
+}
+
 
 int __cdecl CompareDrawSurfs(void const *ptrA, void const *ptrB){
 	const drawSurf_t *a = (const drawSurf_t*)ptrA;

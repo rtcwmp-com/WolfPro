@@ -456,6 +456,6 @@ void RHI_GetUploadSemaphore(); //(semaphore handle, value to wait on)
 void RHI_PrintPools(void);
 
 const char* RHI_GetDeviceName(void);
-
+uint32_t RHI_GetIndexFromHandle(uint64_t handle);
 
 #endif

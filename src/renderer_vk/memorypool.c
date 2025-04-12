@@ -39,6 +39,10 @@ DecomposedHandle DecomposeHandle(uint64_t handle){
 	return item;
 }
 
+uint32_t RHI_GetIndexFromHandle(uint64_t handle){
+	return (uint32_t)((handle >> 32) & 0xFFFFFFFF);
+}
+
 uint64_t Pool_Add(memoryPool *pool, void *rawItem){
 	uint32_t freeSpot = pool->firstFree;
 	

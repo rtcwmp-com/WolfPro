@@ -1,8 +1,6 @@
 2/16/25 disconnect should shutdown the renderer
 loading map after a map is already loaded causes infinite loading 
 
-grenades and players not rendered in r_ignorefastpath 0
-
 multi-stage shaders
     verify colorgen is identity for both stages when shader is collapsed
 sort draw surfaces by pipeline ID of shader stage 0
