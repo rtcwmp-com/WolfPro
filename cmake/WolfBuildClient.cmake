@@ -66,6 +66,9 @@ if((UNIX) AND NOT APPLE AND NOT ANDROID)
 endif()
 
 target_compile_definitions(${wolfmp_target} PRIVATE WOLF_CLIENT=1)
+if(MSVC)
+	target_link_options(${wolfmp_target} PRIVATE /DEBUG)
+endif()
 
 if(MSVC AND NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/wolfmp.vcxproj.user)
 	configure_file(${PROJECT_SOURCE_DIR}/cmake/vs2013.vcxproj.user.in ${CMAKE_CURRENT_BINARY_DIR}/wolfmp.vcxproj.user @ONLY)
