@@ -9,6 +9,17 @@ void Pool_Clear(memoryPool* pool) {
 	}
 }
 
+void Pool_ClearUnused(memoryPool *pool){
+	uint32_t nextFree = 0;
+	for(int i = pool->itemCount; i > 0; i--){
+		if(!pool->lookupData[i].inUse){
+			pool->lookupData[i].nextFreeIndex = nextFree;
+			nextFree = i;
+		}
+	}
+	pool->firstFree = nextFree;
+}
+
 void Pool_Init(memoryPool *pool, const uint32_t itemCount, const uint32_t typeSize, uint16_t type){
 	pool->poolType = type;
 	pool->typeSize = typeSize;

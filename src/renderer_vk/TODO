@@ -3,6 +3,7 @@ loading map after a map is already loaded causes infinite loading
 
 only call CmdBindVertexBuffers when the buffer bindings actually change
 
+fix loading screen black image
 proper upload manager for textures (linear allocation + CPU waits are moved out)
 dynamic lights
 

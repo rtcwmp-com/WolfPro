@@ -30,6 +30,7 @@ void RHI_Shutdown(qboolean destroyWindow)
             Pool_Remove(&vk.bufferPool, it.handle);
         }
     }
+    Pool_ClearUnused(&vk.bufferPool);
 
 
     it = Pool_BeginIteration();
@@ -40,6 +41,7 @@ void RHI_Shutdown(qboolean destroyWindow)
             Pool_Remove(&vk.semaphorePool, it.handle);
         }
     }
+    Pool_ClearUnused(&vk.semaphorePool);
 
     it = Pool_BeginIteration();
     while(Pool_Iterate(&vk.descriptorSetLayoutPool, &it)){
@@ -49,6 +51,7 @@ void RHI_Shutdown(qboolean destroyWindow)
             Pool_Remove(&vk.descriptorSetLayoutPool, it.handle);
         }
     }
+    Pool_ClearUnused(&vk.descriptorSetLayoutPool);
 
     it = Pool_BeginIteration();
     while(Pool_Iterate(&vk.descriptorSetPool, &it)){
@@ -67,6 +70,7 @@ void RHI_Shutdown(qboolean destroyWindow)
             Pool_Remove(&vk.pipelinePool, it.handle);
         }
     }
+    Pool_ClearUnused(&vk.pipelinePool);
 
     it = Pool_BeginIteration();
     while(Pool_Iterate(&vk.commandBufferPool, &it)){
@@ -76,6 +80,7 @@ void RHI_Shutdown(qboolean destroyWindow)
             Pool_Remove(&vk.commandBufferPool, it.handle);
         }
     }
+    Pool_ClearUnused(&vk.commandBufferPool);
 
     it = Pool_BeginIteration();
     while(Pool_Iterate(&vk.texturePool, &it)){
@@ -89,6 +94,7 @@ void RHI_Shutdown(qboolean destroyWindow)
             Pool_Remove(&vk.texturePool, it.handle);
         }
     }
+    Pool_ClearUnused(&vk.texturePool);
     
     if(destroyWindow){
         //destroy private resources

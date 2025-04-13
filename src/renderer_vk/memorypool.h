@@ -34,6 +34,7 @@ typedef struct PoolIterator {
 } PoolIterator;
 
 void Pool_Clear(memoryPool* pool);
+void Pool_ClearUnused(memoryPool *pool);
 void Pool_Init(memoryPool *pool, const uint32_t itemCount, const uint32_t typeSize, uint16_t type);
 uint64_t ComposeHandle(uint32_t index, uint16_t generation,uint16_t type);
 DecomposedHandle DecomposeHandle(uint64_t handle);
