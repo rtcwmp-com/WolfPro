@@ -2393,7 +2393,7 @@ static char *FindShaderInShaderText( const char *shadername ) {
 	}
 
 	// Ridah, optimized shader loading
-	if ( r_cacheShaders->integer ) {
+	if ( r_cacheShaders->integer || 1 ) {
 		/*if (strstr( shadername, "/" ) && !strstr( shadername, "." ))*/ {
 			unsigned short int checksum;
 			shaderStringPointer_t *pShaderString;
@@ -3086,7 +3086,7 @@ static void ScanAndLoadShaderFiles( void ) {
 	ri.FS_FreeFileList( shaderFiles );
 
 	// Ridah, optimized shader loading (18ms on a P3-500 for sfm1.bsp)
-	if ( r_cacheShaders->integer ) {
+	if ( r_cacheShaders->integer || 1 ) {
 		BuildShaderChecksumLookup();
 	}
 	// done.
