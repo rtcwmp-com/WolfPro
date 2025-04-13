@@ -1350,10 +1350,16 @@ void R_Modellist_f( void ) {
 	model_t *mod;
 	int total;
 	int lods;
+	char *filter = Cmd_Argv(1);
 
 	total = 0;
 	for ( i = 1 ; i < tr.numModels; i++ ) {
 		mod = tr.models[i];
+
+		if(filter[0] != '\0' && !Com_Filter(filter, mod->name, qfalse)){
+			continue;
+		}
+		
 		lods = 1;
 		for ( j = 1 ; j < MD3_MAX_LODS ; j++ ) {
 			if ( mod->md3[j] && mod->md3[j] != mod->md3[j - 1] ) {

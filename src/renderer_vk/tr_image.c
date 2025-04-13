@@ -191,12 +191,17 @@ void R_ImageList_f( void ) {
 	const char *yesno[] = {
 		"no ", "yes"
 	};
+	char *filter = Cmd_Argv(1);
 
 	ri.Printf( PRINT_ALL, "\n      -w-- -h-- -mm- -if-- wrap --name-------\n" );
 	texels = 0;
 
 	for ( i = 0 ; i < tr.numImages ; i++ ) {
 		image = tr.images[ i ];
+
+		if(filter[0] != '\0' && !Com_Filter(filter, image->imgName, qfalse)){
+			continue;
+		}
 
 		texels += image->uploadWidth * image->uploadHeight;
 		ri.Printf( PRINT_ALL,  "%4i: %4i %4i  %s   ",
@@ -2533,11 +2538,16 @@ R_SkinList_f
 void    R_SkinList_f( void ) {
 	int i, j;
 	skin_t      *skin;
+	char *filter = Cmd_Argv(1);
 
 	ri.Printf( PRINT_ALL, "------------------\n" );
 
 	for ( i = 0 ; i < tr.numSkins ; i++ ) {
 		skin = tr.skins[i];
+
+		if(filter[0] != '\0' && !Com_Filter(filter, skin->name, qfalse)){
+			continue;
+		}
 
 		ri.Printf( PRINT_ALL, "%3i:%s\n", i, skin->name );
 		for ( j = 0 ; j < skin->numSurfaces ; j++ ) {

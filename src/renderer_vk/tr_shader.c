@@ -2903,17 +2903,21 @@ void    R_ShaderList_f( void ) {
 	int i;
 	int count;
 	shader_t    *shader;
+	char* filter = Cmd_Argv(1);
+
+
+
 
 	ri.Printf( PRINT_ALL, "-----------------------\n" );
 
 	count = 0;
 	for ( i = 0 ; i < tr.numShaders ; i++ ) {
-		if ( ri.Cmd_Argc() > 1 ) {
-			shader = tr.sortedShaders[i];
-		} else {
-			shader = tr.shaders[i];
+		
+		shader = tr.sortedShaders[i];
+		
+		if(filter[0] != '\0' && !Com_Filter(filter, shader->name, qfalse)){
+			continue;
 		}
-
 		ri.Printf( PRINT_ALL, "%i ", shader->numUnfoggedPasses );
 
 		if ( shader->lightmapIndex >= 0 ) {
