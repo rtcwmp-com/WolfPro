@@ -48,8 +48,8 @@ RHI_HANDLE_TYPE(rhiSampler)
 RHI_HANDLE_TYPE(rhiDurationQuery)
 
 
-
-
+#define ALIGN_UP(x, n) ((x + n - 1) & (~(n - 1)))
+#define ALIGN_DOWN(x, n) (x & ~(n - 1))
 
 
 #define RHI_BIT(x)						(1 << x)
@@ -379,7 +379,7 @@ void RHI_Shutdown(qboolean destroyWindow);
 void RHI_WaitUntilDeviceIdle(); //debug only
 
 rhiSemaphore RHI_CreateBinarySemaphore( void );
-rhiSemaphore RHI_CreateTimelineSemaphore( void );
+rhiSemaphore RHI_CreateTimelineSemaphore( qboolean longLifetime );
 void RHI_WaitOnSemaphore(rhiSemaphore semaphore, uint64_t semaphoreValue);
 
 rhiBuffer RHI_CreateBuffer(const rhiBufferDesc *desc);

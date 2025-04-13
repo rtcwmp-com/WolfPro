@@ -24,6 +24,7 @@
 #define MAX_SWAP_CHAIN_IMAGES 16
 #define MAX_TEXTURES (MAX_IMAGEDESCRIPTORS) // needs space for render targets too
 #define MAX_DURATION_QUERIES 64
+#define MAX_UPLOADCMDBUFFERS 4096
 
 #define MAX_TEXTURE_SIZE 2048
 
@@ -254,7 +255,8 @@ typedef struct Vulkan
 	rhiTexture uploadTextureHandle;
 	uint32_t uploadTextureMipLevel;
 
-	rhiCommandBuffer uploadCmdBuffer;
+	rhiCommandBuffer uploadCmdBuffer[MAX_UPLOADCMDBUFFERS];
+	uint32_t uploadCmdBufferIndex;
 	//
 	// extensions
 	// 
@@ -272,6 +274,13 @@ typedef struct Vulkan
 	uint32_t currentFrameIndex;
 	uint32_t durationQueryCount[RHI_FRAMES_IN_FLIGHT];
 	qboolean vsync;
+
+	uint32_t uploadByteOffset;
+	uint32_t uploadByteCount;
+	uint32_t uploadBufferSize;
+
+	rhiSemaphore uploadSemaphore;
+	uint64_t uploadSemaphoreCount;
 } Vulkan;
 
 extern Vulkan vk;

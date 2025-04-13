@@ -1257,6 +1257,8 @@ void RHI_BeginFrame() {
     }
     vk.currentFrameIndex = (vk.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT;
     vk.durationQueryCount[vk.currentFrameIndex] = 0;
+    VkCommandBufferResetFlags flags;
+    
     // VkSemaphoreWaitInfo waitInfo = {};
     // waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
     // waitInfo.pNext = NULL;
@@ -2366,19 +2368,25 @@ VkBufferUsageFlags GetVkBufferUsageFlags(RHI_ResourceState state)
 }
 
 static void CreateUploadManager(){
+    vk.uploadBufferSize = 64 << 20;
+
     rhiBufferDesc textureStagingBufferDesc = {};
     textureStagingBufferDesc.name = "Upload Buffer";
     textureStagingBufferDesc.initialState = RHI_ResourceState_CopySourceBit;
     textureStagingBufferDesc.memoryUsage = RHI_MemoryUsage_Upload;
-    textureStagingBufferDesc.byteCount = 2048 * 2048 * 4 * 2; //x * y * RGBA * alignment
+    textureStagingBufferDesc.byteCount = vk.uploadBufferSize;
     textureStagingBufferDesc.longLifetime = qtrue;
     textureStagingBufferDesc.allowedStates = RHI_ResourceState_CopySourceBit;
 
     vk.uploadBuffer = RHI_CreateBuffer(&textureStagingBufferDesc);
 
-    vk.uploadCmdBuffer = RHI_CreateCommandBuffer(qtrue);
-
-
+    for(int i = 0; i < MAX_UPLOADCMDBUFFERS; i++){
+        vk.uploadCmdBuffer[i] = RHI_CreateCommandBuffer(qtrue);
+    }
+    vk.uploadCmdBufferIndex = 0;
+ 
+    vk.uploadSemaphore = RHI_CreateTimelineSemaphore(qtrue);
+    vk.uploadSemaphoreCount = 0;
 }
 
 uint32_t GetByteCountsPerPixel(VkFormat format){
@@ -2466,7 +2474,7 @@ void RHI_Init( void ) {
     ri.Printf( PRINT_ALL, "Initializing Vulkan subsystem\n" );
 
     
-    Pool_Init(&vk.commandBufferPool, 64, sizeof(CommandBuffer), 0);
+    Pool_Init(&vk.commandBufferPool, MAX_UPLOADCMDBUFFERS * 2, sizeof(CommandBuffer), 0);
     Pool_Init(&vk.semaphorePool, 64, sizeof(Semaphore), 0);
     Pool_Init(&vk.texturePool, MAX_IMAGEDESCRIPTORS, sizeof(Texture), 0);
     Pool_Init(&vk.bufferPool, 64, sizeof(Buffer), 0);

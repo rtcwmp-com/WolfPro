@@ -137,7 +137,7 @@ rhiSemaphore RHI_CreateBinarySemaphore( void )
     return (rhiSemaphore) { Pool_Add(&vk.semaphorePool, &binarySemaphore) };
 }
 
-rhiSemaphore RHI_CreateTimelineSemaphore( void )
+rhiSemaphore RHI_CreateTimelineSemaphore( qboolean longLifetime )
 {
     VkSemaphoreTypeCreateInfo timelineCreateInfo = {};
     timelineCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO;
@@ -157,6 +157,7 @@ rhiSemaphore RHI_CreateTimelineSemaphore( void )
     timelineSemaphore.signaled = qfalse;
     timelineSemaphore.binary = qfalse;
     timelineSemaphore.semaphore = semaphore;
+    timelineSemaphore.longLifetime = longLifetime;
     return (rhiSemaphore) { Pool_Add(&vk.semaphorePool, &timelineSemaphore) };
 }
 
@@ -1232,12 +1233,12 @@ void RHI_BeginBufferUpload()
 void RHI_EndBufferUpload()
 {
 }
-
+static int uploadActive = 0;
 void RHI_BeginTextureUpload(rhiTextureUpload *textureUpload, rhiTexture handle, uint32_t mipLevel)
 {
+    uploadActive++;
+    assert(uploadActive == 1);
     assert(vk.uploadTextureHandle.h == 0);
-    //use vk.deviceProperties.limits.optimalBufferCopyRowPitchAlignment
-    //use vk.deviceProperties.limits.optimalBufferCopyOffsetAlignment
     Texture *texture = GET_TEXTURE(handle);
 
     textureUpload->data = RHI_MapBuffer(vk.uploadBuffer);
@@ -1246,14 +1247,25 @@ void RHI_BeginTextureUpload(rhiTextureUpload *textureUpload, rhiTexture handle, 
     textureUpload->rowPitch = textureUpload->width * GetByteCountsPerPixel(texture->format); 
     vk.uploadTextureHandle = handle;
     vk.uploadTextureMipLevel = mipLevel;
+    vk.uploadByteCount = textureUpload->rowPitch * textureUpload->height;
+    if(vk.uploadByteCount + vk.uploadByteOffset > vk.uploadBufferSize || vk.uploadCmdBufferIndex + 1 >= MAX_UPLOADCMDBUFFERS){
+        vk.uploadByteOffset = 0;
+        RHI_WaitOnSemaphore(vk.uploadSemaphore, vk.uploadSemaphoreCount);
+        vk.uploadCmdBufferIndex = 0;
+    }else{
+        textureUpload->data += vk.uploadByteOffset;
+        vk.uploadCmdBufferIndex++;
+    }
 
 }
 
 void RHI_EndTextureUpload()
 {
+    uploadActive--;
+    assert(uploadActive == 0);
     RHI_UnmapBuffer(vk.uploadBuffer);
     VkCommandBuffer previousCmdBuffer = vk.activeCommandBuffer;
-    RHI_BindCommandBuffer(vk.uploadCmdBuffer); //@TODO: return VkCommandBuffer to assign previous?
+    RHI_BindCommandBuffer(vk.uploadCmdBuffer[vk.uploadCmdBufferIndex]); //@TODO: return VkCommandBuffer to assign previous?
     Texture *texture = GET_TEXTURE(vk.uploadTextureHandle);
     RHI_BeginCommandBuffer();
     RHI_CmdBeginBarrier();
@@ -1272,6 +1284,10 @@ void RHI_EndTextureUpload()
     region.imageExtent.width = max(texture->desc.width >> vk.uploadTextureMipLevel, 1);
     region.imageExtent.height = max(texture->desc.height >> vk.uploadTextureMipLevel, 1);
     region.imageExtent.depth = 1;
+    region.bufferOffset = vk.uploadByteOffset;
+
+    VkDeviceSize n = vk.deviceProperties.limits.optimalBufferCopyOffsetAlignment;
+    vk.uploadByteOffset = ALIGN_UP(vk.uploadByteOffset + vk.uploadByteCount, n);
 
     vkCmdCopyBufferToImage(vk.activeCommandBuffer, GET_BUFFER(vk.uploadBuffer)->buffer, texture->image,
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
@@ -1282,10 +1298,14 @@ void RHI_EndTextureUpload()
 
     RHI_EndCommandBuffer();
 
+    vk.uploadSemaphoreCount++;
+
     rhiSubmitGraphicsDesc submitDesc = {};
+    submitDesc.signalSemaphoreCount = 1;
+    submitDesc.signalSemaphores[0] = vk.uploadSemaphore;
+    submitDesc.signalValues[0] = vk.uploadSemaphoreCount;
     RHI_SubmitGraphics(&submitDesc);
-    vkDeviceWaitIdle(vk.device); //@TODO remove - signal timeline semaphore, wait on sem before uploading 
-    
+
     vk.uploadTextureHandle.h = 0;
     vk.activeCommandBuffer = previousCmdBuffer;
 }

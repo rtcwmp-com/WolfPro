@@ -256,7 +256,7 @@ static void InitVulkan( void ) {
 	uniformBufferDesc.byteCount = sizeof(SceneView);
 	backEnd.sceneViewGPUBuffer = RHI_CreateBuffer(&uniformBufferDesc);
 
-	backEnd.renderComplete = RHI_CreateTimelineSemaphore();
+	backEnd.renderComplete = RHI_CreateTimelineSemaphore(qfalse);
 	backEnd.renderCompleteBinary = RHI_CreateBinarySemaphore();
 	backEnd.imageAcquiredBinary = RHI_CreateBinarySemaphore();
 	backEnd.swapChainTextures = RHI_GetSwapChainImages();
