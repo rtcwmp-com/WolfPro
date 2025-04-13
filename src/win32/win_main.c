@@ -1140,7 +1140,41 @@ void Sys_Init( void ) {
 
 int totalMsec, countMsec;
 
-typedef BOOL (WINAPI *pfn_SetProcessDpiAwarenessContext)( _In_ DPI_AWARENESS_CONTEXT value);
+void SetThreadName(void){
+	typedef BOOL (WINAPI *pfn_SetThreadDescription)( _In_ HANDLE hThread, _In_ PCWSTR lpThreadDescription);
+	HINSTANCE libHandle = LoadLibrary("kernel32.dll");
+
+	if(libHandle != NULL){
+		pfn_SetThreadDescription pfnSetThreadDescription = GetProcAddress(libHandle, "SetThreadDescription");
+
+		if(pfnSetThreadDescription != NULL){
+			pfnSetThreadDescription(GetCurrentThread(), L"Main");
+		}
+
+		FreeLibrary(libHandle);
+	}
+}
+
+
+
+void SetDpiAware(void){
+	typedef BOOL (WINAPI *pfn_SetProcessDpiAwarenessContext)( _In_ DPI_AWARENESS_CONTEXT value);
+	HINSTANCE libHandle = LoadLibrary("user32.dll");
+
+	if(libHandle != NULL){
+		pfn_SetProcessDpiAwarenessContext pfnDpiAware = GetProcAddress(libHandle, "SetProcessDpiAwarenessContext");
+
+		if(pfnDpiAware == NULL){
+			SetProcessDPIAware();
+		}else{
+			pfnDpiAware(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE);
+		}
+
+		FreeLibrary(libHandle);
+	}else{
+		SetProcessDPIAware();
+	}
+}
 /*
 ==================
 WinMain
@@ -1159,23 +1193,9 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	// no abort/retry/fail errors
 	SetErrorMode( SEM_FAILCRITICALERRORS );
 
-	
+	SetThreadName();
 
-	HINSTANCE libHandle = LoadLibrary("user32.dll");
-
-	if(libHandle != NULL){
-		pfn_SetProcessDpiAwarenessContext pfnDpiAware = GetProcAddress(libHandle, "SetProcessDpiAwarenessContext");
-
-		if(pfnDpiAware == NULL){
-			SetProcessDPIAware();
-		}else{
-			pfnDpiAware(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE);
-		}
-
-		FreeLibrary(libHandle);
-	}else{
-		SetProcessDPIAware();
-	}
+	SetDpiAware();
 
 	
 
