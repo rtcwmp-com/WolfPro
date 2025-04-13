@@ -9,6 +9,7 @@ shader r_cache
 
 fix loading screen black image
 proper upload manager for textures (linear allocation + CPU waits are moved out)
+  add wait semaphore to the render submission in EndFrame so that textures are guaranteed to be in a valid state
 dynamic lights
 
 add support for (and use) an extra clip plane for portal/mirror views
