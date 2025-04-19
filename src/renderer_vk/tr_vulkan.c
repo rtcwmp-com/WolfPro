@@ -2390,6 +2390,22 @@ static void CreateUploadManager(){
     vk.uploadSemaphoreCount = 0;
 }
 
+static void CreateScreenshotManager(){
+    rhiTextureDesc screenshotTex = {};
+    screenshotTex.allowedStates = RHI_ResourceState_CopyDestinationBit;
+    screenshotTex.format = R8G8B8A8_UNorm;
+    screenshotTex.height = glConfig.vidHeight;
+    screenshotTex.width = glConfig.vidWidth;
+    screenshotTex.initialState = RHI_ResourceState_CopyDestinationBit;
+    screenshotTex.mipCount = 1;
+    screenshotTex.name = "Screenshot readback";
+    screenshotTex.sampleCount = 1;
+    screenshotTex.memoryUsage = RHI_MemoryUsage_Readback;
+
+    vk.screenshotTexture = RHI_CreateTexture(&screenshotTex);
+    vk.screenshotCmdBuffer = RHI_CreateCommandBuffer(qfalse);
+}
+
 uint32_t GetByteCountsPerPixel(VkFormat format){
     if(format == VK_FORMAT_R8G8B8A8_UNORM){
         return 4;
@@ -2469,6 +2485,7 @@ VkFormat GetVkFormatFromVertexFormat(RHI_VertexFormat format, uint32_t elementCo
 void RHI_Init( void ) {
     if(vk.initialized)
     {
+        CreateScreenshotManager();
         return;
     }
     
@@ -2498,6 +2515,7 @@ void RHI_Init( void ) {
     CreateDescriptorPool();
 
     CreateUploadManager();
+    CreateScreenshotManager();
 
     CreateQueryPool();
     

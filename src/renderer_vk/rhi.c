@@ -267,10 +267,11 @@ rhiTexture RHI_CreateTexture(const rhiTextureDesc *desc)
     }
     else
     {
+        assert(desc->memoryUsage == RHI_MemoryUsage_DeviceLocal || desc->memoryUsage == RHI_MemoryUsage_Readback);
         format = GetVkFormat(desc->format);
 
 		VmaAllocationCreateInfo allocCreateInfo = {};
-		allocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+		allocCreateInfo.usage = GetVmaMemoryUsage(desc->memoryUsage);
 
 		VkImageCreateInfo imageInfo = {};
 		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -281,9 +282,10 @@ rhiTexture RHI_CreateTexture(const rhiTextureDesc *desc)
 		imageInfo.mipLevels = desc->mipCount;
 		imageInfo.arrayLayers = 1;
 		imageInfo.format = format;
-		imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+		imageInfo.tiling = desc->memoryUsage == RHI_MemoryUsage_Readback ? VK_IMAGE_TILING_LINEAR : VK_IMAGE_TILING_OPTIMAL;
 		imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; 
-		imageInfo.usage = GetVkImageUsageFlags(desc->allowedStates);
+		//imageInfo.usage = desc->memoryUsage == RHI_MemoryUsage_Readback ? VK_IMAGE_USAGE_TRANSFER_DST_BIT : GetVkImageUsageFlags(desc->allowedStates);
+        imageInfo.usage = GetVkImageUsageFlags(desc->allowedStates);
 		imageInfo.samples = VK_SAMPLE_COUNT_1_BIT; // @TODO: desc->sampleCount
 		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		VK(vmaCreateImage(vk.allocator, &imageInfo, &allocCreateInfo, &image, &allocation, NULL));
@@ -1370,4 +1372,56 @@ void RHI_CmdInsertDebugLabel(const char * label){
 
 const char* RHI_GetDeviceName(void){
 	return vk.deviceProperties.deviceName;
+}
+
+void RHI_Screenshot(byte *buffer, rhiTexture renderTarget){
+    vkDeviceWaitIdle(vk.device);
+
+    VkCommandBuffer previousCmdBuffer = vk.activeCommandBuffer;
+    RHI_BindCommandBuffer(vk.screenshotCmdBuffer);
+    RHI_BeginCommandBuffer();
+    Texture *srcTex = GET_TEXTURE(renderTarget);
+    Texture *dstTex = GET_TEXTURE(vk.screenshotTexture);
+    
+    VkOffset3D blitSize;
+    blitSize.x = glConfig.vidWidth;
+    blitSize.y = glConfig.vidHeight;
+    blitSize.z = 1;
+
+    VkImageBlit region = {};
+    region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.dstSubresource.layerCount = 1;
+    region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.srcSubresource.layerCount = 1;
+    region.srcOffsets[1] = blitSize;
+    region.dstOffsets[1] = blitSize;
+
+    RHI_CmdBeginBarrier();
+    RHI_CmdTextureBarrier(renderTarget, RHI_ResourceState_CopySourceBit);
+    RHI_CmdTextureBarrier(vk.screenshotTexture, RHI_ResourceState_CopyDestinationBit);
+    RHI_CmdEndBarrier();
+
+    vkCmdBlitImage(vk.activeCommandBuffer, srcTex->image, srcTex->currentLayout, dstTex->image, dstTex->currentLayout, 1, &region, VK_FILTER_LINEAR);
+
+    RHI_EndCommandBuffer();
+
+    rhiSubmitGraphicsDesc graphicsDesc = {};
+    RHI_SubmitGraphics(&graphicsDesc);
+
+    vkDeviceWaitIdle(vk.device);
+
+    VkImageSubresource subresource = {};
+    subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    VkSubresourceLayout layout = {};
+    vkGetImageSubresourceLayout(vk.device, dstTex->image, &subresource, &layout);
+
+    void *readBackBuffer;
+    vmaMapMemory(vk.allocator, dstTex->allocation, &readBackBuffer);
+    for(int i = 0; i < glConfig.vidHeight; i++){
+        memcpy(buffer + (glConfig.vidHeight - 1 - i) * glConfig.vidWidth * 4, (byte*)readBackBuffer + i * layout.rowPitch, glConfig.vidWidth * 4);
+    }
+    vmaUnmapMemory(vk.allocator, dstTex->allocation);
+    
+    vk.activeCommandBuffer = previousCmdBuffer;
 }

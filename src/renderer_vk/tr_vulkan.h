@@ -279,6 +279,9 @@ typedef struct Vulkan
 
 	rhiSemaphore uploadSemaphore;
 	uint64_t uploadSemaphoreCount;
+
+	rhiTexture screenshotTexture;
+	rhiCommandBuffer screenshotCmdBuffer;
 } Vulkan;
 
 extern Vulkan vk;

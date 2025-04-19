@@ -310,7 +310,7 @@ static void InitVulkan( void ) {
 	backEnd.depthBuffer = RHI_CreateTexture(&depthTextureDesc);
 
 	rhiTextureDesc colorTextureDesc = {};
-	colorTextureDesc.allowedStates = RHI_ResourceState_RenderTargetBit | RHI_ResourceState_ShaderInputBit;
+	colorTextureDesc.allowedStates = RHI_ResourceState_RenderTargetBit | RHI_ResourceState_ShaderInputBit | RHI_ResourceState_CopySourceBit;
 	colorTextureDesc.format = R8G8B8A8_UNorm;
 	colorTextureDesc.height = glConfig.vidHeight;
 	colorTextureDesc.initialState = RHI_ResourceState_RenderTargetBit;
@@ -348,8 +348,44 @@ static void InitVulkan( void ) {
 R_TakeScreenshot
 ==================
 */
-void R_TakeScreenshot( int x, int y, int width, int height, char *fileName ) {
-	//@TODO: vulkan screenshots
+void R_TakeScreenshot(char *fileName ) {
+	byte        *buffer;
+	
+	int i, c, temp;
+	int width = glConfig.vidWidth;
+	int height = glConfig.vidHeight;
+
+
+	buffer = ri.Hunk_AllocateTempMemory( glConfig.vidWidth * glConfig.vidHeight * 4 );
+	
+	byte tgaHeader[18] = {};
+	tgaHeader[2] = 2;      // uncompressed type
+	tgaHeader[12] = width & 255;
+	tgaHeader[13] = width >> 8;
+	tgaHeader[14] = height & 255;
+	tgaHeader[15] = height >> 8;
+	tgaHeader[16] = 32;    // pixel size
+
+	RHI_Screenshot( buffer, backEnd.colorBuffer2 );
+	//swap rgb to bgr
+	c = width * height * 4;
+	for ( i = 0 ; i < c ; i += 4 ) {
+		temp = buffer[i];
+		buffer[i] = buffer[i + 2];
+		buffer[i + 2] = temp;
+		buffer[i + 3] = 255;
+	}
+
+	fileHandle_t f = ri.FS_FOpenFileWrite( fileName );
+	if ( f ) {
+		ri.FS_Write( tgaHeader, sizeof(tgaHeader), f );
+		ri.FS_Write( buffer, width * height * 4, f );
+		ri.FS_FCloseFile( f );
+	} else {
+		ri.Printf( PRINT_WARNING, "Failed to open %s\n", fileName );
+	}
+
+	ri.Hunk_FreeTempMemory( buffer );
 }
 
 /*
@@ -357,7 +393,7 @@ void R_TakeScreenshot( int x, int y, int width, int height, char *fileName ) {
 R_TakeScreenshotJPEG
 ==============
 */
-void R_TakeScreenshotJPEG( int x, int y, int width, int height, char *fileName ) {
+void R_TakeScreenshotJPEG(char *fileName ) {
 	//@TODO: vulkan screenshots
 }
 
@@ -483,7 +519,7 @@ void R_ScreenShot_f( void ) {
 	}
 
 
-	R_TakeScreenshot( 0, 0, glConfig.vidWidth, glConfig.vidHeight, checkname );
+	R_TakeScreenshot( checkname );
 
 	if ( !silent ) {
 		ri.Printf( PRINT_ALL, "Wrote %s\n", checkname );
@@ -538,7 +574,7 @@ void R_ScreenShotJPEG_f( void ) {
 	}
 
 
-	R_TakeScreenshotJPEG( 0, 0, glConfig.vidWidth, glConfig.vidHeight, checkname );
+	R_TakeScreenshotJPEG( checkname );
 
 	if ( !silent ) {
 		ri.Printf( PRINT_ALL, "Wrote %s\n", checkname );

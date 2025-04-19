@@ -121,6 +121,13 @@ typedef enum rhiTextureFormatId
 	RHI_TextureFormat_Count
 } rhiTextureFormatId;
 
+typedef enum RHI_MemoryUsage
+{
+	RHI_MemoryUsage_DeviceLocal,
+	RHI_MemoryUsage_Upload,
+	RHI_MemoryUsage_Readback,
+	RHI_MemoryUsage_Count
+} RHI_MemoryUsage;
 typedef struct rhiTextureDesc
 {
 	uint64_t nativeImage;
@@ -135,6 +142,7 @@ typedef struct rhiTextureDesc
 	RHI_ResourceState initialState;
 	rhiTextureFormatId format;
 	qbool longLifetime;
+	RHI_MemoryUsage memoryUsage;
 } rhiTextureDesc;
 
 typedef struct PushConstantsRange
@@ -207,13 +215,7 @@ typedef struct rhiSpecialization
 
 
 
-typedef enum RHI_MemoryUsage
-{
-	RHI_MemoryUsage_DeviceLocal,
-	RHI_MemoryUsage_Upload,
-	RHI_MemoryUsage_Readback,
-	RHI_MemoryUsage_Count
-} RHI_MemoryUsage;
+
 
 typedef struct rhiBufferDesc
 {
@@ -466,5 +468,7 @@ void RHI_PrintPools(void);
 
 const char* RHI_GetDeviceName(void);
 uint32_t RHI_GetIndexFromHandle(uint64_t handle);
+
+void RHI_Screenshot(byte *buffer, rhiTexture renderTarget);
 
 #endif

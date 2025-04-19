@@ -2703,6 +2703,9 @@ void CL_InitRef( void ) {
 	ri.FS_ListFiles = FS_ListFiles;
 	ri.FS_FileIsInPAK = FS_FileIsInPAK;
 	ri.FS_FileExists = FS_FileExists;
+	ri.FS_FOpenFileWrite = FS_FOpenFileWrite;
+	ri.FS_Write = FS_Write;
+	ri.FS_FCloseFile = FS_FCloseFile;
 	ri.Cvar_Get = Cvar_Get;
 	ri.Cvar_Set = Cvar_Set;
 
