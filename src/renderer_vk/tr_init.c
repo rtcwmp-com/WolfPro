@@ -394,7 +394,17 @@ R_TakeScreenshotJPEG
 ==============
 */
 void R_TakeScreenshotJPEG(char *fileName ) {
-	//@TODO: vulkan screenshots
+	byte        *buffer;
+
+	buffer = ri.Hunk_AllocateTempMemory( glConfig.vidWidth * glConfig.vidHeight * 4 );
+
+	RHI_Screenshot( buffer, backEnd.colorBuffer2 );
+
+
+	ri.FS_WriteFile( fileName, buffer, 1 );     // create path
+	SaveJPG( fileName, 95, glConfig.vidWidth, glConfig.vidHeight, buffer );
+
+	ri.Hunk_FreeTempMemory( buffer );
 }
 
 /*
