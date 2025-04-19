@@ -1254,8 +1254,9 @@ void RHI_BeginTextureUpload(rhiTextureUpload *textureUpload, rhiTexture handle, 
         signaledValue = vk.uploadSemaphoreCount;
     }else{
         textureUpload->data += vk.uploadByteOffset;
-        signaledValue = vk.uploadCmdBufferSignaledValue[vk.uploadCmdBufferIndex];
         vk.uploadCmdBufferIndex = (vk.uploadCmdBufferIndex + 1) % MAX_UPLOADCMDBUFFERS;
+        signaledValue = vk.uploadCmdBufferSignaledValue[vk.uploadCmdBufferIndex];
+        
     }
     RHI_WaitOnSemaphore(vk.uploadSemaphore, signaledValue);
 
@@ -1301,6 +1302,7 @@ void RHI_EndTextureUpload()
     RHI_EndCommandBuffer();
 
     vk.uploadSemaphoreCount++;
+    vk.uploadCmdBufferSignaledValue[vk.uploadCmdBufferIndex] = vk.uploadSemaphoreCount;
 
     rhiSubmitGraphicsDesc submitDesc = {};
     submitDesc.signalSemaphoreCount = 1;

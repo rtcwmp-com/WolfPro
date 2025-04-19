@@ -16,15 +16,12 @@
 #define GET_SAMPLER(handle) ((Sampler*)Pool_Get(&vk.samplerPool, handle.h))
 
 
-//TODO only in debug builds
-#define ENABLE_VALIDATION
-
 #define MAX_LAYERS 16
 #define MAX_EXTENSIONS 16
 #define MAX_SWAP_CHAIN_IMAGES 16
 #define MAX_TEXTURES (MAX_IMAGEDESCRIPTORS) // needs space for render targets too
 #define MAX_DURATION_QUERIES 64
-#define MAX_UPLOADCMDBUFFERS 4096
+#define MAX_UPLOADCMDBUFFERS 64
 
 #define MAX_TEXTURE_SIZE 2048
 
