@@ -985,6 +985,9 @@ typedef struct {
 	rhiSampler sampler[4];
 
 	VertexBuffers vertexBuffers[RHI_FRAMES_IN_FLIGHT];
+	VertexBuffers previousVertexBuffers[RHI_FRAMES_IN_FLIGHT];
+	uint32_t previousVertexBufferCount;
+	
 	rhiBuffer sceneViewUploadBuffers[RHI_FRAMES_IN_FLIGHT];
 	rhiBuffer sceneViewGPUBuffer;
 	uint32_t sceneViewCount;

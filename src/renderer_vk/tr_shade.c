@@ -618,9 +618,14 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 			backEnd.currentDescriptorSet = backEnd.descriptorSet;
 		}
 
-		rhiBuffer buffers[3] = {vb->position, vb->color[i], vb->textureCoord[i]};
-		RHI_CmdBindVertexBuffers(buffers, ARRAY_LEN(buffers));
-		
+		rhiBuffer buffers[] = {vb->position, vb->color[i], vb->textureCoord[i]};
+		if(backEnd.previousVertexBufferCount != ARRAY_LEN(buffers) 
+			|| memcmp(buffers, backEnd.previousVertexBuffers, sizeof(buffers)))
+		{
+			RHI_CmdBindVertexBuffers(buffers, ARRAY_LEN(buffers));
+			memcpy(backEnd.previousVertexBuffers, buffers, sizeof(buffers));
+			backEnd.previousVertexBufferCount = ARRAY_LEN(buffers);
+		}
 
 		RHI_CmdPushConstants(pStage->pipeline, RHI_Shader_Vertex, backEnd.or.modelMatrix,sizeof(backEnd.or.modelMatrix));
 		RHI_CmdPushConstants(pStage->pipeline, RHI_Shader_Pixel, &pc, sizeof(pc));
@@ -883,8 +888,13 @@ void RB_StageIteratorLightmappedMultitexture( void ) {
 	}
 
 	rhiBuffer buffers[] = {vb->position, vb->textureCoordLM};
-	RHI_CmdBindVertexBuffers(buffers, ARRAY_LEN(buffers));
-	
+	if(backEnd.previousVertexBufferCount != ARRAY_LEN(buffers) 
+		|| memcmp(buffers, backEnd.previousVertexBuffers, sizeof(buffers)))
+	{
+		RHI_CmdBindVertexBuffers(buffers, ARRAY_LEN(buffers));
+		memcpy(backEnd.previousVertexBuffers, buffers, sizeof(buffers));
+		backEnd.previousVertexBufferCount = ARRAY_LEN(buffers);
+	}
 
 	RHI_CmdPushConstants(pStage->pipeline, RHI_Shader_Vertex, backEnd.or.modelMatrix,sizeof(backEnd.or.modelMatrix));
 	RHI_CmdPushConstants(pStage->pipeline, RHI_Shader_Pixel, &pc, sizeof(pc));

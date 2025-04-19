@@ -797,6 +797,7 @@ const void  *RB_BeginFrame( const void *data ) {
 	backEnd.previousPipeline.h = 0;
 	backEnd.currentDescriptorSet.h = 0;
 	backEnd.pipelineChangeCount = 0;
+	backEnd.previousVertexBufferCount = 0;
 	
 	backEnd.vertexBuffers[backEnd.currentFrameIndex].indexCount = 0; 
 	backEnd.vertexBuffers[backEnd.currentFrameIndex].indexFirst = 0; 
