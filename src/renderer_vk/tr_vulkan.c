@@ -2382,6 +2382,7 @@ static void CreateUploadManager(){
 
     for(int i = 0; i < MAX_UPLOADCMDBUFFERS; i++){
         vk.uploadCmdBuffer[i] = RHI_CreateCommandBuffer(qtrue);
+        vk.uploadCmdBufferSignaledValue[i] = 0;
     }
     vk.uploadCmdBufferIndex = 0;
  

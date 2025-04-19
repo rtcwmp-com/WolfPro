@@ -962,6 +962,7 @@ const void  *RB_EndFrame( const void *data ) {
 	RHI_SubmitGraphicsDesc_Signal(&graphicsDesc, backEnd.renderCompleteBinary, 0);
 	RHI_SubmitGraphicsDesc_Signal(&graphicsDesc, backEnd.renderComplete, backEnd.renderCompleteCounter);
 	RHI_SubmitGraphicsDesc_Wait(&graphicsDesc, backEnd.imageAcquiredBinary);
+	RHI_SubmitGraphicsDesc_Wait_Timeline(&graphicsDesc, RHI_GetUploadSemaphore(), RHI_GetUploadSemaphoreValue());
 	RHI_SubmitGraphics(&graphicsDesc);
 	RHI_SubmitPresent(backEnd.renderCompleteBinary, backEnd.swapChainImageIndex);
 	

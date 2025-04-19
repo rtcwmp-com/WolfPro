@@ -228,9 +228,10 @@ typedef struct rhiBufferDesc
 typedef struct rhiSubmitGraphicsDesc {
     rhiSemaphore signalSemaphores[8];
     uint16_t signalSemaphoreCount;
-    uint64_t signalValues[8];
+    uint64_t signalSemaphoreValues[8];
     rhiSemaphore waitSemaphores[8];
     uint16_t waitSemaphoreCount;
+	uint64_t waitSemaphoreValues[8];
 } rhiSubmitGraphicsDesc;
 
 typedef enum rhiImageLayoutFormat {
@@ -363,13 +364,20 @@ inline void RHI_SubmitGraphicsDesc_Signal(rhiSubmitGraphicsDesc *graphicsDesc, r
     assert(graphicsDesc->signalSemaphoreCount < ARRAY_LEN(graphicsDesc->signalSemaphores));
     int newIndex = graphicsDesc->signalSemaphoreCount++;
     graphicsDesc->signalSemaphores[newIndex] = semaphore;
-    graphicsDesc->signalValues[newIndex] = semaphoreValue;
+    graphicsDesc->signalSemaphoreValues[newIndex] = semaphoreValue;
 }
 
 inline void RHI_SubmitGraphicsDesc_Wait(rhiSubmitGraphicsDesc *graphicsDesc, rhiSemaphore semaphore){
     assert(graphicsDesc->waitSemaphoreCount < ARRAY_LEN(graphicsDesc->waitSemaphores));
     int newIndex = graphicsDesc->waitSemaphoreCount++;
     graphicsDesc->waitSemaphores[newIndex] = semaphore;
+}
+
+inline void RHI_SubmitGraphicsDesc_Wait_Timeline(rhiSubmitGraphicsDesc *graphicsDesc, rhiSemaphore semaphore, uint64_t timelineValue){
+    assert(graphicsDesc->waitSemaphoreCount < ARRAY_LEN(graphicsDesc->waitSemaphores));
+    int newIndex = graphicsDesc->waitSemaphoreCount++;
+    graphicsDesc->waitSemaphores[newIndex] = semaphore;
+	graphicsDesc->waitSemaphoreValues[newIndex] = timelineValue;
 }
 
 
@@ -451,7 +459,8 @@ void RHI_BeginBufferUpload();
 void RHI_EndBufferUpload();
 void RHI_BeginTextureUpload(rhiTextureUpload *textureUpload, rhiTexture handle, uint32_t mipLevel);
 void RHI_EndTextureUpload();
-void RHI_GetUploadSemaphore(); //(semaphore handle, value to wait on)
+rhiSemaphore RHI_GetUploadSemaphore(void); //(semaphore handle, value to wait on)
+uint64_t RHI_GetUploadSemaphoreValue(void);
 
 void RHI_PrintPools(void);
 

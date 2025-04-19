@@ -765,9 +765,9 @@ void RHI_SubmitGraphics(const rhiSubmitGraphicsDesc *graphicsDesc)
     timelineInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
     timelineInfo.pNext = NULL;
     timelineInfo.waitSemaphoreValueCount = graphicsDesc->waitSemaphoreCount;
-    timelineInfo.pWaitSemaphoreValues = VK_NULL_HANDLE;
+    timelineInfo.pWaitSemaphoreValues = graphicsDesc->waitSemaphoreValues;
     timelineInfo.signalSemaphoreValueCount = graphicsDesc->signalSemaphoreCount;
-    timelineInfo.pSignalSemaphoreValues = graphicsDesc->signalValues;
+    timelineInfo.pSignalSemaphoreValues = graphicsDesc->signalSemaphoreValues;
 
     VkSemaphore wait[ARRAY_LEN(graphicsDesc->waitSemaphores)];
     VkSemaphore signal[ARRAY_LEN(graphicsDesc->signalSemaphores)];
@@ -1248,14 +1248,16 @@ void RHI_BeginTextureUpload(rhiTextureUpload *textureUpload, rhiTexture handle, 
     vk.uploadTextureHandle = handle;
     vk.uploadTextureMipLevel = mipLevel;
     vk.uploadByteCount = textureUpload->rowPitch * textureUpload->height;
-    if(vk.uploadByteCount + vk.uploadByteOffset > vk.uploadBufferSize || vk.uploadCmdBufferIndex + 1 >= MAX_UPLOADCMDBUFFERS){
+    uint64_t signaledValue;
+    if(vk.uploadByteCount + vk.uploadByteOffset > vk.uploadBufferSize){
         vk.uploadByteOffset = 0;
-        RHI_WaitOnSemaphore(vk.uploadSemaphore, vk.uploadSemaphoreCount);
-        vk.uploadCmdBufferIndex = 0;
+        signaledValue = vk.uploadSemaphoreCount;
     }else{
         textureUpload->data += vk.uploadByteOffset;
-        vk.uploadCmdBufferIndex++;
+        signaledValue = vk.uploadCmdBufferSignaledValue[vk.uploadCmdBufferIndex];
+        vk.uploadCmdBufferIndex = (vk.uploadCmdBufferIndex + 1) % MAX_UPLOADCMDBUFFERS;
     }
+    RHI_WaitOnSemaphore(vk.uploadSemaphore, signaledValue);
 
 }
 
@@ -1303,15 +1305,20 @@ void RHI_EndTextureUpload()
     rhiSubmitGraphicsDesc submitDesc = {};
     submitDesc.signalSemaphoreCount = 1;
     submitDesc.signalSemaphores[0] = vk.uploadSemaphore;
-    submitDesc.signalValues[0] = vk.uploadSemaphoreCount;
+    submitDesc.signalSemaphoreValues[0] = vk.uploadSemaphoreCount;
     RHI_SubmitGraphics(&submitDesc);
 
     vk.uploadTextureHandle.h = 0;
     vk.activeCommandBuffer = previousCmdBuffer;
 }
 
-void RHI_GetUploadSemaphore()
+rhiSemaphore RHI_GetUploadSemaphore(void)
 {
+    return vk.uploadSemaphore;
+}
+
+uint64_t RHI_GetUploadSemaphoreValue(void){
+    return vk.uploadSemaphoreCount;
 }
 
 void RHI_PrintPools(void){

@@ -256,6 +256,7 @@ typedef struct Vulkan
 	uint32_t uploadTextureMipLevel;
 
 	rhiCommandBuffer uploadCmdBuffer[MAX_UPLOADCMDBUFFERS];
+	uint64_t uploadCmdBufferSignaledValue[MAX_UPLOADCMDBUFFERS];
 	uint32_t uploadCmdBufferIndex;
 	//
 	// extensions
