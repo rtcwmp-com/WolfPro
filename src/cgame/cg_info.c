@@ -268,10 +268,11 @@ void CG_DrawInformation( void ) {
 	const char  *sysInfo;
 	int y;
 	int value;
-	qhandle_t levelshot = 0; // TTimo: init
+	static qhandle_t levelshot = 0;
+	static qhandle_t unknownLevelshot = 0;
 //	qhandle_t	detail;
 	char buf[1024];
-	static int lastDraw = 0;  // Ridah, so we don't draw the screen more often than we need to
+	static int lastDraw = INT_MAX;  // Ridah, so we don't draw the screen more often than we need to
 	int ms;
 	static int callCount = 0;
 	float percentDone;
@@ -285,37 +286,48 @@ void CG_DrawInformation( void ) {
 		return;     // we are in the world, no need to draw information
 	}
 
+	if(levelshot){
+		trap_R_SetColor( NULL );
+		CG_DrawPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, levelshot );
+	}
+
+	
+
 	if ( callCount ) {    // reject recursive calls
 		return;
 	}
 
 	ms = trap_Milliseconds();
-	if ( ( lastDraw <= ms ) && ( lastDraw > ms - 100 ) ) {
+	if(ms - 100 >= lastDraw){
 		return;
 	}
 	lastDraw = ms;
 
 	callCount++;
 
-	info = CG_ConfigString( CS_SERVERINFO );
-	sysInfo = CG_ConfigString( CS_SYSTEMINFO );
+	if ( !unknownLevelshot ) {
+		unknownLevelshot = trap_R_RegisterShaderNoMip( "menu/art/unknownmap" );
+		levelshot = unknownLevelshot;
+	}
+	
 
-	trap_Cvar_VariableStringBuffer( "com_expectedhunkusage", hunkBuf, MAX_QPATH );
-	expectedHunk = atoi( hunkBuf );
+	if(levelshot == unknownLevelshot){
+		info = CG_ConfigString( CS_SERVERINFO );
+		sysInfo = CG_ConfigString( CS_SYSTEMINFO );
 
-
-	s = Info_ValueForKey( info, "mapname" );
-	if ( s && s[0] != 0 ) {  // there is often no 's'
-		if ( strlen( cg_missionStats.string ) > 1 && cg_missionStats.string[0] == 's' ) {
-			levelshot = trap_R_RegisterShaderNoMip( va( "levelshots/pre_%s_stats.tga", s ) );
-		} else {    // show briefing screen
-			if ( s && s[0] != 0 ) {  // there is often no 's'
-				levelshot = trap_R_RegisterShaderNoMip( va( "levelshots/%s.tga", s ) );
+		trap_Cvar_VariableStringBuffer( "com_expectedhunkusage", hunkBuf, MAX_QPATH );
+		expectedHunk = atoi( hunkBuf );
+		s = Info_ValueForKey( info, "mapname" );
+		if ( s && s[0] != 0 ) {  // there is often no 's'
+			if ( strlen( cg_missionStats.string ) > 1 && cg_missionStats.string[0] == 's' ) {
+				levelshot = trap_R_RegisterShaderNoMip( va( "levelshots/pre_%s_stats.tga", s ) );
+			} else {    // show briefing screen
+				if ( s && s[0] != 0 ) {  // there is often no 's'
+					levelshot = trap_R_RegisterShaderNoMip( va( "levelshots/%s.tga", s ) );
+				}
 			}
 		}
-	}
-	if ( !levelshot ) {
-		levelshot = trap_R_RegisterShaderNoMip( "menu/art/unknownmap" );
+		
 	}
 	trap_R_SetColor( NULL );
 	CG_DrawPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, levelshot );

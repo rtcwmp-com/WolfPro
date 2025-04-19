@@ -10,8 +10,6 @@ shader r_cache
   disable backup
   use hashmap for shader text
 
-fix loading screen black image
-
 dynamic lights
 
 add support for (and use) an extra clip plane for portal/mirror views
