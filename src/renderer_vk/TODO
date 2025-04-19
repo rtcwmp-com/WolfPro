@@ -8,7 +8,7 @@ shader r_cache
   disable backup
   use hashmap for shader text
 
-screenshot
+gpu mipmap generation
 
 dynamic lights
 
