@@ -494,6 +494,61 @@ VkBool32 isBlendEnabled(uint32_t srcBlend, uint32_t dstBlend){
     return VK_TRUE;
 }
 
+rhiPipeline RHI_CreateComputePipeline(const rhiComputePipelineDesc *computeDesc){
+    DescriptorSetLayout *descriptorSetLayout = GET_LAYOUT(computeDesc->descLayout);
+
+    VkPushConstantRange pcr = {};
+    pcr.size = computeDesc->pushConstantsBytes;
+    pcr.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+
+    VkPipelineLayout vkPipelineLayout = VK_NULL_HANDLE;
+	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
+    pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutCreateInfo.setLayoutCount = 1;
+    pipelineLayoutCreateInfo.pSetLayouts = &descriptorSetLayout->layout;
+    pipelineLayoutCreateInfo.pPushConstantRanges = &pcr;
+    pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
+
+
+	VK(vkCreatePipelineLayout(vk.device, &pipelineLayoutCreateInfo, NULL, &vkPipelineLayout));
+	SetObjectName(VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)vkPipelineLayout, va("%s Layout", computeDesc->name));
+
+    VkShaderModule csModule;
+    VkShaderModuleCreateInfo csCreateInfo = {};
+    csCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    csCreateInfo.codeSize = computeDesc->shader.byteCount;
+    csCreateInfo.pCode = (const uint32_t*)computeDesc->shader.data;
+
+    VK(vkCreateShaderModule(vk.device, &csCreateInfo, NULL, &csModule));
+
+    PipelineLayout layout = {};
+    layout.pipelineLayout = vkPipelineLayout;
+
+    VkComputePipelineCreateInfo createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    createInfo.layout = vkPipelineLayout;
+    createInfo.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    createInfo.stage.module = csModule;
+    createInfo.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    createInfo.stage.pName = "cs";
+
+    VkPipeline vkPipeline;
+    VK(vkCreateComputePipelines(vk.device, VK_NULL_HANDLE, 1, &createInfo, NULL, &vkPipeline));
+
+    vkDestroyShaderModule(vk.device, csModule, NULL);
+
+    SetObjectName(VK_OBJECT_TYPE_PIPELINE, (uint64_t)vkPipeline, computeDesc->name);
+
+    Pipeline pipeline = {};
+    pipeline.pipeline = vkPipeline;
+    pipeline.compute = qtrue;
+    pipeline.layout = layout;
+    pipeline.pushConstantOffsets[RHI_Shader_Compute] = 0;
+    pipeline.pushConstantSize[RHI_Shader_Compute] = computeDesc->pushConstantsBytes;
+
+
+    return (rhiPipeline) { Pool_Add(&vk.pipelinePool, &pipeline) };
+}
 
 rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDesc)
 {
@@ -723,10 +778,6 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
 
     return (rhiPipeline) { Pool_Add(&vk.pipelinePool, &pipeline) };
 
-}
-
-void RHI_CreateComputePipeline()
-{
 }
 
 rhiTexture* RHI_GetSwapChainImages( void )

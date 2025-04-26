@@ -143,7 +143,11 @@ typedef struct Pipeline
 	PipelineLayout layout;
 	VkPipeline pipeline;
 	qbool compute;
-	rhiGraphicsPipelineDesc graphicsDesc;
+	union {
+		rhiGraphicsPipelineDesc graphicsDesc;
+		rhiComputePipelineDesc computeDesc;
+	};
+	
 	uint32_t pushConstantOffsets[RHI_Shader_Count];
 	uint32_t pushConstantSize[RHI_Shader_Count];
 } Pipeline;

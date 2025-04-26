@@ -85,7 +85,8 @@ typedef enum RHI_ResourceState {
 	RHI_ResourceState_CopySourceBit = RHI_BIT(6),
 	RHI_ResourceState_CopyDestinationBit = RHI_BIT(7),
 	RHI_ResourceState_ShaderInputBit = RHI_BIT(8),
-	RHI_ResourceState_UniformBufferBit = RHI_BIT(9)
+	RHI_ResourceState_UniformBufferBit = RHI_BIT(9),
+	RHI_ResourceState_ShaderReadWriteBit = RHI_BIT(10)
 } RHI_ResourceState;
 
 typedef enum RHI_LoadOp {
@@ -362,6 +363,14 @@ typedef struct rhiGraphicsPipelineDesc {
 
 } rhiGraphicsPipelineDesc;
 
+typedef struct rhiComputePipelineDesc {
+	const char *name;
+	rhiDescriptorSetLayout descLayout;
+	rhiShaderDesc shader;
+	qbool longLifetime;
+	uint32_t pushConstantsBytes;
+} rhiComputePipelineDesc;
+
 inline void RHI_SubmitGraphicsDesc_Signal(rhiSubmitGraphicsDesc *graphicsDesc, rhiSemaphore semaphore, uint64_t semaphoreValue){
     assert(graphicsDesc->signalSemaphoreCount < ARRAY_LEN(graphicsDesc->signalSemaphores));
     int newIndex = graphicsDesc->signalSemaphoreCount++;
@@ -407,7 +416,7 @@ rhiDescriptorSet RHI_CreateDescriptorSet(const char *name, rhiDescriptorSetLayou
 void RHI_UpdateDescriptorSet(rhiDescriptorSet descriptorHandle, uint32_t bindingIndex, RHI_DescriptorType type, uint32_t offset, uint32_t descriptorCount, const void *handles); //rhiTexture, rhiSampler, rhiBuffer
 
 rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDesc);
-void RHI_CreateComputePipeline();
+rhiPipeline RHI_CreateComputePipeline(const rhiComputePipelineDesc *computeDesc);
 
 
 rhiTexture* RHI_GetSwapChainImages( void );

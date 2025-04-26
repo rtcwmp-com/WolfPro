@@ -620,7 +620,10 @@ VkImageUsageFlags GetVkImageUsageFlags(RHI_ResourceState state)
        // @TODO: is this correct ???
        flags |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
     }
-
+    if(state & RHI_ResourceState_ShaderReadWriteBit)
+    {
+        flags |= VK_IMAGE_USAGE_STORAGE_BIT;
+    }
     return flags;
 }
 
@@ -2311,7 +2314,8 @@ VkImageLayout GetVkImageLayout(RHI_ResourceState state)
         { RHI_ResourceState_ShaderInputBit, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
         { RHI_ResourceState_CopySourceBit, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL },
      	{ RHI_ResourceState_CopyDestinationBit, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL },
-        { RHI_ResourceState_DepthWriteBit, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL }
+        { RHI_ResourceState_DepthWriteBit, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL },
+        { RHI_ResourceState_ShaderReadWriteBit, VK_IMAGE_LAYOUT_GENERAL }
     };
 
     for(int i = 0; i < ARRAY_LEN(pairs); i++){
