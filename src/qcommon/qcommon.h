@@ -953,6 +953,8 @@ void CL_FlushMemory( void );
 void CL_StartHunkUsers( void );
 // start all the client stuff using the hunk
 
+qboolean CL_IsFrameSleepEnabled(void);
+
 
 #ifndef UPDATE_SERVER
 void CL_CheckAutoUpdate( void );

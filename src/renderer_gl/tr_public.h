@@ -114,6 +114,7 @@ typedef struct {
 	void ( *RemapShader )( const char *oldShader, const char *newShader, const char *offsetTime );
 
 	qboolean ( *GetEntityToken )( char *buffer, int size );
+	qboolean (*IsFrameSleepEnabled)(void);
 } refexport_t;
 
 //

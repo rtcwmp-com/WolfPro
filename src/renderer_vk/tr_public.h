@@ -121,6 +121,8 @@ typedef struct {
 	
 	// transforms window (client rect) coordinates into render target coordinates
 	void	(*ComputeCursorPosition)( int* x, int* y );
+
+	qboolean (*IsFrameSleepEnabled)(void);
 } refexport_t;
 
 //

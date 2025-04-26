@@ -1425,3 +1425,18 @@ void RHI_Screenshot(byte *buffer, rhiTexture renderTarget){
     
     vk.activeCommandBuffer = previousCmdBuffer;
 }
+
+
+qboolean RHI_IsFrameSleepEnabled(void){
+    switch(vk.presentMode){
+        case VK_PRESENT_MODE_MAILBOX_KHR:
+        case VK_PRESENT_MODE_IMMEDIATE_KHR:
+            return qtrue;
+        case VK_PRESENT_MODE_FIFO_KHR:
+        case VK_PRESENT_MODE_FIFO_RELAXED_KHR:
+            return qfalse;
+        default:
+            assert(!"Unknown presentMode");
+            return qfalse;
+    }
+}

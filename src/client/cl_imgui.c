@@ -87,7 +87,7 @@ void CL_ImGUI_Frame()
 	re.ComputeCursorPosition(&x, &y);
 
 	ImGuiIO *ioptr = igGetIO();
-	ioptr->DeltaTime = (float)((double)elapsedMS / 1000.0);
+	ioptr->DeltaTime = elapsedMS <= 0 ? 0.0001f : (float)((double)elapsedMS / 1000.0);
 	ioptr->MousePos.x = x;
 	ioptr->MousePos.y = y;
 }

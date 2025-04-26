@@ -753,9 +753,24 @@ static void CreateSwapChain()
         ri.Hunk_FreeTempMemory(presentModes);
     }
 
+    /*
+    -- vsync --
+    VK_PRESENT_MODE_MAILBOX_KHR:
+      1 image in a queue, a new image replaces the existing one
+    VK_PRESENT_MODE_FIFO_RELAXED_KHR:
+      "adaptive vsync" if you miss the deadline and provide an image after, it will draw it anyway
+
+    -- no vsync --
+    VK_PRESENT_MODE_IMMEDIATE_KHR:
+      no queue
+    VK_PRESENT_MODE_FIFO_KHR:
+      standard fifo queue
+
+    */
+
     if(r_swapInterval->integer){
         vk.vsync = qtrue;
-        if(!mailboxAvailable){
+        if(mailboxAvailable){
             ri.Printf(PRINT_ALL, "Present mode selected: VK_PRESENT_MODE_MAILBOX_KHR\n");
             selectedPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
         }else if (fifoRelaxedAvailable){
@@ -777,6 +792,7 @@ static void CreateSwapChain()
         }
     }
 
+    vk.presentMode = selectedPresentMode;
 
 
     // @NOTE: VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT is the only image usage flag

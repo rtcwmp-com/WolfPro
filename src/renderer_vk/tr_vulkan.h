@@ -282,6 +282,8 @@ typedef struct Vulkan
 
 	rhiTexture screenshotTexture;
 	rhiCommandBuffer screenshotCmdBuffer;
+
+	VkPresentModeKHR presentMode;
 } Vulkan;
 
 extern Vulkan vk;

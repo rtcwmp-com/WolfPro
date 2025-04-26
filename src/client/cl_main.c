@@ -4670,3 +4670,7 @@ void CL_OpenURL( const char *url ) {
 	}
 	Sys_OpenURL( url, qtrue );
 }
+
+qboolean CL_IsFrameSleepEnabled(void){
+	return re.IsFrameSleepEnabled();
+}
