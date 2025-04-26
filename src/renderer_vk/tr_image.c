@@ -659,7 +659,9 @@ static void Upload32(   unsigned *data,
 			*pUploadHeight = scaled_height;
 
 			rhiTextureUpload textureUpload = {};
-			RHI_BeginTextureUpload(&textureUpload, image->handle, 0 );
+			rhiTextureUploadDesc uploadDesc = {};
+			uploadDesc.handle = image->handle;
+			RHI_BeginTextureUpload(&textureUpload, &uploadDesc );
 			
 			for(int i = 0; i < textureUpload.height; i++ ){
 				memcpy(textureUpload.data + textureUpload.rowPitch * i, (byte*)data + textureUpload.width * 4 * i, textureUpload.width * 4);
@@ -696,7 +698,9 @@ static void Upload32(   unsigned *data,
 	*pUploadHeight = scaled_height;
 
 	rhiTextureUpload textureUpload = {};
-	RHI_BeginTextureUpload(&textureUpload, image->handle, 0 );
+	rhiTextureUploadDesc uploadDesc = {};
+	uploadDesc.handle = image->handle;
+	RHI_BeginTextureUpload(&textureUpload, &uploadDesc);
 	
 	for(int i = 0; i < textureUpload.height; i++ ){
 		memcpy(textureUpload.data + textureUpload.rowPitch * i, (byte*)scaledBuffer + textureUpload.width * 4 * i, textureUpload.width * 4);
@@ -726,7 +730,10 @@ static void Upload32(   unsigned *data,
 			}
 
 			rhiTextureUpload textureUpload = {};
-			RHI_BeginTextureUpload(&textureUpload, image->handle, miplevel );
+			rhiTextureUploadDesc uploadDesc = {};
+			uploadDesc.handle = image->handle;
+			uploadDesc.mipLevel = miplevel;
+			RHI_BeginTextureUpload(&textureUpload, &uploadDesc);
 			assert(textureUpload.width == scaled_width);
 			assert(textureUpload.height == scaled_height);
 			for(int i = 0; i < textureUpload.height; i++ ){

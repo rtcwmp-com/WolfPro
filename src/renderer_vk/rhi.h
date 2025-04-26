@@ -249,6 +249,15 @@ typedef struct rhiTextureUpload {
 	uint32_t height;
 } rhiTextureUpload;
 
+typedef void (*RHI_TextureUploadCallback)(void* userdata);
+
+typedef struct rhiTextureUploadDesc {
+	rhiTexture handle;
+	uint32_t mipLevel;
+	RHI_TextureUploadCallback cb;
+	void *userdata;
+} rhiTextureUploadDesc;
+
 typedef enum RHI_DescriptorType {
 	RHI_DescriptorType_None = 0,
 	RHI_DescriptorType_Sampler,
@@ -468,7 +477,10 @@ void RHI_DurationQueryReset(void);
 //upload manager
 void RHI_BeginBufferUpload();
 void RHI_EndBufferUpload();
-void RHI_BeginTextureUpload(rhiTextureUpload *textureUpload, rhiTexture handle, uint32_t mipLevel);
+
+
+
+void RHI_BeginTextureUpload(rhiTextureUpload *textureUpload, const rhiTextureUploadDesc *textureUploadDesc);
 void RHI_EndTextureUpload();
 rhiSemaphore RHI_GetUploadSemaphore(void); //(semaphore handle, value to wait on)
 uint64_t RHI_GetUploadSemaphoreValue(void);

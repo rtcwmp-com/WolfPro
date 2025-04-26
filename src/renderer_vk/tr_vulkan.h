@@ -253,8 +253,7 @@ typedef struct Vulkan
 	memoryPool samplerPool;
 
 	rhiBuffer uploadBuffer;
-	rhiTexture uploadTextureHandle;
-	uint32_t uploadTextureMipLevel;
+	rhiTextureUploadDesc uploadDesc;
 
 	rhiCommandBuffer uploadCmdBuffer[MAX_UPLOADCMDBUFFERS];
 	uint64_t uploadCmdBufferSignaledValue[MAX_UPLOADCMDBUFFERS];
@@ -288,6 +287,7 @@ typedef struct Vulkan
 	rhiCommandBuffer screenshotCmdBuffer;
 
 	VkPresentModeKHR presentMode;
+	
 } Vulkan;
 
 extern Vulkan vk;

@@ -105,7 +105,9 @@ void RB_ImGUI_Init(void){
     
     
     rhiTextureUpload textureUpload;
-    RHI_BeginTextureUpload(&textureUpload, imGUIfontAtlas, 0);
+    rhiTextureUploadDesc uploadDesc = {};
+    uploadDesc.handle = imGUIfontAtlas;
+    RHI_BeginTextureUpload(&textureUpload, &uploadDesc);
     for(int i = 0; i < height; i++){
         memcpy(textureUpload.data + textureUpload.rowPitch * i, pixels + width * 4 * i, width * 4);
     }

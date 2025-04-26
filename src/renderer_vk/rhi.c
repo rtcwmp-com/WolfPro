@@ -1287,26 +1287,25 @@ void RHI_EndBufferUpload()
 {
 }
 static int uploadActive = 0;
-void RHI_BeginTextureUpload(rhiTextureUpload *textureUpload, rhiTexture handle, uint32_t mipLevel)
+void RHI_BeginTextureUpload(rhiTextureUpload *upload, const rhiTextureUploadDesc *desc)
 {
     uploadActive++;
     assert(uploadActive == 1);
-    assert(vk.uploadTextureHandle.h == 0);
-    Texture *texture = GET_TEXTURE(handle);
+    assert(vk.uploadDesc.handle.h == 0);
+    Texture *texture = GET_TEXTURE(desc->handle);
 
-    textureUpload->data = RHI_MapBuffer(vk.uploadBuffer);
-    textureUpload->width = max(texture->desc.width >> mipLevel, 1);
-    textureUpload->height = max(texture->desc.height >> mipLevel, 1);
-    textureUpload->rowPitch = textureUpload->width * GetByteCountsPerPixel(texture->format); 
-    vk.uploadTextureHandle = handle;
-    vk.uploadTextureMipLevel = mipLevel;
-    vk.uploadByteCount = textureUpload->rowPitch * textureUpload->height;
+    upload->data = RHI_MapBuffer(vk.uploadBuffer);
+    upload->width = max(texture->desc.width >> desc->mipLevel, 1);
+    upload->height = max(texture->desc.height >> desc->mipLevel, 1);
+    upload->rowPitch = upload->width * GetByteCountsPerPixel(texture->format); 
+    vk.uploadDesc = *desc;
+    vk.uploadByteCount = upload->rowPitch * upload->height;
     uint64_t signaledValue;
     if(vk.uploadByteCount + vk.uploadByteOffset > vk.uploadBufferSize){
         vk.uploadByteOffset = 0;
         signaledValue = vk.uploadSemaphoreCount;
     }else{
-        textureUpload->data += vk.uploadByteOffset;
+        upload->data += vk.uploadByteOffset;
         vk.uploadCmdBufferIndex = (vk.uploadCmdBufferIndex + 1) % MAX_UPLOADCMDBUFFERS;
         signaledValue = vk.uploadCmdBufferSignaledValue[vk.uploadCmdBufferIndex];
         
@@ -1322,23 +1321,23 @@ void RHI_EndTextureUpload()
     RHI_UnmapBuffer(vk.uploadBuffer);
     VkCommandBuffer previousCmdBuffer = vk.activeCommandBuffer;
     RHI_BindCommandBuffer(vk.uploadCmdBuffer[vk.uploadCmdBufferIndex]); //@TODO: return VkCommandBuffer to assign previous?
-    Texture *texture = GET_TEXTURE(vk.uploadTextureHandle);
+    Texture *texture = GET_TEXTURE(vk.uploadDesc.handle);
     RHI_BeginCommandBuffer();
     RHI_CmdBeginBarrier();
     RHI_CmdBufferBarrier(vk.uploadBuffer, RHI_ResourceState_CopySourceBit);
-    RHI_CmdTextureBarrier(vk.uploadTextureHandle, RHI_ResourceState_CopyDestinationBit);
+    RHI_CmdTextureBarrier(vk.uploadDesc.handle, RHI_ResourceState_CopyDestinationBit);
     RHI_CmdEndBarrier();
 
     // copy from the staging buffer into the texture mip
     VkBufferImageCopy region = {};
     region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region.imageSubresource.mipLevel = vk.uploadTextureMipLevel;
+    region.imageSubresource.mipLevel = vk.uploadDesc.mipLevel;
     region.imageSubresource.layerCount = 1;
     region.imageOffset.x = 0;
     region.imageOffset.y = 0;
     region.imageOffset.z = 0;
-    region.imageExtent.width = max(texture->desc.width >> vk.uploadTextureMipLevel, 1);
-    region.imageExtent.height = max(texture->desc.height >> vk.uploadTextureMipLevel, 1);
+    region.imageExtent.width = max(texture->desc.width >> vk.uploadDesc.mipLevel, 1);
+    region.imageExtent.height = max(texture->desc.height >> vk.uploadDesc.mipLevel, 1);
     region.imageExtent.depth = 1;
     region.bufferOffset = vk.uploadByteOffset;
 
@@ -1349,7 +1348,7 @@ void RHI_EndTextureUpload()
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
     RHI_CmdBeginBarrier();
-    RHI_CmdTextureBarrier(vk.uploadTextureHandle, texture->desc.initialState);
+    RHI_CmdTextureBarrier(vk.uploadDesc.handle, texture->desc.initialState);
     RHI_CmdEndBarrier();
 
     RHI_EndCommandBuffer();
@@ -1363,7 +1362,7 @@ void RHI_EndTextureUpload()
     submitDesc.signalSemaphoreValues[0] = vk.uploadSemaphoreCount;
     RHI_SubmitGraphics(&submitDesc);
 
-    vk.uploadTextureHandle.h = 0;
+    vk.uploadDesc = (rhiTextureUploadDesc){};
     vk.activeCommandBuffer = previousCmdBuffer;
 }
 
