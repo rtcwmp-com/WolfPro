@@ -38,10 +38,10 @@ void RB_InitBlit(rhiTexture texture, rhiSampler sampler){
     desc.vertexShader.byteCount = sizeof(blit_vs);
 
     blitPipeline = RHI_CreateGraphicsPipeline(&desc);
-    blitDescSet = RHI_CreateDescriptorSet("Blit", blitDescSetLayout);
+    blitDescSet = RHI_CreateDescriptorSet("Blit", blitDescSetLayout, qfalse);
 
-    RHI_UpdateDescriptorSet(blitDescSet, 0, RHI_DescriptorType_ReadOnlyTexture, 0, 1, &texture);
-    RHI_UpdateDescriptorSet(blitDescSet, 1, RHI_DescriptorType_Sampler, 0, 1, &sampler);
+    RHI_UpdateDescriptorSet(blitDescSet, 0, RHI_DescriptorType_ReadOnlyTexture, 0, 1, &texture, 0);
+    RHI_UpdateDescriptorSet(blitDescSet, 1, RHI_DescriptorType_Sampler, 0, 1, &sampler, 0);
 }
 
 void RB_DrawBlit(rhiTexture swapChainImage){

@@ -566,6 +566,8 @@ static void Upload32(   unsigned *data,
 	int i;
 	static int rmse_saved = 0;
 
+	mipmap = qtrue; //@TODO
+
 	// do the root mean square error stuff first
 	if ( r_rmse->value ) {
 		while ( R_RMSE( (byte *)data, width, height ) < r_rmse->value ) {
@@ -644,12 +646,12 @@ static void Upload32(   unsigned *data,
 	imageDesc.mipCount = mipmap? R_ComputeMipCount(scaled_width, scaled_height): 1;
 	imageDesc.format = R8G8B8A8_UNorm;
 	imageDesc.initialState = RHI_ResourceState_ShaderInputBit;
-	imageDesc.allowedStates = RHI_ResourceState_ShaderInputBit | RHI_ResourceState_CopyDestinationBit;
+	imageDesc.allowedStates = RHI_ResourceState_ShaderInputBit | RHI_ResourceState_CopyDestinationBit | RHI_ResourceState_ShaderReadWriteBit;
 	imageDesc.sampleCount = 1;
 
 	image->handle = RHI_CreateTexture(&imageDesc);
 	image->descriptorIndex = descriptorIndex;
-	RHI_UpdateDescriptorSet(backEnd.descriptorSet, 0, RHI_DescriptorType_ReadOnlyTexture, descriptorIndex, 1, &image->handle);
+	RHI_UpdateDescriptorSet(backEnd.descriptorSet, 0, RHI_DescriptorType_ReadOnlyTexture, descriptorIndex, 1, &image->handle, 0);
 
 	// copy or resample data as appropriate for first MIP level
 	if ( ( scaled_width == width ) &&
@@ -661,16 +663,13 @@ static void Upload32(   unsigned *data,
 			rhiTextureUpload textureUpload = {};
 			rhiTextureUploadDesc uploadDesc = {};
 			uploadDesc.handle = image->handle;
+			uploadDesc.generateMips = mipmap;
 			RHI_BeginTextureUpload(&textureUpload, &uploadDesc );
 			
 			for(int i = 0; i < textureUpload.height; i++ ){
 				memcpy(textureUpload.data + textureUpload.rowPitch * i, (byte*)data + textureUpload.width * 4 * i, textureUpload.width * 4);
 			}
 			RHI_EndTextureUpload();
-
-			
-
-			
 
 			return;
 		}
@@ -700,6 +699,7 @@ static void Upload32(   unsigned *data,
 	rhiTextureUpload textureUpload = {};
 	rhiTextureUploadDesc uploadDesc = {};
 	uploadDesc.handle = image->handle;
+	uploadDesc.generateMips = mipmap;
 	RHI_BeginTextureUpload(&textureUpload, &uploadDesc);
 	
 	for(int i = 0; i < textureUpload.height; i++ ){
@@ -708,6 +708,7 @@ static void Upload32(   unsigned *data,
 	RHI_EndTextureUpload();
 
 
+#if 0
 	if ( mipmap ) {
 		int miplevel;
 
@@ -743,7 +744,7 @@ static void Upload32(   unsigned *data,
 
 		}
 	}
-
+#endif
 }
 
 /*

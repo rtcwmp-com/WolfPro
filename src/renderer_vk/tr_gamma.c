@@ -50,10 +50,10 @@ void RB_InitGamma(rhiTexture texture, rhiSampler sampler){
     desc.pushConstants.psBytes = sizeof(GammaPC);
 
     gammaPipeline = RHI_CreateGraphicsPipeline(&desc);
-    gammaDescSet = RHI_CreateDescriptorSet("Gamma", descSetLayout);
+    gammaDescSet = RHI_CreateDescriptorSet("Gamma", descSetLayout, qfalse);
 
-    RHI_UpdateDescriptorSet(gammaDescSet, 0, RHI_DescriptorType_ReadOnlyTexture, 0, 1, &texture);
-    RHI_UpdateDescriptorSet(gammaDescSet, 1, RHI_DescriptorType_Sampler, 0, 1, &sampler);
+    RHI_UpdateDescriptorSet(gammaDescSet, 0, RHI_DescriptorType_ReadOnlyTexture, 0, 1, &texture, 0);
+    RHI_UpdateDescriptorSet(gammaDescSet, 1, RHI_DescriptorType_Sampler, 0, 1, &sampler, 0);
 }
 
 void RB_DrawGamma(rhiTexture renderTarget){

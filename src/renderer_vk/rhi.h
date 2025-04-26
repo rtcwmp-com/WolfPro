@@ -420,8 +420,8 @@ rhiSampler RHI_CreateSampler(const char* name, RHI_TextureAddressing mode, uint3
 void RHI_CreateShader();
 
 rhiDescriptorSetLayout RHI_CreateDescriptorSetLayout(const rhiDescriptorSetLayoutDesc *desc);
-rhiDescriptorSet RHI_CreateDescriptorSet(const char *name, rhiDescriptorSetLayout layoutHandle);
-void RHI_UpdateDescriptorSet(rhiDescriptorSet descriptorHandle, uint32_t bindingIndex, RHI_DescriptorType type, uint32_t offset, uint32_t descriptorCount, const void *handles); //rhiTexture, rhiSampler, rhiBuffer
+rhiDescriptorSet RHI_CreateDescriptorSet(const char *name, rhiDescriptorSetLayout layoutHandle, qboolean longLifetime);
+void RHI_UpdateDescriptorSet(rhiDescriptorSet descriptorHandle, uint32_t bindingIndex, RHI_DescriptorType type, uint32_t offset, uint32_t descriptorCount, const void *handles, uint32_t mipIndex); //rhiTexture, rhiSampler, rhiBuffer
 
 rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDesc);
 rhiPipeline RHI_CreateComputePipeline(const rhiComputePipelineDesc *computeDesc);
@@ -456,6 +456,7 @@ void RHI_CmdSetScissor(int32_t x, int32_t y, uint32_t width, uint32_t height);
 void RHI_CmdPushConstants(rhiPipeline pipeline, RHI_Shader shader, const void *constants, uint32_t byteCount);
 void RHI_CmdDraw(uint32_t vertexCount, uint32_t firstVertex); //non indexed triangles (not for 2d)
 void RHI_CmdDrawIndexed(uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex);
+void RHI_CmdDispatch(uint32_t x, uint32_t y, uint32_t z);
 
 void RHI_CmdBeginBarrier( void );
 void RHI_CmdEndBarrier( void );

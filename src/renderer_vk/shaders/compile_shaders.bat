@@ -1,6 +1,7 @@
 set DXC=%VULKAN_SDK%\bin\dxc.exe
 del *_vs.h
 del *_ps.h
+del *_cs.h
 
 %DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T vs_6_0 -E vs %cd%\generic.hlsl -Fh %cd%\generic_vs.h -Vn generic_vs -D VS
 %DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T ps_6_0 -E ps %cd%\generic.hlsl -Fh %cd%\generic_ps.h -Vn generic_ps -D PS
@@ -13,3 +14,4 @@ del *_ps.h
 %DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T ps_6_0 -E ps %cd%\blit.hlsl -Fh %cd%\blit_ps.h -Vn blit_ps -D PS
 %DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T vs_6_0 -E vs %cd%\generic2s.hlsl -Fh %cd%\generic2s_vs.h -Vn generic2s_vs -D VS
 %DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T ps_6_0 -E ps %cd%\generic2s.hlsl -Fh %cd%\generic2s_ps.h -Vn generic2s_ps -D PS
+%DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T cs_6_0 -E cs %cd%\mipmap.hlsl -Fh %cd%\mipmap_cs.h -Vn mipmap_cs -D CS

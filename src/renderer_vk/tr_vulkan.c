@@ -528,6 +528,7 @@ static void CreateDevice()
     //vk12f.descriptorBindingPartiallyBound = VK_TRUE;
 	vk12f.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
 	vk12f.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
+    vk12f.descriptorBindingStorageImageUpdateAfterBind = VK_TRUE; //@TODO: some older hardware may not support update after bind for storage images
     vk12f.timelineSemaphore = VK_TRUE;
 
     VkPhysicalDeviceVulkan13Features vk13f = {};
@@ -1997,14 +1998,15 @@ static void CreateDescriptorPool(){
         { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, MAX_IMAGEDESCRIPTORS * 2 },
         { VK_DESCRIPTOR_TYPE_SAMPLER, 16 * 2 },
         { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 16 * 2 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 16 * 2 }
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 16 * 2 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, MAX_UPLOADCMDBUFFERS * 12}
 	};
 
     VkDescriptorPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	poolInfo.poolSizeCount = ARRAY_LEN(poolSizes);
 	poolInfo.pPoolSizes = poolSizes;
-	poolInfo.maxSets = 16; 
+	poolInfo.maxSets = 16 + MAX_UPLOADCMDBUFFERS;
 	poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT | VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     
 	VK(vkCreateDescriptorPool(vk.device, &poolInfo, NULL, &vk.descriptorPool));
@@ -2165,6 +2167,9 @@ VkPipelineStageFlags2 GetVkStageFlags(VkImageLayout state)
             return vertexFragmentCompute;
         case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
             return fragmentTests;
+        case VK_IMAGE_LAYOUT_GENERAL:
+            return vertexFragmentCompute;
+
         default:
             assert(!"Unhandled image layout for stage flags");
             return VK_PIPELINE_STAGE_2_NONE;
@@ -2212,6 +2217,8 @@ VkAccessFlags2 GetVkAccessFlags(VkImageLayout state)
             return VK_ACCESS_2_SHADER_READ_BIT;
         case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
             return VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+        case VK_IMAGE_LAYOUT_GENERAL:
+            return VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_SHADER_WRITE_BIT;
         default:
             assert(!"Unhandled image layout");
             return VK_ACCESS_2_NONE;
@@ -2387,6 +2394,8 @@ VkBufferUsageFlags GetVkBufferUsageFlags(RHI_ResourceState state)
 	return flags;
 }
 
+#include "shaders/mipmap_cs.h"
+
 static void CreateUploadManager(){
     vk.uploadBufferSize = 64 << 20;
 
@@ -2405,6 +2414,7 @@ static void CreateUploadManager(){
     mipmapLayoutDesc.bindings[0].descriptorCount = 12;
     mipmapLayoutDesc.bindings[0].descriptorType = RHI_DescriptorType_ReadWriteTexture;
     mipmapLayoutDesc.bindings[0].stageFlags = RHI_PipelineStage_ComputeBit;
+    mipmapLayoutDesc.longLifetime = qtrue;
 
     vk.mipmapLayout = RHI_CreateDescriptorSetLayout(&mipmapLayoutDesc);
 
@@ -2413,15 +2423,15 @@ static void CreateUploadManager(){
     mipmapPipelineDesc.longLifetime = qtrue;
     mipmapPipelineDesc.name = "Mipmap";
     mipmapPipelineDesc.pushConstantsBytes = 8;
-    //mipmapPipelineDesc.shader.byteCount = sizeof(mipmapShader);
-    //mipmapPipelineDesc.shader.data = mipmapShader;
+    mipmapPipelineDesc.shader.byteCount = sizeof(mipmap_cs);
+    mipmapPipelineDesc.shader.data = mipmap_cs;
 
     vk.mipmapPipeline = RHI_CreateComputePipeline(&mipmapPipelineDesc);
 
     for(int i = 0; i < MAX_UPLOADCMDBUFFERS; i++){
         vk.uploadCmdBuffer[i] = RHI_CreateCommandBuffer(qtrue);
         vk.uploadCmdBufferSignaledValue[i] = 0;
-        vk.uploadDescriptorSets[i] = RHI_CreateDescriptorSet(va("Upload Desc Set #%d", i), vk.mipmapLayout);
+        vk.uploadDescriptorSets[i] = RHI_CreateDescriptorSet(va("Upload Desc Set #%d", i), vk.mipmapLayout, qtrue);
     }
     vk.uploadCmdBufferIndex = 0;
  
@@ -2536,7 +2546,7 @@ void RHI_Init( void ) {
     Pool_Init(&vk.texturePool, MAX_IMAGEDESCRIPTORS, sizeof(Texture), 0);
     Pool_Init(&vk.bufferPool, 64, sizeof(Buffer), 0);
     Pool_Init(&vk.descriptorSetLayoutPool, 64, sizeof(DescriptorSetLayout), 0);
-    Pool_Init(&vk.descriptorSetPool, 64, sizeof(DescriptorSet), 0);
+    Pool_Init(&vk.descriptorSetPool, 64 + MAX_UPLOADCMDBUFFERS, sizeof(DescriptorSet), 0);
     Pool_Init(&vk.pipelinePool, 256, sizeof(Pipeline), 0);
     Pool_Init(&vk.samplerPool, 16, sizeof(Sampler), 0);
     

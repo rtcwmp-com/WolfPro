@@ -283,7 +283,7 @@ static void InitVulkan( void ) {
 
 
 
-	backEnd.descriptorSet = RHI_CreateDescriptorSet("Game Textures", backEnd.descriptorSetLayout);
+	backEnd.descriptorSet = RHI_CreateDescriptorSet("Game Textures", backEnd.descriptorSetLayout, qfalse);
 
 	for(int a = 0; a < 2; a++){
 		for(int c = 0; c < 2; c++){
@@ -294,8 +294,8 @@ static void InitVulkan( void ) {
 
 	}
 	
-	RHI_UpdateDescriptorSet(backEnd.descriptorSet, 1, RHI_DescriptorType_Sampler, 0, ARRAY_LEN(backEnd.sampler), backEnd.sampler);
-	RHI_UpdateDescriptorSet(backEnd.descriptorSet, 2, RHI_DescriptorType_ReadOnlyBuffer, 0, 1, &backEnd.sceneViewGPUBuffer);
+	RHI_UpdateDescriptorSet(backEnd.descriptorSet, 1, RHI_DescriptorType_Sampler, 0, ARRAY_LEN(backEnd.sampler), backEnd.sampler, 0);
+	RHI_UpdateDescriptorSet(backEnd.descriptorSet, 2, RHI_DescriptorType_ReadOnlyBuffer, 0, 1, &backEnd.sceneViewGPUBuffer, 0);
 
 	rhiTextureDesc depthTextureDesc = {};
 	depthTextureDesc.allowedStates = RHI_ResourceState_DepthWriteBit;

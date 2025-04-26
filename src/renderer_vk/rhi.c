@@ -55,9 +55,10 @@ void RHI_Shutdown(qboolean destroyWindow)
 
     it = Pool_BeginIteration();
     while(Pool_Iterate(&vk.descriptorSetPool, &it)){
-		// @TODO:
-       DescriptorSet *descSet = (DescriptorSet*)it.value;
-       vkFreeDescriptorSets(vk.device, vk.descriptorPool, 1, &descSet->set);
+        DescriptorSet *descSet = (DescriptorSet*)it.value;
+        if(!descSet->longLifetime || destroyWindow){
+            vkFreeDescriptorSets(vk.device, vk.descriptorPool, 1, &descSet->set);
+        }
     }
     Pool_Clear(&vk.descriptorSetPool);
 
@@ -91,6 +92,9 @@ void RHI_Shutdown(qboolean destroyWindow)
                 vmaDestroyImage(vk.allocator, texture->image, texture->allocation);
             }
             vkDestroyImageView(vk.device, texture->view, NULL);
+            for(int i = 0; i < texture->desc.mipCount; i++){
+                vkDestroyImageView(vk.device, texture->mipViews[i], NULL); 
+            }
             Pool_Remove(&vk.texturePool, it.handle);
         }
     }
@@ -293,6 +297,7 @@ rhiTexture RHI_CreateTexture(const rhiTextureDesc *desc)
 		SetObjectName(VK_OBJECT_TYPE_IMAGE, (uint64_t)image, desc->name);
     }
 
+    
     VkImageView view;
     VkImageViewCreateInfo viewInfo = {};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -307,6 +312,8 @@ rhiTexture RHI_CreateTexture(const rhiTextureDesc *desc)
     VK(vkCreateImageView(vk.device, &viewInfo, NULL, &view));
     SetObjectName(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)view, desc->name);
 
+   
+
     Texture texture = {};
     texture.desc = *desc;
     texture.image = image;
@@ -315,6 +322,25 @@ rhiTexture RHI_CreateTexture(const rhiTextureDesc *desc)
     texture.ownsImage = ownsImage;
     texture.format = format;
     texture.currentLayout = layout;
+
+    for(int i = 0; i < desc->mipCount; i++){
+        VkImageView mipView;
+        VkImageViewCreateInfo mipViewInfo = {};
+        mipViewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        mipViewInfo.image = image;
+        mipViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        mipViewInfo.format = format;
+        mipViewInfo.subresourceRange.aspectMask = GetVkImageAspectFlags(format);
+        mipViewInfo.subresourceRange.baseMipLevel = i;
+        mipViewInfo.subresourceRange.levelCount = 1;
+        mipViewInfo.subresourceRange.baseArrayLayer = 0;
+        mipViewInfo.subresourceRange.layerCount = 1;
+        VK(vkCreateImageView(vk.device, &mipViewInfo, NULL, &mipView));
+        SetObjectName(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)mipView, desc->name);
+        texture.mipViews[i] = mipView;
+    }
+
+
     return (rhiTexture) { Pool_Add(&vk.texturePool, &texture) };
 }
 
@@ -398,7 +424,7 @@ rhiDescriptorSetLayout RHI_CreateDescriptorSetLayout(const rhiDescriptorSetLayou
     return (rhiDescriptorSetLayout) { Pool_Add(&vk.descriptorSetLayoutPool, &descLayout) };
 }
 
-rhiDescriptorSet RHI_CreateDescriptorSet(const char *name, rhiDescriptorSetLayout layoutHandle)
+rhiDescriptorSet RHI_CreateDescriptorSet(const char *name, rhiDescriptorSetLayout layoutHandle, qboolean longLifetime)
 {
     DescriptorSetLayout *layout = GET_LAYOUT(layoutHandle);
 
@@ -415,11 +441,12 @@ rhiDescriptorSet RHI_CreateDescriptorSet(const char *name, rhiDescriptorSetLayou
     DescriptorSet desc = {};
     desc.set = descriptorSet;
     desc.layout = layoutHandle;
+    desc.longLifetime = longLifetime;
 
     return (rhiDescriptorSet) { Pool_Add(&vk.descriptorSetPool, &desc) };
 }
 
-void RHI_UpdateDescriptorSet(rhiDescriptorSet descriptorHandle, uint32_t bindingIndex, RHI_DescriptorType type, uint32_t offset, uint32_t descriptorCount, const void *handles){
+void RHI_UpdateDescriptorSet(rhiDescriptorSet descriptorHandle, uint32_t bindingIndex, RHI_DescriptorType type, uint32_t offset, uint32_t descriptorCount, const void *handles, uint32_t mipIndex){
     DescriptorSet *descSet = GET_DESCRIPTORSET(descriptorHandle);
     DescriptorSetLayout *layout = GET_LAYOUT(descSet->layout);
 
@@ -475,6 +502,18 @@ void RHI_UpdateDescriptorSet(rhiDescriptorSet descriptorHandle, uint32_t binding
        
         write.pBufferInfo = bufferInfo;
         vkUpdateDescriptorSets(vk.device, 1, &write, 0, NULL);
+    }else if(type == RHI_DescriptorType_ReadWriteTexture){
+        assert(descriptorCount <= ARRAY_LEN(imageInfo));
+        const rhiTexture *textureHandle = (const rhiTexture*)handles;
+        for(int i = 0; i < descriptorCount; i++){
+            Texture *texture = GET_TEXTURE(textureHandle[i]);
+            imageInfo[i].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+            imageInfo[i].imageView = texture->mipViews[mipIndex];
+            imageInfo[i].sampler = VK_NULL_HANDLE;
+        }
+        write.pImageInfo = imageInfo;
+        vkUpdateDescriptorSets(vk.device, 1, &write, 0, NULL);
+
     }else{
         assert(!"Unhandled descriptor type");
     }
@@ -1073,7 +1112,9 @@ void RHI_CmdPushConstants(rhiPipeline pipeline, RHI_Shader shader, const void *c
  //   assert(byteCount == privatePipeline->pushConstantSize[shader]);
     assert((uint32_t)shader < RHI_Shader_Count);
 
-    vkCmdPushConstants(vk.activeCommandBuffer, privatePipeline->layout.pipelineLayout, GetVkShaderStageFlagsFromShader(shader), privatePipeline->pushConstantOffsets[shader], byteCount, constants);
+    vkCmdPushConstants(vk.activeCommandBuffer, privatePipeline->layout.pipelineLayout, 
+                       GetVkShaderStageFlagsFromShader(shader), privatePipeline->pushConstantOffsets[shader],
+                       byteCount, constants);
 }
 
 void RHI_CmdDraw(uint32_t vertexCount, uint32_t firstVertex)
@@ -1084,6 +1125,11 @@ void RHI_CmdDraw(uint32_t vertexCount, uint32_t firstVertex)
 void RHI_CmdDrawIndexed(uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
 {
     vkCmdDrawIndexed(vk.activeCommandBuffer, indexCount, 1, firstIndex, firstVertex, 0);
+}
+
+void RHI_CmdDispatch(uint32_t x, uint32_t y, uint32_t z)
+{
+    vkCmdDispatch(vk.activeCommandBuffer, x, y, z);
 }
 
 void RHI_CmdBeginBarrier()
@@ -1351,8 +1397,19 @@ void RHI_EndTextureUpload()
         RHI_CmdBeginBarrier();
         RHI_CmdTextureBarrier(vk.uploadDesc.handle, RHI_ResourceState_ShaderReadWriteBit);
         RHI_CmdEndBarrier();
+        rhiDescriptorSet set = vk.uploadDescriptorSets[vk.uploadCmdBufferIndex];
+        for(int i = 0; i < texture->desc.mipCount; i++){
+            RHI_UpdateDescriptorSet(set, 0, RHI_DescriptorType_ReadWriteTexture, i, 1, &vk.uploadDesc.handle, i);
+        }
 
-        //TODO: select correct descriptor set, update desc set with new bindings, bind pipeline and desc sets, set push constants, dispatch
+        RHI_CmdBindPipeline(vk.mipmapPipeline);
+        RHI_CmdBindDescriptorSet(vk.mipmapPipeline, set);
+        uint32_t indices[2] = { 0, 1 };
+        RHI_CmdPushConstants(vk.mipmapPipeline, RHI_Shader_Compute, indices, sizeof(indices));
+        uint32_t x = (texture->desc.width + 7) / 8;
+        uint32_t y = (texture->desc.height + 7) / 8;
+
+        RHI_CmdDispatch(x, y, 1);
     }
 
     RHI_CmdBeginBarrier();

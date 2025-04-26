@@ -113,7 +113,7 @@ void RB_ImGUI_Init(void){
     }
     RHI_EndTextureUpload();
     imGUIfontAtlasIndex = tr.textureDescriptorCount++;
-    RHI_UpdateDescriptorSet(backEnd.descriptorSet, 0, RHI_DescriptorType_ReadOnlyTexture, imGUIfontAtlasIndex, 1, &imGUIfontAtlas);
+    RHI_UpdateDescriptorSet(backEnd.descriptorSet, 0, RHI_DescriptorType_ReadOnlyTexture, imGUIfontAtlasIndex, 1, &imGUIfontAtlas, 0);
 
     ImFontAtlas_SetTexID(io->Fonts, (ImTextureID)imGUIfontAtlasIndex);
 

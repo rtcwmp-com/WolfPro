@@ -124,6 +124,7 @@ typedef struct Texture
 {
 	VkImage image;
 	VkImageView view;
+	VkImageView mipViews[16];
 	VmaAllocation allocation;
 	rhiTextureDesc desc;
 	VkFormat format;
@@ -174,6 +175,7 @@ typedef struct DescriptorSet
 {
 	VkDescriptorSet set;
 	rhiDescriptorSetLayout layout;
+	qbool longLifetime;
 } DescriptorSet;
 
 typedef struct
@@ -261,6 +263,7 @@ typedef struct Vulkan
 	rhiDescriptorSet uploadDescriptorSets[MAX_UPLOADCMDBUFFERS];
 	rhiDescriptorSetLayout mipmapLayout;
 	rhiPipeline mipmapPipeline;
+
 	//
 	// extensions
 	// 
