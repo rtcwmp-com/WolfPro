@@ -258,6 +258,9 @@ typedef struct Vulkan
 	rhiCommandBuffer uploadCmdBuffer[MAX_UPLOADCMDBUFFERS];
 	uint64_t uploadCmdBufferSignaledValue[MAX_UPLOADCMDBUFFERS];
 	uint32_t uploadCmdBufferIndex;
+	rhiDescriptorSet uploadDescriptorSets[MAX_UPLOADCMDBUFFERS];
+	rhiDescriptorSetLayout mipmapLayout;
+	rhiPipeline mipmapPipeline;
 	//
 	// extensions
 	// 

@@ -2400,9 +2400,28 @@ static void CreateUploadManager(){
 
     vk.uploadBuffer = RHI_CreateBuffer(&textureStagingBufferDesc);
 
+    rhiDescriptorSetLayoutDesc mipmapLayoutDesc = {};
+    mipmapLayoutDesc.bindingCount = 1;
+    mipmapLayoutDesc.bindings[0].descriptorCount = 12;
+    mipmapLayoutDesc.bindings[0].descriptorType = RHI_DescriptorType_ReadWriteTexture;
+    mipmapLayoutDesc.bindings[0].stageFlags = RHI_PipelineStage_ComputeBit;
+
+    vk.mipmapLayout = RHI_CreateDescriptorSetLayout(&mipmapLayoutDesc);
+
+    rhiComputePipelineDesc mipmapPipelineDesc = {};
+    mipmapPipelineDesc.descLayout = vk.mipmapLayout;
+    mipmapPipelineDesc.longLifetime = qtrue;
+    mipmapPipelineDesc.name = "Mipmap";
+    mipmapPipelineDesc.pushConstantsBytes = 8;
+    //mipmapPipelineDesc.shader.byteCount = sizeof(mipmapShader);
+    //mipmapPipelineDesc.shader.data = mipmapShader;
+
+    vk.mipmapPipeline = RHI_CreateComputePipeline(&mipmapPipelineDesc);
+
     for(int i = 0; i < MAX_UPLOADCMDBUFFERS; i++){
         vk.uploadCmdBuffer[i] = RHI_CreateCommandBuffer(qtrue);
         vk.uploadCmdBufferSignaledValue[i] = 0;
+        vk.uploadDescriptorSets[i] = RHI_CreateDescriptorSet(va("Upload Desc Set #%d", i), vk.mipmapLayout);
     }
     vk.uploadCmdBufferIndex = 0;
  

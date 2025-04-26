@@ -1347,6 +1347,14 @@ void RHI_EndTextureUpload()
     vkCmdCopyBufferToImage(vk.activeCommandBuffer, GET_BUFFER(vk.uploadBuffer)->buffer, texture->image,
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
+    if(vk.uploadDesc.generateMips){
+        RHI_CmdBeginBarrier();
+        RHI_CmdTextureBarrier(vk.uploadDesc.handle, RHI_ResourceState_ShaderReadWriteBit);
+        RHI_CmdEndBarrier();
+
+        //TODO: select correct descriptor set, update desc set with new bindings, bind pipeline and desc sets, set push constants, dispatch
+    }
+
     RHI_CmdBeginBarrier();
     RHI_CmdTextureBarrier(vk.uploadDesc.handle, texture->desc.initialState);
     RHI_CmdEndBarrier();

@@ -254,8 +254,7 @@ typedef void (*RHI_TextureUploadCallback)(void* userdata);
 typedef struct rhiTextureUploadDesc {
 	rhiTexture handle;
 	uint32_t mipLevel;
-	RHI_TextureUploadCallback cb;
-	void *userdata;
+	qboolean generateMips;
 } rhiTextureUploadDesc;
 
 typedef enum RHI_DescriptorType {
