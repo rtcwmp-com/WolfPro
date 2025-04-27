@@ -893,7 +893,7 @@ void R_Init( void ) {
 	glConfig.ATIPointMode = qfalse;
 	glConfig.colorBits = 32;
 	glConfig.depthBits = 32;
-	glConfig.deviceSupportsGamma = qfalse; //@TODO
+	glConfig.deviceSupportsGamma = qtrue;
 	glConfig.displayFrequency = 0; //@TODO
 	glConfig.driverType = GLDRV_STANDALONE; //@TODO
 	glConfig.hardwareType = GLHW_GENERIC;
