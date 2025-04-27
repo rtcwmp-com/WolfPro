@@ -66,7 +66,8 @@ void RHI_Shutdown(qboolean destroyWindow)
     it = Pool_BeginIteration();
     while(Pool_Iterate(&vk.pipelinePool, &it)){
         Pipeline *pipeline = (Pipeline*)it.value;
-        if(!pipeline->graphicsDesc.longLifetime || destroyWindow){
+        qbool longLifetime = pipeline->compute ? pipeline->computeDesc.longLifetime : pipeline->graphicsDesc.longLifetime;
+        if(!longLifetime || destroyWindow){
             vkDestroyPipelineLayout(vk.device, pipeline->layout.pipelineLayout, NULL);
             vkDestroyPipeline(vk.device,pipeline->pipeline, NULL);
             Pool_Remove(&vk.pipelinePool, it.handle);
