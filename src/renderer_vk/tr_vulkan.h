@@ -263,6 +263,9 @@ typedef struct Vulkan
 	rhiDescriptorSet uploadDescriptorSets[MAX_UPLOADCMDBUFFERS];
 	rhiDescriptorSetLayout mipmapLayout;
 	rhiPipeline mipmapPipeline;
+	rhiPipeline mipmapXPipeline;
+	rhiPipeline mipmapYPipeline;
+	rhiTexture mipmapScratchTexture;
 
 	//
 	// extensions

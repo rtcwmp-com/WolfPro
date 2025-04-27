@@ -635,6 +635,7 @@ static void Upload32(   unsigned *data,
 			rhiTextureUploadDesc uploadDesc = {};
 			uploadDesc.handle = image->handle;
 			uploadDesc.generateMips = mipmap;
+			uploadDesc.clamp = image->wrapClampMode == GL_CLAMP;
 			RHI_BeginTextureUpload(&textureUpload, &uploadDesc );
 			
 			for(int i = 0; i < textureUpload.height; i++ ){
@@ -671,6 +672,7 @@ static void Upload32(   unsigned *data,
 	rhiTextureUploadDesc uploadDesc = {};
 	uploadDesc.handle = image->handle;
 	uploadDesc.generateMips = mipmap;
+	uploadDesc.clamp = image->wrapClampMode == GL_CLAMP;
 	RHI_BeginTextureUpload(&textureUpload, &uploadDesc);
 	
 	for(int i = 0; i < textureUpload.height; i++ ){

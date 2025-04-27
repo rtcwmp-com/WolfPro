@@ -638,6 +638,7 @@ VkFormat GetVkFormat(rhiTextureFormatId format)
         case R8G8B8A8_UNorm: return VK_FORMAT_R8G8B8A8_UNORM;
         case B8G8R8A8_UNorm: return VK_FORMAT_B8G8R8A8_UNORM;
         case B8G8R8A8_sRGB: return VK_FORMAT_B8G8R8A8_SRGB;
+        case R16G16B16A16_SFloat: return VK_FORMAT_R16G16B16A16_SFLOAT;
         case D16_UNorm: return VK_FORMAT_D16_UNORM;
         case D32_SFloat: return VK_FORMAT_D32_SFLOAT;
         //case D24_UNorm_S8_UInt: return VK_FORMAT_D24_UNORM_S8_UINT;
@@ -2395,6 +2396,8 @@ VkBufferUsageFlags GetVkBufferUsageFlags(RHI_ResourceState state)
 }
 
 #include "shaders/mipmap_cs.h"
+#include "shaders/mipmap_x_cs.h"
+#include "shaders/mipmap_y_cs.h"
 
 static void CreateUploadManager(){
     vk.uploadBufferSize = 64 << 20;
@@ -2410,11 +2413,16 @@ static void CreateUploadManager(){
     vk.uploadBuffer = RHI_CreateBuffer(&textureStagingBufferDesc);
 
     rhiDescriptorSetLayoutDesc mipmapLayoutDesc = {};
-    mipmapLayoutDesc.bindingCount = 1;
+    mipmapLayoutDesc.bindingCount = 2;
     mipmapLayoutDesc.bindings[0].descriptorCount = 12;
     mipmapLayoutDesc.bindings[0].descriptorType = RHI_DescriptorType_ReadWriteTexture;
     mipmapLayoutDesc.bindings[0].stageFlags = RHI_PipelineStage_ComputeBit;
+    mipmapLayoutDesc.bindings[1].descriptorCount = 1;
+    mipmapLayoutDesc.bindings[1].descriptorType = RHI_DescriptorType_ReadWriteTexture;
+    mipmapLayoutDesc.bindings[1].stageFlags = RHI_PipelineStage_ComputeBit;
     mipmapLayoutDesc.longLifetime = qtrue;
+
+    
 
     vk.mipmapLayout = RHI_CreateDescriptorSetLayout(&mipmapLayoutDesc);
 
@@ -2422,16 +2430,43 @@ static void CreateUploadManager(){
     mipmapPipelineDesc.descLayout = vk.mipmapLayout;
     mipmapPipelineDesc.longLifetime = qtrue;
     mipmapPipelineDesc.name = "Mipmap";
-    mipmapPipelineDesc.pushConstantsBytes = 8;
+    mipmapPipelineDesc.pushConstantsBytes = 12;
     mipmapPipelineDesc.shader.byteCount = sizeof(mipmap_cs);
     mipmapPipelineDesc.shader.data = mipmap_cs;
 
     vk.mipmapPipeline = RHI_CreateComputePipeline(&mipmapPipelineDesc);
 
+    mipmapPipelineDesc.pushConstantsBytes = 20;
+    mipmapPipelineDesc.shader.byteCount = sizeof(mipmap_x_cs);
+    mipmapPipelineDesc.shader.data = mipmap_x_cs;
+    mipmapPipelineDesc.name = "Mipmap X";
+    vk.mipmapXPipeline = RHI_CreateComputePipeline(&mipmapPipelineDesc);
+
+    // mipmapPipelineDesc.shader.byteCount = sizeof(mipmap_y_cs);
+    // mipmapPipelineDesc.shader.data = mipmap_y_cs;
+    // mipmapPipelineDesc.name = "Mipmap Y";
+    // vk.mipmapYPipeline = RHI_CreateComputePipeline(&mipmapPipelineDesc);
+
+    rhiTextureDesc mipmapScratchTexDesc = {};
+    mipmapScratchTexDesc.allowedStates = RHI_ResourceState_ShaderReadWriteBit;
+    mipmapScratchTexDesc.format = R16G16B16A16_SFloat;
+    mipmapScratchTexDesc.height = 2048;
+    mipmapScratchTexDesc.width = 2048;
+    mipmapScratchTexDesc.initialState = RHI_ResourceState_ShaderReadWriteBit;
+    mipmapScratchTexDesc.longLifetime = qtrue;
+    mipmapScratchTexDesc.memoryUsage = RHI_MemoryUsage_DeviceLocal;
+    mipmapScratchTexDesc.mipCount = 1;
+    mipmapScratchTexDesc.name = "Mipmap Scratch";
+    mipmapScratchTexDesc.sampleCount = 1;
+
+    vk.mipmapScratchTexture = RHI_CreateTexture(&mipmapScratchTexDesc);
+
+
     for(int i = 0; i < MAX_UPLOADCMDBUFFERS; i++){
         vk.uploadCmdBuffer[i] = RHI_CreateCommandBuffer(qtrue);
         vk.uploadCmdBufferSignaledValue[i] = 0;
         vk.uploadDescriptorSets[i] = RHI_CreateDescriptorSet(va("Upload Desc Set #%d", i), vk.mipmapLayout, qtrue);
+        RHI_UpdateDescriptorSet(vk.uploadDescriptorSets[i], 1, RHI_DescriptorType_ReadWriteTexture, 0, 1, &vk.mipmapScratchTexture, 0);
     }
     vk.uploadCmdBufferIndex = 0;
  

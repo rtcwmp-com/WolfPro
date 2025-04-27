@@ -1423,9 +1423,18 @@ void RHI_EndTextureUpload()
                 RHI_CmdTextureBarrier(vk.uploadDesc.handle, RHI_ResourceState_ShaderReadWriteBit);
                 RHI_CmdEndBarrier();
             }
-            
-            uint32_t indices[2] = { i - 1, i };
-            RHI_CmdPushConstants(vk.mipmapPipeline, RHI_Shader_Compute, indices, sizeof(indices));
+
+            typedef struct mipmapPushConstants {
+                uint32_t srcIndex;
+                uint32_t dstIndex;
+                uint32_t clamp;
+            } mipmapPushConstants;
+
+            mipmapPushConstants pc = {};
+            pc.srcIndex = i - 1;
+            pc.dstIndex = i;
+            pc.clamp = vk.uploadDesc.clamp;
+            RHI_CmdPushConstants(vk.mipmapPipeline, RHI_Shader_Compute, &pc, sizeof(pc));
             
             uint32_t x = (w + 7) / 8;
             uint32_t y = (h + 7) / 8;

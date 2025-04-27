@@ -15,3 +15,5 @@ del *_cs.h
 %DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T vs_6_0 -E vs %cd%\generic2s.hlsl -Fh %cd%\generic2s_vs.h -Vn generic2s_vs -D VS
 %DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T ps_6_0 -E ps %cd%\generic2s.hlsl -Fh %cd%\generic2s_ps.h -Vn generic2s_ps -D PS
 %DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T cs_6_0 -E cs %cd%\mipmap.hlsl -Fh %cd%\mipmap_cs.h -Vn mipmap_cs -D CS
+%DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T cs_6_0 -E cs %cd%\mipmap_x.hlsl -Fh %cd%\mipmap_x_cs.h -Vn mipmap_x_cs -D CS
+%DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T cs_6_0 -E cs %cd%\mipmap_y.hlsl -Fh %cd%\mipmap_y_cs.h -Vn mipmap_y_cs -D CS

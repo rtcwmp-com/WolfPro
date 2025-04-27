@@ -2,15 +2,12 @@ struct RootConstants
 {
 	uint srcIndex;
     uint dstIndex;
+    uint clampMode;
 };
 
 [[vk::push_constant]] RootConstants rc;
 
-[[vk::binding(0)]] RWTexture2D<unorm float4> mips[12];
-
-uint2 TexTC(uint2 tc, uint2 dims){
-    return min(tc, dims - uint2(1,1));
-}
+#include "mipmap.hlsli"
 
 [numthreads(8,8,1)]
 void cs(uint3 dtID : SV_DispatchThreadID) 

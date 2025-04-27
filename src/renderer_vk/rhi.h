@@ -115,6 +115,7 @@ typedef enum rhiTextureFormatId
 	R8G8B8A8_UNorm,
 	B8G8R8A8_UNorm,
 	B8G8R8A8_sRGB,
+	R16G16B16A16_SFloat,
 	D16_UNorm,
 	D32_SFloat,
 	//D24_UNorm_S8_UInt, // this is not well supported (:wave: AMD)
@@ -255,6 +256,7 @@ typedef struct rhiTextureUploadDesc {
 	rhiTexture handle;
 	uint32_t mipLevel;
 	qboolean generateMips;
+	qboolean clamp;
 } rhiTextureUploadDesc;
 
 typedef enum RHI_DescriptorType {
