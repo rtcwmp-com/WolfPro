@@ -539,8 +539,6 @@ static void Upload32(   unsigned *data,
 	int i;
 	static int rmse_saved = 0;
 
-	mipmap = qtrue; //@TODO
-
 	// do the root mean square error stuff first
 	if ( r_rmse->value ) {
 		while ( R_RMSE( (byte *)data, width, height ) < r_rmse->value ) {

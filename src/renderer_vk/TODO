@@ -9,6 +9,7 @@ shader r_cache
   use hashmap for shader text
 
 gpu mipmap generation
+why is R_LightScaleTexture not applied to non-mipmapped textures that are not rescaled
 
 dynamic lights
 
@@ -20,7 +21,7 @@ remove r_cache/r_cacheshaders
 remove r_measureoverdraw
 remove r_ignoreglerrors r_drawBuffer and stereo
 redo com_frame/rhi_endframe sleep mechanism _mm_pause busy loop
-
+remove R_GammaCorrect s_gammatable
 
 vid_restart variations:
     vid_restart -> full
