@@ -586,6 +586,7 @@ rhiPipeline RHI_CreateComputePipeline(const rhiComputePipelineDesc *computeDesc)
     pipeline.layout = layout;
     pipeline.pushConstantOffsets[RHI_Shader_Compute] = 0;
     pipeline.pushConstantSize[RHI_Shader_Compute] = computeDesc->pushConstantsBytes;
+    pipeline.computeDesc = *computeDesc;
 
 
     return (rhiPipeline) { Pool_Add(&vk.pipelinePool, &pipeline) };
