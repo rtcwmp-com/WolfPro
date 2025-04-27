@@ -1406,8 +1406,11 @@ void RHI_EndTextureUpload()
         RHI_CmdBindDescriptorSet(vk.mipmapPipeline, set);
         uint32_t indices[2] = { 0, 1 };
         RHI_CmdPushConstants(vk.mipmapPipeline, RHI_Shader_Compute, indices, sizeof(indices));
-        uint32_t x = (texture->desc.width + 7) / 8;
-        uint32_t y = (texture->desc.height + 7) / 8;
+        uint32_t w = max(texture->desc.width / 2, 1);
+        uint32_t h = max(texture->desc.height / 2, 1);
+        uint32_t x = (w + 7) / 8;
+        uint32_t y = (h + 7) / 8;
+        
 
         RHI_CmdDispatch(x, y, 1);
     }
