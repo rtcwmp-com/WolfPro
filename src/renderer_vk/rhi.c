@@ -58,9 +58,10 @@ void RHI_Shutdown(qboolean destroyWindow)
         DescriptorSet *descSet = (DescriptorSet*)it.value;
         if(!descSet->longLifetime || destroyWindow){
             vkFreeDescriptorSets(vk.device, vk.descriptorPool, 1, &descSet->set);
+            Pool_Remove(&vk.descriptorSetPool, it.handle);
         }
     }
-    Pool_Clear(&vk.descriptorSetPool);
+    Pool_ClearUnused(&vk.descriptorSetPool);
 
     it = Pool_BeginIteration();
     while(Pool_Iterate(&vk.pipelinePool, &it)){
