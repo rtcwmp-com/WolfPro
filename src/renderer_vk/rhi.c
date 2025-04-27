@@ -1174,7 +1174,7 @@ void RHI_CmdEndBarrier()
     for(int i = 0; i < vk.textureBarrierCount; i++){
         Texture* texture = GET_TEXTURE(vk.textureBarriers[i]);
         VkImageLayout newLayout = GetVkImageLayout(vk.textureState[i]);
-        if(texture->currentLayout == newLayout ){
+        if(texture->currentLayout == newLayout && newLayout != VK_IMAGE_LAYOUT_GENERAL ){
             continue;
         }
         
@@ -1182,8 +1182,14 @@ void RHI_CmdEndBarrier()
         VkImageMemoryBarrier2 barrier = {};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
         barrier.image = texture->image;
-        barrier.srcAccessMask = GetVkAccessFlags(texture->currentLayout);
-        barrier.dstAccessMask = GetVkAccessFlags(newLayout);
+        if(texture->currentLayout == VK_IMAGE_LAYOUT_GENERAL && newLayout == VK_IMAGE_LAYOUT_GENERAL){
+            barrier.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_SHADER_WRITE_BIT;
+        }else{
+            barrier.srcAccessMask = GetVkAccessFlags(texture->currentLayout);
+            barrier.dstAccessMask = GetVkAccessFlags(newLayout);
+        }
+
         barrier.srcStageMask = GetVkStageFlags(texture->currentLayout);
         barrier.dstStageMask = GetVkStageFlags(newLayout);
         barrier.oldLayout = texture->currentLayout;
@@ -1404,15 +1410,28 @@ void RHI_EndTextureUpload()
 
         RHI_CmdBindPipeline(vk.mipmapPipeline);
         RHI_CmdBindDescriptorSet(vk.mipmapPipeline, set);
-        uint32_t indices[2] = { 0, 1 };
-        RHI_CmdPushConstants(vk.mipmapPipeline, RHI_Shader_Compute, indices, sizeof(indices));
+
         uint32_t w = max(texture->desc.width / 2, 1);
         uint32_t h = max(texture->desc.height / 2, 1);
-        uint32_t x = (w + 7) / 8;
-        uint32_t y = (h + 7) / 8;
-        
 
-        RHI_CmdDispatch(x, y, 1);
+        for(int i = 1; i < texture->desc.mipCount; i++){
+            if(i >= 2){
+                RHI_CmdBeginBarrier();
+                RHI_CmdTextureBarrier(vk.uploadDesc.handle, RHI_ResourceState_ShaderReadWriteBit);
+                RHI_CmdEndBarrier();
+            }
+            
+            uint32_t indices[2] = { i - 1, i };
+            RHI_CmdPushConstants(vk.mipmapPipeline, RHI_Shader_Compute, indices, sizeof(indices));
+            
+            uint32_t x = (w + 7) / 8;
+            uint32_t y = (h + 7) / 8;
+    
+            RHI_CmdDispatch(x, y, 1);
+            w = max(w / 2, 1);
+            h = max(h / 2, 1);
+        }
+       
     }
 
     RHI_CmdBeginBarrier();
