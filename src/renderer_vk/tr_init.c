@@ -798,7 +798,7 @@ void R_Register( void ) {
 	r_debugUI = ri.Cvar_Get( "r_debugUI", "0", CVAR_TEMP);
 	r_debugInput = ri.Cvar_Get( "r_debugInput", "0", CVAR_TEMP);
 
-	r_mipFilter = ri.Cvar_Get( "r_mipFilter", "0", CVAR_ARCHIVE );
+	r_mipFilter = ri.Cvar_Get( "r_mipFilter", "1", CVAR_ARCHIVE );
 
 	// make sure all the commands added here are also
 	// removed in R_Shutdown
