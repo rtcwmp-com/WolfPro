@@ -26,10 +26,10 @@ void cs(uint3 dtID : SV_DispatchThreadID)
 
     uint2 srcDims = uint2(srcWidth, srcHeight);
     
-    float4 a = src[TexTC(dtID.xy * 2 + uint2(0,0), srcDims)];
-    float4 b = src[TexTC(dtID.xy * 2 + uint2(0,1), srcDims)];
-    float4 c = src[TexTC(dtID.xy * 2 + uint2(1,0), srcDims)];
-    float4 d = src[TexTC(dtID.xy * 2 + uint2(1,1), srcDims)];
+    float4 a = src[TexTC(dtID.xy * 2 + uint2(0,0), srcDims, rc.clampMode != 0)];
+    float4 b = src[TexTC(dtID.xy * 2 + uint2(0,1), srcDims, rc.clampMode != 0)];
+    float4 c = src[TexTC(dtID.xy * 2 + uint2(1,0), srcDims, rc.clampMode != 0)];
+    float4 d = src[TexTC(dtID.xy * 2 + uint2(1,1), srcDims, rc.clampMode != 0)];
 
     dst[dtID.xy] = 0.25 * (a + b + c + d);
 }

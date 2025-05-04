@@ -29,8 +29,8 @@ void cs(uint3 dtID : SV_DispatchThreadID)
 
     uint2 srcDims = uint2(rc.srcWidth, rc.srcHeight);
     
-    float4 a = src[TexTC(uint2(dtID.x, dtID.y * 2), srcDims)];
-    float4 b = src[TexTC(uint2(dtID.x, dtID.y * 2 + 1), srcDims)];
+    float4 a = src[TexTC(uint2(dtID.x, dtID.y * 2), srcDims, rc.clampMode != 0)];
+    float4 b = src[TexTC(uint2(dtID.x, dtID.y * 2 + 1), srcDims, rc.clampMode != 0)];
 
     dst[dtID.xy] = 0.5 * (a + b);
 }
