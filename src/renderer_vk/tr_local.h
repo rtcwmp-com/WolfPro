@@ -1247,6 +1247,8 @@ extern cvar_t *r_gpu;
 extern cvar_t *r_debugUI;
 extern cvar_t *r_debugInput;
 
+extern cvar_t *r_mipFilter;
+
 extern cvar_t   *r_fullscreenDesktop;
 //====================================================================
 

@@ -2430,18 +2430,20 @@ static void CreateUploadManager(){
     mipmapPipelineDesc.descLayout = vk.mipmapLayout;
     mipmapPipelineDesc.longLifetime = qtrue;
     mipmapPipelineDesc.name = "Mipmap";
-    mipmapPipelineDesc.pushConstantsBytes = 12;
+    mipmapPipelineDesc.pushConstantsBytes = sizeof(mipmapPushConstants);
     mipmapPipelineDesc.shader.byteCount = sizeof(mipmap_cs);
     mipmapPipelineDesc.shader.data = mipmap_cs;
 
     vk.mipmapPipeline = RHI_CreateComputePipeline(&mipmapPipelineDesc);
 
-    mipmapPipelineDesc.pushConstantsBytes = 20;
+    mipmapPipelineDesc.pushConstantsBytes = sizeof(mipmapXPushConstants);
     mipmapPipelineDesc.shader.byteCount = sizeof(mipmap_x_cs);
     mipmapPipelineDesc.shader.data = mipmap_x_cs;
     mipmapPipelineDesc.name = "Mipmap X";
     vk.mipmapXPipeline = RHI_CreateComputePipeline(&mipmapPipelineDesc);
 
+
+    mipmapPipelineDesc.pushConstantsBytes = sizeof(mipmapYPushConstants);
     mipmapPipelineDesc.shader.byteCount = sizeof(mipmap_y_cs);
     mipmapPipelineDesc.shader.data = mipmap_y_cs;
     mipmapPipelineDesc.name = "Mipmap Y";

@@ -191,6 +191,28 @@ typedef struct
 
 } Buffer;
 
+typedef struct mipmapXPushConstants {
+	uint32_t srcIndex;
+	uint32_t clamp;
+	uint32_t dstWidth;
+	uint32_t dstHeight;
+	float weights[4];
+} mipmapXPushConstants;
+
+typedef struct mipmapYPushConstants {
+	uint32_t dstIndex;
+	uint32_t clamp;
+	uint32_t srcWidth;
+	uint32_t srcHeight;
+	float weights[4];
+} mipmapYPushConstants;
+
+typedef struct mipmapPushConstants {
+	uint32_t srcIndex;
+	uint32_t dstIndex;
+	uint32_t clamp;
+} mipmapPushConstants;
+
 typedef struct Vulkan
 {
     //

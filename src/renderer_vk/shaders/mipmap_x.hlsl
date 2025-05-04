@@ -4,6 +4,7 @@ struct RootConstants
     uint clampMode;
     uint dstWidth;
     uint dstHeight;
+    float4 weights;
 };
 
 [[vk::push_constant]] RootConstants rc;
@@ -28,8 +29,20 @@ void cs(uint3 dtID : SV_DispatchThreadID)
 
     uint2 srcDims = uint2(srcWidth, srcHeight);
     
-    float4 a = src[TexTC(uint2(dtID.x * 2, dtID.y), srcDims, rc.clampMode != 0)];
-    float4 b = src[TexTC(uint2(dtID.x * 2 + 1, dtID.y), srcDims, rc.clampMode != 0)];
+    // float4 a = src[TexTC(uint2(dtID.x * 2, dtID.y), srcDims, rc.clampMode != 0)];
+    // float4 b = src[TexTC(uint2(dtID.x * 2 + 1, dtID.y), srcDims, rc.clampMode != 0)];
 
-    dst[dtID.xy] = 0.5 * (a + b);
+    // dst[dtID.xy] =  * (a + b);
+    dst[dtID.xy] = 
+    rc.weights.w * gtol(src[TexTC(uint2(dtID.x * 2 - 3, dtID.y), srcDims, rc.clampMode != 0)]) + 
+    rc.weights.z * gtol(src[TexTC(uint2(dtID.x * 2 - 2, dtID.y), srcDims, rc.clampMode != 0)]) +
+    rc.weights.y * gtol(src[TexTC(uint2(dtID.x * 2 - 1, dtID.y), srcDims, rc.clampMode != 0)]) + 
+    rc.weights.x * gtol(src[TexTC(uint2(dtID.x * 2 + 0, dtID.y), srcDims, rc.clampMode != 0)]) + 
+    rc.weights.x * gtol(src[TexTC(uint2(dtID.x * 2 + 1, dtID.y), srcDims, rc.clampMode != 0)]) +
+    rc.weights.y * gtol(src[TexTC(uint2(dtID.x * 2 + 2, dtID.y), srcDims, rc.clampMode != 0)]) + 
+    rc.weights.z * gtol(src[TexTC(uint2(dtID.x * 2 + 3, dtID.y), srcDims, rc.clampMode != 0)]) + 
+    rc.weights.w * gtol(src[TexTC(uint2(dtID.x * 2 + 4, dtID.y), srcDims, rc.clampMode != 0)]);
+
+
+
 }

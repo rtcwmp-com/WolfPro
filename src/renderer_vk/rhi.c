@@ -1392,12 +1392,6 @@ static void FastMips(){
             RHI_CmdEndBarrier();
         }
 
-        typedef struct mipmapPushConstants {
-            uint32_t srcIndex;
-            uint32_t dstIndex;
-            uint32_t clamp;
-        } mipmapPushConstants;
-
         mipmapPushConstants pc = {};
         pc.srcIndex = i - 1;
         pc.dstIndex = i;
@@ -1415,19 +1409,9 @@ static void FastMips(){
 }
 
 static void SlowMips(){
-    typedef struct mipmapXPushConstants {
-        uint32_t srcIndex;
-        uint32_t clamp;
-        uint32_t dstWidth;
-        uint32_t dstHeight;
-    } mipmapXPushConstants;
+    
 
-    typedef struct mipmapYPushConstants {
-        uint32_t dstIndex;
-        uint32_t clamp;
-        uint32_t srcWidth;
-        uint32_t srcHeight;
-    } mipmapYPushConstants;
+
 
     Texture *texture = GET_TEXTURE(vk.uploadDesc.handle);
     RHI_CmdBeginBarrier();
@@ -1459,6 +1443,10 @@ static void SlowMips(){
         pcX.clamp = vk.uploadDesc.clamp;
         pcX.dstWidth = dw;
         pcX.dstHeight = dh;
+        pcX.weights[0] = 0.479230106f;
+        pcX.weights[1] =  0.151636884f;
+        pcX.weights[2] = -0.0816986337f;
+        pcX.weights[3] = -0.0491683967f;
         RHI_CmdPushConstants(vk.mipmapXPipeline, RHI_Shader_Compute, &pcX, sizeof(pcX));
 
         uint32_t x = (dw + 7) / 8;
@@ -1483,6 +1471,10 @@ static void SlowMips(){
         pcY.clamp = vk.uploadDesc.clamp;
         pcY.srcWidth = dw;
         pcY.srcHeight = dh;
+        pcY.weights[0] = 0.479230106f;
+        pcY.weights[1] =  0.151636884f;
+        pcY.weights[2] = -0.0816986337f;
+        pcY.weights[3] = -0.0491683967f;
         RHI_CmdPushConstants(vk.mipmapYPipeline, RHI_Shader_Compute, &pcY, sizeof(pcY));
         
         dh = max(dh / 2, 1);
@@ -1530,7 +1522,7 @@ void RHI_EndTextureUpload()
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
     if(vk.uploadDesc.generateMips){
-        if(0){
+        if(!r_mipFilter->integer){
             FastMips();
         }else{
             SlowMips();

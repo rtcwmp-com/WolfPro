@@ -10,3 +10,11 @@ int2 TexTC(int2 tc, int2 dims, bool clampMode){
     }
     
 }
+
+float4 gtol(float4 input){
+    return float4(input.rgb * input.rgb, input.a);
+}
+
+float4 ltog(float4 input){
+    return float4(sqrt(input.rgb), input.a);
+}
