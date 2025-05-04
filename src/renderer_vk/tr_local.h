@@ -71,6 +71,7 @@ long myftol( float f );
 #define myftol( x ) ( (int)( x ) )
 #endif
 
+typedef byte color4ub_t[4];
 
 
 #define MAX_SHADERS             8192
@@ -932,10 +933,18 @@ typedef struct {
 	uint32_t vertexFirst; //first vertex of the draw call
 } VertexBuffers;
 
+typedef struct DynamicLight {
+	vec3_t position;
+	float radius;
+	vec4_t color;
+} DynamicLight;
+
 #pragma pack(push,1)
 typedef struct SceneView {
 	float projectionMatrix[16];
 	float clipPlane[4];
+	DynamicLight lights[MAX_DLIGHTS]; 
+	uint32_t lightCount;
 } SceneView;
 #pragma pack(pop)
 
@@ -1402,7 +1411,7 @@ TESSELATOR/SHADER DECLARATIONS
 
 ====================================================================
 */
-typedef byte color4ub_t[4];
+
 
 typedef struct stageVars
 {

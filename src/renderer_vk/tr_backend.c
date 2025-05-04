@@ -456,6 +456,39 @@ void RB_UploadSceneView(const float *projectionMatrix, const float *clipPlane){
 	memcpy(sceneView.projectionMatrix, projectionMatrix, sizeof(sceneView.projectionMatrix));
 	memcpy(sceneView.clipPlane, clipPlane, sizeof(sceneView.clipPlane));
 
+	for(int i = 0; i < backEnd.refdef.num_dlights; i++){
+		dlight_t *src = &backEnd.refdef.dlights[i];
+		DynamicLight *dst = &sceneView.lights[i];
+		float *viewMatrix  = backEnd.viewParms.world.modelMatrix;
+		//Camera space position of the light
+		vec4_t pos; 
+		for (int m = 0 ; m < 4 ; m++ ) {
+			pos[m] =
+				src->origin[0] * viewMatrix[ m + 0 * 4 ] +
+				src->origin[1] * viewMatrix[ m + 1 * 4 ] +
+				src->origin[2] * viewMatrix[ m + 2 * 4 ] +
+				viewMatrix[ m + 3 * 4 ];
+		}
+		if(pos[3] != 0.0f && pos[3] != 1.0f){
+			for(int m = 0; m < 3; m++){
+				pos[m] /= pos[3];
+			}
+		}
+		
+		VectorCopy(pos, dst->position);
+		//Sys_DebugPrintf("Flash position: %g, %g, %g\n", dst->position[0], dst->position[1], dst->position[2]);
+		//vec_t dist = Distance(dst->position, backEnd.viewParms.world.origin);
+		//Sys_DebugPrintf("distance: %g\n", dist);
+
+
+		dst->radius = src->radius;
+		for(int c = 0; c < 3; c++){
+			dst->color[c] = src->color[c];
+		}
+		dst->color[3] = 1.0f;
+		sceneView.lightCount++;
+	}
+
 	rhiBuffer currentScene = backEnd.sceneViewUploadBuffers[backEnd.currentFrameIndex];
 	assert(backEnd.sceneViewCount < SCENEVIEW_MAX);
 

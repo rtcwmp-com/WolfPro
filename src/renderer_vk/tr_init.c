@@ -276,7 +276,7 @@ static void InitVulkan( void ) {
 
 	descSetLayoutDesc.bindings[2].descriptorCount = 1;
 	descSetLayoutDesc.bindings[2].descriptorType = RHI_DescriptorType_ReadOnlyBuffer;
-	descSetLayoutDesc.bindings[2].stageFlags = RHI_PipelineStage_VertexBit;
+	descSetLayoutDesc.bindings[2].stageFlags = RHI_PipelineStage_VertexBit | RHI_PipelineStage_PixelBit;
 
 
 	descSetLayoutDesc.bindingCount = 3;
@@ -665,7 +665,7 @@ R_Register
 void R_Register( void ) {
 	//
 	// latched and archived variables
-	r_ext_texture_filter_anisotropic    = ri.Cvar_Get( "r_ext_texture_filter_anisotropic", "0", CVAR_ARCHIVE );
+	r_ext_texture_filter_anisotropic    = ri.Cvar_Get( "r_ext_texture_filter_anisotropic", "16", CVAR_ARCHIVE );
 
 
 	r_picmip = ri.Cvar_Get( "r_picmip", "1", CVAR_ARCHIVE | CVAR_LATCH ); //----(SA)	mod for DM and DK for id build.  was "1" // JPW NERVE pushed back to 1
