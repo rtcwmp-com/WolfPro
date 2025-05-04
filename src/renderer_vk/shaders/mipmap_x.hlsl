@@ -1,14 +1,12 @@
 struct RootConstants
 {
 	uint srcIndex;
-    uint dstIndex; //unused
     uint clampMode;
     uint dstWidth;
     uint dstHeight;
 };
 
 [[vk::push_constant]] RootConstants rc;
-
 
 #include "mipmap.hlsli"
 

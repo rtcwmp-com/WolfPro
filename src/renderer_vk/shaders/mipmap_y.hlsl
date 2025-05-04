@@ -1,32 +1,33 @@
 struct RootConstants
 {
-	uint srcIndex;
-    uint dstIndex; //unused
+    uint dstIndex; 
     uint clampMode;
-    uint dstWidth;
-    uint dstHeight;
+    uint srcWidth;
+    uint srcHeight;
 };
 
 [[vk::push_constant]] RootConstants rc;
 
 #include "mipmap.hlsli"
 
-[[vk::binding(0,12)]] RWTexture2D<float4> dst;
+
+[[vk::binding(1)]] RWTexture2D<float4> src;
+
 
 
 [numthreads(8,8,1)]
 void cs(uint3 dtID : SV_DispatchThreadID) 
 {
-   
-    if(dtID.x >= rc.dstWidth || dtID.y >= rc.dstHeight){
+    RWTexture2D<unorm float4> dst = mips[rc.dstIndex];
+    uint dstWidth;
+    uint dstHeight;
+    dst.GetDimensions(dstWidth, dstHeight);
+    if(dtID.x >= dstWidth || dtID.y >= dstHeight){
         return;
     }
-    RWTexture2D<unorm float4> src = mips[rc.srcIndex];
-    uint srcWidth;
-    uint srcHeight;
-    src.GetDimensions(srcWidth, srcHeight);
 
-    uint2 srcDims = uint2(srcWidth, srcHeight);
+
+    uint2 srcDims = uint2(rc.srcWidth, rc.srcHeight);
     
     float4 a = src[TexTC(uint2(dtID.x, dtID.y * 2), srcDims)];
     float4 b = src[TexTC(uint2(dtID.x, dtID.y * 2 + 1), srcDims)];

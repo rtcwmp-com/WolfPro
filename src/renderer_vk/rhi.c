@@ -1369,6 +1369,133 @@ void RHI_BeginTextureUpload(rhiTextureUpload *upload, const rhiTextureUploadDesc
 
 }
 
+static void FastMips(){
+    Texture *texture = GET_TEXTURE(vk.uploadDesc.handle);
+    RHI_CmdBeginBarrier();
+    RHI_CmdTextureBarrier(vk.uploadDesc.handle, RHI_ResourceState_ShaderReadWriteBit);
+    RHI_CmdEndBarrier();
+    rhiDescriptorSet set = vk.uploadDescriptorSets[vk.uploadCmdBufferIndex];
+    for(int i = 0; i < texture->desc.mipCount; i++){
+        RHI_UpdateDescriptorSet(set, 0, RHI_DescriptorType_ReadWriteTexture, i, 1, &vk.uploadDesc.handle, i);
+    }
+
+    RHI_CmdBindPipeline(vk.mipmapPipeline);
+    RHI_CmdBindDescriptorSet(vk.mipmapPipeline, set);
+
+    uint32_t w = max(texture->desc.width / 2, 1);
+    uint32_t h = max(texture->desc.height / 2, 1);
+
+    for(int i = 1; i < texture->desc.mipCount; i++){
+        if(i >= 2){
+            RHI_CmdBeginBarrier();
+            RHI_CmdTextureBarrier(vk.uploadDesc.handle, RHI_ResourceState_ShaderReadWriteBit);
+            RHI_CmdEndBarrier();
+        }
+
+        typedef struct mipmapPushConstants {
+            uint32_t srcIndex;
+            uint32_t dstIndex;
+            uint32_t clamp;
+        } mipmapPushConstants;
+
+        mipmapPushConstants pc = {};
+        pc.srcIndex = i - 1;
+        pc.dstIndex = i;
+        pc.clamp = vk.uploadDesc.clamp;
+        RHI_CmdPushConstants(vk.mipmapPipeline, RHI_Shader_Compute, &pc, sizeof(pc));
+        
+        uint32_t x = (w + 7) / 8;
+        uint32_t y = (h + 7) / 8;
+
+        RHI_CmdDispatch(x, y, 1);
+        w = max(w / 2, 1);
+        h = max(h / 2, 1);
+    }
+   
+}
+
+static void SlowMips(){
+    typedef struct mipmapXPushConstants {
+        uint32_t srcIndex;
+        uint32_t clamp;
+        uint32_t dstWidth;
+        uint32_t dstHeight;
+    } mipmapXPushConstants;
+
+    typedef struct mipmapYPushConstants {
+        uint32_t dstIndex;
+        uint32_t clamp;
+        uint32_t srcWidth;
+        uint32_t srcHeight;
+    } mipmapYPushConstants;
+
+    Texture *texture = GET_TEXTURE(vk.uploadDesc.handle);
+    RHI_CmdBeginBarrier();
+    RHI_CmdTextureBarrier(vk.uploadDesc.handle, RHI_ResourceState_ShaderReadWriteBit);
+    RHI_CmdEndBarrier();
+    rhiDescriptorSet set = vk.uploadDescriptorSets[vk.uploadCmdBufferIndex];
+    for(int i = 0; i < texture->desc.mipCount; i++){
+        RHI_UpdateDescriptorSet(set, 0, RHI_DescriptorType_ReadWriteTexture, i, 1, &vk.uploadDesc.handle, i);
+        
+    }
+
+    uint32_t sw = texture->desc.width;
+    uint32_t sh = texture->desc.height;
+
+    for(int i = 1; i < texture->desc.mipCount; i++){
+        uint32_t dw = max(sw / 2, 1);
+        uint32_t dh = sh;
+
+        RHI_CmdBeginBarrier();
+        RHI_CmdTextureBarrier(vk.uploadDesc.handle, RHI_ResourceState_ShaderReadWriteBit);
+        RHI_CmdTextureBarrier(vk.mipmapScratchTexture, RHI_ResourceState_ShaderReadWriteBit);
+        RHI_CmdEndBarrier();
+
+        RHI_CmdBindPipeline(vk.mipmapXPipeline);
+        RHI_CmdBindDescriptorSet(vk.mipmapXPipeline, set);
+
+        mipmapXPushConstants pcX = {};
+        pcX.srcIndex = i - 1;
+        pcX.clamp = vk.uploadDesc.clamp;
+        pcX.dstWidth = dw;
+        pcX.dstHeight = dh;
+        RHI_CmdPushConstants(vk.mipmapXPipeline, RHI_Shader_Compute, &pcX, sizeof(pcX));
+
+        uint32_t x = (dw + 7) / 8;
+        uint32_t y = (dh + 7) / 8;
+
+        RHI_CmdDispatch(x, y, 1);
+
+        
+        
+        RHI_CmdBeginBarrier();
+        RHI_CmdTextureBarrier(vk.uploadDesc.handle, RHI_ResourceState_ShaderReadWriteBit);
+        RHI_CmdTextureBarrier(vk.mipmapScratchTexture, RHI_ResourceState_ShaderReadWriteBit);
+        RHI_CmdEndBarrier();
+
+        RHI_CmdBindPipeline(vk.mipmapYPipeline);
+        RHI_CmdBindDescriptorSet(vk.mipmapYPipeline, set);
+
+        
+
+        mipmapYPushConstants pcY = {};
+        pcY.dstIndex = i;
+        pcY.clamp = vk.uploadDesc.clamp;
+        pcY.srcWidth = dw;
+        pcY.srcHeight = dh;
+        RHI_CmdPushConstants(vk.mipmapYPipeline, RHI_Shader_Compute, &pcY, sizeof(pcY));
+        
+        dh = max(dh / 2, 1);
+        
+        x = (dw + 7) / 8;
+        y = (dh + 7) / 8;
+        RHI_CmdDispatch(x, y, 1);
+
+        sw = dw;
+        sh = dh;
+    }
+}
+
 void RHI_EndTextureUpload()
 {
     uploadActive--;
@@ -1403,47 +1530,11 @@ void RHI_EndTextureUpload()
                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
     if(vk.uploadDesc.generateMips){
-        RHI_CmdBeginBarrier();
-        RHI_CmdTextureBarrier(vk.uploadDesc.handle, RHI_ResourceState_ShaderReadWriteBit);
-        RHI_CmdEndBarrier();
-        rhiDescriptorSet set = vk.uploadDescriptorSets[vk.uploadCmdBufferIndex];
-        for(int i = 0; i < texture->desc.mipCount; i++){
-            RHI_UpdateDescriptorSet(set, 0, RHI_DescriptorType_ReadWriteTexture, i, 1, &vk.uploadDesc.handle, i);
+        if(0){
+            FastMips();
+        }else{
+            SlowMips();
         }
-
-        RHI_CmdBindPipeline(vk.mipmapPipeline);
-        RHI_CmdBindDescriptorSet(vk.mipmapPipeline, set);
-
-        uint32_t w = max(texture->desc.width / 2, 1);
-        uint32_t h = max(texture->desc.height / 2, 1);
-
-        for(int i = 1; i < texture->desc.mipCount; i++){
-            if(i >= 2){
-                RHI_CmdBeginBarrier();
-                RHI_CmdTextureBarrier(vk.uploadDesc.handle, RHI_ResourceState_ShaderReadWriteBit);
-                RHI_CmdEndBarrier();
-            }
-
-            typedef struct mipmapPushConstants {
-                uint32_t srcIndex;
-                uint32_t dstIndex;
-                uint32_t clamp;
-            } mipmapPushConstants;
-
-            mipmapPushConstants pc = {};
-            pc.srcIndex = i - 1;
-            pc.dstIndex = i;
-            pc.clamp = vk.uploadDesc.clamp;
-            RHI_CmdPushConstants(vk.mipmapPipeline, RHI_Shader_Compute, &pc, sizeof(pc));
-            
-            uint32_t x = (w + 7) / 8;
-            uint32_t y = (h + 7) / 8;
-    
-            RHI_CmdDispatch(x, y, 1);
-            w = max(w / 2, 1);
-            h = max(h / 2, 1);
-        }
-       
     }
 
     RHI_CmdBeginBarrier();

@@ -931,14 +931,24 @@ const void  *RB_EndFrame( const void *data ) {
 
 		int64_t currentTime = Sys_Microseconds();
 		static int64_t previousTime = INT64_MIN;
-		static float previousTimes[64];
+		static float previousDurations[64];
+		const int n = ARRAY_LEN(previousDurations);
 		static int durationIndex;
-		previousTimes[durationIndex] = (float)(currentTime - previousTime);
-		durationIndex = (durationIndex + 1) % ARRAY_LEN(previousTimes);
+		int minValue = INT_MAX;
+		int maxValue = INT_MIN;
+		previousDurations[durationIndex] = (float)(currentTime - previousTime);
+		for(int i = 0; i < n; i++){
+			minValue = min(minValue, previousDurations[i]);
+			maxValue = max(maxValue, previousDurations[i]);
+		}
+
+		igText("Frame delta: %d", currentTime - previousTime);
+		igText(" min: %d\n max: %d", minValue, maxValue);
+		durationIndex = (durationIndex + 1) % n;
 		
 		igText("FPS: %d", (int)(1000000 / (currentTime - previousTime)));
 		ImVec2 graphSize = {1000, 500};
-		igPlotLines_FloatPtr("FPS", previousTimes,ARRAY_LEN(previousTimes),durationIndex,"durations", 4000 , 10000, graphSize, sizeof(float) );
+		igPlotLines_FloatPtr("FPS", previousDurations,n,durationIndex,"durations", 4000 , 10000, graphSize, sizeof(float) );
 		previousTime = currentTime;
 	}
 	igEnd();

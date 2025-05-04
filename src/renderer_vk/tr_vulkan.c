@@ -2442,10 +2442,10 @@ static void CreateUploadManager(){
     mipmapPipelineDesc.name = "Mipmap X";
     vk.mipmapXPipeline = RHI_CreateComputePipeline(&mipmapPipelineDesc);
 
-    // mipmapPipelineDesc.shader.byteCount = sizeof(mipmap_y_cs);
-    // mipmapPipelineDesc.shader.data = mipmap_y_cs;
-    // mipmapPipelineDesc.name = "Mipmap Y";
-    // vk.mipmapYPipeline = RHI_CreateComputePipeline(&mipmapPipelineDesc);
+    mipmapPipelineDesc.shader.byteCount = sizeof(mipmap_y_cs);
+    mipmapPipelineDesc.shader.data = mipmap_y_cs;
+    mipmapPipelineDesc.name = "Mipmap Y";
+    vk.mipmapYPipeline = RHI_CreateComputePipeline(&mipmapPipelineDesc);
 
     rhiTextureDesc mipmapScratchTexDesc = {};
     mipmapScratchTexDesc.allowedStates = RHI_ResourceState_ShaderReadWriteBit;
