@@ -338,7 +338,7 @@ rhiTexture RHI_CreateTexture(const rhiTextureDesc *desc)
         mipViewInfo.subresourceRange.baseArrayLayer = 0;
         mipViewInfo.subresourceRange.layerCount = 1;
         VK(vkCreateImageView(vk.device, &mipViewInfo, NULL, &mipView));
-        SetObjectName(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)mipView, desc->name);
+        SetObjectName(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)mipView, va("mip #%d: %s", i, desc->name));
         texture.mipViews[i] = mipView;
     }
 

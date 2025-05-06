@@ -890,6 +890,9 @@ void RecreateSwapchain(void){
     for(int i = 0; i < vk.swapChainImageCount; i++){
         Texture *texture = GET_TEXTURE(vk.swapChainRenderTargets[i]);
         vkDestroyImageView(vk.device,texture->view,NULL);
+        for(int i = 0; i < texture->desc.mipCount; i++){
+            vkDestroyImageView(vk.device, texture->mipViews[i], NULL); 
+        }
         Pool_Remove(&vk.texturePool, vk.swapChainRenderTargets[i].h);
     }
     
