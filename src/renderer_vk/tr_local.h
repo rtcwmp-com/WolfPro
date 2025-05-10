@@ -933,18 +933,10 @@ typedef struct {
 	uint32_t vertexFirst; //first vertex of the draw call
 } VertexBuffers;
 
-typedef struct DynamicLight {
-	vec3_t position;
-	float radius;
-	vec4_t color;
-} DynamicLight;
-
 #pragma pack(push,1)
 typedef struct SceneView {
 	float projectionMatrix[16];
 	float clipPlane[4];
-	DynamicLight lights[MAX_DLIGHTS]; 
-	uint32_t lightCount;
 } SceneView;
 #pragma pack(pop)
 
@@ -1888,9 +1880,6 @@ typedef struct pixelShaderPushConstants {
 } pixelShaderPushConstants;
 
 typedef struct pixelShaderPushConstants2 {
-	vec3_t lightPositionOS;
-    float lightRadius;
-    vec3_t lightColor;
 	uint32_t textureIndex1;
 	uint32_t samplerIndex1;
 	uint32_t textureIndex2;

@@ -877,16 +877,6 @@ void RB_StageIteratorLightmappedMultitexture( void ) {
 	pc.alphaTest = AlphaTestMode(pStage->stateBits);
 	pc.texEnv = GL_MODULATE;
 
-	pc.lightRadius = -1.0f;
-
-	for(int i = 0; i < backEnd.refdef.num_dlights; i++){
-		if(tess.dlightBits & (1 << i)){
-			VectorCopy(backEnd.refdef.dlights[i].transformed, pc.lightPositionOS);
-			VectorCopy(backEnd.refdef.dlights[i].color, pc.lightColor);
-			pc.lightRadius = backEnd.refdef.dlights[i].radius;
-			break;
-		}
-	}
 	
 	if(backEnd.previousPipeline.h != pStage->pipeline.h){
 		RHI_CmdBindPipeline(pStage->pipeline);

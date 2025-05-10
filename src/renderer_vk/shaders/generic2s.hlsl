@@ -7,8 +7,6 @@ struct VOut
     [[vk::location(0)]] float4 position : SV_Position;
     [[vk::location(1)]] float2 tc1 : TEXCOORD0;
     [[vk::location(2)]] float2 tc2 : TEXCOORD1;
-    [[vk::location(3)]] float3 positionVS : POSITIONVS;
-    [[vk::location(4)]] float3 positionOS : POSITIONOS;
 };
 
 #if VS
@@ -33,8 +31,6 @@ VOut vs(VIn input)
     float4 positionVS = mul(rc.modelViewMatrix, float4(input.position.xyz, 1.0));
     VOut output;
 	output.position = mul(sceneView.projectionMatrix, positionVS);
-    output.positionVS = positionVS.xyz;
-    output.positionOS = input.position.xyz;
     output.tc1 = input.tc1;
     output.tc2 = input.tc2;
 
@@ -48,9 +44,6 @@ VOut vs(VIn input)
 struct RootConstants
 {
     [[vk::offset(64)]]
-	float3 lightPositionOS;
-    float lightRadius;
-    float3 lightColor;
     uint textureIndex1;
     uint samplerIndex1;
     uint textureIndex2;
@@ -81,22 +74,10 @@ float4 texEnv(float4 p, float4 s, uint texEnv){
 [earlydepthstencil]
 float4 ps(VOut input) : SV_Target
 {
-    float3 light = float3(0,0,0);
-    // for(int i = 0; i < sceneView.lightCount; i++){
-    //     DynamicLight dl = sceneView.lights[i];
-    //     float d = distance(dl.position, input.positionVS);
-    //     float intensity = saturate(1.0 - d/dl.radius);
-    //     light += dl.color.rgb * intensity;
-    // }
-    if(rc.lightRadius > 0.0){
-        float d = distance(rc.lightPositionOS, input.positionOS);
-        float intensity = saturate(1.0 - d/rc.lightRadius);
-        light += rc.lightColor * intensity;
-    }
-    
+
     float4 color1 = texture[rc.textureIndex1].Sample(mySampler[rc.samplerIndex1], input.tc1);
     float4 color2 = texture[rc.textureIndex2].Sample(mySampler[rc.samplerIndex2], input.tc2);
-    return texEnv(color1, color2, rc.texEnv) + float4(light, 0);
+    return texEnv(color1, color2, rc.texEnv);
 }
 
 #endif

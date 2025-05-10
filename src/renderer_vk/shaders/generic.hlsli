@@ -22,19 +22,10 @@ bool failsAlphaTest(uint alphaTest, float alpha){
 #endif
 
 
-struct DynamicLight
-{
-    float3 position;
-    float radius;
-    float4 color;
-};
-
 struct SceneView
 {
   matrix projectionMatrix;
   float4 clipPlane;
-  DynamicLight lights[32];
-  uint lightCount;
 };
 [[vk::binding(2)]] ConstantBuffer<SceneView> sceneView;
 
