@@ -463,11 +463,11 @@ typedef struct corona_s {
 } corona_t;
 
 typedef struct dlight_s {
-	vec3_t origin;
+	vec3_t origin;				// world space position
 	vec3_t color;               // range from 0.0 to 1.0, should be color normalized
 	float radius;
 
-	vec3_t transformed;         // origin in local coordinate system
+	vec3_t transformed;         // object space position
 
 	// Ridah
 	int overdraw;
@@ -1888,6 +1888,9 @@ typedef struct pixelShaderPushConstants {
 } pixelShaderPushConstants;
 
 typedef struct pixelShaderPushConstants2 {
+	vec3_t lightPositionOS;
+    float lightRadius;
+    vec3_t lightColor;
 	uint32_t textureIndex1;
 	uint32_t samplerIndex1;
 	uint32_t textureIndex2;
