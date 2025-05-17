@@ -1542,7 +1542,7 @@ int __cdecl CompareDrawSurfs(void const *ptrA, void const *ptrB){
 R_SortDrawSurfs
 =================
 */
-void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs ) {
+void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs, int firstLitSurf ) {
 	shader_t        *shader;
 	int fogNum;
 	int entityNum;
@@ -1566,6 +1566,70 @@ void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	// sort the drawsurfs by sort type, then orientation, then shader
 	// qsortFast( drawSurfs, numDrawSurfs, sizeof( drawSurf_t ) );
 	qsort(drawSurfs,numDrawSurfs, sizeof( drawSurf_t ), CompareDrawSurfs );
+
+	int numLitSurfs[32] = { };
+
+	for ( i = 0 ; i < numDrawSurfs ; i++ ) {
+		drawSurf_t *drawSurf = &drawSurfs[i];
+		int mask = 0;
+		switch(*drawSurfs->surface){
+			case SF_GRID:
+				mask = ((srfGridMesh_t*)drawSurfs->surface)->dlightBits;
+				break;
+			case SF_FACE:
+				mask = ((srfSurfaceFace_t*)drawSurfs->surface)->dlightBits;
+				break;
+			case SF_TRIANGLES:
+				mask = ((srfTriangles_t*)drawSurfs->surface)->dlightBits;
+				break;
+			default:
+				break;
+		}
+		for(int l = 0; l < 32; l++){
+			if(mask & (1<<l)){
+				numLitSurfs[l]++;
+			}
+		}
+	}
+
+	int firstLitSurfs[32] = { };
+	int totalSurfs = numLitSurfs[0];
+	firstLitSurfs[0] = firstLitSurf;
+	for(i = 1; i < 32; i++){
+		firstLitSurfs[i] = firstLitSurfs[i - 1] + numLitSurfs[i - 1];
+		totalSurfs += numLitSurfs[i];
+	}
+
+	assert(totalSurfs <= ARRAY_LEN(backEndData->litSurfs));
+
+
+	for ( i = 0 ; i < numDrawSurfs ; i++ ) {
+		
+		drawSurf_t *drawSurf = &drawSurfs[i];
+		int mask = 0;
+		switch(*drawSurfs->surface){
+			case SF_GRID:
+				mask = ((srfGridMesh_t*)drawSurfs->surface)->dlightBits;
+				break;
+			case SF_FACE:
+				mask = ((srfSurfaceFace_t*)drawSurfs->surface)->dlightBits;
+				break;
+			case SF_TRIANGLES:
+				mask = ((srfTriangles_t*)drawSurfs->surface)->dlightBits;
+				break;
+			default:
+				break;
+		}
+		for(int l = 0; l < 32; l++){
+			if(mask & (1<<l)){
+				int litSurfIndex = firstLitSurfs[l]++;
+				litSurf_t *litSurf = &tr.refdef.litSurfs[litSurfIndex];
+				litSurf->surface = drawSurfs->surface;
+				litSurf->shader = drawSurfs->shader;
+				litSurf->sort = drawSurfs->sort;
+			}
+		}
+	}
 
 	// check for any pass through drawing, which
 	// may cause another view to be rendered first
@@ -1747,7 +1811,7 @@ or a mirror / remote location
 ================
 */
 void R_RenderView( viewParms_t *parms ) {
-	int firstDrawSurf;
+	
 
 	if ( parms->viewportWidth <= 0 || parms->viewportHeight <= 0 ) {
 		return;
@@ -1774,8 +1838,8 @@ void R_RenderView( viewParms_t *parms ) {
 	tr.viewParms.frameSceneNum = tr.frameSceneNum;
 	tr.viewParms.frameCount = tr.frameCount;
 
-	firstDrawSurf = tr.refdef.numDrawSurfs;
-
+	int firstDrawSurf = tr.refdef.numDrawSurfs;
+	int firstLitSurf = tr.refdef.numLitSurfs;
 
 	// set viewParms.world
 	R_RotateForViewer();
@@ -1784,7 +1848,7 @@ void R_RenderView( viewParms_t *parms ) {
 
 	R_GenerateDrawSurfs();
 
-	R_SortDrawSurfs( tr.refdef.drawSurfs + firstDrawSurf, tr.refdef.numDrawSurfs - firstDrawSurf );
+	R_SortDrawSurfs( tr.refdef.drawSurfs + firstDrawSurf, tr.refdef.numDrawSurfs - firstDrawSurf, firstLitSurf );
 
 	// draw main system development information (surface outlines, etc)
 	R_FogOff();

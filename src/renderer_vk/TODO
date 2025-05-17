@@ -22,9 +22,26 @@ dynamic lights
       (the inverse-transpose of the model/model-view matrix)
 - move the quick test code from generic2 to generic so that we can light up e.g. dropped weapons with a dynamite to make sure all transformations are correct
 
+create 6 pipelines and 1 shader
+  - 3 for cull type
+  - 2 for polygon offset
+  - no alphatest
+  - depth test equal
+  - additive blend
+  - readonly depth access
+  - earlydepthstencil always enabled
+  - takes 1 diffuse texture and 1 sampler and 1 dynamic light
+
+R_DlightSurface( msurface_t *surf, int dlightBits (boolean) ) -> mask 
+R_AddWorldSurface( msurface_t *surf, shader_t *shader, int dlightBits (boolean)) 
+R_AddDrawSurf( surf->data, shader, surf->fogIndex, dlightBits (boolean))
+
 
 tess.dlightBits
 
+
+what happens when this part is uncommented? 
+backEnd.refdef.floatTime = originalTime; // - backEnd.currentEntity->e.shaderTime; // JPW NERVE pulled this to match q3ta
 
 add support for (and use) an extra clip plane for portal/mirror views
 fog

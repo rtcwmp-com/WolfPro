@@ -330,6 +330,7 @@ static void InitVulkan( void ) {
 	RB_InitGamma(backEnd.colorBuffer, gammaSampler);
 	RB_InitBlit(backEnd.colorBuffer2, blitSampler);
 	RB_ImGUI_Init();
+	RB_CreateDynamicLightPipelines();
 	
 }
 

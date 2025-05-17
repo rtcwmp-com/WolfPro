@@ -514,6 +514,9 @@ typedef struct {
 
 	int numDrawSurfs;
 	struct drawSurf_s   *drawSurfs;
+
+	int numLitSurfs;
+	struct litSurf_s *litSurfs;
 } trRefdef_t;
 
 
@@ -611,6 +614,12 @@ typedef struct drawSurf_s {
 	surfaceType_t       *surface;       // any of surface*_t
 	shader_t *shader;
 } drawSurf_t;
+
+typedef struct litSurf_s {
+	int64_t sort;                      // bit combination for fast compares
+	surfaceType_t       *surface;       // any of surface*_t
+	shader_t *shader;
+} litSurf_t;
 
 #define MAX_FACE_POINTS     64
 
@@ -842,37 +851,17 @@ extern refimport_t ri;
 #define MAX_LIGHTMAPS           256
 #define MAX_SKINS               1024
 
-
+#define MAX_LITSURFS           0x10000
 #define MAX_DRAWSURFS           0x10000
 #define DRAWSURF_MASK           ( MAX_DRAWSURFS - 1 )
 
-/*
 
-the drawsurf sort data is packed into a single 32 bit value so it can be
-compared quickly during the qsorting process
-
-the bits are allocated as follows:
-
-22 - 31	: sorted shader index
-11 - 21	: entity index
-2 - 6	: fog index
-removed	: used to be clipped flag
-0 - 1	: dlightmap index
-
-newest: (fixes shader index not having enough bytes)
-
-18 - 31	: sorted shader index
-7 - 17	: entity index
-2 - 6	: fog index
-0 - 1	: dlightmap index
-
-*/
-#define QSORT_ALPHATEST_SHIFT   62
-#define QSORT_LIGHTMAP_SHIFT    61 
-#define QSORT_PSONUM_SHIFT      32
-#define QSORT_SHADERNUM_SHIFT   18
-#define QSORT_ENTITYNUM_SHIFT   7
-#define QSORT_FOGNUM_SHIFT      2
+#define QSORT_ALPHATEST_SHIFT   61
+#define QSORT_LIGHTMAP_SHIFT    60 
+#define QSORT_PSONUM_SHIFT      31
+#define QSORT_SHADERNUM_SHIFT   17
+#define QSORT_ENTITYNUM_SHIFT   6
+#define QSORT_FOGNUM_SHIFT      1
 #define QSORT_DLIGHT_SHIFT      0
 
 #define QSORT_ALPHATEST_MASK  1
@@ -881,7 +870,7 @@ newest: (fixes shader index not having enough bytes)
 #define QSORT_FOGNUM_MASK     31
 #define QSORT_SHADERNUM_MASK (MAX_SHADERS - 1 )
 #define QSORT_ENTITYNUM_MASK (MAX_GENTITIES - 1 )
-#define QSORT_DLIGHT_MASK 3
+#define QSORT_DLIGHT_MASK 1
 
 
 extern int gl_filter_min, gl_filter_max;
@@ -1007,6 +996,8 @@ typedef struct {
 	uint32_t renderPassCount[RHI_FRAMES_IN_FLIGHT];
 	uint32_t pipelineChangeCount;
 	qbool clearColor;
+
+	rhiPipeline dynamicLightPipelines[6];
 } backEndState_t;
 
 /*
@@ -1630,6 +1621,7 @@ RENDERER BACK END FUNCTIONS
 
 void RB_ExecuteRenderCommands( const void *data );
 void RB_CreateGraphicsPipeline(shader_t *newShader);
+void RB_CreateDynamicLightPipelines(void);
 void RB_ClearPipelineCache(void);
 void RB_BeginRenderPass(const char* name, const RHI_RenderPass* rp);
 void RB_EndRenderPass(void);
@@ -1726,6 +1718,7 @@ typedef enum {
 // duplicated so the front and back end can run in parallel
 // on an SMP machine
 typedef struct {
+	litSurf_t litSurfs[MAX_LITSURFS];
 	drawSurf_t drawSurfs[MAX_DRAWSURFS];
 	dlight_t dlights[MAX_DLIGHTS];
 	corona_t coronas[MAX_CORONAS];          //----(SA)
@@ -1880,6 +1873,7 @@ typedef struct pixelShaderPushConstants {
 } pixelShaderPushConstants;
 
 typedef struct pixelShaderPushConstants2 {
+	//@TODO: reduce to 1 uint32_t 
 	uint32_t textureIndex1;
 	uint32_t samplerIndex1;
 	uint32_t textureIndex2;
@@ -1887,6 +1881,14 @@ typedef struct pixelShaderPushConstants2 {
 	uint32_t alphaTest;
 	uint32_t texEnv;
 } pixelShaderPushConstants2;
+
+typedef struct dynamicLightPushConstants {
+	vec3_t lightPos;
+	float lightRadius;
+	uint32_t lightColor;
+	uint32_t textureIndex;
+	uint32_t samplerIndex;
+} dynamicLightPushConstants;
 
 void R_Gpulist_f(void);
 

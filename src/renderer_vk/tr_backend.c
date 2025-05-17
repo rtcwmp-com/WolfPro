@@ -230,31 +230,22 @@ void RB_BeginDrawingView( void ) {
 RB_RenderDrawSurfList
 ==================
 */
-void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
+void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int firstSurfIndex, int lastSurfIndex) {
 	shader_t        *shader, *oldShader;
 	int fogNum, oldFogNum;
 	int entityNum, oldEntityNum;
-	int dlighted, oldDlighted;
+	int dlighted;
 	qboolean depthRange, oldDepthRange;
 	int i;
 	drawSurf_t      *drawSurf;
 	int oldSort;
 	float originalTime;
-#ifdef __MACOS__
-	int macEventTime;
 
-	Sys_PumpEvents();       // crutch up the mac's limited buffer queue size
-
-	// we don't want to pump the event loop too often and waste time, so
-	// we are going to check every shader change
-	macEventTime = ri.Milliseconds() + MAC_EVENT_PUMP_MSEC;
-#endif
 
 	// save original time for entity shader offsets
 	originalTime = backEnd.refdef.floatTime;
 
-	// clear the z buffer, set the modelview, etc
-	RB_BeginDrawingView();
+	
 
 	// draw everything
 	oldEntityNum = -1;
@@ -262,13 +253,12 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	oldShader = NULL;
 	oldFogNum = -1;
 	oldDepthRange = qfalse;
-	oldDlighted = qfalse;
 	oldSort = -1;
 	depthRange = qfalse;
 
-	backEnd.pc.c_surfaces += numDrawSurfs;
+	backEnd.pc.c_surfaces += lastSurfIndex - firstSurfIndex;
 
-	for ( i = 0, drawSurf = drawSurfs ; i < numDrawSurfs ; i++, drawSurf++ ) {
+	for ( i = firstSurfIndex, drawSurf = drawSurfs + firstSurfIndex ; i < lastSurfIndex ; i++, drawSurf++ ) {
 		if ( drawSurf->sort == oldSort ) {
 			// fast path, same as previous sort
 			rb_surfaceTable[ *drawSurf->surface ]( drawSurf->surface );
@@ -281,24 +271,15 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 		// change the tess parameters if needed
 		// a "entityMergable" shader is a shader that can have surfaces from seperate
 		// entities merged into a single batch, like smoke and blood puff sprites
-		if ( shader != oldShader || fogNum != oldFogNum || dlighted != oldDlighted
+		if ( shader != oldShader || fogNum != oldFogNum
 			 || ( entityNum != oldEntityNum && !shader->entityMergable ) ) {
 			if ( oldShader != NULL ) {
-#ifdef __MACOS__    // crutch up the mac's limited buffer queue size
-				int t;
-
-				t = ri.Milliseconds();
-				if ( t > macEventTime ) {
-					macEventTime = t + MAC_EVENT_PUMP_MSEC;
-					Sys_PumpEvents();
-				}
-#endif
 				RB_EndSurface();
 			}
 			RB_BeginSurface( shader, fogNum );
 			oldShader = shader;
 			oldFogNum = fogNum;
-			oldDlighted = dlighted;
+			
 		}
 
 		//
@@ -311,17 +292,8 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 				backEnd.currentEntity = &backEnd.refdef.entities[entityNum];
 				backEnd.refdef.floatTime = originalTime; // - backEnd.currentEntity->e.shaderTime; // JPW NERVE pulled this to match q3ta
 
-				// we have to reset the shaderTime as well otherwise image animations start
-				// from the wrong frame
-//				tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;
-
 				// set up the transformation matrix
 				R_RotateForEntity( backEnd.currentEntity, &backEnd.viewParms, &backEnd.or );
-
-				// set up the dynamic lighting if needed
-				if ( backEnd.currentEntity->needDlights ) {
-					R_TransformDlights( backEnd.refdef.num_dlights, backEnd.refdef.dlights, &backEnd.or );
-				}
 
 				if ( backEnd.currentEntity->e.renderfx & RF_DEPTHHACK ) {
 					// hack the depth range to prevent view model from poking into walls
@@ -332,12 +304,12 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 				backEnd.refdef.floatTime = originalTime;
 				backEnd.or = backEnd.viewParms.world;
 
-				// we have to reset the shaderTime as well otherwise image animations on
-				// the world (like water) continue with the wrong frame
-//				tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;
-
-				R_TransformDlights( backEnd.refdef.num_dlights, backEnd.refdef.dlights, &backEnd.or );
 			}
+
+			// set up the dynamic lighting if needed
+			// if ( backEnd.currentEntity->needDlights ) {
+			// 	R_TransformDlights( backEnd.refdef.num_dlights, backEnd.refdef.dlights, &backEnd.or );
+			// }
 
 			//
 			// change depthrange if needed
@@ -369,26 +341,148 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	backEnd.currentEntity = &tr.worldEntity;
 	backEnd.refdef.floatTime = originalTime;
 	backEnd.or = backEnd.viewParms.world;
-	R_TransformDlights( backEnd.refdef.num_dlights, backEnd.refdef.dlights, &backEnd.or );
+	// R_TransformDlights( backEnd.refdef.num_dlights, backEnd.refdef.dlights, &backEnd.or );
 
 	if ( depthRange ) {
 		RHI_CmdSetViewport( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
 			backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight, 0.0f, 1.0f );
 	}
 
-	// (SA) draw sun
-	RB_DrawSun();
+	if(firstSurfIndex > 0){
+		// (SA) draw sun
+		RB_DrawSun();
+
+		// darken down any stencil shadows
+		RB_ShadowFinish();
+
+		// add light flares on lights that aren't obscured
+		RB_RenderFlares();
+	}
+	
+
+}
 
 
-	// darken down any stencil shadows
-	RB_ShadowFinish();
+void RB_RenderLitSurfList( drawSurf_t *drawSurfs, int firstSurfIndex, int lastSurfIndex, dlight_t *dlight) {
+	shader_t        *shader, *oldShader;
+	int fogNum, oldFogNum;
+	int entityNum, oldEntityNum;
+	int dlighted;
+	qboolean depthRange, oldDepthRange;
+	drawSurf_t      *drawSurf;
+	int oldSort;
+	float originalTime;
+	int i;
 
-	// add light flares on lights that aren't obscured
-	RB_RenderFlares();
 
-#ifdef __MACOS__
-	Sys_PumpEvents();       // crutch up the mac's limited buffer queue size
-#endif
+	// save original time for entity shader offsets
+	originalTime = backEnd.refdef.floatTime;
+
+	//tess.currentStageIteratorFunc = RB_DynamicLightIterator;
+	
+
+	// draw everything
+	oldEntityNum = -1;
+	backEnd.currentEntity = &tr.worldEntity;
+	oldShader = NULL;
+	oldFogNum = -1;
+	oldDepthRange = qfalse;
+	oldSort = -1;
+	depthRange = qfalse;
+
+	// backEnd.pc.c_surfaces += lastSurfIndex - firstSurfIndex;
+
+
+	for ( i = firstSurfIndex, drawSurf = drawSurfs + firstSurfIndex ; i < lastSurfIndex ; i++, drawSurf++ ) {
+		if ( drawSurf->sort == oldSort ) {
+			// fast path, same as previous sort
+			rb_surfaceTable[ *drawSurf->surface ]( drawSurf->surface );
+			continue;
+		}
+		oldSort = drawSurf->sort;
+		R_DecomposeSort( drawSurf->sort, &entityNum, &shader, &fogNum, &dlighted );
+
+		//
+		// change the tess parameters if needed
+		// a "entityMergable" shader is a shader that can have surfaces from seperate
+		// entities merged into a single batch, like smoke and blood puff sprites
+		if ( shader != oldShader || fogNum != oldFogNum
+			 || ( entityNum != oldEntityNum && !shader->entityMergable ) ) {
+			if ( oldShader != NULL ) {
+				RB_EndSurface();
+			}
+			RB_BeginSurface( shader, fogNum );
+			oldShader = shader;
+			oldFogNum = fogNum;
+			
+		}
+
+		//
+		// change the modelview matrix if needed
+		//
+		if ( entityNum != oldEntityNum ) {
+			depthRange = qfalse;
+
+			if ( entityNum != ENTITYNUM_WORLD ) {
+				backEnd.currentEntity = &backEnd.refdef.entities[entityNum];
+				backEnd.refdef.floatTime = originalTime; // - backEnd.currentEntity->e.shaderTime; // JPW NERVE pulled this to match q3ta
+
+				// set up the transformation matrix
+				R_RotateForEntity( backEnd.currentEntity, &backEnd.viewParms, &backEnd.or );
+
+				if ( backEnd.currentEntity->e.renderfx & RF_DEPTHHACK ) {
+					// hack the depth range to prevent view model from poking into walls
+					depthRange = qtrue;
+				}
+			} else {
+				backEnd.currentEntity = &tr.worldEntity;
+				backEnd.refdef.floatTime = originalTime;
+				backEnd.or = backEnd.viewParms.world;
+
+			}
+
+			// set up the dynamic lighting if needed
+			// if ( backEnd.currentEntity->needDlights ) {
+			// 	R_TransformDlights( backEnd.refdef.num_dlights, backEnd.refdef.dlights, &backEnd.or );
+			// }
+
+			//
+			// change depthrange if needed
+			//
+			if ( oldDepthRange != depthRange ) {
+				if ( depthRange ) {
+					RHI_CmdSetViewport( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
+						backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight, 0.0f, 0.3f );
+				} else {
+					RHI_CmdSetViewport( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
+						backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight, 0.0f, 1.0f );
+				}
+				oldDepthRange = depthRange;
+			}
+
+			oldEntityNum = entityNum;
+		}
+
+		// add the triangles for this surface
+		rb_surfaceTable[ *drawSurf->surface ]( drawSurf->surface );
+	}
+
+	// draw the contents of the last shader batch
+	if ( oldShader != NULL ) {
+		RB_EndSurface();
+	}
+
+	// go back to the world modelview matrix
+	backEnd.currentEntity = &tr.worldEntity;
+	backEnd.refdef.floatTime = originalTime;
+	backEnd.or = backEnd.viewParms.world;
+	// R_TransformDlights( backEnd.refdef.num_dlights, backEnd.refdef.dlights, &backEnd.or );
+
+	if ( depthRange ) {
+		RHI_CmdSetViewport( backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
+			backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight, 0.0f, 1.0f );
+	}
+
 }
 
 
@@ -776,7 +870,26 @@ const void  *RB_DrawSurfs( const void *data ) {
 	backEnd.refdef = cmd->refdef;
 	backEnd.viewParms = cmd->viewParms;
 
-	RB_RenderDrawSurfList( cmd->drawSurfs, cmd->numDrawSurfs );
+	int numOpaqueSurfs = 0;
+	for(int i = 0; i < cmd->numDrawSurfs; i++){
+		if(cmd->drawSurfs[i].shader->sort > SS_OPAQUE){
+			break;
+		}
+		numOpaqueSurfs++;
+	}
+	// clear the z buffer, set the modelview, etc
+	RB_BeginDrawingView();
+
+	RB_RenderDrawSurfList( cmd->drawSurfs, 0, numOpaqueSurfs );
+
+	
+	for(int l = 0; l < backEnd.refdef.num_dlights; l++){
+		RB_RenderLitSurfList(cmd->drawSurfs, 0, numOpaqueSurfs, &backEnd.refdef.dlights[l]);
+	}
+	
+
+	RB_RenderDrawSurfList( cmd->drawSurfs, numOpaqueSurfs, cmd->numDrawSurfs );
+
 
 	return (const void *)( cmd + 1 );
 }
@@ -1109,6 +1222,8 @@ void RB_ClearPipelineCache(void){
 	memset(pipelineHash, 0, sizeof(pipelineHash));
 }
 
+
+
 void RB_CreateGraphicsPipeline(shader_t *newShader){
 
 	qbool isMT = newShader->isMultitextured; //newShader->optimalStageIteratorFunc == RB_StageIteratorLightmappedMultitexture;
@@ -1227,6 +1342,70 @@ void RB_CreateGraphicsPipeline(shader_t *newShader){
 		
 	}
 	
+}
+int GetDynamicPipelineIndex(int cull, int polygonOffset){
+	return polygonOffset * CT_COUNT + cull;
+}
+
+#include "shaders/dynamiclight_ps.h"
+#include "shaders/dynamiclight_vs.h"
+
+void RB_CreateDynamicLightPipelines(void){
+	for(int c = 0; c < CT_COUNT; c++){
+		for(int p = 0; p < 2; p++){
+			rhiGraphicsPipelineDesc graphicsDesc = {};
+			graphicsDesc.name = va("Dynamic Light C: %d, P: %d", c, p);
+			graphicsDesc.descLayout = backEnd.descriptorSetLayout;
+			graphicsDesc.pushConstants.vsBytes = 64;
+
+			graphicsDesc.pushConstants.psBytes = sizeof(dynamicLightPushConstants);
+			graphicsDesc.vertexShader.data = dynamiclight_vs;
+			graphicsDesc.vertexShader.byteCount = sizeof(dynamiclight_vs);
+			graphicsDesc.pixelShader.data = dynamiclight_ps;
+			graphicsDesc.pixelShader.byteCount = sizeof(dynamiclight_ps);
+
+			rhiVertexAttributeDesc *a;
+			a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
+			a->elementCount = 4; //position
+			a->elementFormat = RHI_VertexFormat_Float32;
+			a->bufferBinding = 0;
+
+			a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
+			a->elementCount = 2; //tc
+			a->elementFormat = RHI_VertexFormat_Float32;
+			a->bufferBinding = 1;
+
+			a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
+			a->elementCount = 4; //color
+			a->elementFormat = RHI_VertexFormat_UNorm8;
+			a->bufferBinding = 2;
+			
+
+			a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
+			a->elementCount = 4; //normal
+			a->elementFormat = RHI_VertexFormat_Float32;
+			a->bufferBinding = 3;
+	
+			
+			graphicsDesc.vertexBufferCount = 4;
+			graphicsDesc.vertexBuffers[0].stride = 4 * sizeof(float);
+			graphicsDesc.vertexBuffers[1].stride = 2 * sizeof(float);
+			graphicsDesc.vertexBuffers[2].stride = 4 * sizeof(byte);
+			graphicsDesc.vertexBuffers[3].stride = 4 * sizeof(float);
+
+			graphicsDesc.cullType = c;
+			graphicsDesc.polygonOffset = p;
+			graphicsDesc.srcBlend = GLS_SRCBLEND_ONE;
+			graphicsDesc.dstBlend = GLS_DSTBLEND_ONE;
+			graphicsDesc.depthTest = qtrue;
+			graphicsDesc.depthWrite = qfalse;
+			graphicsDesc.depthTestEqual = qtrue;
+			graphicsDesc.wireframe = qfalse;
+			graphicsDesc.colorFormat = R8G8B8A8_UNorm;
+
+			backEnd.dynamicLightPipelines[GetDynamicPipelineIndex(c, p)] = RHI_CreateGraphicsPipeline(&graphicsDesc);
+		}
+	}
 }
 
 
