@@ -223,6 +223,12 @@ static void InitVulkan( void ) {
 		vertexBufferDesc.byteCount = VBA_MAX * sizeof(tess.xyz[0]);
 		backEnd.vertexBuffers[i].position = RHI_CreateBuffer(&vertexBufferDesc);
 
+		vertexBufferDesc.initialState = RHI_ResourceState_VertexBufferBit;
+		vertexBufferDesc.allowedStates = RHI_ResourceState_VertexBufferBit;
+		vertexBufferDesc.name = va("%s %d", "Normal Buffer", i);
+		vertexBufferDesc.byteCount = VBA_MAX * sizeof(tess.normal[0]);
+		backEnd.vertexBuffers[i].normal = RHI_CreateBuffer(&vertexBufferDesc);
+
 		vertexBufferDesc.initialState = RHI_ResourceState_IndexBufferBit;
 		vertexBufferDesc.allowedStates = RHI_ResourceState_IndexBufferBit;
 		vertexBufferDesc.name = va("%s %d", "Index Buffer", i);

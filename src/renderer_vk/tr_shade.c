@@ -636,6 +636,98 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 	vb->vertexCount += tess.numVertexes;
 }
 
+uint32_t packColorR11G11B10(vec3_t color){
+	uint32_t res = 0;
+	res |= (uint32_t)(color[0] * 2047) & 0x7FF;
+	res |= ((uint32_t)(color[1] * 2047) & 0x7FF) << 11;
+	res |= ((uint32_t)(color[2] * 1023) & 0x3FF) << 22;
+	return res;
+}
+
+static void RB_DrawDynamicLight(void){
+		
+	VertexBuffers *vb = &backEnd.vertexBuffers[backEnd.currentFrameIndex];
+
+	if((vb->indexCount + tess.numIndexes) > IDX_MAX || (vb->vertexCount + tess.numVertexes) > VBA_MAX ){
+		assert(!"Out of vertex buffer memory");
+		return;
+	}
+
+	byte *indexBufferData = RHI_MapBuffer(vb->index);
+	memcpy(indexBufferData + (vb->indexFirst * sizeof(tess.indexes[0])), tess.indexes,	tess.numIndexes * sizeof(tess.indexes[0]));
+	RHI_UnmapBuffer(vb->index);
+
+	byte *positionBufferData = RHI_MapBuffer(vb->position);
+	memcpy(positionBufferData + (vb->vertexFirst * sizeof(tess.xyz[0])), tess.xyz, tess.numVertexes * sizeof(tess.xyz[0]));
+	RHI_UnmapBuffer(vb->position);
+
+	byte *normalBufferData = RHI_MapBuffer(vb->normal);
+	memcpy(normalBufferData + (vb->vertexFirst * sizeof(tess.normal[0])), tess.normal, tess.numVertexes * sizeof(tess.normal[0]));
+	RHI_UnmapBuffer(vb->normal);
+
+	int diffuseStageIndex = 0; //@TODO 
+	shaderStage_t *pStage = tess.xstages[diffuseStageIndex];
+	//if (pStage == NULL || !pStage->active) {
+	if (pStage == NULL) {
+		//return;
+	}
+
+
+	ComputeColors( pStage );
+	ComputeTexCoords( pStage );
+
+	byte *tcBufferData = RHI_MapBuffer(vb->textureCoord[0]);
+	memcpy(tcBufferData + (vb->vertexFirst * sizeof(float) * 2), tess.svars.texcoords, tess.numVertexes * sizeof(float) * 2);
+	RHI_UnmapBuffer(vb->textureCoord[0]);
+
+	byte *colorBufferData = RHI_MapBuffer(vb->color[0]);
+	memcpy(colorBufferData + (vb->vertexFirst * sizeof(tess.svars.colors[0])), tess.svars.colors, tess.numVertexes * sizeof(tess.svars.colors[0]));
+	RHI_UnmapBuffer(vb->color[0]);
+
+	
+
+	dynamicLightPushConstants pc = {}; 
+	image_t *currentImage = R_GetAnimatedImageSafe(&pStage->bundle[0]);
+	qbool clamp = currentImage->wrapClampMode == GL_CLAMP;
+	qbool anisotropy = r_ext_texture_filter_anisotropic->integer > 1 && !backEnd.projection2D && !currentImage->lightMap;
+
+	pc.samplerIndex = RB_GetSamplerIndex(clamp, anisotropy);
+	pc.textureIndex = currentImage->descriptorIndex;
+	pc.lightColor = packColorR11G11B10(tess.dlight.color);
+	VectorCopy(tess.dlight.transformed, pc.lightPos);
+	pc.lightRadius = tess.dlight.radius;
+
+	shader_t *shader = tess.shader;
+	
+	rhiPipeline pipeline = backEnd.dynamicLightPipelines[RB_GetDynamicLightPipelineIndex(shader->cullType, shader->polygonOffset)];
+	if(backEnd.previousPipeline.h != pipeline.h){
+		RHI_CmdBindPipeline(pipeline);
+		backEnd.previousPipeline = pipeline;
+		backEnd.pipelineChangeCount++;
+	}
+	if(backEnd.currentDescriptorSet.h == 0){
+		RHI_CmdBindDescriptorSet(pipeline, backEnd.descriptorSet);
+		backEnd.currentDescriptorSet = backEnd.descriptorSet;
+	}
+
+	rhiBuffer buffers[] = {vb->position, vb->textureCoord[0], vb->color[0], vb->normal};
+	if(backEnd.previousVertexBufferCount != ARRAY_LEN(buffers) 
+		|| memcmp(buffers, backEnd.previousVertexBuffers, sizeof(buffers)))
+	{
+		RHI_CmdBindVertexBuffers(buffers, ARRAY_LEN(buffers));
+		memcpy(backEnd.previousVertexBuffers, buffers, sizeof(buffers));
+		backEnd.previousVertexBufferCount = ARRAY_LEN(buffers);
+	}
+
+	RHI_CmdPushConstants(pipeline, RHI_Shader_Vertex, backEnd.or.modelMatrix,sizeof(backEnd.or.modelMatrix));
+	RHI_CmdPushConstants(pipeline, RHI_Shader_Pixel, &pc, sizeof(pc));
+
+	RHI_CmdDrawIndexed(tess.numIndexes, vb->indexFirst, vb->vertexFirst);
+
+	vb->indexCount += tess.numIndexes;
+	vb->vertexCount += tess.numVertexes;
+}
+
 /*
 ** RB_IterateStagesGeneric
 */
@@ -946,7 +1038,12 @@ void RB_EndSurface( void ) {
 	//
 	// call off to shader specific tess end function
 	//
-	tess.currentStageIteratorFunc();
+	if(tess.renderType == RT_GENERIC){
+		tess.currentStageIteratorFunc();
+	}else if(tess.renderType == RT_DYNAMICLIGHT){
+		RB_DrawDynamicLight();
+	}
+	
 
 	//
 	// draw debugging stuff

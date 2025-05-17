@@ -916,6 +916,7 @@ typedef struct {
 	rhiBuffer color[MAX_SHADER_STAGES];
 	rhiBuffer textureCoord[MAX_SHADER_STAGES];
 	rhiBuffer textureCoordLM;
+	rhiBuffer normal;
 	uint32_t indexCount; //total indices written this frame
 	uint32_t indexFirst; //first index of the draw call
 	uint32_t vertexCount; //total vertices written this frame
@@ -1632,6 +1633,7 @@ RENDERER BACK END FUNCTIONS
 void RB_ExecuteRenderCommands( const void *data );
 void RB_CreateGraphicsPipeline(shader_t *newShader);
 void RB_CreateDynamicLightPipelines(void);
+int RB_GetDynamicLightPipelineIndex(int cull, int polygonOffset);
 void RB_ClearPipelineCache(void);
 void RB_BeginRenderPass(const char* name, const RHI_RenderPass* rp);
 void RB_EndRenderPass(void);
@@ -1876,6 +1878,7 @@ void RHI_BeginFrame();
 void RHI_EndFrame();
 qboolean RHI_IsFrameSleepEnabled(void);
 
+#pragma pack(push, 1)
 typedef struct pixelShaderPushConstants {
 	uint32_t textureIndex;
 	uint32_t samplerIndex;
@@ -1899,6 +1902,7 @@ typedef struct dynamicLightPushConstants {
 	uint32_t textureIndex;
 	uint32_t samplerIndex;
 } dynamicLightPushConstants;
+#pragma pack(pop)
 
 void R_Gpulist_f(void);
 

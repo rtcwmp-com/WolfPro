@@ -1345,7 +1345,7 @@ void RB_CreateGraphicsPipeline(shader_t *newShader){
 	}
 	
 }
-int GetDynamicPipelineIndex(int cull, int polygonOffset){
+int RB_GetDynamicLightPipelineIndex(int cull, int polygonOffset){
 	return polygonOffset * CT_COUNT + cull;
 }
 
@@ -1405,7 +1405,7 @@ void RB_CreateDynamicLightPipelines(void){
 			graphicsDesc.wireframe = qfalse;
 			graphicsDesc.colorFormat = R8G8B8A8_UNorm;
 
-			backEnd.dynamicLightPipelines[GetDynamicPipelineIndex(c, p)] = RHI_CreateGraphicsPipeline(&graphicsDesc);
+			backEnd.dynamicLightPipelines[RB_GetDynamicLightPipelineIndex(c, p)] = RHI_CreateGraphicsPipeline(&graphicsDesc);
 		}
 	}
 }

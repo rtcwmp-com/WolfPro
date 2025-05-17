@@ -630,7 +630,7 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
     pipelineLayoutCreateInfo.pushConstantRangeCount = pcrCount;
 
 	VK(vkCreatePipelineLayout(vk.device, &pipelineLayoutCreateInfo, NULL, &vkPipelineLayout));
-	SetObjectName(VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)vkPipelineLayout, "Pipeline Layout");
+	SetObjectName(VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)vkPipelineLayout, va("%s Layout", graphicsDesc->name));
 
     PipelineLayout layout = {};
     layout.pipelineLayout = vkPipelineLayout;
