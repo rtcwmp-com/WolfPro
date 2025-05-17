@@ -999,6 +999,7 @@ typedef struct {
 	qbool clearColor;
 
 	rhiPipeline dynamicLightPipelines[6];
+	qboolean pipelineLayoutDirty;
 } backEndState_t;
 
 /*
