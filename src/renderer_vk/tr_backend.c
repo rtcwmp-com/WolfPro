@@ -880,16 +880,22 @@ const void  *RB_DrawSurfs( const void *data ) {
 	RB_BeginDrawingView();
 
 	RHI_CmdBeginDebugLabel("Opaque");
+	RHI_CmdBindDescriptorSet(tr.shaders[0]->stages[0]->pipeline, backEnd.descriptorSet); //@TODO
+	backEnd.currentDescriptorSet = backEnd.descriptorSet;
 	RB_RenderDrawSurfList( cmd->drawSurfs, 0, numOpaqueSurfs );
 	RHI_CmdEndDebugLabel();
 	
 	RHI_CmdBeginDebugLabel("Dynamic Lights");
+	RHI_CmdBindDescriptorSet(backEnd.dynamicLightPipelines[0], backEnd.descriptorSet);
+	backEnd.currentDescriptorSet = backEnd.descriptorSet;
 	for(int l = 0; l < backEnd.refdef.num_dlights; l++){
 		RB_RenderLitSurfList(cmd->drawSurfs, 0, numOpaqueSurfs, &backEnd.refdef.dlights[l]);
 	}
 	RHI_CmdEndDebugLabel();
 
 	RHI_CmdBeginDebugLabel("Transparent");
+	RHI_CmdBindDescriptorSet(tr.shaders[0]->stages[0]->pipeline, backEnd.descriptorSet); //@TODO
+	backEnd.currentDescriptorSet = backEnd.descriptorSet;
 	RB_RenderDrawSurfList( cmd->drawSurfs, numOpaqueSurfs, cmd->numDrawSurfs );
 	RHI_CmdEndDebugLabel();
 
