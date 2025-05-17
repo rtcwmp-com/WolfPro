@@ -1567,30 +1567,36 @@ void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs, int firstLitSurf 
 	// qsortFast( drawSurfs, numDrawSurfs, sizeof( drawSurf_t ) );
 	qsort(drawSurfs,numDrawSurfs, sizeof( drawSurf_t ), CompareDrawSurfs );
 
+	int dlightMask = (1 << tr.refdef.num_dlights) - 1;
+	if (tr.refdef.num_dlights > 0) {
+		//Sys_DebugBreak();
+	}
 	int numLitSurfs[32] = { };
-
 	for ( i = 0 ; i < numDrawSurfs ; i++ ) {
 		drawSurf_t *drawSurf = &drawSurfs[i];
 		int mask = 0;
-		switch(*drawSurfs->surface){
+		switch(*drawSurf->surface){
 			case SF_GRID:
-				mask = ((srfGridMesh_t*)drawSurfs->surface)->dlightBits;
+				mask = ((srfGridMesh_t*)drawSurf->surface)->dlightBits;
 				break;
 			case SF_FACE:
-				mask = ((srfSurfaceFace_t*)drawSurfs->surface)->dlightBits;
+				mask = ((srfSurfaceFace_t*)drawSurf->surface)->dlightBits;
 				break;
 			case SF_TRIANGLES:
-				mask = ((srfTriangles_t*)drawSurfs->surface)->dlightBits;
+				mask = ((srfTriangles_t*)drawSurf->surface)->dlightBits;
 				break;
 			default:
 				break;
 		}
+		mask &= dlightMask;
 		for(int l = 0; l < 32; l++){
 			if(mask & (1<<l)){
 				numLitSurfs[l]++;
 			}
 		}
 	}
+
+	
 
 	int firstLitSurfs[32] = { };
 	int totalSurfs = numLitSurfs[0];
@@ -1607,26 +1613,27 @@ void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs, int firstLitSurf 
 		
 		drawSurf_t *drawSurf = &drawSurfs[i];
 		int mask = 0;
-		switch(*drawSurfs->surface){
+		switch(*drawSurf->surface){
 			case SF_GRID:
-				mask = ((srfGridMesh_t*)drawSurfs->surface)->dlightBits;
+				mask = ((srfGridMesh_t*)drawSurf->surface)->dlightBits;
 				break;
 			case SF_FACE:
-				mask = ((srfSurfaceFace_t*)drawSurfs->surface)->dlightBits;
+				mask = ((srfSurfaceFace_t*)drawSurf->surface)->dlightBits;
 				break;
 			case SF_TRIANGLES:
-				mask = ((srfTriangles_t*)drawSurfs->surface)->dlightBits;
+				mask = ((srfTriangles_t*)drawSurf->surface)->dlightBits;
 				break;
 			default:
 				break;
 		}
+		mask &= dlightMask;
 		for(int l = 0; l < 32; l++){
 			if(mask & (1<<l)){
 				int litSurfIndex = firstLitSurfs[l]++;
 				litSurf_t *litSurf = &tr.refdef.litSurfs[litSurfIndex];
-				litSurf->surface = drawSurfs->surface;
-				litSurf->shader = drawSurfs->shader;
-				litSurf->sort = drawSurfs->sort;
+				litSurf->surface = drawSurf->surface;
+				litSurf->shader = drawSurf->shader;
+				litSurf->sort = drawSurf->sort;
 			}
 		}
 	}
