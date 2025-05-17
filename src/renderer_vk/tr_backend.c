@@ -245,6 +245,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int firstSurfIndex, int lastS
 	// save original time for entity shader offsets
 	originalTime = backEnd.refdef.floatTime;
 
+	tess.renderType = RT_GENERIC;
 	
 
 	// draw everything
@@ -379,7 +380,8 @@ void RB_RenderLitSurfList( drawSurf_t *drawSurfs, int firstSurfIndex, int lastSu
 	originalTime = backEnd.refdef.floatTime;
 
 	//tess.currentStageIteratorFunc = RB_DynamicLightIterator;
-	
+	tess.renderType = RT_DYNAMICLIGHT;
+	tess.dlight = *dlight;
 
 	// draw everything
 	oldEntityNum = -1;
@@ -406,14 +408,13 @@ void RB_RenderLitSurfList( drawSurf_t *drawSurfs, int firstSurfIndex, int lastSu
 		// change the tess parameters if needed
 		// a "entityMergable" shader is a shader that can have surfaces from seperate
 		// entities merged into a single batch, like smoke and blood puff sprites
-		if ( shader != oldShader || fogNum != oldFogNum
-			 || ( entityNum != oldEntityNum && !shader->entityMergable ) ) {
+		if ( shader != oldShader  || ( entityNum != oldEntityNum && !shader->entityMergable ) ) {
 			if ( oldShader != NULL ) {
 				RB_EndSurface();
 			}
 			RB_BeginSurface( shader, fogNum );
+			
 			oldShader = shader;
-			oldFogNum = fogNum;
 			
 		}
 
@@ -442,9 +443,7 @@ void RB_RenderLitSurfList( drawSurf_t *drawSurfs, int firstSurfIndex, int lastSu
 			}
 
 			// set up the dynamic lighting if needed
-			// if ( backEnd.currentEntity->needDlights ) {
-			// 	R_TransformDlights( backEnd.refdef.num_dlights, backEnd.refdef.dlights, &backEnd.or );
-			// }
+			R_TransformDlights( 1, dlight, &backEnd.or );
 
 			//
 			// change depthrange if needed
@@ -880,16 +879,19 @@ const void  *RB_DrawSurfs( const void *data ) {
 	// clear the z buffer, set the modelview, etc
 	RB_BeginDrawingView();
 
+	RHI_CmdBeginDebugLabel("Opaque");
 	RB_RenderDrawSurfList( cmd->drawSurfs, 0, numOpaqueSurfs );
-
+	RHI_CmdEndDebugLabel();
 	
+	RHI_CmdBeginDebugLabel("Dynamic Lights");
 	for(int l = 0; l < backEnd.refdef.num_dlights; l++){
 		RB_RenderLitSurfList(cmd->drawSurfs, 0, numOpaqueSurfs, &backEnd.refdef.dlights[l]);
 	}
-	
+	RHI_CmdEndDebugLabel();
 
+	RHI_CmdBeginDebugLabel("Transparent");
 	RB_RenderDrawSurfList( cmd->drawSurfs, numOpaqueSurfs, cmd->numDrawSurfs );
-
+	RHI_CmdEndDebugLabel();
 
 	return (const void *)( cmd + 1 );
 }

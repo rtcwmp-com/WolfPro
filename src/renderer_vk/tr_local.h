@@ -1402,6 +1402,12 @@ typedef struct stageVars
 	vec2_t texcoords[NUM_TEXTURE_BUNDLES][SHADER_MAX_VERTEXES];
 } stageVars_t;
 
+typedef enum renderType_t {
+	RT_GENERIC,
+	RT_DYNAMICLIGHT,
+	RT_COUNT
+} renderType_t;
+
 typedef struct shaderCommands_s
 {
 	glIndex_t indexes[SHADER_MAX_INDEXES];
@@ -1428,6 +1434,10 @@ typedef struct shaderCommands_s
 	int numPasses;
 	void ( *currentStageIteratorFunc )( void );
 	shaderStage_t   **xstages;
+
+	dlight_t dlight;
+	renderType_t renderType;
+
 } shaderCommands_t;
 
 extern shaderCommands_t tess;

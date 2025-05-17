@@ -1568,9 +1568,7 @@ void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs, int firstLitSurf 
 	qsort(drawSurfs,numDrawSurfs, sizeof( drawSurf_t ), CompareDrawSurfs );
 
 	int dlightMask = (1 << tr.refdef.num_dlights) - 1;
-	if (tr.refdef.num_dlights > 0) {
-		//Sys_DebugBreak();
-	}
+
 	int numLitSurfs[32] = { };
 	for ( i = 0 ; i < numDrawSurfs ; i++ ) {
 		drawSurf_t *drawSurf = &drawSurfs[i];
