@@ -79,6 +79,11 @@ void    IN_DeactivateWin32Mouse( void );
 void    IN_Activate( qboolean active );
 void    IN_Frame( void );
 
+// crash handling
+void WIN_InstallExceptionHandlers(void);
+void WIN_RegisterExceptionCommands(void);
+void WIN_EndTimePeriod(void);
+
 // window procedure
 LONG WINAPI MainWndProc(
 	HWND hWnd,

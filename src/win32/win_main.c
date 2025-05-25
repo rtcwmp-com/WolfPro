@@ -127,6 +127,29 @@ void Sys_BeginProfiling( void ) {
 	// this is just used on the mac build
 }
 
+static qbool win_timePeriodActive = qfalse;
+
+
+static void WIN_BeginTimePeriod(void)
+{
+	if (win_timePeriodActive)
+		return;
+
+	timeBeginPeriod(1);
+	win_timePeriodActive = qtrue;
+}
+
+
+void WIN_EndTimePeriod(void)
+{
+	if (!win_timePeriodActive)
+		return;
+
+	timeEndPeriod(1);
+	win_timePeriodActive = qfalse;
+}
+
+
 /*
 =============
 Sys_Error
@@ -149,7 +172,7 @@ void QDECL Sys_Error( const char *error, ... ) {
 	Sys_SetErrorText( text );
 	Sys_ShowConsole( 1, qtrue );
 
-	timeEndPeriod( 1 );
+	WIN_EndTimePeriod();
 
 	IN_Shutdown();
 
@@ -173,7 +196,7 @@ Sys_Quit
 ==============
 */
 void Sys_Quit( int status ) {
-	timeEndPeriod( 1 );
+	WIN_EndTimePeriod();
 	IN_Shutdown();
 	Sys_DestroyConsole();
 
@@ -1116,7 +1139,7 @@ void Sys_Init( void ) {
 
 	// make sure the timer is high precision, otherwise
 	// NT gets 18ms resolution
-	timeBeginPeriod( 1 );
+	WIN_BeginTimePeriod();
 
 	Cmd_AddCommand( "in_restart", Sys_In_Restart_f );
 	Cmd_AddCommand( "net_restart", Sys_Net_Restart_f );
@@ -1190,6 +1213,8 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 		return 0;
 	}
 
+	WIN_InstallExceptionHandlers();
+
 	// no abort/retry/fail errors
 	SetErrorMode( SEM_FAILCRITICALERRORS );
 
@@ -1218,6 +1243,9 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	Sys_InitStreamThread();
 
 	Com_Init( sys_cmdline );
+
+	WIN_RegisterExceptionCommands();
+
 	NET_Init();
 
 	_getcwd( cwd, sizeof( cwd ) );
