@@ -394,3 +394,10 @@ void Sys_LeaveCriticalSection( void *ptr ) {
 void Sys_DebugPrintf( PRINTF_FORMAT_STRING const char* fmt, ... )
 {
 }
+
+char* Sys_GetScreenshotPath(char* filename){
+	char* homepath = Cvar_VariableString("fs_homepath");
+	char* gamepath = Cvar_VariableString("fs_game");
+
+	return va("%s/%s/screenshots/%s.jpg", homepath, gamepath, filename);
+}

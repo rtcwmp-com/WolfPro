@@ -544,6 +544,18 @@ void R_ScreenShot_f( void ) {
 	}
 }
 
+/*
+================
+RTCWPro - reqSS
+================
+*/
+void R_GenerateSS_f(char* filename) {
+	char* filepath[MAX_OSPATH];
+
+	Com_sprintf(filepath, sizeof(filepath), "screenshots/%s.jpg", filename);
+	R_TakeScreenshotJPEG(filepath);
+}
+
 void R_ScreenShotJPEG_f( void ) {
 	char checkname[MAX_OSPATH];
 	int len;
@@ -559,6 +571,13 @@ void R_ScreenShotJPEG_f( void ) {
 		silent = qtrue;
 	} else {
 		silent = qfalse;
+	}
+
+	if (!strcmp(ri.Cmd_Argv(1), "reqss")) {
+		if (strlen(ri.Cmd_Argv(2))) {
+			R_GenerateSS_f(ri.Cmd_Argv(2));
+		}
+		return;
 	}
 
 	if ( ri.Cmd_Argc() == 2 && !silent ) {

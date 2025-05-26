@@ -1390,6 +1390,29 @@ void Info_SetValueForKey_Big( char *s, const char *key, const char *value ) {
 }
 
 
+/*
+==================
+Q_IsNumeric
 
+Float and Int will be considered valid.
+==================
+*/
+qboolean Q_IsNumeric(const char* s) {
+
+	if (!s || strlen(s) < 1) {
+		return qfalse;
+	}
+
+	while (*s) {
+		if (*s == '.'|| *s == '-') {
+			*s++;
+
+			continue;
+		}
+		else if ((isdigit(*s++) == 0))
+			return qfalse;
+	}
+	return qtrue;
+}
 
 //====================================================================

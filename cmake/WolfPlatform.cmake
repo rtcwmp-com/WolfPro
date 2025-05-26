@@ -80,7 +80,7 @@ elseif(WIN32)
 		target_compile_definitions(shared_libraries INTERFACE C_ONLY)
 	endif()
 
-	target_link_libraries(os_libraries INTERFACE wsock32 ws2_32 psapi winmm user32 gdi32 advapi32 shell32)
+	target_link_libraries(os_libraries INTERFACE wsock32 ws2_32 psapi winmm user32 gdi32 advapi32 shell32 version)
 
 	if(CMAKE_BUILD_TYPE MATCHES "Debug")
 		target_link_libraries(os_libraries INTERFACE libcmtd)

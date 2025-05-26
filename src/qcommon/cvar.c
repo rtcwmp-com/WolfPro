@@ -35,7 +35,7 @@ cvar_t      *cvar_vars;
 cvar_t      *cvar_cheats;
 int cvar_modifiedFlags;
 
-#define MAX_CVARS   1024
+#define MAX_CVARS   2048
 cvar_t cvar_indexes[MAX_CVARS];
 int cvar_numIndexes;
 
@@ -94,7 +94,7 @@ static qboolean Cvar_ValidateString( const char *s ) {
 Cvar_FindVar
 ============
 */
-static cvar_t *Cvar_FindVar( const char *var_name ) {
+cvar_t *Cvar_FindVar( const char *var_name ) {
 	cvar_t  *var;
 	long hash;
 
@@ -947,7 +947,11 @@ void Cvar_Init( void ) {
 	Cmd_AddCommand( "reset", Cvar_Reset_f );
 	Cmd_AddCommand( "cvarlist", Cvar_List_f );
 	Cmd_AddCommand( "cvar_restart", Cvar_Restart_f );
-
+#ifdef DEDICATED
+	Cmd_AddCommand( "restrictedlist", Cvar_RestrictedList_f);
+#else
+	Cmd_AddCommand("violations", Cvar_RestrictedList_f);
+#endif
 	// NERVE - SMF - can't rely on autoexec to do this
 	Cvar_Get( "devdll", "1", CVAR_ROM );
 }

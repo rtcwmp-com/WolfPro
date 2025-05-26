@@ -32,6 +32,7 @@ if(UNIX)
 	LIST(APPEND COMMON_SRC "src/unix/linux_common.c")
 	LIST(APPEND COMMON_SRC "src/unix/linux_signals.c")
 	LIST(APPEND COMMON_SRC "src/unix/snapvector.nasm")
+	LIST(APPEND COMMON_SRC "src/unix/unix_threads.c")
 	LIST(APPEND CLIENT_SRC ${SDL_SRC})
 	LIST(APPEND CLIENT_SRC "src/unix/linux_qgl.c")
 elseif(WIN32)
@@ -42,7 +43,9 @@ elseif(WIN32)
 	LIST(APPEND COMMON_SRC "src/win32/win_wndproc.c")
 	LIST(APPEND CLIENT_SRC "src/win32/win_snd.c")
 	LIST(APPEND CLIENT_SRC "src/win32/win_input.c")
+	LIST(APPEND COMMON_SRC "src/win32/win_exception.c")
 	LIST(APPEND COMMON_SRC "src/win32/winquake.rc")
+	LIST(APPEND COMMON_SRC "src/win32/win_threads.c")
 	#LIST(APPEND COMMON_SRC "src/win32/client.manifest")
 endif()
 
@@ -51,6 +54,7 @@ endif()
 FILE(GLOB SERVER_SRC
 	"src/server/*.c"
 	"src/server/*.h"
+	"src/client/cl_cvarrestrict.c"
 	"src/null/*.c"
 	"src/null/*.h"
 	"src/botlib/be*.c"

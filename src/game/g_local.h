@@ -38,7 +38,7 @@ If you have questions concerning this license or the applicable additional terms
 
 // the "gameversion" client command will print this plus compile date
 //----(SA) Wolfenstein
-#define GAMEVERSION "main"
+
 // done.
 
 #define BODY_QUEUE_SIZE     8

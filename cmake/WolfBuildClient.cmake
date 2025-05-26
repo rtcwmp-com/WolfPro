@@ -35,11 +35,14 @@ else()
 endif()
 
 
+
+
 if(IS_VULKAN)
 	target_link_libraries(${wolfmp_target}
 		client_libraries_vk
 		engine_libraries
 		os_libraries
+		${CURL_LIBRARIES}
 	)
 	target_link_libraries(${wolfmp_target} cimgui)
 else()
@@ -47,8 +50,11 @@ else()
 	client_libraries_gl
 	engine_libraries
 	os_libraries
+	${CURL_LIBRARIES}
 	)
 endif()
+
+target_include_directories(${wolfmp_target} PRIVATE ${CURL_INCLUDE_DIR})
 
 message(STATUS CMAKE_BUILD_TYPE)
 

@@ -700,6 +700,27 @@ void Cmd_List_f( void ) {
 
 /*
 ============
+Cmd_TokenizeLine
+============
+*/
+void Cmd_TokenizeLine(const char* text_in, const char* delim, char *pos) {
+	char* token;
+
+	cmd_argc = 0;
+	if (!text_in) {
+		return;
+	}
+
+	token = strtok_r((char *)text_in, delim, &pos);
+	while (token != NULL) {
+		cmd_argv[cmd_argc] = token;
+		cmd_argc++;
+		token = strtok_r(NULL, delim, &pos);
+	}
+}
+
+/*
+============
 Cmd_Init
 ============
 */

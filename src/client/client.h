@@ -90,6 +90,12 @@ typedef struct {
 
 extern int g_console_field_width;
 
+
+typedef struct {
+	int actionTime;
+	int warnedTime;
+	qboolean doPrint;
+} clientHandle_t;
 typedef struct {
 	int timeoutcount;               // it requres several frames in a timeout condition
 									// to disconnect, preventing debugging breaks from
@@ -155,6 +161,7 @@ typedef struct {
 	qboolean corruptedTranslationFile;
 	char translationVersion[MAX_STRING_TOKENS];
 	// -NERVE - SMF
+	clientHandle_t handle;
 } clientActive_t;
 
 extern clientActive_t cl;
@@ -651,4 +658,88 @@ inline void CL_ImGUI_Frame(void) {}
 
 #endif //NO RTCW_VULKAN
 #define KEYCATCH_IMGUI          0x0010
+
+
+#define CTL_RKVALD          "rkvald"
+#define RKVALD_OK           "1"
+#define RKVALD_NOT_OK       "0"
+#define RKVALD_TIME_FULL    65000
+#define RKVALD_TIME_PING    10000
+#define RKVALD_TIME_PING_L  40000
+#define RKVALD_TIME_PING_S  20000
+#define RKVALD_TIME_OFF     -1
+
+#define SVC_NONE            0
+#define SVC_EQUAL           1
+#define SVC_NOTEQUAL        2
+#define SVC_GREATER         3
+#define SVC_GREATEREQUAL    4
+#define SVC_LOWER           5
+#define SVC_LOWEREQUAL      6
+#define SVC_INSIDE          7
+#define SVC_OUTSIDE         8
+#define SVC_INCLUDE         9
+#define SVC_EXCLUDE         10
+#define SVC_WITHBITS        11
+#define SVC_WITHOUTBITS     12
+#define SVC_MAX             13
+
+#define SVC_TYPE_STRING     0
+#define SVC_TYPE_INT        1
+#define SVC_TYPE_FLOAT      2
+#define SVC_TYPE_MAX        3
+
+// Cvar restrictions table for tags
+typedef struct {
+	int type;
+	char* operatorFlag;
+	char* longDesc;
+} cvar_restrictions_l;
+
+// Cvar restriction tags
+static const cvar_restrictions_l Cvar_Restriction_Flags[] = {
+	{ SVC_NONE, "", "<any>" },
+	{ SVC_EQUAL, "EQ", "EQUAL" },
+	{ SVC_NOTEQUAL, "!EQ", "NOT EQUAL" },
+	{ SVC_GREATER, "GRT", "GREATER" },
+	{ SVC_GREATEREQUAL, "GQ", "GREATER OR EQUAL" },
+	{ SVC_LOWER, "LO", "LOWER" },
+	{ SVC_LOWEREQUAL, "LQ", "LOWER OR EQUAL" },
+	{ SVC_INSIDE, "IN", "BETWEEN" },
+	{ SVC_OUTSIDE, "OUT", "OUTSIDE" },
+	{ SVC_INCLUDE, "INCLUDE", "INCLUDE" },
+	{ SVC_EXCLUDE, "EXCLUDE", "NOT INCLUDE" },
+	{ SVC_WITHBITS, "WBIT", "WITH BITS" },
+	{ SVC_WITHOUTBITS, "!WBIT", "WITHOUT BITS" }
+};
+
+// Cvar restrictions
+typedef struct cvar_restrictions_s {
+	char* name;
+	unsigned int type;
+	char*   sVal1;
+	char*   sVal2;
+	float   fVal1;
+	float   fVal2;
+	int     iVal1;
+	int     iVal2;
+	struct cvar_restrictions_s* next;
+	struct cvar_restrictions_s* hashNext;
+	qboolean flagged;
+} cvar_rest_t;
+
+void CL_SetRestStatus(void);
+
+void Cvar_RestBuildList(char* data);
+
+cvar_rest_t* Cvar_SetRestricted(const char* var_name, unsigned int type, const char* value, const char* value2);
+// registers cvars for validation list
+void CL_CheckRestStatus(void);
+void Cvar_Rest_Reset(void);
+// 
+// RTCWPro - cl_control.c - source: Nate (rtcwMP)
+//
+void CL_GenerateSS(char* address, char* hookid, char* hooktoken, char* waittime, char* datetime);
+char* Sys_GetScreenshotPath(char* filename);
+extern cvar_t* cl_StreamingSelfSignedCert;
 #endif
