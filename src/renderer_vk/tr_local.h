@@ -930,7 +930,7 @@ typedef struct SceneView {
 } SceneView;
 #pragma pack(pop)
 
-#define VBA_MAX 64000
+#define VBA_MAX 524288
 #define IDX_MAX (VBA_MAX * 8)
 #define SCENEVIEW_MAX 16
 #define MAX_RENDERPASSES 64 
