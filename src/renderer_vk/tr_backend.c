@@ -393,6 +393,7 @@ void RB_RenderLitSurfList( drawSurf_t *drawSurfs, int firstSurfIndex, int lastSu
 	depthRange = qfalse;
 
 	// backEnd.pc.c_surfaces += lastSurfIndex - firstSurfIndex;
+	
 
 
 	for ( i = firstSurfIndex, drawSurf = drawSurfs + firstSurfIndex ; i < lastSurfIndex ; i++, drawSurf++ ) {
@@ -886,9 +887,21 @@ const void  *RB_DrawSurfs( const void *data ) {
 	
 	RHI_CmdBeginDebugLabel("Dynamic Lights");
 	backEnd.pipelineLayoutDirty = qtrue;
+	int numLights = 0;
 	for(int l = 0; l < backEnd.refdef.num_dlights; l++){
-		RB_RenderLitSurfList(cmd->drawSurfs, 0, numOpaqueSurfs, &backEnd.refdef.dlights[l]);
+		dlight_t *dl = &backEnd.refdef.dlights[l];
+		if(R_CullPointAndRadius(dl->origin, dl->radius) == CULL_OUT){
+			continue;
+		}
+
+		numLights++;
+		RB_RenderLitSurfList(cmd->drawSurfs, 0, numOpaqueSurfs, dl);
 	}
+	if(igBegin("lights", NULL, 0)){
+		igText("Number of dlights: %d", numLights);
+	}
+	igEnd();
+	
 	RHI_CmdEndDebugLabel();
 
 	RHI_CmdBeginDebugLabel("Transparent");
