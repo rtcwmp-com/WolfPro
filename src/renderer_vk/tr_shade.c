@@ -694,9 +694,9 @@ static void RB_DrawDynamicLight(void){
 
 	pc.samplerIndex = RB_GetSamplerIndex(clamp, anisotropy);
 	pc.textureIndex = currentImage->descriptorIndex;
-	pc.lightColor = packColorR11G11B10(tess.dlight.color);
-	VectorCopy(tess.dlight.transformed, pc.lightPos);
-	pc.lightRadius = tess.dlight.radius;
+	pc.lightColor = packColorR11G11B10(tess.dlight->color);
+	VectorCopy(tess.dlight->transformed, pc.lightPos);
+	pc.lightRadius = tess.dlight->radius;
 
 	shader_t *shader = tess.shader;
 	

@@ -1437,7 +1437,7 @@ typedef struct shaderCommands_s
 	void ( *currentStageIteratorFunc )( void );
 	shaderStage_t   **xstages;
 
-	dlight_t dlight;
+	dlight_t *dlight;
 	renderType_t renderType;
 
 } shaderCommands_t;

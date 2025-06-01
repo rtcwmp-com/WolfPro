@@ -381,7 +381,7 @@ void RB_RenderLitSurfList( drawSurf_t *drawSurfs, int firstSurfIndex, int lastSu
 
 	//tess.currentStageIteratorFunc = RB_DynamicLightIterator;
 	tess.renderType = RT_DYNAMICLIGHT;
-	tess.dlight = *dlight;
+	tess.dlight = dlight;
 
 	// draw everything
 	oldEntityNum = -1;
