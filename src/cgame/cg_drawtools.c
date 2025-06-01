@@ -316,7 +316,7 @@ CG_DrawChar
 Coordinates and size in 640*480 virtual screen size
 ===============
 */
-void CG_DrawChar( int x, int y, int width, int height, int ch ) {
+void CG_DrawChar( float x, float y, int width, int height, int ch ) {
 	int row, col;
 	float frow, fcol;
 	float size;
@@ -354,7 +354,7 @@ CG_DrawChar2
 Coordinates and size in 640*480 virtual screen size
 ===============
 */
-void CG_DrawChar2( int x, int y, int width, int height, int ch ) {
+void CG_DrawChar2( float x, float y, int width, int height, int ch ) {
 	int row, col;
 	float frow, fcol;
 	float size;
@@ -420,7 +420,7 @@ void CG_DrawStringExt( int x, int y, const char *string, const float *setColor,
 				s += 2;
 				continue;
 			}
-			CG_DrawChar( xx + 2, y + 2, charWidth, charHeight, *s );
+			CG_DrawChar( xx + 3 / cgs.screenXScale, y + 3 / cgs.screenYScale, charWidth, charHeight, *s );
 			cnt++;
 			xx += charWidth;
 			s++;
@@ -483,7 +483,7 @@ void CG_DrawStringExt2( int x, int y, const char *string, const float *setColor,
 				s += 2;
 				continue;
 			}
-			CG_DrawChar2( xx + 2, y + 2, charWidth, charHeight, *s );
+			CG_DrawChar2( xx + 2 / cgs.screenXScale , y + 2 / cgs.screenYScale, charWidth, charHeight, *s );
 			cnt++;
 			xx += charWidth;
 			s++;
