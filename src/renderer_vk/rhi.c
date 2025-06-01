@@ -677,9 +677,10 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
 	rasterizer.polygonMode = graphicsDesc->wireframe ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
 	rasterizer.cullMode = GetVkCullModeFlags(graphicsDesc->cullType);
 	rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
-	rasterizer.depthClampEnable = VK_FALSE;
+	rasterizer.depthClampEnable = vk.deviceFeatures.depthClamp;
 	rasterizer.rasterizerDiscardEnable = VK_FALSE;
 	rasterizer.lineWidth = 1.0f;
+
     
     if(graphicsDesc->polygonOffset){
         rasterizer.depthBiasEnable = VK_TRUE;

@@ -536,6 +536,7 @@ static void CreateDevice()
     vk13f.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
     vk13f.synchronization2 = VK_TRUE;
     vk13f.dynamicRendering = VK_TRUE;
+    
     vk13f.pNext = &vk12f;
 
     // @TODO: copy over results from vk.deviceFeatures when they're optional
@@ -544,7 +545,7 @@ static void CreateDevice()
     features2.features.shaderSampledImageArrayDynamicIndexing = VK_TRUE;
     features2.features.samplerAnisotropy = VK_TRUE;
     //features2.features.shaderClipDistance = VK_TRUE;
-    //features2.pNext = &featuresExt;
+    features2.features.depthClamp = vk.deviceFeatures.depthClamp;
     features2.pNext = &vk13f;
 
     VkDeviceCreateInfo createInfo = {};

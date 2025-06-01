@@ -12,25 +12,8 @@ shader r_cache
 why is R_LightScaleTexture not applied to non-mipmapped textures that are not rescaled
 
 dynamic lights
-- we need the normal vector to properly avoid lighting back faces
-    - if we decide to only use exactly 1 light (or very small amount) per surface, then we can shade in object space and not push any new matrix data to the GPU:
-      - the normal vector is already in object-space, so no extra transformation is necessary
-      - transform the light position(s) to object space on the CPU and upload through push constants
-      
-    - for the fully generic version we can shade in either world-space or view-space
-      either way we need to pass down at least 1 extra matrix per draw call through a new uniform buffer
-      (the inverse-transpose of the model/model-view matrix)
-- move the quick test code from generic2 to generic so that we can light up e.g. dropped weapons with a dynamite to make sure all transformations are correct
+ - frustum culling
 
-create 6 pipelines and 1 shader
-  - 3 for cull type
-  - 2 for polygon offset
-  - no alphatest
-  - depth test equal
-  - additive blend
-  - readonly depth access
-  - earlydepthstencil always enabled
-  - takes 1 diffuse texture and 1 sampler and 1 dynamic light
 
 R_DlightSurface( msurface_t *surf, int dlightBits (boolean) ) -> mask 
 R_AddWorldSurface( msurface_t *surf, shader_t *shader, int dlightBits (boolean)) 
