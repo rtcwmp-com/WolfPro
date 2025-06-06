@@ -53,6 +53,18 @@ typedef struct
 	FILE *log_fp;
 } glwstate_t;
 
+typedef struct
+{
+	// The main window's rendering context is the only one we can ever keep around
+	// because the window class has the CS_OWNDC style set (for OpenGL).
+	HDC			hDC;
+	HGLRC		hGLRC;
+	qbool		pixelFormatSet;
+	int			nPendingPF;
+} vkwstate_t;
+
+extern vkwstate_t vkw_state;
+
 extern glwstate_t glw_state;
 
 #endif

@@ -43,7 +43,7 @@ If you have questions concerning this license or the applicable additional terms
 
 
 #include <float.h>
-#include "../renderer/tr_local.h"
+#include "../renderer_common/tr_local.h"
 #include "unix_glw.h"
 
 // bk001129 - from cvs1.17 (mkv)

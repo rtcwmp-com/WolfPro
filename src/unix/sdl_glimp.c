@@ -37,7 +37,7 @@ along with RtcwPro. If not, see <https://www.gnu.org/licenses/>.
 
 #include <dlfcn.h>
 
-#include "../renderer/tr_local.h"
+#include "../renderer_common/tr_local.h"
 #include "linux_local.h"
 
 #include "unix_glw.h"
@@ -293,36 +293,6 @@ fail:
 	return qfalse;
 }
 
-/*
-* Find the first occurrence of find in s.
-*/
-// bk001130 - from cvs1.17 (mkv), const
-// bk001130 - made first argument const
-static const char *Q_stristr( const char *s, const char *find ) {
-	register char c, sc;
-	register size_t len;
-
-	if ( ( c = *find++ ) != 0 ) {
-		if ( c >= 'a' && c <= 'z' ) {
-			c -= ( 'a' - 'A' );
-		}
-		len = strlen( find );
-		do
-		{
-			do
-			{
-				if ( ( sc = *s++ ) == 0 ) {
-					return NULL;
-				}
-				if ( sc >= 'a' && sc <= 'z' ) {
-					sc -= ( 'a' - 'A' );
-				}
-			} while ( sc != c );
-		} while ( Q_stricmpn( s, find, len ) != 0 );
-		s--;
-	}
-	return s;
-}
 
 /*
 ** GLW_InitExtensions
@@ -481,7 +451,7 @@ void GLimp_Init( void ) {
 
 	SDL_Rect deskropRect;
 	sdl_GetSafeDesktopRect(&deskropRect);
-	R_ConfigureVideoMode(deskropRect.w, deskropRect.h);
+	RE_ConfigureVideoMode(deskropRect.w, deskropRect.h);
 
 	Uint32 windowFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
 	if (glInfo.winFullscreen) {
@@ -613,13 +583,3 @@ void GLimp_LogComment( char *comment ) {
 		fprintf( glw_state.log_fp, "%s", comment );
 	}
 }
-
-void GLimp_RenderThreadWrapper( void *stub ) {}
-qboolean GLimp_SpawnRenderThread( void ( *function )( void ) ) {
-	return qfalse;
-}
-void *GLimp_RendererSleep( void ) {
-	return NULL;
-}
-void GLimp_FrontEndSleep( void ) {}
-void GLimp_WakeRenderer( void *data ) {}

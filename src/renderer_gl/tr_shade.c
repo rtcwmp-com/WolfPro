@@ -1415,6 +1415,7 @@ void RB_StageIteratorLightmappedMultitexture( void ) {
 
 	input = &tess;
 
+
 	//
 	// log this call
 	//

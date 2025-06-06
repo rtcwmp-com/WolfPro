@@ -247,6 +247,7 @@ void QDECL Com_Error( int code, const char *fmt, ... ) {
 		}
 	}
 #endif
+	
 
 	// when we are running automated scripts, make sure we
 	// know if anything failed
@@ -276,6 +277,10 @@ void QDECL Com_Error( int code, const char *fmt, ... ) {
 	va_start( argptr,fmt );
 	Q_vsnprintf( com_errorMessage, sizeof( com_errorMessage ), fmt, argptr );
 	va_end( argptr );
+
+	if(code == ERR_FATAL && Sys_IsDebugging()){
+		Sys_DebugBreak();
+	}
 
 	if ( code != ERR_DISCONNECT && code != ERR_NEED_CD ) {
 		Cvar_Set( "com_errorMessage", com_errorMessage );
@@ -2493,7 +2498,7 @@ void Com_Init( char *commandLine ) {
 	//
 	// init commands and vars
 	//
-	com_maxfps = Cvar_Get( "com_maxfps", "85", CVAR_ARCHIVE | CVAR_LATCH );
+	com_maxfps = Cvar_Get( "com_maxfps", "85", CVAR_ARCHIVE );
 	com_blood = Cvar_Get( "com_blood", "1", CVAR_ARCHIVE );
 
 	com_developer = Cvar_Get( "developer", "0", CVAR_TEMP );
@@ -2642,7 +2647,7 @@ void Com_WriteConfiguration( void ) {
 
 	// bk001119 - tentative "not needed for dedicated"
 #ifndef DEDICATED
-	fs = Cvar_Get( "fs_game", "", CVAR_INIT | CVAR_SYSTEMINFO );
+	fs = Cvar_Get( "fs_game", "rtcwmod", CVAR_INIT | CVAR_SYSTEMINFO );
 	if ( UI_usesUniqueCDKey() && fs && fs->string[0] != 0 ) {
 		Com_WriteCDKey( fs->string, &cl_cdkey[16] );
 	} else {
@@ -2788,6 +2793,11 @@ void Com_Frame( void ) {
 	} else {
 		minMsec = 1;
 	}
+#ifndef DEDICATED
+	if(!CL_IsFrameSleepEnabled()){
+		minMsec = 0; //sleep is already happening in the driver for vsync
+	}
+#endif
 	do {
 		com_frameTime = Com_EventLoop();
 		if ( lastTime > com_frameTime ) {
@@ -3405,4 +3415,45 @@ void Field_CompleteCommand( field_t *field ) {
 	// run through again, printing matches
 	Cmd_CommandCompletion( PrintMatches );
 	Cvar_CommandCompletion( PrintMatches );
+}
+
+
+
+static unsigned int CRC32_table[256];
+static qbool CRC32_tableCreated = qfalse;
+
+
+void CRC32_Begin( unsigned int* crc )
+{
+	if ( !CRC32_tableCreated )
+	{
+		for ( int i = 0; i < 256; i++ )
+		{
+			unsigned int c = i;
+			for ( int j = 0; j < 8; j++ )
+				c = c & 1 ? (c >> 1) ^ 0xEDB88320UL : c >> 1;
+			CRC32_table[i] = c;
+		}
+		CRC32_tableCreated = qtrue;
+	}
+
+	*crc = 0xFFFFFFFFUL;
+}
+
+
+void CRC32_ProcessBlock( unsigned int* crc, const void* buffer, unsigned int length )
+{
+	unsigned int hash = *crc;
+	const unsigned char* buf = (const unsigned char*)buffer;
+	while ( length-- )
+	{
+		hash = CRC32_table[(hash ^ *buf++) & 0xFF] ^ (hash >> 8);
+	}
+	*crc = hash;
+}
+
+
+void CRC32_End( unsigned int* crc )
+{
+	*crc ^= 0xFFFFFFFFUL;
 }

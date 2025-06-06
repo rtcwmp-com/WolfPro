@@ -26,27 +26,27 @@ LIST(REMOVE_ITEM COMMON_SRC ${COMMON_SRC_REMOVE})
 
 # Platform specific code for server and client
 if(UNIX)
-	LIST(APPEND PLATFORM_SHARED_SRC "src/unix/unix_main.c")
-	LIST(APPEND PLATFORM_SHARED_SRC "src/unix/unix_net.c")
-	LIST(APPEND PLATFORM_SHARED_SRC "src/unix/unix_shared.c")
-	LIST(APPEND PLATFORM_SHARED_SRC "src/unix/linux_common.c")
-	LIST(APPEND PLATFORM_SHARED_SRC "src/unix/linux_signals.c")
-	LIST(APPEND PLATFORM_SHARED_SRC "src/unix/snapvector.nasm")
-	LIST(APPEND PLATFORM_CLIENT_SRC ${SDL_SRC})
-	LIST(APPEND PLATFORM_CLIENT_SRC "src/unix/linux_qgl.c")
+	LIST(APPEND COMMON_SRC "src/unix/unix_main.c")
+	LIST(APPEND COMMON_SRC "src/unix/unix_net.c")
+	LIST(APPEND COMMON_SRC "src/unix/unix_shared.c")
+	LIST(APPEND COMMON_SRC "src/unix/linux_common.c")
+	LIST(APPEND COMMON_SRC "src/unix/linux_signals.c")
+	LIST(APPEND COMMON_SRC "src/unix/snapvector.nasm")
+	LIST(APPEND CLIENT_SRC ${SDL_SRC})
+	LIST(APPEND CLIENT_SRC "src/unix/linux_qgl.c")
 elseif(WIN32)
-	LIST(APPEND PLATFORM_SHARED_SRC "src/win32/win_syscon.c")
-	LIST(APPEND PLATFORM_SHARED_SRC "src/win32/win_shared.c")
-	LIST(APPEND PLATFORM_SHARED_SRC "src/win32/win_main.c")
-	LIST(APPEND PLATFORM_SHARED_SRC "src/win32/win_net.c")
-	LIST(APPEND PLATFORM_SHARED_SRC "src/win32/win_wndproc.c")
-	LIST(APPEND PLATFORM_CLIENT_SRC "src/win32/win_snd.c")
-	LIST(APPEND PLATFORM_CLIENT_SRC "src/win32/win_qgl.c")
-	LIST(APPEND PLATFORM_CLIENT_SRC "src/win32/win_input.c")
-	LIST(APPEND PLATFORM_CLIENT_SRC "src/win32/win_glimp.c")
-	LIST(APPEND PLATFORM_CLIENT_SRC "src/win32/win_gamma.c")
-	LIST(APPEND PLATFORM_SHARED_SRC "src/win32/winquake.rc")
+	LIST(APPEND COMMON_SRC "src/win32/win_syscon.c")
+	LIST(APPEND COMMON_SRC "src/win32/win_shared.c")
+	LIST(APPEND COMMON_SRC "src/win32/win_main.c")
+	LIST(APPEND COMMON_SRC "src/win32/win_net.c")
+	LIST(APPEND COMMON_SRC "src/win32/win_wndproc.c")
+	LIST(APPEND CLIENT_SRC "src/win32/win_snd.c")
+	LIST(APPEND CLIENT_SRC "src/win32/win_input.c")
+	LIST(APPEND COMMON_SRC "src/win32/winquake.rc")
+	#LIST(APPEND COMMON_SRC "src/win32/client.manifest")
 endif()
+
+
 
 FILE(GLOB SERVER_SRC
 	"src/server/*.c"
@@ -61,7 +61,7 @@ FILE(GLOB SERVER_SRC
 
 LIST(APPEND SERVER_SRC ${QCOMMON})
 
-FILE(GLOB CLIENT_SRC
+FILE(GLOB CLIENT_COMMON_SRC
 	"src/server/*.c"
 	"src/server/*.h"
 	"src/client/*.c"
@@ -71,6 +71,11 @@ FILE(GLOB CLIENT_SRC
 	"src/botlib/l_*.c"
 	"src/botlib/l_*.h"
 )
+
+LIST(APPEND CLIENT_SRC ${CLIENT_COMMON_SRC})
+
+
+
 
 LIST(APPEND CLIENT_SRC ${QCOMMON})
 
@@ -147,13 +152,46 @@ FILE(GLOB JPEG_FILES
 
 FILE(GLOB RENDERER_COMMON
 	"src/game/q_shared.h"
+	"src/renderer_common/*.h"
 )
-
-LIST(REMOVE_ITEM RENDERER_COMMON )
-
 
 FILE(GLOB RENDERER_FILES
-	"src/renderer/*.c"
-	"src/renderer/*.h"
+	"src/renderer_gl/*.c"
+	"src/renderer_gl/*.h"
 )
 
+FILE(GLOB RENDERER_VK_FILES
+	"src/renderer_vk/*.c"
+	"src/renderer_vk/*.h"
+)
+
+FILE(GLOB RENDERER_VK_VMA_FILES
+	"src/renderer_vk/vk_vma_alloc.cpp"
+)
+
+FILE(GLOB RENDERER_CIMGUI_FILES
+	"src/cimgui/*.cpp"
+	"src/cimgui/*.h"
+	"src/cimgui/imgui/*.cpp"
+	"src/cimgui/imgui/*.h"
+
+)
+
+set(CLIENT_SRC_VK ${CLIENT_SRC})
+set(CLIENT_SRC_GL ${CLIENT_SRC})
+LIST(APPEND CLIENT_SRC_GL
+	"src/win32/win_glimp.c"
+	"src/win32/win_qgl.c"
+	"src/win32/win_gamma.c"
+)
+
+LIST(APPEND CLIENT_SRC_VK
+	"src/win32/win_vkimp.c"
+)
+
+message(STATUS ${CLIENT_SRC_GL})
+LIST(REMOVE_ITEM CLIENT_SRC_GL
+	"${CMAKE_CURRENT_SOURCE_DIR}/src/client/cl_imgui.c"
+)
+
+message(STATUS ${CLIENT_SRC_GL})

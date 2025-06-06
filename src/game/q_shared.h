@@ -105,6 +105,7 @@ If you have questions concerning this license or the applicable additional terms
 #include <time.h>
 #include <ctype.h>
 #include <limits.h>
+#include <stdint.h>
 
 #endif
 
@@ -303,6 +304,8 @@ typedef int clipHandle_t;
 #define max( x, y ) ( ( ( x ) > ( y ) ) ? ( x ) : ( y ) )
 #define min( x, y ) ( ( ( x ) < ( y ) ) ? ( x ) : ( y ) )
 #endif
+
+#define ARRAY_LEN(x)		(sizeof(x) / sizeof(*(x)))
 
 // angle indexes
 #define PITCH               0       // up / down
@@ -667,6 +670,7 @@ void ProjectPointOntoVector( vec3_t point, vec3_t vStart, vec3_t vEnd, vec3_t vP
 //=============================================
 
 float Com_Clamp( float min, float max, float value );
+int Com_ClampInt( int min, int max, int value );
 
 char    *COM_SkipPath( char *pathname );
 void    COM_StripExtension( const char *in, char *out );
@@ -762,6 +766,7 @@ char    *Q_strrchr( const char* string, int c );
 // buffer size safe library replacements
 void    Q_strncpyz( char *dest, const char *src, int destsize );
 void    Q_strcat( char *dest, int size, const char *src );
+const char *Q_stristr( const char *s, const char *find );
 
 // strlen that discounts Quake color sequences
 int Q_PrintStrlen( const char *string );

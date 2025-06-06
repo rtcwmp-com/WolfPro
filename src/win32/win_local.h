@@ -91,6 +91,7 @@ void Conbuf_AppendText( const char *msg );
 void SNDDMA_Activate( void );
 int  SNDDMA_InitDS();
 
+#define MAX_MONITOR_COUNT 16
 typedef struct
 {
 
@@ -106,9 +107,20 @@ typedef struct
 	// when we get a windows message, we store the time off so keyboard processing
 	// can know the exact time of an event
 	unsigned sysMsgTime;
+
+	int			monitor;		// 0-based index of the monitor currently used for display
+	int			primaryMonitor;	// 0-based index of the primary monitor
+	int			monitorCount;
+	RECT		monitorRects[MAX_MONITOR_COUNT];
+	HMONITOR	hMonitors[MAX_MONITOR_COUNT];
+
+	qbool		inputInitialized;
+	qbool		duringCreateWindow;	// qtrue during the call to CreateWindow
+
 } WinVars_t;
 
 extern WinVars_t g_wv;
+
 
 #ifdef DOOMSOUND    ///// (SA) DOOMSOUND
 #ifdef __cplusplus

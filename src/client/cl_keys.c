@@ -197,7 +197,7 @@ keyname_t keynames_d[] =    //deutsch
 	{"EINGABETASTE", K_ENTER},
 	{"ESC", K_ESCAPE},
 	{"LEERTASTE", K_SPACE},
-	{"RÜCKTASTE", K_BACKSPACE},
+	{"Rï¿½CKTASTE", K_BACKSPACE},
 	{"PFEILT.AUF", K_UPARROW},
 	{"PFEILT.UNTEN", K_DOWNARROW},
 	{"PFEILT.LINKS", K_LEFTARROW},
@@ -450,9 +450,9 @@ keyname_t keynames_s[] =  //Spanish
 
 	{"ALT", K_ALT},
 	{"CTRL", K_CTRL},
-	{"MAYÚS", K_SHIFT},
+	{"MAYï¿½S", K_SHIFT},
 
-	{"BLOQ_MAYÚS", K_CAPSLOCK},
+	{"BLOQ_MAYï¿½S", K_CAPSLOCK},
 
 	{"F1", K_F1},
 	{"F2", K_F2},
@@ -469,16 +469,16 @@ keyname_t keynames_s[] =  //Spanish
 
 	{"INSERT", K_INS},
 	{"SUPR", K_DEL},
-	{"AV_PÁG", K_PGDN},
-	{"RE_PÁG", K_PGUP},
+	{"AV_Pï¿½G", K_PGDN},
+	{"RE_Pï¿½G", K_PGUP},
 	{"INICIO", K_HOME},
 	{"FIN", K_END},
 
-	{"RATÓN1", K_MOUSE1},
-	{"RATÓN2", K_MOUSE2},
-	{"RATÓN3", K_MOUSE3},
-	{"RATÓN4", K_MOUSE4},
-	{"RATÓN5", K_MOUSE5},
+	{"RATï¿½N1", K_MOUSE1},
+	{"RATï¿½N2", K_MOUSE2},
+	{"RATï¿½N3", K_MOUSE3},
+	{"RATï¿½N4", K_MOUSE4},
+	{"RATï¿½N5", K_MOUSE5},
 
 	{"RUEDA_HACIA_ARRIBA",   K_MWHEELUP },
 	{"RUEDA_HACIA_ABAJO",    K_MWHEELDOWN },
@@ -535,13 +535,13 @@ keyname_t keynames_s[] =  //Spanish
 
 	{"INICIO(NUM)",          K_KP_HOME },
 	{"ARRIBA(NUM)",      K_KP_UPARROW },
-	{"RE_PÁG(NUM)",          K_KP_PGUP },
+	{"RE_Pï¿½G(NUM)",          K_KP_PGUP },
 	{"IZQUIERDA(NUM)",   K_KP_LEFTARROW },
 	{"5(NUM)",           K_KP_5 },
 	{"DERECHA(NUM)", K_KP_RIGHTARROW },
 	{"FIN(NUM)",         K_KP_END },
 	{"ABAJO(NUM)",   K_KP_DOWNARROW },
-	{"AV_PÁG(NUM)",          K_KP_PGDN },
+	{"AV_Pï¿½G(NUM)",          K_KP_PGDN },
 	{"INTRO(NUM)",       K_KP_ENTER },
 	{"INS(NUM)",         K_KP_INS },
 	{"SUPR(NUM)",            K_KP_DEL },
@@ -569,7 +569,7 @@ keyname_t keynames_i[] =  //Italian
 	{"SPAZIO", K_SPACE},
 	{"BACKSPACE", K_BACKSPACE},
 	{"FRECCIASU", K_UPARROW},
-	{"FRECCIAGIÙ", K_DOWNARROW},
+	{"FRECCIAGIï¿½", K_DOWNARROW},
 	{"FRECCIASX", K_LEFTARROW},
 	{"FRECCIADX", K_RIGHTARROW},
 
@@ -594,7 +594,7 @@ keyname_t keynames_i[] =  //Italian
 
 	{"INS", K_INS},
 	{"CANC", K_DEL},
-	{"PAGGIÙ", K_PGDN},
+	{"PAGGIï¿½", K_PGDN},
 	{"PAGGSU", K_PGUP},
 	{"HOME", K_HOME},
 	{"FINE", K_END},
@@ -606,7 +606,7 @@ keyname_t keynames_i[] =  //Italian
 	{"MOUSE5", K_MOUSE5},
 
 	{"ROTELLASU",    K_MWHEELUP },
-	{"ROTELLAGIÙ",   K_MWHEELDOWN },
+	{"ROTELLAGIï¿½",   K_MWHEELDOWN },
 
 	{"JOY1", K_JOY1},
 	{"JOY2", K_JOY2},
@@ -665,8 +665,8 @@ keyname_t keynames_i[] =  //Italian
 	{"TN_5",         K_KP_5 },
 	{"TN_FRECCIA_DX",    K_KP_RIGHTARROW },
 	{"TN_FINE",          K_KP_END },
-	{"TN_FRECCIAGIÙ",    K_KP_DOWNARROW },
-	{"TN_PAGGIÙ",            K_KP_PGDN },
+	{"TN_FRECCIAGIï¿½",    K_KP_DOWNARROW },
+	{"TN_PAGGIï¿½",            K_KP_PGDN },
 	{"TN_INVIO",     K_KP_ENTER },
 	{"TN_INS",           K_KP_INS },
 	{"TN_CANC",          K_KP_DEL },
@@ -679,7 +679,7 @@ keyname_t keynames_i[] =  //Italian
 
 	{"PAUSA", K_PAUSE},
 
-	{"ò", ';'},   // because a raw semicolon seperates commands
+	{"ï¿½", ';'},   // because a raw semicolon seperates commands
 
 	{"COMMAND", K_COMMAND},  //mac
 
@@ -816,7 +816,7 @@ void Field_Paste( field_t *edit ) {
 		Field_CharEvent( edit, cbd[i] );
 	}
 
-	free( cbd );
+	Z_Free( cbd );
 }
 
 /*
@@ -1649,6 +1649,10 @@ void CL_KeyEvent( int key, qboolean down, unsigned time ) {
 	char cmd[1024];
 	qboolean bypassMenu = qfalse;       // NERVE - SMF
 
+	if(CL_ImGUI_KeyEvent(key, down, keys[key].binding)){
+		return;
+	}
+	
 	// update auto-repeat status and BUTTON_ANY status
 	keys[key].down = down;
 
@@ -1875,6 +1879,11 @@ Normal keyboard characters, already shifted / capslocked / etc
 void CL_CharEvent( int key ) {
 	// the console key should never be used as a char
 	if ( key == '`' || key == '~' ) {
+		return;
+	}
+
+	if ( cls.keyCatchers & KEYCATCH_IMGUI ) {
+		CL_ImGUI_CharEvent(key);
 		return;
 	}
 

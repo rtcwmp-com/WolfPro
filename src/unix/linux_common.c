@@ -48,3 +48,10 @@ void Com_Memset( void* dest, const int val, const size_t count ) {
 	memset( dest, val, count );
 }
 
+qbool Sys_IsDebugging(void){
+	return qfalse;
+}
+
+void Sys_DebugBreak(void){
+	return;
+}

@@ -32,7 +32,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "../game/q_shared.h"
 #include "../qcommon/qcommon.h"
-#include "../renderer/tr_public.h"
+#include "../renderer_common/tr_public.h"
 #include "../ui/ui_public.h"
 #include "keys.h"
 #include "snd_public.h"
@@ -633,4 +633,22 @@ void CL_Netchan_Transmit( netchan_t *chan, msg_t* msg ); //int length, const byt
 void CL_Netchan_TransmitNextFragment( netchan_t *chan );
 qboolean CL_Netchan_Process( netchan_t *chan, msg_t *msg );
 
+#ifdef RTCW_VULKAN
+//cl_imgui.c
+void CL_ImGUI_Init(void);
+void CL_ImGUI_Shutdown(void);
+qboolean CL_ImGUI_KeyEvent(int k, qboolean down, const char* cmd);
+void CL_ImGUI_CharEvent(int key);
+void CL_ImGUI_MouseEvent(int dx, int dy, int time);
+void CL_ImGUI_Frame(void);
+#else
+inline void CL_ImGUI_Init(void) {}
+inline void CL_ImGUI_Shutdown(void) {}
+inline qboolean CL_ImGUI_KeyEvent(int k, qboolean down, const char* cmd) { return qfalse;}
+inline void CL_ImGUI_CharEvent(int key) {}
+inline void CL_ImGUI_MouseEvent(int dx, int dy, int time) {}
+inline void CL_ImGUI_Frame(void) {}
+
+#endif //NO RTCW_VULKAN
+#define KEYCATCH_IMGUI          0x0010
 #endif

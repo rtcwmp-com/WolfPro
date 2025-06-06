@@ -34,8 +34,35 @@ If you have questions concerning this license or the applicable additional terms
 
 //#define	PRE_RELEASE_DEMO
 
-//============================================================================
+#if defined(_MSC_VER)
+#include <sal.h>
+#define PRINTF_FORMAT_STRING _Printf_format_string_
+#else
+#define PRINTF_FORMAT_STRING
+#endif
 
+
+qbool Sys_IsDebugging(void);
+
+#ifdef _MSC_VER
+	#define Sys_DebugBreak __debugbreak
+	
+#else
+	void Sys_DebugBreak(void);
+#endif
+
+#ifdef _DEBUG
+#define Q_assert(x) if(!(x)) \
+						if(Sys_IsDebugging()) \
+						 	 Sys_DebugBreak(); \
+						else assert(x);
+#else
+#define Q_assert(x)
+#endif
+					
+
+//============================================================================
+#define CLIENT_WINDOW_TITLE "Wolfenstein"
 //
 // msg.c
 //
@@ -926,6 +953,8 @@ void CL_FlushMemory( void );
 void CL_StartHunkUsers( void );
 // start all the client stuff using the hunk
 
+qboolean CL_IsFrameSleepEnabled(void);
+
 
 #ifndef UPDATE_SERVER
 void CL_CheckAutoUpdate( void );
@@ -1034,6 +1063,7 @@ void    Sys_Print( const char *msg );
 // Sys_Milliseconds should only be used for profiling purposes,
 // any game related timing information should come from event timestamps
 int     Sys_Milliseconds( void );
+int64_t Sys_Microseconds(void);
 
 void    Sys_SnapVector( float *v );
 
@@ -1064,6 +1094,8 @@ char    *Sys_DefaultCDPath( void );
 char    *Sys_DefaultBasePath( void );
 char    *Sys_DefaultInstallPath( void );
 char    *Sys_DefaultHomePath( void );
+
+void Sys_DebugPrintf( PRINTF_FORMAT_STRING const char* fmt, ... );
 
 char **Sys_ListFiles( const char *directory, const char *extension, char *filter, int *numfiles, qboolean wantsubs );
 void    Sys_FreeFileList( char **list );
@@ -1203,6 +1235,15 @@ extern huffman_t clientHuffTables;
 #else
 #error unknown OS
 #endif
+
+void CRC32_Begin( unsigned int* crc );
+void CRC32_ProcessBlock( unsigned int* crc, const void* buffer, unsigned int length );
+void CRC32_End( unsigned int* crc );
+
+// relative to window's client rectangle
+void	Sys_GetCursorPosition( int* x, int* y );
+
+qbool Sys_IsMinimized(void);
 
 #endif // _QCOMMON_H_
 

@@ -1300,6 +1300,10 @@ void RE_EndRegistration( void ) {
 	}
 }
 
+qboolean RE_IsFrameSleepEnabled(void){
+	return qtrue;
+}
+
 
 /*
 @@@@@@@@@@@@@@@@@@@@@
@@ -1366,6 +1370,7 @@ refexport_t *GetRefAPI( int apiVersion, refimport_t *rimp ) {
 	re.RegisterFont     = RE_RegisterFont;
 	re.RemapShader      = R_RemapShader;
 	re.GetEntityToken   = R_GetEntityToken;
+	re.IsFrameSleepEnabled = RE_IsFrameSleepEnabled;
 
 	return &re;
 }

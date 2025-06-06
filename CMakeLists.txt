@@ -44,7 +44,7 @@ option(BUNDLED_LIBS_DEFAULT		"Default value for bundled libs"								ON)
 
 cmake_dependent_option(BUILD_CLIENT_MOD			"Build the client side mod libraries"							ON "BUILD_MOD" OFF)
 cmake_dependent_option(BUILD_SERVER_MOD			"Build the server side mod libraries"							ON "BUILD_MOD" OFF)
-cmake_dependent_option(BUILD_MOD_PK3			"Pack the mod libraries and game scripts into mod pk3"			OFF "BUILD_CLIENT_MOD" OFF)
+cmake_dependent_option(BUILD_MOD_PK3			"Pack the mod libraries and game scripts into mod pk3"			ON "BUILD_CLIENT_MOD" OFF)
 
 # Optional features
 option(FORCE_DEBUG				"Force enable debug macros"								OFF)
@@ -52,6 +52,8 @@ option(ENABLE_ASAN				"Enable AddressSanitizer on clang"						OFF)
 option(ENABLE_MULTI_BUILD		"Enable binary names to include arch"					ON)
 
 cmake_dependent_option(FEATURE_WINDOWS_CONSOLE	"Build win32 executables with Windows console"	OFF "WIN32" OFF)
+
+set(INSTALL_DEFAULT_BASEDIR "" CACHE STRING "")
 
 #-----------------------------------------------------------------
 # Setup

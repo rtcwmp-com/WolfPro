@@ -42,7 +42,7 @@ If you have questions concerning this license or the applicable additional terms
 ** related functions that are relevant ONLY to win_glimp.c
 */
 #include <assert.h>
-#include "../renderer/tr_local.h"
+#include "../renderer_common/tr_local.h"
 #include "../qcommon/qcommon.h"
 #include "resource.h"
 #include "glw_win.h"

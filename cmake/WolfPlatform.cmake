@@ -82,6 +82,12 @@ elseif(WIN32)
 
 	target_link_libraries(os_libraries INTERFACE wsock32 ws2_32 psapi winmm user32 gdi32 advapi32 shell32)
 
+	if(CMAKE_BUILD_TYPE MATCHES "Debug")
+		target_link_libraries(os_libraries INTERFACE libcmtd)
+	else()
+		target_link_libraries(os_libraries INTERFACE libcmt)
+	endif()
+	
 	if(BUNDLED_SDL)
 		# Libraries for Win32 native and MinGW required by static SDL2 build
 		target_link_libraries(os_libraries INTERFACE user32 gdi32 imm32 ole32 oleaut32 version uuid hid setupapi)
@@ -118,14 +124,34 @@ elseif(WIN32)
 				CMAKE_C_FLAGS_DEBUG
 				CMAKE_C_FLAGS_RELEASE
 			)
+			# message("Compiler flagS: ${CompilerFlags}")
+			# if(CMAKE_BUILD_TYPE MATCHES "Debug")
+			# set_property(TARGET wolfmp PROPERTY
+            #  MSVC_RUNTIME_LIBRARY "MultiThreadedDebug")
+			# else()
+			# set_property(TARGET wolfmp PROPERTY
+			# 		MSVC_RUNTIME_LIBRARY "MultiThreaded")
+			# endif()
 
 			foreach(CompilerFlag ${CompilerFlags})
-				string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
+				message("Compiler flag: ${CompilerFlag} ${${CompilerFlag}}")
+				if(CMAKE_BUILD_TYPE MATCHES "Debug")
+					string(REPLACE "/MDd" "/MTd" ${CompilerFlag} "${${CompilerFlag}}")
+				else()
+					string(REPLACE "/MD" "/MT" ${CompilerFlag} "${${CompilerFlag}}")
+				endif()
 			endforeach()
-
-			set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:MSVCRT.lib /NODEFAULTLIB:MSVCRTD.lib")
-			set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /NODEFAULTLIB:MSVCRT.lib /NODEFAULTLIB:MSVCRTD.lib")
-
+			foreach(CompilerFlag ${CompilerFlags})
+				message("Compiler flag after: ${CompilerFlag} ${${CompilerFlag}}")
+			endforeach()
+			if(CMAKE_BUILD_TYPE MATCHES "Debug")
+				set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:MSVCRTD.lib /NODEFAULTLIB:MSVCRT.lib /NODEFAULTLIB:libcmt.lib")
+				set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /NODEFAULTLIB:MSVCRTD.lib /NODEFAULTLIB:MSVCRT.lib /NODEFAULTLIB:libcmt.lib")
+			else()
+				set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /NODEFAULTLIB:MSVCRT.lib /NODEFAULTLIB:MSVCRTD.lib /NODEFAULTLIB:libcmtd.lib")
+				set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /NODEFAULTLIB:MSVCRT.lib /NODEFAULTLIB:MSVCRTD.lib /NODEFAULTLIB:libcmtd.lib")
+			endif()
+			message("Done ")
 
 		# Should we always use this?
 		# add_definitions(-DC_ONLY)

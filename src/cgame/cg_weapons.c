@@ -673,6 +673,8 @@ static void CG_DynamiteTrail( centity_t *ent, const weaponInfo_t *wi ) {
 
 	BG_EvaluateTrajectory( &ent->currentState.pos, cg.time, origin );
 
+	origin[2] += 30.0f;
+
 	if ( ent->currentState.teamNum < 4 ) {
 		mult = 0.004f * ( cg.time - ent->currentState.effect1Time ) / 30000.0f;
 		trap_R_AddLightToScene( origin, 200 + 300 * fabs( sin( ( cg.time - ent->currentState.effect1Time ) * mult ) ),1.0,0,0, REF_FORCE_DLIGHT );

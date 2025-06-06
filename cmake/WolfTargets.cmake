@@ -4,7 +4,8 @@
 add_library(shared_libraries INTERFACE)
 
 # All client only libraries
-add_library(client_libraries INTERFACE)
+add_library(client_libraries_vk INTERFACE)
+add_library(client_libraries_gl INTERFACE)
 
 # All server only libraries
 add_library(server_libraries INTERFACE)
@@ -16,6 +17,7 @@ add_library(engine_libraries INTERFACE)
 add_library(renderer_libraries INTERFACE)
 
 add_library(renderer_gl1_libraries INTERFACE)
+add_library(renderer_vk_libraries INTERFACE)
 
 # Mod shared libraries
 add_library(mod_libraries INTERFACE)

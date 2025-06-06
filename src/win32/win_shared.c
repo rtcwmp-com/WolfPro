@@ -40,6 +40,16 @@ If you have questions concerning this license or the applicable additional terms
 #include <io.h>
 #include <conio.h>
 
+qbool Sys_IsDebugging(void){
+	return IsDebuggerPresent();
+}
+
+#ifndef _MSC_VER
+void Sys_DebugBreak(void){
+	DebugBreak();
+}
+#endif
+
 /*
 ================
 Sys_Milliseconds
@@ -59,6 +69,22 @@ int Sys_Milliseconds( void ) {
 	return sys_curtime;
 }
 
+int64_t Sys_Microseconds(void){
+	static qbool initialized = qfalse;
+	static LARGE_INTEGER start;
+	static LARGE_INTEGER freq;
+
+	if (!initialized) {
+		initialized = qtrue;
+		QueryPerformanceFrequency(&freq);
+		QueryPerformanceCounter(&start);
+	}
+
+	LARGE_INTEGER now;
+	QueryPerformanceCounter(&now);
+
+	return ((now.QuadPart - start.QuadPart) * 1000000LL) / freq.QuadPart;
+}
 /*
 ================
 Sys_SnapVector
@@ -119,4 +145,8 @@ char *Sys_GetCurrentUser( void ) {
 	}
 
 	return s_userName;
+}
+
+qbool Sys_IsMinimized(void){
+	return !!IsIconic(g_wv.hWnd);
 }

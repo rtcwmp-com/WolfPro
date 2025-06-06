@@ -2,8 +2,8 @@
 # Common
 #-----------------------------------------------------------------
 	#SET(CMAKE_BUILD_TYPE "Debug")
-	SET(CMAKE_BUILD_TYPE "Release")
-	MESSAGE("No CMAKE_BUILD_TYPE specified, defaulting to ${CMAKE_BUILD_TYPE}")
+	#SET(CMAKE_BUILD_TYPE "Release")
+	#MESSAGE("No CMAKE_BUILD_TYPE specified, defaulting to ${CMAKE_BUILD_TYPE}")
 
 string(LENGTH "${CMAKE_SOURCE_DIR}/" SOURCE_PATH_SIZE)
 add_definitions("-DSOURCE_PATH_SIZE=${SOURCE_PATH_SIZE}")
@@ -93,10 +93,7 @@ endif()
 # If we are in windows clean these so the packaging is cleaner
 # these need to be set before any other processing happens!
 if(WIN32)
-	set(INSTALL_DEFAULT_BASEDIR ".")
-	set(INSTALL_DEFAULT_BINDIR ".")
-	set(INSTALL_DEFAULT_SHAREDIR ".")
-	set(INSTALL_DEFAULT_MODDIR ".")
+	
 else()
 	set(INSTALL_DEFAULT_BASEDIR ""					CACHE STRING "Appended to CMAKE_INSTALL_PREFIX")
 	set(INSTALL_DEFAULT_BINDIR "bin"				CACHE STRING "Appended to CMAKE_INSTALL_PREFIX")

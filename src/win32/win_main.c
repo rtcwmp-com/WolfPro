@@ -1140,6 +1140,41 @@ void Sys_Init( void ) {
 
 int totalMsec, countMsec;
 
+void SetThreadName(void){
+	typedef BOOL (WINAPI *pfn_SetThreadDescription)( _In_ HANDLE hThread, _In_ PCWSTR lpThreadDescription);
+	HINSTANCE libHandle = LoadLibrary("kernel32.dll");
+
+	if(libHandle != NULL){
+		pfn_SetThreadDescription pfnSetThreadDescription = GetProcAddress(libHandle, "SetThreadDescription");
+
+		if(pfnSetThreadDescription != NULL){
+			pfnSetThreadDescription(GetCurrentThread(), L"Main");
+		}
+
+		FreeLibrary(libHandle);
+	}
+}
+
+
+
+void SetDpiAware(void){
+	typedef BOOL (WINAPI *pfn_SetProcessDpiAwarenessContext)( _In_ DPI_AWARENESS_CONTEXT value);
+	HINSTANCE libHandle = LoadLibrary("user32.dll");
+
+	if(libHandle != NULL){
+		pfn_SetProcessDpiAwarenessContext pfnDpiAware = GetProcAddress(libHandle, "SetProcessDpiAwarenessContext");
+
+		if(pfnDpiAware == NULL){
+			SetProcessDPIAware();
+		}else{
+			pfnDpiAware(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE);
+		}
+
+		FreeLibrary(libHandle);
+	}else{
+		SetProcessDPIAware();
+	}
+}
 /*
 ==================
 WinMain
@@ -1155,14 +1190,23 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 		return 0;
 	}
 
+	// no abort/retry/fail errors
+	SetErrorMode( SEM_FAILCRITICALERRORS );
+
+	SetThreadName();
+
+	SetDpiAware();
+
+	
+
+
 	g_wv.hInstance = hInstance;
 	Q_strncpyz( sys_cmdline, lpCmdLine, sizeof( sys_cmdline ) );
 
 	// done before Com/Sys_Init since we need this for error output
 	Sys_CreateConsole();
 
-	// no abort/retry/fail errors
-	SetErrorMode( SEM_FAILCRITICALERRORS );
+
 
 	// get the initial time base
 	Sys_Milliseconds();
@@ -1224,3 +1268,29 @@ char *Sys_DefaultInstallPath( void ) {
 	return Sys_Cwd();
 }
 
+
+void Sys_DebugPrintf( PRINTF_FORMAT_STRING const char* fmt, ... )
+{
+    char buffer[1024];
+    va_list argptr;
+    va_start(argptr, fmt);
+    const int len = vsprintf(buffer, fmt, argptr);
+    va_end(argptr);
+
+    if (len < 0)
+        return;
+    if (len >= sizeof(buffer))
+        buffer[sizeof(buffer) - 1] = '\0';
+
+    OutputDebugStringA(buffer);
+}
+
+
+void Sys_GetCursorPosition( int* x, int* y )
+{
+	POINT point;
+	GetCursorPos( &point );
+	ScreenToClient( g_wv.hWnd, &point );
+	*x = point.x;
+	*y = point.y;
+}

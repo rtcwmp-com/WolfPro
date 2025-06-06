@@ -696,7 +696,6 @@ Also called by Com_Error
 =================
 */
 void CL_FlushMemory( void ) {
-
 	// shutdown all the client stuff
 	CL_ShutdownAll();
 
@@ -1057,6 +1056,10 @@ CL_Disconnect_f
 ==================
 */
 void CL_Disconnect_f( void ) {
+	if ( Cvar_VariableValue( "sv_running" ) ) {
+		Cvar_Set( "sv_killserver", "1" );
+		return;
+	}
 	SCR_StopCinematic();
 	if ( cls.state != CA_DISCONNECTED && cls.state != CA_CINEMATIC ) {
 		Com_Error( ERR_DISCONNECT, "Disconnected from server" );
@@ -2226,6 +2229,9 @@ void CL_Frame( int msec ) {
 		SCR_DebugGraph( cls.realFrametime * 0.25, 0 );
 	}
 
+	// update the client's own GUI
+	CL_ImGUI_Frame();
+
 	// see if we need to update any userinfo
 	CL_CheckUserinfo();
 
@@ -2651,6 +2657,10 @@ int CL_ScaledMilliseconds( void ) {
 	return Sys_Milliseconds() * com_timescale->value;
 }
 
+qbool CL_IsRecordingVideo(void){
+	return !!cl_avidemo->integer;
+}
+
 /*
 ============
 CL_InitRef
@@ -2693,6 +2703,9 @@ void CL_InitRef( void ) {
 	ri.FS_ListFiles = FS_ListFiles;
 	ri.FS_FileIsInPAK = FS_FileIsInPAK;
 	ri.FS_FileExists = FS_FileExists;
+	ri.FS_FOpenFileWrite = FS_FOpenFileWrite;
+	ri.FS_Write = FS_Write;
+	ri.FS_FCloseFile = FS_FCloseFile;
 	ri.Cvar_Get = Cvar_Get;
 	ri.Cvar_Set = Cvar_Set;
 
@@ -2701,6 +2714,9 @@ void CL_InitRef( void ) {
 	ri.CIN_UploadCinematic = CIN_UploadCinematic;
 	ri.CIN_PlayCinematic = CIN_PlayCinematic;
 	ri.CIN_RunCinematic = CIN_RunCinematic;
+	#ifdef RTCW_VULKAN
+	ri.IsRecordingVideo = CL_IsRecordingVideo;
+	#endif
 
 	ret = GetRefAPI( REF_API_VERSION, &ri );
 
@@ -2997,6 +3013,8 @@ void CL_Init( void ) {
 	CL_InitTranslation();   // NERVE - SMF - localization
 #endif
 
+	CL_ImGUI_Init();
+
 	Com_Printf( "----- Client Initialization Complete -----\n" );
 }
 
@@ -3058,6 +3076,8 @@ void CL_Shutdown( void ) {
 	Cvar_Set( "cl_running", "0" );
 
 	recursive = qfalse;
+
+	CL_ImGUI_Shutdown();
 
 	memset( &cls, 0, sizeof( cls ) );
 
@@ -4649,4 +4669,8 @@ void CL_OpenURL( const char *url ) {
 		return;
 	}
 	Sys_OpenURL( url, qtrue );
+}
+
+qboolean CL_IsFrameSleepEnabled(void){
+	return re.IsFrameSleepEnabled();
 }

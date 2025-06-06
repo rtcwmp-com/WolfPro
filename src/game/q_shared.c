@@ -51,6 +51,16 @@ float Com_Clamp( float min, float max, float value ) {
 	return value;
 }
 
+int Com_ClampInt( int min, int max, int value )
+{
+	if ( value < min ) {
+		return min;
+	}
+	if ( value > max ) {
+		return max;
+	}
+	return value;
+}
 
 /*
 ============
@@ -843,6 +853,38 @@ void Q_strcat( char *dest, int size, const char *src ) {
 		Com_Error( ERR_FATAL, "Q_strcat: already overflowed" );
 	}
 	Q_strncpyz( dest + l1, src, size - l1 );
+}
+
+
+/*
+* Find the first occurrence of find in s.
+*/
+// bk001130 - from cvs1.17 (mkv), const
+// bk001130 - made first argument const
+const char *Q_stristr( const char *s, const char *find ) {
+	register char c, sc;
+	register size_t len;
+
+	if ( ( c = *find++ ) != 0 ) {
+		if ( c >= 'a' && c <= 'z' ) {
+			c -= ( 'a' - 'A' );
+		}
+		len = strlen( find );
+		do
+		{
+			do
+			{
+				if ( ( sc = *s++ ) == 0 ) {
+					return NULL;
+				}
+				if ( sc >= 'a' && sc <= 'z' ) {
+					sc -= ( 'a' - 'A' );
+				}
+			} while ( sc != c );
+		} while ( Q_stricmpn( s, find, len ) != 0 );
+		s--;
+	}
+	return s;
 }
 
 

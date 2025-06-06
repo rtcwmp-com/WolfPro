@@ -114,6 +114,7 @@ typedef struct {
 	void ( *RemapShader )( const char *oldShader, const char *newShader, const char *offsetTime );
 
 	qboolean ( *GetEntityToken )( char *buffer, int size );
+	qboolean (*IsFrameSleepEnabled)(void);
 } refexport_t;
 
 //
@@ -173,6 +174,9 @@ typedef struct {
 	void ( *FS_FreeFileList )( char **filelist );
 	void ( *FS_WriteFile )( const char *qpath, const void *buffer, int size );
 	qboolean ( *FS_FileExists )( const char *file );
+	fileHandle_t (*FS_FOpenFileWrite)( const char *filename );
+	int (*FS_Write)( const void *buffer, int len, fileHandle_t h );
+	void (*FS_FCloseFile)( fileHandle_t f );
 
 	// cinematic stuff
 	void ( *CIN_UploadCinematic )( int handle );

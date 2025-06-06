@@ -29,9 +29,10 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "../client/client.h"
 #include "win_local.h"
-#include "../renderer/tr_public.h"
+#include "../renderer_common/tr_public.h"
 
 WinVars_t g_wv;
+
 
 #ifndef WM_MOUSEWHEEL
 #define WM_MOUSEWHEEL ( WM_MOUSELAST + 1 )  // message that will be supported by the OS
@@ -50,38 +51,6 @@ cvar_t      *r_fullscreen;
 
 LONG WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
 
-static qboolean s_alttab_disabled;
-
-static void WIN_DisableAltTab( void ) {
-	if ( s_alttab_disabled ) {
-		return;
-	}
-
-	if ( !Q_stricmp( Cvar_VariableString( "arch" ), "winnt" ) ) {
-		RegisterHotKey( 0, 0, MOD_ALT, VK_TAB );
-	} else
-	{
-		BOOL old;
-
-		SystemParametersInfo( SPI_SCREENSAVERRUNNING, 1, &old, 0 );
-	}
-	s_alttab_disabled = qtrue;
-}
-
-static void WIN_EnableAltTab( void ) {
-	if ( s_alttab_disabled ) {
-		if ( !Q_stricmp( Cvar_VariableString( "arch" ), "winnt" ) ) {
-			UnregisterHotKey( 0, 0 );
-		} else
-		{
-			BOOL old;
-
-			SystemParametersInfo( SPI_SCREENSAVERRUNNING, 0, &old, 0 );
-		}
-
-		s_alttab_disabled = qfalse;
-	}
-}
 
 /*
 ==================
@@ -102,6 +71,9 @@ static void VID_AppActivate( BOOL fActive, BOOL minimize ) {
 	{
 		g_wv.activeApp = qfalse;
 	}
+	
+	if ( r_fullscreen->integer )
+		SetWindowPos( g_wv.hWnd, fActive ? HWND_TOPMOST : HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE );
 
 	// minimize/restore mouse-capture on demand
 	if ( !g_wv.activeApp ) {
@@ -358,12 +330,6 @@ LONG WINAPI MainWndProc(
 		r_fullscreen = Cvar_Get( "r_fullscreen", "1", CVAR_ARCHIVE | CVAR_LATCH );
 
 		MSH_MOUSEWHEEL = RegisterWindowMessage( "MSWHEEL_ROLLMSG" );
-		if ( r_fullscreen->integer ) {
-			WIN_DisableAltTab();
-		} else
-		{
-			WIN_EnableAltTab();
-		}
 
 		break;
 #if 0
@@ -383,9 +349,6 @@ LONG WINAPI MainWndProc(
 	case WM_DESTROY:
 		// let sound and input know about this?
 		g_wv.hWnd = NULL;
-		if ( r_fullscreen->integer ) {
-			WIN_EnableAltTab();
-		}
 		break;
 
 	case WM_CLOSE:

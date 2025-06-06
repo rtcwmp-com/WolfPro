@@ -419,7 +419,9 @@ CL_MouseEvent
 =================
 */
 void CL_MouseEvent( int dx, int dy, int time ) {
-	if ( cls.keyCatchers & KEYCATCH_UI ) {
+	if(cls.keyCatchers & KEYCATCH_IMGUI ) {
+		CL_ImGUI_MouseEvent(dx, dy, time);
+	} else if ( cls.keyCatchers & KEYCATCH_UI ) {
 
 		// NERVE - SMF - if we just want to pass it along to game
 		if ( cl_bypassMouseInput->integer == 1 ) {
@@ -435,6 +437,7 @@ void CL_MouseEvent( int dx, int dy, int time ) {
 		cl.mouseDx[cl.mouseIndex] += dx;
 		cl.mouseDy[cl.mouseIndex] += dy;
 	}
+	
 }
 
 /*
