@@ -12,7 +12,10 @@ target_link_libraries(wolfded
 	server_libraries
 	engine_libraries
 	os_libraries
+	${CURL_LIBRARIES}
 )
+
+target_include_directories(wolfded PRIVATE ${CURL_INCLUDE_DIR})
 
 if(UNIX)
 	set_target_properties(wolfded

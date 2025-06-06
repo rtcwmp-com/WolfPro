@@ -59,10 +59,33 @@ qbool Sys_IsDebugging(void);
 #else
 #define Q_assert(x)
 #endif
+
+#define RTCW_WINDOWS_EXCEPTION_CODE 0xDEADBEEF
+
+#define DIE(Message) Sys_Crash(Message, __FILE__, __LINE__, __FUNCTION__)
+
+#if defined(_MSC_VER)
+#define ASSERT_OR_DIE(Condition, Message) \
+	do { \
+		if (!(Condition)) { \
+			if (Sys_IsDebuggerAttached()) \
+				__debugbreak(); \
+			else \
+				Sys_Crash(Message, __FILE__, __LINE__, __FUNCTION__); \
+		} \
+	} while (false)
+#else
+#define ASSERT_OR_DIE(Condition, Message) \
+	do { \
+		if (!(Condition)) \
+			Sys_Crash(Message, __FILE__, __LINE__, __FUNCTION__); \
+	} while (false)
+#endif
 					
 
 //============================================================================
 #define CLIENT_WINDOW_TITLE "Wolfenstein"
+#define GAME_PROTOCOL_VERSION 60
 //
 // msg.c
 //
@@ -1244,6 +1267,25 @@ void CRC32_End( unsigned int* crc );
 void	Sys_GetCursorPosition( int* x, int* y );
 
 qbool Sys_IsMinimized(void);
+
+typedef struct MD5Context {
+	uint32_t buf[4];
+	uint32_t bits[2];
+	unsigned char in[64];
+} MD5_CTX;
+
+// MD5
+char* Com_MD5File(const char* fn, int length, const char* prefix, int prefix_len);
+char* Com_MD5(const void* data, int length, const char* prefix, int prefix_len, int hexcase);
+
+cvar_t* Cvar_FindVar(const char* var_name);
+void	Cmd_TokenizeLine(const char* text_in, const char* delim, char* pos);
+// Takes a null terminated string.  Does not need to be /n terminated.
+// breaks the string up into arg tokens.
+void Cvar_RestrictedList_f(void);
+
+const char* Q_itohex(uint64_t number, qbool uppercase, qbool prefix);
+
 
 #endif // _QCOMMON_H_
 

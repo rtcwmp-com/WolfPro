@@ -68,7 +68,8 @@ float4 ps(VOut input) : SV_Target
     float3 l = lv / dist;
     float intensity = max(1 - dist / rc.lightRadius, 0.0);
     float ndotl = max(dot(input.normal, l), 0.0);
-    return color * lightColor * intensity * ndotl;
+    float frontside = max(sign(ndotl), 0.0);
+    return color * lightColor * intensity * frontside;
 }
 
 #endif

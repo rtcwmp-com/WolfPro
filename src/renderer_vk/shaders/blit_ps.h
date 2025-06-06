@@ -12,46 +12,86 @@
                OpExecutionMode %ps OriginUpperLeft
           %6 = OpString "C:\\Users\\snapp\\Documents\\GitHub\\RTCW-MP\\src\\renderer_vk\\shaders\\blit.hlsl"
          %24 = OpString "float"
-         %32 = OpString "
-struct VOut
-{
-	float4 position : SV_Position;
-	float2 texCoords : TEXCOORD0;
-};
-
-
-#if VS
-
-
-VOut vs(uint id : SV_VertexID)
-{
-	VOut output;
-	output.position.x = (float)(id / 2) * 4.0 - 1.0;
-	output.position.y = (float)(id % 2) * 4.0 - 1.0;
-	output.position.z = 0.0;
-	output.position.w = 1.0;
-	output.texCoords.x = (float)(id / 2) * 2.0;
-	output.texCoords.y = (float)(id % 2) * 2.0;
-
-	return output;
-}
-
-#endif
-
-
-#if PS
-
-
-[[vk::binding(0)]] Texture2D texture0;
-[[vk::binding(1)]] SamplerState sampler0;
-
-float4 ps(VOut input) : SV_Target
-{
-	float3 base = texture0.Sample(sampler0, input.texCoords).rgb;
-
-	return float4(base, 1.0);
-}
-
+         %32 = OpString "
+
+struct VOut
+
+{
+
+	float4 position : SV_Position;
+
+	float2 texCoords : TEXCOORD0;
+
+};
+
+
+
+
+
+#if VS
+
+
+
+
+
+VOut vs(uint id : SV_VertexID)
+
+{
+
+	VOut output;
+
+	output.position.x = (float)(id / 2) * 4.0 - 1.0;
+
+	output.position.y = (float)(id % 2) * 4.0 - 1.0;
+
+	output.position.z = 0.0;
+
+	output.position.w = 1.0;
+
+	output.texCoords.x = (float)(id / 2) * 2.0;
+
+	output.texCoords.y = (float)(id % 2) * 2.0;
+
+
+
+	return output;
+
+}
+
+
+
+#endif
+
+
+
+
+
+#if PS
+
+
+
+
+
+[[vk::binding(0)]] Texture2D texture0;
+
+[[vk::binding(1)]] SamplerState sampler0;
+
+
+
+float4 ps(VOut input) : SV_Target
+
+{
+
+	float3 base = texture0.Sample(sampler0, input.texCoords).rgb;
+
+
+
+	return float4(base, 1.0);
+
+}
+
+
+
 #endif"
          %37 = OpString "position"
          %43 = OpString "texCoords"
@@ -124,7 +164,7 @@ float4 ps(VOut input) : SV_Target
     %uint_36 = OpConstant %uint 36
     %uint_16 = OpConstant %uint 16
     %uint_33 = OpConstant %uint 33
-%uint_862394600 = OpConstant %uint 862394600
+%uint_168374328 = OpConstant %uint 168374328
     %uint_31 = OpConstant %uint 31
     %uint_30 = OpConstant %uint 30
          %85 = OpTypeFunction %void
@@ -415,7 +455,7 @@ const unsigned char blit_ps[] = {
   0x2b, 0x00, 0x04, 0x00, 0x0d, 0x00, 0x00, 0x00, 0x3f, 0x00, 0x00, 0x00,
   0x10, 0x00, 0x00, 0x00, 0x2b, 0x00, 0x04, 0x00, 0x0d, 0x00, 0x00, 0x00,
   0x49, 0x00, 0x00, 0x00, 0x21, 0x00, 0x00, 0x00, 0x2b, 0x00, 0x04, 0x00,
-  0x0d, 0x00, 0x00, 0x00, 0x4c, 0x00, 0x00, 0x00, 0xe8, 0x18, 0x67, 0x33,
+  0x0d, 0x00, 0x00, 0x00, 0x4c, 0x00, 0x00, 0x00, 0x38, 0x30, 0x09, 0x0a,
   0x2b, 0x00, 0x04, 0x00, 0x0d, 0x00, 0x00, 0x00, 0x53, 0x00, 0x00, 0x00,
   0x1f, 0x00, 0x00, 0x00, 0x2b, 0x00, 0x04, 0x00, 0x0d, 0x00, 0x00, 0x00,
   0x54, 0x00, 0x00, 0x00, 0x1e, 0x00, 0x00, 0x00, 0x21, 0x00, 0x03, 0x00,

@@ -3,42 +3,15 @@ loading map after a map is already loaded causes infinite loading
 some mp_ice trees have wrong vertex attributes (black color)
  - need shader override textures/tree/pine_trunk_m02.tga [texture] 128x256 R8G8B8A8_UNORM
 
+console history save to disk
+autocomplete map names
 
 shader r_cache
   disable backup
   use hashmap for shader text
 
-
-why is R_LightScaleTexture not applied to non-mipmapped textures that are not rescaled
-
-dynamic lights
-- we need the normal vector to properly avoid lighting back faces
-    - if we decide to only use exactly 1 light (or very small amount) per surface, then we can shade in object space and not push any new matrix data to the GPU:
-      - the normal vector is already in object-space, so no extra transformation is necessary
-      - transform the light position(s) to object space on the CPU and upload through push constants
-      
-    - for the fully generic version we can shade in either world-space or view-space
-      either way we need to pass down at least 1 extra matrix per draw call through a new uniform buffer
-      (the inverse-transpose of the model/model-view matrix)
-- move the quick test code from generic2 to generic so that we can light up e.g. dropped weapons with a dynamite to make sure all transformations are correct
-
-create 6 pipelines and 1 shader
-  - 3 for cull type
-  - 2 for polygon offset
-  - no alphatest
-  - depth test equal
-  - additive blend
-  - readonly depth access
-  - earlydepthstencil always enabled
-  - takes 1 diffuse texture and 1 sampler and 1 dynamic light
-
-R_DlightSurface( msurface_t *surf, int dlightBits (boolean) ) -> mask 
-R_AddWorldSurface( msurface_t *surf, shader_t *shader, int dlightBits (boolean)) 
-R_AddDrawSurf( surf->data, shader, surf->fogIndex, dlightBits (boolean))
-
-
-tess.dlightBits
-
+better gamma handling
+ - why is R_LightScaleTexture not applied to non-mipmapped textures that are not rescaled
 
 what happens when this part is uncommented? 
 backEnd.refdef.floatTime = originalTime; // - backEnd.currentEntity->e.shaderTime; // JPW NERVE pulled this to match q3ta
@@ -46,11 +19,15 @@ backEnd.refdef.floatTime = originalTime; // - backEnd.currentEntity->e.shaderTim
 add support for (and use) an extra clip plane for portal/mirror views
 fog
 
+better frame pacing
+ - redo com_frame/rhi_endframe sleep mechanism _mm_pause busy loop
+
 MSAA + alpha2coverage
+
+
 remove r_cache/r_cacheshaders
 remove r_measureoverdraw
 remove r_ignoreglerrors r_drawBuffer and stereo
-redo com_frame/rhi_endframe sleep mechanism _mm_pause busy loop
 remove R_GammaCorrect s_gammatable
 
 vid_restart variations:

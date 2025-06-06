@@ -1591,4 +1591,11 @@ typedef enum {
 #define VOTEFLAGS_KICK              ( 1 << 6 )
 #define VOTEFLAGS_MAP                   ( 1 << 7 )
 
+qboolean Q_IsNumeric(const char* s);
+
+#if defined(_WIN32) || defined(_WIN64)
+/* We are on Windows */
+# define strtok_r strtok_s
+#endif
+
 #endif  // __Q_SHARED_H

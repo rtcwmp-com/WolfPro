@@ -33,10 +33,14 @@ If you have questions concerning this license or the applicable additional terms
  *
 */
 
+#ifndef  ___BG_PUBLIC_H
+#define ___BG_PUBLIC_H
+
 // because games can change separately from the main system version, we need a
 // second version that must match between game and cgame
 
 #define GAME_VERSION        "RTCW-MP"
+#define GAMEVERSION "main"
 
 #define DEFAULT_GRAVITY     800
 #define FORCE_LIMBO_HEALTH  -150 // JPW NERVE
@@ -1718,3 +1722,5 @@ int BG_GetAnimScriptEvent( playerState_t *ps, scriptAnimEventTypes_t event );
 
 extern animStringItem_t animStateStr[];
 extern animStringItem_t animBodyPartsStr[];
+
+#endif

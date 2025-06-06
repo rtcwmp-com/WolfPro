@@ -25,7 +25,8 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
-
+#ifndef __G_PUBLIC_H
+#define __G_PUBLIC_H
 
 // g_public.h -- game module information visible to server
 
@@ -468,3 +469,4 @@ typedef enum {
 
 } gameExport_t;
 
+#endif

@@ -139,3 +139,15 @@ if (ENABLE_SSE)
 		endif()
 	endif()
 endif()
+
+#-----------------------------------------------------------------
+# cURL
+#-----------------------------------------------------------------
+find_package(CURL)
+if(CURL_FOUND)
+	
+	set(CMAKE_REQUIRED_INCLUDES ${CURL_INCLUDE_DIR})
+	set(CMAKE_REQUIRED_LIBRARIES ${CURL_LIBRARY})
+	message(STATUS "CURL Include dir: " ${CURL_INCLUDE_DIR})
+	message(STATUS "CURL library: " ${CURL_LIBRARY})
+endif()

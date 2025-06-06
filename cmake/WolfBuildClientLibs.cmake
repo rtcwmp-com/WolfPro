@@ -70,3 +70,4 @@ if(JPEGTURBO_FOUND)
 	# FIXME: function is checked, but HAVE_JPEG_MEM_SRC is empty. Why?
 	check_function_exists("jpeg_mem_src" HAVE_JPEG_MEM_SRC)
 endif()
+

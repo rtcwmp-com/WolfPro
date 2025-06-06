@@ -150,3 +150,10 @@ char *Sys_GetCurrentUser( void ) {
 qbool Sys_IsMinimized(void){
 	return !!IsIconic(g_wv.hWnd);
 }
+
+char* Sys_GetScreenshotPath(char* filename){
+	char* basepath = Cvar_VariableString("fs_basepath");
+	char* gamepath = Cvar_VariableString("fs_game");
+
+	return va("%s/%s/screenshots/%s.jpg", basepath, gamepath, filename);
+}

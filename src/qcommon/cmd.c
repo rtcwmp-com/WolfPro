@@ -31,7 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "../game/q_shared.h"
 #include "qcommon.h"
 
-#define MAX_CMD_BUFFER  16384
+#define MAX_CMD_BUFFER  32768
 #define MAX_CMD_LINE    1024
 
 typedef struct {
@@ -696,6 +696,27 @@ void Cmd_List_f( void ) {
 		i++;
 	}
 	Com_Printf( "%i commands\n", i );
+}
+
+/*
+============
+Cmd_TokenizeLine
+============
+*/
+void Cmd_TokenizeLine(const char* text_in, const char* delim, char *pos) {
+	char* token;
+
+	cmd_argc = 0;
+	if (!text_in) {
+		return;
+	}
+
+	token = strtok_r((char *)text_in, delim, &pos);
+	while (token != NULL) {
+		cmd_argv[cmd_argc] = token;
+		cmd_argc++;
+		token = strtok_r(NULL, delim, &pos);
+	}
 }
 
 /*

@@ -827,8 +827,20 @@ void CL_Disconnect( qboolean showMainMenu ) {
 	// wipe the client connection
 	memset( &clc, 0, sizeof( clc ) );
 
-	cls.state = CA_DISCONNECTED;
+	// wipe any restricted cvars
+	Cvar_Rest_Reset();
 
+// L0 - Fix shutdowns ..
+	if (uivm && cls.state > CA_DISCONNECTED) {
+
+		// shutdown the UI
+		CL_ShutdownUI();
+
+		// init the UI
+		CL_InitUI();
+	}
+
+	cls.state = CA_DISCONNECTED;
 	// allow cheats locally
 	Cvar_Set( "sv_cheats", "1" );
 
@@ -2069,6 +2081,21 @@ void CL_ConnectionlessPacket( netadr_t from, msg_t *msg ) {
 		return;
 	}
 
+	if (!Q_stricmp(c, "getRestrictedList")) {
+
+		if (cls.state < CA_CONNECTED) {
+			Com_DPrintf("Not connected. Restrict check Ignored.\n");
+			return;
+		}
+
+		if (!NET_CompareBaseAdr(from, clc.serverAddress)) {
+			Com_DPrintf("getRestrictedList connectResponse from a different address.  Ignored.\n");
+			return;
+		}
+		Cvar_RestBuildList(va("%s", Cmd_Args()));
+		return;
+	}
+
 	Com_DPrintf( "Unknown connectionless packet command.\n" );
 }
 
@@ -2807,6 +2834,9 @@ void CL_Init( void ) {
 	//
 	// register our variables
 	//
+
+	Cvar_Get("cl_checkversion", "17", CVAR_ROM | CVAR_USERINFO);
+
 	cl_noprint = Cvar_Get( "cl_noprint", "0", 0 );
 	cl_motd = Cvar_Get( "cl_motd", "1", 0 );
 	cl_autoupdate = Cvar_Get( "cl_autoupdate", "1", CVAR_ARCHIVE );

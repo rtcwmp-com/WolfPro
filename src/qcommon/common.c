@@ -31,6 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "../game/q_shared.h"
 #include "qcommon.h"
 #include <setjmp.h>
+#include "threads.h"
 
 #define MAX_NUM_ARGVS   50
 
@@ -2285,6 +2286,8 @@ char cl_cdkey[34] = "123456789";
 Com_ReadCDKey
 =================
 */
+#define CDKEY_SALT			"]=q.0xFF^"
+
 void Com_ReadCDKey( const char *filename ) {
 	fileHandle_t f;
 	char buffer[33];
@@ -2308,6 +2311,10 @@ void Com_ReadCDKey( const char *filename ) {
 	} else {
 		Q_strncpyz( cl_cdkey, "                ", 17 );
 	}
+
+	#ifndef DEDICATED
+        Cvar_Set("cl_guid", Com_MD5(buffer, CDKEY_LEN, CDKEY_SALT, sizeof(CDKEY_SALT) - 1, 0));
+    #endif
 }
 
 /*
@@ -2591,6 +2598,8 @@ void Com_Init( char *commandLine ) {
 			Cvar_Set( "nextmap", "cinematic wolfintro.RoQ" );
 		}
 	}
+
+	Threads_Init();
 
 	com_fullyInitialized = qtrue;
 	Com_Printf( "--- Common Initialization Complete ---\n" );
@@ -3456,4 +3465,34 @@ void CRC32_ProcessBlock( unsigned int* crc, const void* buffer, unsigned int len
 void CRC32_End( unsigned int* crc )
 {
 	*crc ^= 0xFFFFFFFFUL;
+}
+
+const char* Q_itohex(uint64_t number, qbool uppercase, qbool prefix)
+{
+	static const char* luts[2] = { "0123456789abcdef", "0123456789ABCDEF" };
+	static char buffer[19];
+	const int maxLength = 16;
+
+	const char* const lut = luts[uppercase == 0 ? 0 : 1];
+	uint64_t x = number;
+	int i = maxLength + 2;
+	buffer[i] = '\0';
+	while (i--) {
+		buffer[i] = lut[x & 15];
+		x >>= 4;
+	}
+
+	int startOffset = 2;
+	for (i = 2; i < maxLength + 1; i++, startOffset++) {
+		if (buffer[i] != '0')
+			break;
+	}
+
+	if (prefix) {
+		startOffset -= 2;
+		buffer[startOffset + 0] = '0';
+		buffer[startOffset + 1] = 'x';
+	}
+
+	return buffer + startOffset;
 }

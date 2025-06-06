@@ -930,7 +930,7 @@ typedef struct SceneView {
 } SceneView;
 #pragma pack(pop)
 
-#define VBA_MAX 64000
+#define VBA_MAX 524288
 #define IDX_MAX (VBA_MAX * 8)
 #define SCENEVIEW_MAX 16
 #define MAX_RENDERPASSES 64 
@@ -1437,7 +1437,7 @@ typedef struct shaderCommands_s
 	void ( *currentStageIteratorFunc )( void );
 	shaderStage_t   **xstages;
 
-	dlight_t dlight;
+	dlight_t *dlight;
 	renderType_t renderType;
 
 } shaderCommands_t;

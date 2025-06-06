@@ -178,7 +178,7 @@ void CG_Text_Paint( float x, float y, float scale, vec4_t color, const char *tex
 					int ofs = style == ITEM_TEXTSTYLE_SHADOWED ? 1 : 2;
 					colorBlack[3] = newColor[3];
 					trap_R_SetColor( colorBlack );
-					CG_Text_PaintChar( x + ofs, y - yadj + ofs,
+					CG_Text_PaintChar( x + ofs * cgs.screenXScale, y - yadj + ofs * cgs.screenYScale,
 									   glyph->imageWidth,
 									   glyph->imageHeight,
 									   useScale,

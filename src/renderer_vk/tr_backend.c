@@ -381,7 +381,7 @@ void RB_RenderLitSurfList( drawSurf_t *drawSurfs, int firstSurfIndex, int lastSu
 
 	//tess.currentStageIteratorFunc = RB_DynamicLightIterator;
 	tess.renderType = RT_DYNAMICLIGHT;
-	tess.dlight = *dlight;
+	tess.dlight = dlight;
 
 	// draw everything
 	oldEntityNum = -1;
@@ -393,6 +393,7 @@ void RB_RenderLitSurfList( drawSurf_t *drawSurfs, int firstSurfIndex, int lastSu
 	depthRange = qfalse;
 
 	// backEnd.pc.c_surfaces += lastSurfIndex - firstSurfIndex;
+	
 
 
 	for ( i = firstSurfIndex, drawSurf = drawSurfs + firstSurfIndex ; i < lastSurfIndex ; i++, drawSurf++ ) {
@@ -887,7 +888,11 @@ const void  *RB_DrawSurfs( const void *data ) {
 	RHI_CmdBeginDebugLabel("Dynamic Lights");
 	backEnd.pipelineLayoutDirty = qtrue;
 	for(int l = 0; l < backEnd.refdef.num_dlights; l++){
-		RB_RenderLitSurfList(cmd->drawSurfs, 0, numOpaqueSurfs, &backEnd.refdef.dlights[l]);
+		dlight_t *dl = &backEnd.refdef.dlights[l];
+		if(R_CullPointAndRadius(dl->origin, dl->radius) == CULL_OUT){
+			continue;
+		}
+		RB_RenderLitSurfList(cmd->drawSurfs, 0, numOpaqueSurfs, dl);
 	}
 	RHI_CmdEndDebugLabel();
 
