@@ -10,154 +10,81 @@
                OpMemoryModel Logical GLSL450
                OpEntryPoint Vertex %vs "vs" %in_var_SV_Position %in_var_TEXCOORD0 %in_var_COLOR0 %in_var_NORMAL0 %gl_Position %out_var_TEXCOORD0 %out_var_COLOR0 %out_var_NORMAL0 %out_var_POSITIONOS0
          %12 = OpString "C:\\Users\\snapp\\Documents\\GitHub\\RTCW-MP\\src\\renderer_vk\\shaders\\dynamiclight.hlsl"
-         %38 = OpString "
-
-#include \"generic.hlsli\"
-
-
-
-struct VOut
-
-{
-
-    [[vk::location(0)]] float4 position : SV_Position;
-
-    [[vk::location(1)]] float2 tc : TEXCOORD0;
-
-    [[vk::location(2)]] float4 color : COLOR0;
-
-    [[vk::location(3)]] float3 normal : NORMAL0;
-
-    [[vk::location(4)]] float3 positionOS : POSITIONOS0;
-
-};
-
-
-
-#if VS
-
-
-
-struct RootConstants
-
-{
-
-	matrix modelViewMatrix;
-
-};
-
-[[vk::push_constant]] RootConstants rc;
-
-
-
-struct VIn
-
-{
-
-    [[vk::location(0)]] float4 position : SV_Position;
-
-    [[vk::location(1)]] float2 tc : TEXCOORD0;
-
-    [[vk::location(2)]] float4 color : COLOR0;
-
-    [[vk::location(3)]] float4 normal : NORMAL0;
-
-};
-
-
-
-
-
-
-
-VOut vs(VIn input)
-
-{
-
-    VOut output;
-
-	output.position = mul(sceneView.projectionMatrix, mul(rc.modelViewMatrix, float4(input.position.xyz, 1.0)));
-
-    output.positionOS = input.position.xyz;
-
-    output.tc = input.tc;
-
-    output.color = input.color;
-
-    output.normal = input.normal.xyz;
-
-
-
-    return output;
-
-}
-
-
-
-#endif
-
-
-
-#if PS
-
-
-
-struct RootConstants
-
-{
-
-    [[vk::offset(64)]]
-
-	float3 lightPos;
-
-	float lightRadius;
-
-	uint lightColor;
-
-	uint textureIndex;
-
-	uint samplerIndex;
-
-};
-
-[[vk::push_constant]] RootConstants rc;
-
-
-
-#include \"game_textures.hlsli\"
-
-
-
-[earlydepthstencil]
-
-float4 ps(VOut input) : SV_Target
-
-{
-
-    
-
-    float4 color = input.color * texture[rc.textureIndex].Sample(mySampler[rc.samplerIndex], input.tc);
-
-    float4 lightColor = unpackColorR11G11B10(rc.lightColor);
-
-    float3 lv = rc.lightPos - input.positionOS;
-
-    float dist = length(lv);
-
-    float3 l = lv / dist;
-
-    float intensity = max(1 - dist / rc.lightRadius, 0.0);
-
-    float ndotl = max(dot(input.normal, l), 0.0);
-
-    float frontside = max(sign(ndotl), 0.0);
-
-    return color * lightColor * intensity * frontside;
-
-}
-
-
-
+         %38 = OpString "
+#include \"generic.hlsli\"
+
+struct VOut
+{
+    [[vk::location(0)]] float4 position : SV_Position;
+    [[vk::location(1)]] float2 tc : TEXCOORD0;
+    [[vk::location(2)]] float4 color : COLOR0;
+    [[vk::location(3)]] float3 normal : NORMAL0;
+    [[vk::location(4)]] float3 positionOS : POSITIONOS0;
+};
+
+#if VS
+
+struct RootConstants
+{
+	matrix modelViewMatrix;
+};
+[[vk::push_constant]] RootConstants rc;
+
+struct VIn
+{
+    [[vk::location(0)]] float4 position : SV_Position;
+    [[vk::location(1)]] float2 tc : TEXCOORD0;
+    [[vk::location(2)]] float4 color : COLOR0;
+    [[vk::location(3)]] float4 normal : NORMAL0;
+};
+
+
+
+VOut vs(VIn input)
+{
+    VOut output;
+	output.position = mul(sceneView.projectionMatrix, mul(rc.modelViewMatrix, float4(input.position.xyz, 1.0)));
+    output.positionOS = input.position.xyz;
+    output.tc = input.tc;
+    output.color = input.color;
+    output.normal = input.normal.xyz;
+
+    return output;
+}
+
+#endif
+
+#if PS
+
+struct RootConstants
+{
+    [[vk::offset(64)]]
+	float3 lightPos;
+	float lightRadius;
+	uint lightColor;
+	uint textureIndex;
+	uint samplerIndex;
+};
+[[vk::push_constant]] RootConstants rc;
+
+#include \"game_textures.hlsli\"
+
+[earlydepthstencil]
+float4 ps(VOut input) : SV_Target
+{
+    
+    float4 color = input.color * texture[rc.textureIndex].Sample(mySampler[rc.samplerIndex], input.tc);
+    float4 lightColor = unpackColorR11G11B10(rc.lightColor);
+    float3 lv = rc.lightPos - input.positionOS;
+    float dist = length(lv);
+    float3 l = lv / dist;
+    float intensity = max(1 - dist / rc.lightRadius, 0.0);
+    float ndotl = max(dot(input.normal, l), 0.0);
+    float frontside = max(sign(ndotl), 0.0);
+    //return color * lightColor * intensity * frontside;
+    return color * lightColor * intensity;
+}
+
 #endif"
          %45 = OpString "float"
          %50 = OpString "position"
@@ -176,84 +103,45 @@ float4 ps(VOut input) : SV_Target
         %106 = OpString "@type.ConstantBuffer.SceneView"
         %107 = OpString "type.ConstantBuffer.SceneView"
         %109 = OpString "C:\\Users\\snapp\\Documents\\GitHub\\RTCW-MP\\src\\renderer_vk\\shaders/generic.hlsli"
-        %110 = OpString "
-
-#if PS
-
-bool failsAlphaTest(uint alphaTest, float alpha){
-
-    if(alphaTest == 1){
-
-        if(alpha == 0){
-
-            return true;
-
-        }
-
-    }
-
-    if(alphaTest == 2){
-
-        if(alpha >= 0.5){
-
-            return true;
-
-        }
-
-    }
-
-    if(alphaTest == 3){
-
-        if(alpha < 0.5){
-
-            return true;
-
-        }
-
-    }
-
-    return false;
-
-}
-
-
-
-#endif
-
-
-
-
-
-struct SceneView
-
-{
-
-  matrix projectionMatrix;
-
-  float4 clipPlane;
-
-};
-
-[[vk::binding(2)]] ConstantBuffer<SceneView> sceneView;
-
-
-
-float4 unpackColorR8G8B8A8(uint color){
-
-    uint4 res = uint4(color, (color >> 8), (color >> 16), (color >> 24)) & uint4(0xFF, 0xFF, 0xFF, 0xFF);
-
-    return float4(res)/255.0;
-
-}
-
-
-
-float4 unpackColorR11G11B10(uint color){
-
-    uint4 res = uint4(color, (color >> 11), (color >> 22), 0xFF) & uint4(0x7FF, 0x7FF, 0x3FF, 0xFF);
-
-    return float4(res)/float4(2047.0, 2047.0, 1023.0, 255.0);
-
+        %110 = OpString "
+#if PS
+bool failsAlphaTest(uint alphaTest, float alpha){
+    if(alphaTest == 1){
+        if(alpha == 0){
+            return true;
+        }
+    }
+    if(alphaTest == 2){
+        if(alpha >= 0.5){
+            return true;
+        }
+    }
+    if(alphaTest == 3){
+        if(alpha < 0.5){
+            return true;
+        }
+    }
+    return false;
+}
+
+#endif
+
+
+struct SceneView
+{
+  matrix projectionMatrix;
+  float4 clipPlane;
+};
+[[vk::binding(2)]] ConstantBuffer<SceneView> sceneView;
+
+float4 unpackColorR8G8B8A8(uint color){
+    uint4 res = uint4(color, (color >> 8), (color >> 16), (color >> 24)) & uint4(0xFF, 0xFF, 0xFF, 0xFF);
+    return float4(res)/255.0;
+}
+
+float4 unpackColorR11G11B10(uint color){
+    uint4 res = uint4(color, (color >> 11), (color >> 22), 0xFF) & uint4(0x7FF, 0x7FF, 0x3FF, 0xFF);
+    return float4(res)/float4(2047.0, 2047.0, 1023.0, 255.0);
 }"
         %114 = OpString "projectionMatrix"
         %117 = OpString "clipPlane"
@@ -565,7 +453,7 @@ const unsigned char dynamiclight_vs[] = {
   0x73, 0x72, 0x63, 0x5c, 0x72, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x65, 0x72,
   0x5f, 0x76, 0x6b, 0x5c, 0x73, 0x68, 0x61, 0x64, 0x65, 0x72, 0x73, 0x5c,
   0x64, 0x79, 0x6e, 0x61, 0x6d, 0x69, 0x63, 0x6c, 0x69, 0x67, 0x68, 0x74,
-  0x2e, 0x68, 0x6c, 0x73, 0x6c, 0x00, 0x00, 0x00, 0x07, 0x00, 0xc0, 0x01,
+  0x2e, 0x68, 0x6c, 0x73, 0x6c, 0x00, 0x00, 0x00, 0x07, 0x00, 0xcc, 0x01,
   0x26, 0x00, 0x00, 0x00, 0x0d, 0x0a, 0x23, 0x69, 0x6e, 0x63, 0x6c, 0x75,
   0x64, 0x65, 0x20, 0x22, 0x67, 0x65, 0x6e, 0x65, 0x72, 0x69, 0x63, 0x2e,
   0x68, 0x6c, 0x73, 0x6c, 0x69, 0x22, 0x0d, 0x0a, 0x0d, 0x0a, 0x73, 0x74,
@@ -709,12 +597,16 @@ const unsigned char dynamiclight_vs[] = {
   0x6f, 0x61, 0x74, 0x20, 0x66, 0x72, 0x6f, 0x6e, 0x74, 0x73, 0x69, 0x64,
   0x65, 0x20, 0x3d, 0x20, 0x6d, 0x61, 0x78, 0x28, 0x73, 0x69, 0x67, 0x6e,
   0x28, 0x6e, 0x64, 0x6f, 0x74, 0x6c, 0x29, 0x2c, 0x20, 0x30, 0x2e, 0x30,
-  0x29, 0x3b, 0x0d, 0x0a, 0x20, 0x20, 0x20, 0x20, 0x72, 0x65, 0x74, 0x75,
-  0x72, 0x6e, 0x20, 0x63, 0x6f, 0x6c, 0x6f, 0x72, 0x20, 0x2a, 0x20, 0x6c,
-  0x69, 0x67, 0x68, 0x74, 0x43, 0x6f, 0x6c, 0x6f, 0x72, 0x20, 0x2a, 0x20,
-  0x69, 0x6e, 0x74, 0x65, 0x6e, 0x73, 0x69, 0x74, 0x79, 0x20, 0x2a, 0x20,
-  0x66, 0x72, 0x6f, 0x6e, 0x74, 0x73, 0x69, 0x64, 0x65, 0x3b, 0x0d, 0x0a,
-  0x7d, 0x0d, 0x0a, 0x0d, 0x0a, 0x23, 0x65, 0x6e, 0x64, 0x69, 0x66, 0x00,
+  0x29, 0x3b, 0x0d, 0x0a, 0x20, 0x20, 0x20, 0x20, 0x2f, 0x2f, 0x72, 0x65,
+  0x74, 0x75, 0x72, 0x6e, 0x20, 0x63, 0x6f, 0x6c, 0x6f, 0x72, 0x20, 0x2a,
+  0x20, 0x6c, 0x69, 0x67, 0x68, 0x74, 0x43, 0x6f, 0x6c, 0x6f, 0x72, 0x20,
+  0x2a, 0x20, 0x69, 0x6e, 0x74, 0x65, 0x6e, 0x73, 0x69, 0x74, 0x79, 0x20,
+  0x2a, 0x20, 0x66, 0x72, 0x6f, 0x6e, 0x74, 0x73, 0x69, 0x64, 0x65, 0x3b,
+  0x0d, 0x0a, 0x20, 0x20, 0x20, 0x20, 0x72, 0x65, 0x74, 0x75, 0x72, 0x6e,
+  0x20, 0x63, 0x6f, 0x6c, 0x6f, 0x72, 0x20, 0x2a, 0x20, 0x6c, 0x69, 0x67,
+  0x68, 0x74, 0x43, 0x6f, 0x6c, 0x6f, 0x72, 0x20, 0x2a, 0x20, 0x69, 0x6e,
+  0x74, 0x65, 0x6e, 0x73, 0x69, 0x74, 0x79, 0x3b, 0x0d, 0x0a, 0x7d, 0x0d,
+  0x0a, 0x0d, 0x0a, 0x23, 0x65, 0x6e, 0x64, 0x69, 0x66, 0x00, 0x00, 0x00,
   0x07, 0x00, 0x04, 0x00, 0x2d, 0x00, 0x00, 0x00, 0x66, 0x6c, 0x6f, 0x61,
   0x74, 0x00, 0x00, 0x00, 0x07, 0x00, 0x05, 0x00, 0x32, 0x00, 0x00, 0x00,
   0x70, 0x6f, 0x73, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x00, 0x00, 0x00, 0x00,
