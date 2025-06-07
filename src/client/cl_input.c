@@ -714,6 +714,9 @@ void CL_CreateNewCommands( void ) {
 	// unexpected moves after a hitch
 	if ( frame_msec > 200 ) {
 		frame_msec = 200;
+	} else if (frame_msec < 1) {
+		// too fast input
+		return;
 	}
 	old_com_frameTime = com_frameTime;
 
