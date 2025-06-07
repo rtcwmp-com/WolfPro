@@ -844,7 +844,6 @@ extern int time_frontend;
 extern int time_backend;            // renderer backend time
 
 extern int com_frameTime;
-extern int com_frameMsec;
 
 extern qboolean com_errorEntered;
 
@@ -1001,6 +1000,7 @@ void SV_Shutdown( char *finalmsg );
 void SV_Frame( int msec );
 void SV_PacketEvent( netadr_t from, msg_t *msg );
 qboolean SV_GameCommand( void );
+int SV_FrameSleepMS(void);
 
 
 //
@@ -1087,6 +1087,8 @@ void    Sys_Print( const char *msg );
 // any game related timing information should come from event timestamps
 int     Sys_Milliseconds( void );
 int64_t Sys_Microseconds(void);
+void Sys_MicroSleep( int us );
+void Sys_Sleep( int ms );
 
 void    Sys_SnapVector( float *v );
 

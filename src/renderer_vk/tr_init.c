@@ -176,6 +176,7 @@ cvar_t *r_debugUI;
 cvar_t *r_debugInput;
 cvar_t *r_mipFilter;
 
+cvar_t *r_sleepThreshold;
 
 
 static void AssertCvarRange( cvar_t *cv, float minVal, float maxVal, qboolean shouldBeIntegral ) {
@@ -825,6 +826,8 @@ void R_Register( void ) {
 	r_debugInput = ri.Cvar_Get( "r_debugInput", "0", CVAR_TEMP);
 
 	r_mipFilter = ri.Cvar_Get( "r_mipFilter", "1", CVAR_ARCHIVE );
+
+	r_sleepThreshold = ri.Cvar_Get("r_sleepThreshold", "2500", CVAR_ARCHIVE);
 
 	// make sure all the commands added here are also
 	// removed in R_Shutdown

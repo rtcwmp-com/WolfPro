@@ -1094,4 +1094,16 @@ void SV_Frame( int msec ) {
 	SV_MasterHeartbeat( HEARTBEAT_GAME );
 }
 
+
+int SV_FrameSleepMS(void)
+{
+	if ( !sv_fps )
+		return 1;
+
+	const int sleepMS = 1000 / sv_fps->value;
+	if ( sleepMS < sv.timeResidual )
+		return 0;
+
+	return sleepMS - sv.timeResidual;
+}
 //============================================================================

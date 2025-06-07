@@ -88,8 +88,8 @@ int time_frontend;          // renderer frontend time
 int time_backend;           // renderer backend time
 
 int com_frameTime;
-int com_frameMsec;
 int com_frameNumber;
+int64_t	com_nextTargetTimeUS = INT64_MIN;
 
 qboolean com_errorEntered;
 qboolean com_fullyInitialized;
@@ -2737,6 +2737,66 @@ int Com_ModifyMsec( int msec ) {
 	return msec;
 }
 
+
+static void Com_FrameSleep( qbool demoPlayback )
+{
+	// "timedemo" playback means we run at full speed
+	if ( demoPlayback && com_timedemo->integer )
+		return;
+
+	// decide how much sleep we need
+	qbool preciseCap = qfalse;
+	int64_t sleepUS = 0;
+	if ( com_dedicated->integer ) {
+		sleepUS = 1000 * SV_FrameSleepMS();
+	} else {
+		preciseCap = qtrue;
+		sleepUS = 1000000 / com_maxfps->integer;
+#ifndef DEDICATED
+		if ( Sys_IsMinimized() ) {
+			sleepUS = 20 * 1000;
+			preciseCap = qfalse;
+		} else if ( !CL_IsFrameSleepEnabled() ) {
+			return;
+		}
+#endif
+	}
+
+	// decide when we should stop sleeping
+	static int64_t targetTimeUS = INT64_MIN;
+	if ( Sys_Microseconds() > targetTimeUS + 3 * sleepUS )
+		targetTimeUS = Sys_Microseconds() + sleepUS;
+	else
+		targetTimeUS += sleepUS;
+	com_nextTargetTimeUS = targetTimeUS + 1000000 / com_maxfps->integer;
+
+	// sleep if needed
+	if ( com_dedicated->integer ) {
+		while ( targetTimeUS - Sys_Microseconds() > 1000 ) {
+			NET_Sleep( 1 );
+			Com_EventLoop();
+		}
+	} else {
+		int runEventLoop = 0;
+		if ( preciseCap ) {
+			for ( ;; ) {
+				runEventLoop ^= 1;
+				const int64_t remainingUS = targetTimeUS - Sys_Microseconds();
+				if ( remainingUS > 3000 && runEventLoop )
+					Com_EventLoop();
+				else if ( remainingUS > 0 )
+					Sys_MicroSleep( remainingUS );
+				else
+					break;
+			}
+		} else {
+			while ( targetTimeUS - Sys_Microseconds() > 1000 ) {
+				Sys_Sleep( 1 );
+			}
+		}
+	}
+}
+
 /*
 =================
 Com_Frame
@@ -2745,18 +2805,13 @@ Com_Frame
 void Com_Frame( void ) {
 
 	int msec, minMsec;
-	static int lastTime;
-	int key;
+	
 
 	int timeBeforeFirstEvents;
 	int timeBeforeServer;
 	int timeBeforeEvents;
 	int timeBeforeClient;
 	int timeAfter;
-
-
-
-
 
 	if ( setjmp( abortframe ) ) {
 		return;         // an ERR_DROP was thrown
@@ -2769,10 +2824,6 @@ void Com_Frame( void ) {
 	timeBeforeEvents = 0;
 	timeBeforeClient = 0;
 	timeAfter = 0;
-
-
-	// old net chan encryption key
-	key = 0x87243987;
 
 	// DHM - Nerve :: Don't write config on Update Server
 #ifndef UPDATE_SERVER
@@ -2795,30 +2846,16 @@ void Com_Frame( void ) {
 		timeBeforeFirstEvents = Sys_Milliseconds();
 	}
 
-	// we may want to spin here if things are going too fast
-	if ( !com_dedicated->integer && com_maxfps->integer > 0 && !com_timedemo->integer ) {
-		minMsec = 1000 / com_maxfps->integer;
-	} else {
-		minMsec = 1;
-	}
-#ifndef DEDICATED
-	if(!CL_IsFrameSleepEnabled()){
-		minMsec = 0; //sleep is already happening in the driver for vsync
-	}
-#endif
-	do {
-		com_frameTime = Com_EventLoop();
-		if ( lastTime > com_frameTime ) {
-			lastTime = com_frameTime;       // possible on first frame
-		}
-		msec = com_frameTime - lastTime;
-	} while ( msec < minMsec );
-	Cbuf_Execute();
-
+	Com_FrameSleep( qfalse );
+	
+	static int lastTime = 0;
 	lastTime = com_frameTime;
+	com_frameTime = Com_EventLoop();
+	msec = com_frameTime - lastTime;
 
+	Cbuf_Execute();
+	
 	// mess with msec if needed
-	com_frameMsec = msec;
 	msec = Com_ModifyMsec( msec );
 
 	//
@@ -2907,9 +2944,6 @@ void Com_Frame( void ) {
 		c_patch_traces = 0;
 		c_pointcontents = 0;
 	}
-
-	// old net chan encryption key
-	key = lastTime * 0x87243987;
 
 	com_frameNumber++;
 }
