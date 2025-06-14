@@ -7,7 +7,7 @@
 
 
 Vulkan vk;
-
+RHIExport rhie;
 
 static const char* GetStringForVkObjectType(VkObjectType type)
 {
@@ -1312,7 +1312,12 @@ void RHI_BeginFrame() {
 }
 
 void RHI_EndFrame() {
-    // AcquireSubmitPresent();
+    int64_t currentTime = Sys_Microseconds();
+    static int64_t previousTime = INT64_MIN;
+    const int64_t us = currentTime - previousTime;
+    previousTime = currentTime;
+    rhie.presentToPresentUS = us;
+
 }
 
 // static void CreateTrianglePipelineLayout()

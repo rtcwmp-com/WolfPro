@@ -1005,17 +1005,8 @@ RB_EndFrame
 
 =============
 */
-const void  *RB_EndFrame( const void *data ) {
-	const swapBuffersCommand_t  *cmd;
 
-	// finish any 2D drawing if needed
-	if ( tess.numIndexes ) {
-		RB_EndSurface();
-	}
-
-
-	cmd = (const swapBuffersCommand_t *)data;
-
+void DrawGUI_Performance(void){
 	int f = (backEnd.currentFrameIndex - 1 + RHI_FRAMES_IN_FLIGHT) % RHI_FRAMES_IN_FLIGHT;
 	int p = (backEnd.currentFrameIndex - 2 + RHI_FRAMES_IN_FLIGHT) % RHI_FRAMES_IN_FLIGHT;
 	for(int i = 0; i < backEnd.renderPassCount[f]; i++){
@@ -1027,55 +1018,77 @@ const void  *RB_EndFrame( const void *data ) {
 	
 	uint32_t duration = RHI_GetDurationUs(backEnd.frameDuration[(backEnd.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT]);
 	AddHistory(&s_fullFrameHistory, 0, 0, duration);
-	
-	if(igBegin("Statistics", NULL, 0)){
-		igText("GPU: %s", RHI_GetDeviceName());
-		igNewLine();
 
-		igText("Renderpasses");
-		int32_t renderPassDuration = 0;
-		igText("Entire Frame %d", (int)s_fullFrameHistory.median);
-		for(int i = 0; i < backEnd.renderPassCount[f]; i++){
-			renderPass *currentRenderPass = &backEnd.renderPasses[f][i];
-			igText("%s %d", currentRenderPass->name, (int)s_history[i].median);
-			renderPassDuration += currentRenderPass->durationUs;
+	static bool breakdownActive = false;
+	ToggleBooleanWithShortcut(&breakdownActive, ImGuiKey_F, ImGUI_ShortcutOptions_Global);
+	GUI_AddMainMenuItem(ImGUI_MainMenu_Perf, "Frame breakdown", "Ctrl+Shift+F", &breakdownActive, qtrue);
+	if(breakdownActive){
+		if(igBegin("Frame breakdown", &breakdownActive, 0)){
+			igText("GPU: %s", RHI_GetDeviceName());
+			igNewLine();
+
+			igText("Renderpasses");
+			int32_t renderPassDuration = 0;
+			igText("Entire Frame %d", (int)s_fullFrameHistory.median);
+			for(int i = 0; i < backEnd.renderPassCount[f]; i++){
+				renderPass *currentRenderPass = &backEnd.renderPasses[f][i];
+				igText("%s %d", currentRenderPass->name, (int)s_history[i].median);
+				renderPassDuration += currentRenderPass->durationUs;
+			}
+			igText("Overhead %d", (int)duration - (int)renderPassDuration);
+			igText("PSO changes: %d", (int)backEnd.pipelineChangeCount);
+			igText("Textures loaded: %d", (int)tr.numImages);
+
+			static int previousSceneCount;
+			static int previousViewCount;
+			igText("Scenes: %d", tr.sceneCount - previousSceneCount);
+			igText("Views: %d", tr.viewCount - previousViewCount);
+			previousSceneCount = tr.sceneCount;
+			previousViewCount = tr.viewCount;
+
+
+			int64_t currentTime = Sys_Microseconds();
+			static int64_t previousTime = INT64_MIN;
+			const int64_t us = currentTime - previousTime;
+			previousTime = currentTime;
+			static float previousDurations[64];
+			const int n = ARRAY_LEN(previousDurations);
+			static int durationIndex;
+			int minValue = INT_MAX;
+			int maxValue = INT_MIN;
+			previousDurations[durationIndex] = (float)(us);
+			for(int i = 0; i < n; i++){
+				minValue = min(minValue, previousDurations[i]);
+				maxValue = max(maxValue, previousDurations[i]);
+			}
+
+			igText("Frame delta: %d", us);
+			igText(" min: %d\n max: %d", minValue, maxValue);
+			durationIndex = (durationIndex + 1) % n;
+			
+			igText("FPS: %d", (int)(1000000 / (us)));
+			ImVec2 graphSize = {1000, 500};
+			igPlotLines_FloatPtr("FPS", previousDurations,n,durationIndex,"durations", 4000 , 10000, graphSize, sizeof(float) );
+			
 		}
-		igText("Overhead %d", (int)duration - (int)renderPassDuration);
-		igText("PSO changes: %d", (int)backEnd.pipelineChangeCount);
-		igText("Textures loaded: %d", (int)tr.numImages);
-
-		static int previousSceneCount;
-		static int previousViewCount;
-		igText("Scenes: %d", tr.sceneCount - previousSceneCount);
-		igText("Views: %d", tr.viewCount - previousViewCount);
-		previousSceneCount = tr.sceneCount;
-		previousViewCount = tr.viewCount;
-
-
-		int64_t currentTime = Sys_Microseconds();
-		static int64_t previousTime = INT64_MIN;
-		static float previousDurations[64];
-		const int n = ARRAY_LEN(previousDurations);
-		static int durationIndex;
-		int minValue = INT_MAX;
-		int maxValue = INT_MIN;
-		previousDurations[durationIndex] = (float)(currentTime - previousTime);
-		for(int i = 0; i < n; i++){
-			minValue = min(minValue, previousDurations[i]);
-			maxValue = max(maxValue, previousDurations[i]);
-		}
-
-		igText("Frame delta: %d", currentTime - previousTime);
-		igText(" min: %d\n max: %d", minValue, maxValue);
-		durationIndex = (durationIndex + 1) % n;
-		
-		igText("FPS: %d", (int)(1000000 / (currentTime - previousTime)));
-		ImVec2 graphSize = {1000, 500};
-		igPlotLines_FloatPtr("FPS", previousDurations,n,durationIndex,"durations", 4000 , 10000, graphSize, sizeof(float) );
-		previousTime = currentTime;
+		igEnd();
 	}
-	igEnd();
 	
+}
+
+const void  *RB_EndFrame( const void *data ) {
+	const swapBuffersCommand_t  *cmd;
+
+	// finish any 2D drawing if needed
+	if ( tess.numIndexes ) {
+		RB_EndSurface();
+	}
+
+
+	cmd = (const swapBuffersCommand_t *)data;
+
+	GUI_DrawMainMenu();
+	DrawGUI_Performance();
 
 	RB_DrawGamma(backEnd.colorBuffer2);
 	RB_ImGUI_Draw(backEnd.colorBuffer2);

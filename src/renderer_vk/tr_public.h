@@ -203,4 +203,6 @@ typedef struct {
 // returned.
 refexport_t*GetRefAPI( int apiVersion, refimport_t *rimp );
 
+void RE_DrawMainMenuBarInfo(void);
+
 #endif  // __TR_PUBLIC_H

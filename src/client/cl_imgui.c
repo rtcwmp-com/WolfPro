@@ -208,3 +208,102 @@ void CL_ImGUI_ButtonMapping(){
 	}
 }
 
+
+typedef struct MainMenuItem
+{
+	ImGUI_MainMenu_Id menu;
+	const char* name;
+	const char* shortcut;
+	bool* selected;
+	bool enabled;
+} MainMenuItem;
+
+typedef struct MainMenu
+{
+	MainMenuItem items[64];
+	int itemCount;
+	int itemCountPerMenu[ImGUI_MainMenu_Count]; // effectively a histogram
+} MainMenu;
+
+static MainMenu mm;
+
+#define M(Enum, Desc) Desc,
+static const char* mainMenuNames[ImGUI_MainMenu_Count + 1] =
+{
+	MAIN_MENU_LIST(M)
+	""
+};
+#undef M
+
+// global requires shift key down, local requires shift up
+
+
+bool IsShortcutPressed(ImGuiKey key, ImGUI_ShortcutOptions flags)
+{
+	const bool globalShortcut = (flags & ImGUI_ShortcutOptions_Global) != 0;
+	const bool shiftStateOK = globalShortcut == igIsKeyDown_Nil(ImGuiMod_Shift);
+	
+	return igIsKeyDown_Nil(ImGuiMod_Ctrl) && shiftStateOK && igIsKeyPressed_Bool(key, false);
+}
+
+void ToggleBooleanWithShortcut(bool *value, ImGuiKey key, ImGUI_ShortcutOptions flags)
+{
+	if (IsShortcutPressed(key, flags))
+	{
+		*value = !*value;
+	}
+}
+
+void GUI_AddMainMenuItem(ImGUI_MainMenu_Id menu, const char* name, const char* shortcut, bool* selected, bool enabled)
+{
+	if(mm.itemCount >= ARRAY_LEN(mm.items) ||
+		(unsigned int)menu >= ImGUI_MainMenu_Count)
+	{
+		Q_assert(!"GUI_AddMainMenuItem: can't add menu entry");
+		return;
+	}
+
+	MainMenuItem *item = &mm.items[mm.itemCount++];
+	item->menu = menu;
+	item->name = name;
+	item->shortcut = shortcut;
+	item->selected = selected;
+	item->enabled = enabled;
+
+	mm.itemCountPerMenu[menu]++;
+}
+
+void GUI_DrawMainMenu()
+{
+	if(igBeginMainMenuBar())
+	{
+		for(int m = 0; m < ImGUI_MainMenu_Count; ++m)
+		{
+			if(mm.itemCountPerMenu[m] <= 0)
+			{
+				continue;
+			}
+
+			if(igBeginMenu(mainMenuNames[m], qtrue))
+			{
+				for(int i = 0; i < mm.itemCount; ++i)
+				{
+					const MainMenuItem *item = &mm.items[i];
+					if(item->menu == m)
+					{
+						igMenuItem_BoolPtr(item->name, item->shortcut, item->selected, item->enabled);
+					}
+				}
+
+				igEndMenu();
+			}
+		}
+
+		RE_DrawMainMenuBarInfo();
+
+		igEndMainMenuBar();
+	}
+
+	mm.itemCount = 0;
+	memset(mm.itemCountPerMenu, 0, sizeof(mm.itemCountPerMenu));
+}

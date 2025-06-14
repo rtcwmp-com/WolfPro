@@ -1920,4 +1920,16 @@ void RB_ImGUI_BeginFrame(void);
 void RB_ImGUI_Draw(rhiTexture renderTarget);
 void R_ComputeCursorPosition( int* x, int* y );
 
+typedef struct RHIExport
+{
+	uint32_t renderToPresentUS;
+	uint32_t inputToRenderUS;
+	uint32_t inputToPresentUS;
+	uint32_t presentToPresentUS;
+	float monitorFrameDurationMS;
+	float targetFrameDurationMS;
+} RHIExport;
+
+extern RHIExport rhie;
+
 #endif //TR_LOCAL_H (THIS MUST BE LAST!!)

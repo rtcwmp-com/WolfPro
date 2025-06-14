@@ -215,4 +215,37 @@ void RB_ImGUI_Draw(rhiTexture renderTarget){
     
 }
 
+void RE_DrawMainMenuBarInfo(void)
+{
+	static uint32_t frameTimes[16];
+	static uint32_t frameCount = 0;
+	static int displayedFPS = 0;
 
+	// frame times can be 0 in some cases
+	if(rhie.presentToPresentUS > 0)
+	{
+		frameTimes[frameCount++] = rhie.presentToPresentUS;
+	}
+	else
+	{
+		frameCount = 0;
+	}
+	if(frameCount == ARRAY_LEN(frameTimes))
+	{
+		uint32_t sum = 0;
+		for(uint32_t i = 0; i < ARRAY_LEN(frameTimes); ++i)
+		{
+			sum += frameTimes[i];
+		}
+		sum /= ARRAY_LEN(frameTimes);
+		displayedFPS = (int)((1000000 + (sum >> 1)) / sum);
+		frameCount = 0;
+	}
+
+		const char* const info = va(
+		"%s | %3d FPS",
+		RHI_GetDeviceName(), displayedFPS);
+	//const float offset = igGetWindowWidth() - igCalcTextSize("___").x - igCalcTextSize(info).x; igCalcTextSize()
+	//igSameLine(offset);
+	igText(info);
+}
