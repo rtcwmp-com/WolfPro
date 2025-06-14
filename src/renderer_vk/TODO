@@ -20,6 +20,12 @@ add support for (and use) an extra clip plane for portal/mirror views
 fog
 
 MSAA + alpha2coverage
+  - begin 3d rendering
+  - is viewport fullscreen and MSAA 
+    - bind MSAA rendertarget
+    - when no longer rendering fullscreen 3d with MSAA
+      - run gamma correction and resolve in new compute pipeline
+      - bind normal render target
 
 
 remove r_cache/r_cacheshaders

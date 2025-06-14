@@ -1351,7 +1351,7 @@ void RB_CreateGraphicsPipeline(shader_t *newShader){
 		cachedPipeline cached = {};
 
 		for(int i = 0; i < 2; i++){
-			graphicsDesc.sampleCount = i * 8;
+			graphicsDesc.sampleCount = i == 1? r_msaa->integer: 1;
 			if(!RB_GetCachedPipeline(hash, &cached.pipeline, &graphicsDesc)){
 				graphicsDesc.name = newShader->name;
 				cached.pipeline = RHI_CreateGraphicsPipeline(&graphicsDesc);
@@ -1471,4 +1471,16 @@ void RB_EndRenderPass(void){
 
 int RB_GetSamplerIndex(qbool clamp, qbool anisotropy){
 	return (anisotropy * 2) + clamp;
+}
+
+qbool RB_IsMSAAEnabled(void){
+	switch(r_msaa->integer){
+		case 2:
+		case 4:
+		case 8:
+		case 16:
+			return qtrue;
+		default:
+			return qfalse;
+	}
 }

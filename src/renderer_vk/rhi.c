@@ -290,9 +290,8 @@ rhiTexture RHI_CreateTexture(const rhiTextureDesc *desc)
 		imageInfo.format = format;
 		imageInfo.tiling = desc->memoryUsage == RHI_MemoryUsage_Readback ? VK_IMAGE_TILING_LINEAR : VK_IMAGE_TILING_OPTIMAL;
 		imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; 
-		//imageInfo.usage = desc->memoryUsage == RHI_MemoryUsage_Readback ? VK_IMAGE_USAGE_TRANSFER_DST_BIT : GetVkImageUsageFlags(desc->allowedStates);
         imageInfo.usage = GetVkImageUsageFlags(desc->allowedStates);
-		imageInfo.samples = VK_SAMPLE_COUNT_1_BIT; // @TODO: desc->sampleCount
+		imageInfo.samples = GetVkSampleCount(desc->sampleCount);
 		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		VK(vmaCreateImage(vk.allocator, &imageInfo, &allocCreateInfo, &image, &allocation, NULL));
 
@@ -773,7 +772,7 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
     VkPipelineMultisampleStateCreateInfo multiSampling = {};
 	multiSampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 	multiSampling.rasterizationSamples = GetVkSampleCount(graphicsDesc->sampleCount);
-	multiSampling.alphaToCoverageEnable = VK_FALSE;
+	multiSampling.alphaToCoverageEnable = GetVkSampleCount(graphicsDesc->sampleCount) != VK_SAMPLE_COUNT_1_BIT;
 
     VkPipelineDepthStencilStateCreateInfo depthStencil = {};
     depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;

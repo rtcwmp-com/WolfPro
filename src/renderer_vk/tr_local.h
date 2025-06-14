@@ -987,8 +987,10 @@ typedef struct {
 	rhiPipeline previousPipeline;
 	rhiDescriptorSet currentDescriptorSet;
 
-	rhiTexture depthBuffer;
+	rhiTexture depthBufferMS;
+	rhiTexture colorBufferMS;
 	
+	rhiTexture depthBuffer;
 	rhiTexture colorBuffer;
 	rhiTexture colorBuffer2; //ping pong between render targets
 	
@@ -1246,6 +1248,8 @@ extern cvar_t *r_mipFilter;
 extern cvar_t   *r_fullscreenDesktop;
 
 extern cvar_t	*r_sleepThreshold;		// time cushion in us for a call to Sleep(1+)
+
+extern cvar_t *r_msaa;
 //====================================================================
 
 float R_NoiseGet4f( float x, float y, float z, float t );
@@ -1641,6 +1645,7 @@ void RB_ClearPipelineCache(void);
 void RB_BeginRenderPass(const char* name, const RHI_RenderPass* rp);
 void RB_EndRenderPass(void);
 int RB_GetSamplerIndex(qbool clamp, qbool anisotropy);
+qbool RB_IsMSAAEnabled(void);
 
 /*
 =============================================================

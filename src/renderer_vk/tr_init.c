@@ -178,6 +178,8 @@ cvar_t *r_mipFilter;
 
 cvar_t *r_sleepThreshold;
 
+cvar_t *r_msaa;
+
 
 static void AssertCvarRange( cvar_t *cv, float minVal, float maxVal, qboolean shouldBeIntegral ) {
 	if ( shouldBeIntegral ) {
@@ -317,6 +319,14 @@ static void InitVulkan( void ) {
 	depthTextureDesc.width = glConfig.vidWidth;
 	backEnd.depthBuffer = RHI_CreateTexture(&depthTextureDesc);
 
+
+	if(RB_IsMSAAEnabled()){
+		depthTextureDesc.name = "Depth Buffer MS";
+		depthTextureDesc.sampleCount = r_msaa->integer;
+		backEnd.depthBufferMS = RHI_CreateTexture(&depthTextureDesc);
+	}
+	
+
 	rhiTextureDesc colorTextureDesc = {};
 	colorTextureDesc.allowedStates = RHI_ResourceState_RenderTargetBit | RHI_ResourceState_ShaderInputBit | RHI_ResourceState_CopySourceBit;
 	colorTextureDesc.format = R8G8B8A8_UNorm;
@@ -330,6 +340,12 @@ static void InitVulkan( void ) {
 	backEnd.colorBuffer = RHI_CreateTexture(&colorTextureDesc);
 	colorTextureDesc.name = "Color Buffer 2";
 	backEnd.colorBuffer2 = RHI_CreateTexture(&colorTextureDesc);
+
+	if(RB_IsMSAAEnabled()){
+		colorTextureDesc.name = "Color Buffer MS";
+		colorTextureDesc.sampleCount = r_msaa->integer;
+		backEnd.colorBufferMS = RHI_CreateTexture(&colorTextureDesc);
+	}
 
 	rhiSampler blitSampler = backEnd.sampler[RB_GetSamplerIndex(qtrue,qfalse)];
 	rhiSampler gammaSampler = backEnd.sampler[RB_GetSamplerIndex(qtrue,qfalse)];
@@ -692,7 +708,7 @@ R_Register
 void R_Register( void ) {
 	//
 	// latched and archived variables
-	r_ext_texture_filter_anisotropic    = ri.Cvar_Get( "r_ext_texture_filter_anisotropic", "16", CVAR_ARCHIVE );
+	r_ext_texture_filter_anisotropic    = ri.Cvar_Get( "r_anisotropy", "16", CVAR_ARCHIVE | CVAR_LATCH );
 
 
 	r_picmip = ri.Cvar_Get( "r_picmip", "1", CVAR_ARCHIVE | CVAR_LATCH ); //----(SA)	mod for DM and DK for id build.  was "1" // JPW NERVE pushed back to 1
@@ -825,9 +841,11 @@ void R_Register( void ) {
 	r_debugUI = ri.Cvar_Get( "r_debugUI", "0", CVAR_TEMP);
 	r_debugInput = ri.Cvar_Get( "r_debugInput", "0", CVAR_TEMP);
 
-	r_mipFilter = ri.Cvar_Get( "r_mipFilter", "1", CVAR_ARCHIVE );
+	r_mipFilter = ri.Cvar_Get( "r_mipFilter", "1", CVAR_ARCHIVE | CVAR_LATCH);
 
 	r_sleepThreshold = ri.Cvar_Get("r_sleepThreshold", "2500", CVAR_ARCHIVE);
+
+	r_msaa = ri.Cvar_Get("r_msaa", "8", CVAR_ARCHIVE | CVAR_LATCH);
 
 	// make sure all the commands added here are also
 	// removed in R_Shutdown
