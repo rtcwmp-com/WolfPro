@@ -19,9 +19,6 @@ backEnd.refdef.floatTime = originalTime; // - backEnd.currentEntity->e.shaderTim
 add support for (and use) an extra clip plane for portal/mirror views
 fog
 
-better frame pacing
- - redo com_frame/rhi_endframe sleep mechanism _mm_pause busy loop
-
 MSAA + alpha2coverage
 
 

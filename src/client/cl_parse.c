@@ -793,3 +793,34 @@ void CL_ParseServerMessage( msg_t *msg ) {
 		}
 	}
 }
+
+#ifdef RTCW_VULKAN
+//#if 1
+#include "cl_imgui.h"
+
+void CL_ImGUIClientSnapshotStats(void){
+    static qbool windowActive = qfalse;
+	//ToggleBooleanWithShortcut(&windowActive, ImGuiKey_F, ImGUI_ShortcutOptions_Global);
+	GUI_AddMainMenuItem(ImGUI_MainMenu_Info, "Client info", "", &windowActive, qtrue);
+   
+	if(windowActive){
+        
+		if(igBegin("Client info", &windowActive, 0)){
+			igText("Snapshot stats:");
+			igNewLine();
+			if(cls.state == CA_ACTIVE){
+				igText("Current snapshot serverTime: %d (%d)", cl.snap.serverTime, cls.realtime + cl.serverTimeDelta - cl.serverTime);
+				igText("Current ping: %d", cl.snap.ping);
+			}
+			
+
+        }
+        igEnd();
+    }
+}
+
+void CL_ImGUI_Update(void) {
+	CL_ImGUIClientSnapshotStats();
+}
+
+#endif

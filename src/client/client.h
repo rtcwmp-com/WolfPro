@@ -33,7 +33,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "../game/q_shared.h"
 #include "../qcommon/qcommon.h"
 #include "../renderer_common/tr_public.h"
-#include "../renderer_common/tr_public.h"
 #include "../ui/ui_public.h"
 #include "keys.h"
 #include "snd_public.h"
@@ -743,4 +742,9 @@ void Cvar_Rest_Reset(void);
 void CL_GenerateSS(char* address, char* hookid, char* hooktoken, char* waittime, char* datetime);
 char* Sys_GetScreenshotPath(char* filename);
 extern cvar_t* cl_StreamingSelfSignedCert;
+
+#ifdef RTCW_VULKAN
+void CL_GetSnapshotInfo(void);
+void CL_ImGUI_Update(void);
+#endif
 #endif

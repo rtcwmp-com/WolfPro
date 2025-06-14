@@ -1089,6 +1089,7 @@ const void  *RB_EndFrame( const void *data ) {
 
 	GUI_DrawMainMenu();
 	DrawGUI_Performance();
+	ri.CL_ImGUI_Update();
 
 	RB_DrawGamma(backEnd.colorBuffer2);
 	RB_ImGUI_Draw(backEnd.colorBuffer2);

@@ -27,7 +27,6 @@ typedef enum ImGUI_ShortcutOptions
 	ImGUI_ShortcutOptions_Global = 1 << 0
 } ImGUI_ShortcutOptions;
 
-typedef void (*GUI_MainMenuCallback)();
 void GUI_AddMainMenuItem(ImGUI_MainMenu_Id menu, const char* item, const char* shortcut, bool* selected, bool enabled);
 void GUI_DrawMainMenu();
 void ToggleBooleanWithShortcut(bool *value, ImGuiKey key, ImGUI_ShortcutOptions flags);

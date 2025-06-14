@@ -192,6 +192,7 @@ typedef struct {
 	e_status ( *CIN_RunCinematic )( int handle );
 
 	qbool (*IsRecordingVideo)(void);
+	void (*CL_ImGUI_Update)(void);
 
 	
 
