@@ -1349,21 +1349,22 @@ void RB_CreateGraphicsPipeline(shader_t *newShader){
 
 		uint32_t hash = RB_HashPipeline(&graphicsDesc);
 		cachedPipeline cached = {};
-		
-		if(!RB_GetCachedPipeline(hash, &cached.pipeline, &graphicsDesc)){
-			graphicsDesc.name = newShader->name;
-			cached.pipeline = RHI_CreateGraphicsPipeline(&graphicsDesc);
-			
-			graphicsDesc.name = NULL;
-			cached.desc = graphicsDesc;
-			cached.hash = hash;
-			RB_AddCachedPipeline(hash, &cached);
-			totalPipelines++;
-		}
-		assert(cached.pipeline.h != 0);
-		stage->pipeline = cached.pipeline;
 
-		
+		for(int i = 0; i < 2; i++){
+			graphicsDesc.sampleCount = i * 8;
+			if(!RB_GetCachedPipeline(hash, &cached.pipeline, &graphicsDesc)){
+				graphicsDesc.name = newShader->name;
+				cached.pipeline = RHI_CreateGraphicsPipeline(&graphicsDesc);
+				
+				graphicsDesc.name = NULL;
+				cached.desc = graphicsDesc;
+				cached.hash = hash;
+				RB_AddCachedPipeline(hash, &cached);
+				totalPipelines++;
+			}
+			assert(cached.pipeline.h != 0);
+			stage->pipeline[i] = cached.pipeline;
+		}	
 	}
 	
 }

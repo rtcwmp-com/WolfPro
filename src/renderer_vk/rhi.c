@@ -772,7 +772,7 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
 
     VkPipelineMultisampleStateCreateInfo multiSampling = {};
 	multiSampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-	multiSampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+	multiSampling.rasterizationSamples = GetVkSampleCount(graphicsDesc->sampleCount);
 	multiSampling.alphaToCoverageEnable = VK_FALSE;
 
     VkPipelineDepthStencilStateCreateInfo depthStencil = {};
