@@ -1540,3 +1540,27 @@ void RB_FinishFullscreen3D(qbool prevFullscreen3D){
 	
 	
 }
+
+void RB_BeginComputePass(const char* name){
+	RHI_CmdBeginDebugLabel(name);
+	
+	if(backEnd.renderPassCount[backEnd.currentFrameIndex] < MAX_RENDERPASSES){
+		uint32_t i = backEnd.renderPassCount[backEnd.currentFrameIndex]++;
+		renderPass *currentPass = &backEnd.renderPasses[backEnd.currentFrameIndex][i];
+		currentPass->query = RHI_CmdBeginDurationQuery();
+		Q_strncpyz(currentPass->name, name, sizeof(currentPass->name));
+		uint32_t nameHash = 0;
+		CRC32_Begin(&nameHash);
+		CRC32_ProcessBlock(&nameHash, name, strlen(name));
+		CRC32_End(&nameHash);
+		currentPass->nameHash = nameHash;
+	}
+}
+
+void RB_EndComputePass(void){
+	assert(backEnd.renderPassCount[backEnd.currentFrameIndex] > 0);
+	uint32_t i = backEnd.renderPassCount[backEnd.currentFrameIndex] - 1;
+	renderPass *currentPass = &backEnd.renderPasses[backEnd.currentFrameIndex][i];
+	RHI_CmdEndDurationQuery(currentPass->query);
+	RHI_CmdEndDebugLabel();
+}

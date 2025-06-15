@@ -69,6 +69,7 @@ void RB_MSAA_Init(void){
 
 void RB_MSAA_Resolve(rhiTexture MSTexture, rhiTexture resTexture){
     RB_EndRenderPass();
+    RB_BeginComputePass("MSAA Resolve");
 
     RHI_CmdBeginBarrier();
     RHI_CmdTextureBarrier(resTexture, RHI_ResourceState_ShaderReadWriteBit);
@@ -90,5 +91,5 @@ void RB_MSAA_Resolve(rhiTexture MSTexture, rhiTexture resTexture){
     RHI_CmdBindDescriptorSet(msaaPipeline, set);
 
     RHI_CmdDispatch((glConfig.vidWidth + 7)/8, (glConfig.vidHeight + 7)/8, 1);
-
+    RB_EndComputePass();
 }

@@ -1647,6 +1647,8 @@ int RB_GetDynamicLightPipelineIndex(int cull, int polygonOffset);
 void RB_ClearPipelineCache(void);
 void RB_BeginRenderPass(const char* name, const RHI_RenderPass* rp);
 void RB_EndRenderPass(void);
+void RB_BeginComputePass(const char* name);
+void RB_EndComputePass(void);
 int RB_GetSamplerIndex(qbool clamp, qbool anisotropy);
 qbool RB_IsMSAARequested(void);
 qbool RB_IsViewportFullscreen(const viewParms_t *vp);
