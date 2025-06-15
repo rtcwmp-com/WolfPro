@@ -201,16 +201,30 @@ void RB_BeginDrawingView( void ) {
 		RB_UploadSceneView(backEnd.viewParms.vulkanProjectionMatrix, zeroPlane);
 	}
 
-
-	RHI_CmdBeginBarrier();
-	RHI_CmdTextureBarrier(backEnd.depthBuffer, RHI_ResourceState_DepthWriteBit);
-	RHI_CmdTextureBarrier(backEnd.colorBuffer, RHI_ResourceState_RenderTargetBit);
-	RHI_CmdEndBarrier();
+	if(!RB_IsViewportFullscreen(&backEnd.viewParms)){
+		RB_ResolveMSAA();
+	}
+	
 
 	RHI_RenderPass renderPass = {};
-
-	renderPass.colorTexture = backEnd.colorBuffer;
-	renderPass.depthTexture = backEnd.depthBuffer;
+	if(RB_IsMSAAEnabled() && RB_IsViewportFullscreen(&backEnd.viewParms)){
+		renderPass.colorTexture = backEnd.colorBufferMS;
+		renderPass.depthTexture = backEnd.depthBufferMS;
+		backEnd.msaaActive = qtrue;
+		RHI_CmdBeginBarrier();
+		RHI_CmdTextureBarrier(backEnd.depthBufferMS, RHI_ResourceState_DepthWriteBit);
+		RHI_CmdTextureBarrier(backEnd.colorBufferMS, RHI_ResourceState_RenderTargetBit);
+		RHI_CmdEndBarrier();
+	}else{
+		renderPass.colorTexture = backEnd.colorBuffer;
+		renderPass.depthTexture = backEnd.depthBuffer;
+		backEnd.msaaActive = qfalse;
+		RHI_CmdBeginBarrier();
+		RHI_CmdTextureBarrier(backEnd.depthBuffer, RHI_ResourceState_DepthWriteBit);
+		RHI_CmdTextureBarrier(backEnd.colorBuffer, RHI_ResourceState_RenderTargetBit);
+		RHI_CmdEndBarrier();
+	}
+	
 	renderPass.depth = 1.0f;
 	Vector4Copy(clearColor, renderPass.color);
 	renderPass.depthLoad = (clearBits & GL_DEPTH_BUFFER_BIT)? RHI_LoadOp_Clear : RHI_LoadOp_Load; 
@@ -537,6 +551,8 @@ void    RB_SetGL2D( void ) {
 	renderPass.colorLoad = backEnd.clearColor ? RHI_LoadOp_Clear : RHI_LoadOp_Load;
 	renderPass.colorTexture = backEnd.colorBuffer;
 	backEnd.clearColor = qfalse;
+
+	RB_ResolveMSAA();
 
 	RB_BeginRenderPass("2D", &renderPass);
 
@@ -1084,6 +1100,8 @@ const void  *RB_EndFrame( const void *data ) {
 		RB_EndSurface();
 	}
 
+	RB_ResolveMSAA();
+
 
 	cmd = (const swapBuffersCommand_t *)data;
 
@@ -1483,4 +1501,15 @@ qbool RB_IsMSAAEnabled(void){
 		default:
 			return qfalse;
 	}
+}
+
+qbool RB_IsViewportFullscreen(const viewParms_t *vp){
+	return vp->viewportHeight == glConfig.vidHeight 
+			&& vp->viewportWidth == glConfig.vidWidth 
+			&& vp->viewportX == 0 
+			&& vp->viewportY == 0;
+}
+
+void RB_ResolveMSAA(void){
+	backEnd.msaaActive = qfalse;
 }

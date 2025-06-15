@@ -576,7 +576,7 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 			break;
 		}
 
-		rhiPipeline pipeline = pStage->pipeline[0];
+		rhiPipeline pipeline = pStage->pipeline[backEnd.msaaActive ? 1 : 0];
 
 		if (i > 0) {
 			//__debugbreak();
@@ -928,7 +928,7 @@ void RB_StageIteratorLightmappedMultitexture( void ) {
 		return;
 	}
 
-	rhiPipeline pipeline = pStage->pipeline[0];
+	rhiPipeline pipeline = pStage->pipeline[backEnd.msaaActive ? 1 : 0];
 
 	VertexBuffers *vb = &backEnd.vertexBuffers[backEnd.currentFrameIndex];
 

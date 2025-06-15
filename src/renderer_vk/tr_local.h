@@ -989,6 +989,7 @@ typedef struct {
 
 	rhiTexture depthBufferMS;
 	rhiTexture colorBufferMS;
+	qbool msaaActive;
 	
 	rhiTexture depthBuffer;
 	rhiTexture colorBuffer;
@@ -1646,7 +1647,8 @@ void RB_BeginRenderPass(const char* name, const RHI_RenderPass* rp);
 void RB_EndRenderPass(void);
 int RB_GetSamplerIndex(qbool clamp, qbool anisotropy);
 qbool RB_IsMSAAEnabled(void);
-
+qbool RB_IsViewportFullscreen(const viewParms_t *vp);
+void RB_ResolveMSAA(void);
 /*
 =============================================================
 
