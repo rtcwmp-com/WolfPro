@@ -1528,7 +1528,7 @@ void RB_FinishFullscreen3D(qbool prevFullscreen3D){
 	if(prevFullscreen3D && !backEnd.fullscreen3D){
 		if(backEnd.msaaActive){
 			backEnd.msaaActive = qfalse;
-			RB_MSAA_Resolve();
+			RB_MSAA_Resolve(backEnd.colorBufferMS, backEnd.colorBuffer);
 		} else {
 			rhiSampler gammaSampler = backEnd.sampler[RB_GetSamplerIndex(qtrue,qfalse)];
 			RB_DrawGamma(backEnd.colorBuffer, gammaSampler, backEnd.colorBuffers[backEnd.colorBufferIndex ^ 1]); 

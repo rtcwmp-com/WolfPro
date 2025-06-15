@@ -352,7 +352,7 @@ static void InitVulkan( void ) {
 	RB_InitBlit();
 
 	if(RB_IsMSAARequested()){
-		RB_MSAA_Init(backEnd.colorBufferMS, backEnd.colorBuffers[0]);
+		RB_MSAA_Init();
 	}
 	
 	RB_ImGUI_Init();

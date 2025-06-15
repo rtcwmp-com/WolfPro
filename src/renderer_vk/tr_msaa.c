@@ -5,13 +5,10 @@
 
 rhiDescriptorSetLayout msaaDescSetLayout;
 rhiPipeline msaaPipeline;
-rhiDescriptorSet msaaDescSet;
-rhiTexture msaaTexture;
-rhiTexture resolvedTexture;
+rhiDescriptorSet msaaDescSet[2];
 
-void RB_MSAA_Init(rhiTexture MSTexture, rhiTexture resTexture){
-    msaaTexture = MSTexture;
-    resolvedTexture = resTexture;
+void RB_MSAA_Init(void){
+
     rhiDescriptorSetLayoutDesc descriptorSetLayoutDesc = {};
     descriptorSetLayoutDesc.name = "MSAA Desc Set Layout";
     descriptorSetLayoutDesc.bindingCount = 2;
@@ -33,23 +30,28 @@ void RB_MSAA_Init(rhiTexture MSTexture, rhiTexture resTexture){
     desc.shader.byteCount = sizeof(msaa_cs);
 
     msaaPipeline = RHI_CreateComputePipeline(&desc);
-    msaaDescSet = RHI_CreateDescriptorSet("MSAA", msaaDescSetLayout, qfalse);
+    msaaDescSet[0] = RHI_CreateDescriptorSet("MSAA 1", msaaDescSetLayout, qfalse);
+    msaaDescSet[1] = RHI_CreateDescriptorSet("MSAA 2", msaaDescSetLayout, qfalse);
 
-    RHI_UpdateDescriptorSet(msaaDescSet, 0, RHI_DescriptorType_ReadOnlyTexture, 0, 1, &msaaTexture, 0);
-    RHI_UpdateDescriptorSet(msaaDescSet, 1, RHI_DescriptorType_ReadWriteTexture, 0, 1, &resolvedTexture, 0);
+    
 }
 
-void RB_MSAA_Resolve(void){
+void RB_MSAA_Resolve(rhiTexture MSTexture, rhiTexture resTexture){
     RB_EndRenderPass();
 
     RHI_CmdBeginBarrier();
-    RHI_CmdTextureBarrier(resolvedTexture, RHI_ResourceState_ShaderReadWriteBit);
-    RHI_CmdTextureBarrier(msaaTexture, RHI_ResourceState_ShaderInputBit);
+    RHI_CmdTextureBarrier(resTexture, RHI_ResourceState_ShaderReadWriteBit);
+    RHI_CmdTextureBarrier(MSTexture, RHI_ResourceState_ShaderInputBit);
     RHI_CmdEndBarrier();
 
 
     RHI_CmdBindPipeline(msaaPipeline);
-    RHI_CmdBindDescriptorSet(msaaPipeline, msaaDescSet);
+
+    rhiDescriptorSet set = msaaDescSet[backEnd.currentFrameIndex];
+    RHI_UpdateDescriptorSet(set, 0, RHI_DescriptorType_ReadOnlyTexture, 0, 1, &MSTexture, 0);
+    RHI_UpdateDescriptorSet(set, 1, RHI_DescriptorType_ReadWriteTexture, 0, 1, &resTexture, 0);
+
+    RHI_CmdBindDescriptorSet(msaaPipeline, set);
 
     RHI_CmdDispatch((glConfig.vidWidth + 7)/8, (glConfig.vidHeight + 7)/8, 1);
 
