@@ -337,9 +337,9 @@ static void InitVulkan( void ) {
 	colorTextureDesc.name = "Color Buffer";
 	colorTextureDesc.sampleCount = 1;
 	colorTextureDesc.width = glConfig.vidWidth;
-	backEnd.colorBuffer = RHI_CreateTexture(&colorTextureDesc);
+	backEnd.colorBuffers[0] = RHI_CreateTexture(&colorTextureDesc);
 	colorTextureDesc.name = "Color Buffer 2";
-	backEnd.colorBuffer2 = RHI_CreateTexture(&colorTextureDesc);
+	backEnd.colorBuffers[1] = RHI_CreateTexture(&colorTextureDesc);
 
 	if(RB_IsMSAARequested()){
 		colorTextureDesc.name = "Color Buffer MS";
@@ -347,15 +347,12 @@ static void InitVulkan( void ) {
 		colorTextureDesc.allowedStates = RHI_ResourceState_RenderTargetBit | RHI_ResourceState_ShaderInputBit | RHI_ResourceState_CopySourceBit;
 		backEnd.colorBufferMS = RHI_CreateTexture(&colorTextureDesc);
 	}
-
-	rhiSampler blitSampler = backEnd.sampler[RB_GetSamplerIndex(qtrue,qfalse)];
-	rhiSampler gammaSampler = backEnd.sampler[RB_GetSamplerIndex(qtrue,qfalse)];
 	
-	RB_InitGamma(backEnd.colorBuffer, gammaSampler);
-	RB_InitBlit(backEnd.colorBuffer2, blitSampler);
+	RB_InitGamma();
+	RB_InitBlit();
 
 	if(RB_IsMSAARequested()){
-		RB_MSAA_Init(backEnd.colorBufferMS, backEnd.colorBuffer);
+		RB_MSAA_Init(backEnd.colorBufferMS, backEnd.colorBuffers[0]);
 	}
 	
 	RB_ImGUI_Init();
@@ -397,7 +394,7 @@ void R_TakeScreenshot(char *fileName ) {
 	tgaHeader[15] = height >> 8;
 	tgaHeader[16] = 32;    // pixel size
 
-	RHI_Screenshot( buffer, backEnd.colorBuffer2 );
+	RHI_Screenshot( buffer, backEnd.colorBuffer );
 	//swap rgb to bgr
 	c = width * height * 4;
 	for ( i = 0 ; i < c ; i += 4 ) {
@@ -429,7 +426,7 @@ void R_TakeScreenshotJPEG(char *fileName ) {
 
 	buffer = ri.Hunk_AllocateTempMemory( glConfig.vidWidth * glConfig.vidHeight * 4 );
 
-	RHI_Screenshot( buffer, backEnd.colorBuffer2 );
+	RHI_Screenshot( buffer, backEnd.colorBuffer );
 
 
 	ri.FS_WriteFile( fileName, buffer, 1 );     // create path

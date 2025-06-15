@@ -548,15 +548,19 @@ void    RB_SetGL2D( void ) {
 
 	memcpy(backEnd.or.modelMatrix, modelViewMatrix, sizeof(backEnd.or.modelMatrix));
 
+	const qbool prevFullscreen3D = backEnd.fullscreen3D;
+	backEnd.fullscreen3D = qfalse;
+	RB_FinishFullscreen3D(prevFullscreen3D);
+
+	RHI_CmdBeginBarrier();
+	RHI_CmdTextureBarrier(backEnd.colorBuffer, RHI_ResourceState_RenderTargetBit);
+	RHI_CmdEndBarrier();
+
 	RHI_RenderPass renderPass = {};
 	
 	renderPass.colorLoad = backEnd.clearColor ? RHI_LoadOp_Clear : RHI_LoadOp_Load;
 	renderPass.colorTexture = backEnd.colorBuffer;
 	backEnd.clearColor = qfalse;
-
-	const qbool prevFullscreen3D = backEnd.fullscreen3D;
-	backEnd.fullscreen3D = qfalse;
-	RB_FinishFullscreen3D(prevFullscreen3D);
 
 	RB_BeginRenderPass("2D", &renderPass);
 
@@ -941,6 +945,8 @@ const void  *RB_BeginFrame( const void *data ) {
 	backEnd.currentDescriptorSet.h = 0;
 	backEnd.pipelineChangeCount = 0;
 	backEnd.previousVertexBufferCount = 0;
+	backEnd.colorBufferIndex = 0;
+	backEnd.colorBuffer = backEnd.colorBuffers[backEnd.colorBufferIndex];
 	
 	backEnd.vertexBuffers[backEnd.currentFrameIndex].indexCount = 0; 
 	backEnd.vertexBuffers[backEnd.currentFrameIndex].indexFirst = 0; 
@@ -1115,10 +1121,11 @@ const void  *RB_EndFrame( const void *data ) {
 	DrawGUI_Performance();
 	ri.CL_ImGUI_Update();
 
-	RB_DrawGamma(backEnd.colorBuffer2);
+	RB_ImGUI_Draw(backEnd.colorBuffer);
 
-	RB_ImGUI_Draw(backEnd.colorBuffer2);
-	RB_DrawBlit(backEnd.swapChainTextures[backEnd.swapChainImageIndex]);
+	rhiSampler blitSampler = backEnd.sampler[RB_GetSamplerIndex(qtrue,qfalse)];
+
+	RB_DrawBlit(backEnd.colorBuffer, blitSampler, backEnd.swapChainTextures[backEnd.swapChainImageIndex]);
 	RB_EndRenderPass();
 
 	RHI_CmdBeginBarrier();
@@ -1520,12 +1527,17 @@ qbool RB_IsViewportFullscreen(const viewParms_t *vp){
 void RB_FinishFullscreen3D(qbool prevFullscreen3D){
 	if(prevFullscreen3D && !backEnd.fullscreen3D){
 		if(backEnd.msaaActive){
-		backEnd.msaaActive = qfalse;
-
-		RB_MSAA_Resolve();
+			backEnd.msaaActive = qfalse;
+			RB_MSAA_Resolve();
 		} else {
-			//RB_DrawGamma(); //@TODO
+			rhiSampler gammaSampler = backEnd.sampler[RB_GetSamplerIndex(qtrue,qfalse)];
+			RB_DrawGamma(backEnd.colorBuffer, gammaSampler, backEnd.colorBuffers[backEnd.colorBufferIndex ^ 1]); 
+			backEnd.colorBufferIndex ^= 1;
+			backEnd.colorBuffer = backEnd.colorBuffers[backEnd.colorBufferIndex];
+			
 		}
+		backEnd.pipelineLayoutDirty = qtrue;
 	}
+	
 	
 }

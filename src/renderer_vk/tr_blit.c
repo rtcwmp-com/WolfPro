@@ -5,11 +5,9 @@
 
 rhiDescriptorSetLayout blitDescSetLayout;
 rhiPipeline blitPipeline;
-rhiDescriptorSet blitDescSet;
-rhiTexture blitTexture;
+rhiDescriptorSet blitDescSet[2];
 
-void RB_InitBlit(rhiTexture texture, rhiSampler sampler){
-    blitTexture = texture;
+void RB_InitBlit(void){
     rhiDescriptorSetLayoutDesc descriptorSetLayoutDesc = {};
     descriptorSetLayoutDesc.name = "Blit Desc Set Layout";
     descriptorSetLayoutDesc.bindingCount = 2;
@@ -38,18 +36,18 @@ void RB_InitBlit(rhiTexture texture, rhiSampler sampler){
     desc.vertexShader.byteCount = sizeof(blit_vs);
 
     blitPipeline = RHI_CreateGraphicsPipeline(&desc);
-    blitDescSet = RHI_CreateDescriptorSet("Blit", blitDescSetLayout, qfalse);
+    blitDescSet[0] = RHI_CreateDescriptorSet("Blit", blitDescSetLayout, qfalse);
+    blitDescSet[1] = RHI_CreateDescriptorSet("Blit", blitDescSetLayout, qfalse);
 
-    RHI_UpdateDescriptorSet(blitDescSet, 0, RHI_DescriptorType_ReadOnlyTexture, 0, 1, &texture, 0);
-    RHI_UpdateDescriptorSet(blitDescSet, 1, RHI_DescriptorType_Sampler, 0, 1, &sampler, 0);
+    
 }
 
-void RB_DrawBlit(rhiTexture swapChainImage){
+void RB_DrawBlit(rhiTexture texture, rhiSampler sampler, rhiTexture swapChainImage){
     RB_EndRenderPass();
 
     RHI_CmdBeginBarrier();
     RHI_CmdTextureBarrier(swapChainImage, RHI_ResourceState_RenderTargetBit);
-    RHI_CmdTextureBarrier(blitTexture, RHI_ResourceState_ShaderInputBit);
+    RHI_CmdTextureBarrier(texture, RHI_ResourceState_ShaderInputBit);
     RHI_CmdEndBarrier();
 
     qbool isBlitted = r_fullscreen->integer && !r_fullscreenDesktop->integer;
@@ -70,9 +68,13 @@ void RB_DrawBlit(rhiTexture swapChainImage){
         RHI_CmdSetViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight, 0.0f, 1.0f);
         RHI_CmdSetScissor(0, 0, glConfig.vidWidth, glConfig.vidHeight);
     }
-    
+
+    rhiDescriptorSet set = blitDescSet[backEnd.currentFrameIndex];
+    RHI_UpdateDescriptorSet(set, 0, RHI_DescriptorType_ReadOnlyTexture, 0, 1, &texture, 0);
+    RHI_UpdateDescriptorSet(set, 1, RHI_DescriptorType_Sampler, 0, 1, &sampler, 0);
+
     RHI_CmdBindPipeline(blitPipeline);
-    RHI_CmdBindDescriptorSet(blitPipeline, blitDescSet);
+    RHI_CmdBindDescriptorSet(blitPipeline, set);
     RHI_CmdDraw(3, 0);
 
     RB_EndRenderPass();

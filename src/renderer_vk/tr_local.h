@@ -993,8 +993,9 @@ typedef struct {
 	qbool fullscreen3D; //only valid when projection2D is false
 	
 	rhiTexture depthBuffer;
-	rhiTexture colorBuffer;
-	rhiTexture colorBuffer2; //ping pong between render targets
+	rhiTexture colorBuffer; //current active rendertarget
+	rhiTexture colorBuffers[2]; //ping pong between render targets
+	uint32_t colorBufferIndex;
 	
 	rhiDurationQuery frameDuration[RHI_FRAMES_IN_FLIGHT];
 	renderPass renderPasses[RHI_FRAMES_IN_FLIGHT][MAX_RENDERPASSES];
@@ -1917,11 +1918,11 @@ typedef struct dynamicLightPushConstants {
 
 void R_Gpulist_f(void);
 
-void RB_InitGamma(rhiTexture texture, rhiSampler sampler);
-void RB_DrawGamma(rhiTexture renderTarget);
+void RB_InitGamma(void);
+void RB_DrawGamma(rhiTexture texture, rhiSampler sampler, rhiTexture renderTarget);
 
-void RB_InitBlit(rhiTexture texture, rhiSampler sampler);
-void RB_DrawBlit(rhiTexture renderTarget);
+void RB_InitBlit(void);
+void RB_DrawBlit(rhiTexture texture, rhiSampler sampler, rhiTexture swapChainImage);
 
 void RB_ImGUI_Init(void);
 void RB_ImGUI_BeginFrame(void);

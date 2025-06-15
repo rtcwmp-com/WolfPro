@@ -616,10 +616,10 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 			backEnd.pipelineChangeCount++;
 		}
 		if(backEnd.currentDescriptorSet.h == 0 || backEnd.pipelineLayoutDirty){
-		RHI_CmdBindDescriptorSet(pipeline, backEnd.descriptorSet);
-		backEnd.currentDescriptorSet = backEnd.descriptorSet;
-		backEnd.pipelineLayoutDirty = qfalse;
-	}
+			RHI_CmdBindDescriptorSet(pipeline, backEnd.descriptorSet);
+			backEnd.currentDescriptorSet = backEnd.descriptorSet;
+			backEnd.pipelineLayoutDirty = qfalse;
+		}
 
 		rhiBuffer buffers[] = {vb->position, vb->color[i], vb->textureCoord[i]};
 		if(backEnd.previousVertexBufferCount != ARRAY_LEN(buffers) 
