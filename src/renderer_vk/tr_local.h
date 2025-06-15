@@ -1927,6 +1927,9 @@ void RB_ImGUI_BeginFrame(void);
 void RB_ImGUI_Draw(rhiTexture renderTarget);
 void R_ComputeCursorPosition( int* x, int* y );
 
+void RB_MSAA_Init(rhiTexture MSTexture, rhiTexture resTexture);
+void RB_MSAA_Resolve(void);
+
 typedef struct RHIExport
 {
 	uint32_t renderToPresentUS;

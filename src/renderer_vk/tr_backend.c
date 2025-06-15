@@ -1511,5 +1511,11 @@ qbool RB_IsViewportFullscreen(const viewParms_t *vp){
 }
 
 void RB_ResolveMSAA(void){
-	backEnd.msaaActive = qfalse;
+	
+
+	if(backEnd.msaaActive){
+		backEnd.msaaActive = qfalse;
+
+		RB_MSAA_Resolve();
+	}
 }

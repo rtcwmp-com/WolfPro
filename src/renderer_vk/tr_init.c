@@ -328,7 +328,7 @@ static void InitVulkan( void ) {
 	
 
 	rhiTextureDesc colorTextureDesc = {};
-	colorTextureDesc.allowedStates = RHI_ResourceState_RenderTargetBit | RHI_ResourceState_ShaderInputBit | RHI_ResourceState_CopySourceBit;
+	colorTextureDesc.allowedStates = RHI_ResourceState_RenderTargetBit | RHI_ResourceState_ShaderInputBit | RHI_ResourceState_CopySourceBit | RHI_ResourceState_ShaderReadWriteBit;
 	colorTextureDesc.format = R8G8B8A8_UNorm;
 	colorTextureDesc.height = glConfig.vidHeight;
 	colorTextureDesc.initialState = RHI_ResourceState_RenderTargetBit;
@@ -344,6 +344,7 @@ static void InitVulkan( void ) {
 	if(RB_IsMSAAEnabled()){
 		colorTextureDesc.name = "Color Buffer MS";
 		colorTextureDesc.sampleCount = r_msaa->integer;
+		colorTextureDesc.allowedStates = RHI_ResourceState_RenderTargetBit | RHI_ResourceState_ShaderInputBit | RHI_ResourceState_CopySourceBit;
 		backEnd.colorBufferMS = RHI_CreateTexture(&colorTextureDesc);
 	}
 
@@ -352,6 +353,11 @@ static void InitVulkan( void ) {
 	
 	RB_InitGamma(backEnd.colorBuffer, gammaSampler);
 	RB_InitBlit(backEnd.colorBuffer2, blitSampler);
+
+	if(RB_IsMSAAEnabled()){
+		RB_MSAA_Init(backEnd.colorBufferMS, backEnd.colorBuffer);
+	}
+	
 	RB_ImGUI_Init();
 	RB_CreateDynamicLightPipelines();
 	

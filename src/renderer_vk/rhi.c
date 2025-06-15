@@ -538,7 +538,7 @@ rhiPipeline RHI_CreateComputePipeline(const rhiComputePipelineDesc *computeDesc)
     DescriptorSetLayout *descriptorSetLayout = GET_LAYOUT(computeDesc->descLayout);
 
     VkPushConstantRange pcr = {};
-    pcr.size = computeDesc->pushConstantsBytes;
+    pcr.size = max(computeDesc->pushConstantsBytes, 4);
     pcr.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
     VkPipelineLayout vkPipelineLayout = VK_NULL_HANDLE;
