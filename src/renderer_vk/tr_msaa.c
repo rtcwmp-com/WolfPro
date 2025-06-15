@@ -1,6 +1,8 @@
 #include "tr_local.h"
 #include "rhi.h"
-#include "shaders/msaa_cs.h"
+#include "shaders/msaa_2_cs.h"
+#include "shaders/msaa_4_cs.h"
+#include "shaders/msaa_8_cs.h"
 
 
 #pragma pack(push,1)
@@ -17,6 +19,9 @@ rhiPipeline msaaPipeline;
 rhiDescriptorSet msaaDescSet[2];
 
 void RB_MSAA_Init(void){
+    if(!RB_IsMSAARequested()){
+        return;
+    }
 
     rhiDescriptorSetLayoutDesc descriptorSetLayoutDesc = {};
     descriptorSetLayoutDesc.name = "MSAA Desc Set Layout";
@@ -36,8 +41,24 @@ void RB_MSAA_Init(void){
     desc.descLayout = msaaDescSetLayout;
     desc.pushConstantsBytes = sizeof(MSAAPC);
 
-    desc.shader.data = msaa_cs;
-    desc.shader.byteCount = sizeof(msaa_cs);
+    switch(r_msaa->integer){
+        case 2:
+            desc.shader.data = msaa_2_cs;
+            desc.shader.byteCount = sizeof(msaa_2_cs);
+            break;
+        case 4:
+            desc.shader.data = msaa_4_cs;
+            desc.shader.byteCount = sizeof(msaa_4_cs);
+            break;
+        case 8:
+            desc.shader.data = msaa_8_cs;
+            desc.shader.byteCount = sizeof(msaa_8_cs);
+            break;
+        default:
+            assert(!"bad MSAA sample count");
+            break;
+    }
+
 
     msaaPipeline = RHI_CreateComputePipeline(&desc);
     msaaDescSet[0] = RHI_CreateDescriptorSet("MSAA 1", msaaDescSetLayout, qfalse);

@@ -24,7 +24,7 @@ void cs(uint3 dtID : SV_DispatchThreadID)
     }
     
     float4 accum = float4(0, 0, 0, 0);
-    for(int i = 0; i < 8; i++){
+    for(int i = 0; i < SAMPLE_COUNT; i++){
         //accum += src.Load(dtID.xy, i);
         float4 sampled = src.Load(dtID.xy, i);
         float3 gc = pow(sampled.rgb, rc.invGamma) * rc.brightness;
@@ -32,7 +32,7 @@ void cs(uint3 dtID : SV_DispatchThreadID)
 
     }
 
-    dst[dtID.xy] = accum / 8.0;
+    dst[dtID.xy] = accum / float(SAMPLE_COUNT);
 
 
 }

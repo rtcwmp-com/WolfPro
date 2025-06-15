@@ -350,11 +350,7 @@ static void InitVulkan( void ) {
 	
 	RB_InitGamma();
 	RB_InitBlit();
-
-	if(RB_IsMSAARequested()){
-		RB_MSAA_Init();
-	}
-	
+	RB_MSAA_Init();
 	RB_ImGUI_Init();
 	RB_CreateDynamicLightPipelines();
 	

@@ -19,4 +19,6 @@ del *_cs.h
 %DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T cs_6_0 -E cs %cd%\mipmap_y.hlsl -Fh %cd%\mipmap_y_cs.h -Vn mipmap_y_cs -D CS
 %DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T vs_6_0 -E vs %cd%\dynamiclight.hlsl -Fh %cd%\dynamiclight_vs.h -Vn dynamiclight_vs -D VS
 %DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T ps_6_0 -E ps %cd%\dynamiclight.hlsl -Fh %cd%\dynamiclight_ps.h -Vn dynamiclight_ps -D PS
-%DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T cs_6_0 -E cs %cd%\msaa.hlsl -Fh %cd%\msaa_cs.h -Vn msaa_cs -D CS
+%DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T cs_6_0 -E cs %cd%\msaa.hlsl -Fh %cd%\msaa_2_cs.h -Vn msaa_2_cs -D SAMPLE_COUNT=2
+%DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T cs_6_0 -E cs %cd%\msaa.hlsl -Fh %cd%\msaa_4_cs.h -Vn msaa_4_cs -D SAMPLE_COUNT=4
+%DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T cs_6_0 -E cs %cd%\msaa.hlsl -Fh %cd%\msaa_8_cs.h -Vn msaa_8_cs -D SAMPLE_COUNT=8
