@@ -200,25 +200,26 @@ void RB_BeginDrawingView( void ) {
 		vec4_t zeroPlane = {0};
 		RB_UploadSceneView(backEnd.viewParms.vulkanProjectionMatrix, zeroPlane);
 	}
+	const qbool prevFullscreen3D = backEnd.fullscreen3D;
+	backEnd.fullscreen3D = RB_IsViewportFullscreen(&backEnd.viewParms);
+	RB_FinishFullscreen3D(prevFullscreen3D);
 
-	if(!RB_IsViewportFullscreen(&backEnd.viewParms)){
-		RB_ResolveMSAA();
-	}
-	
 
 	RHI_RenderPass renderPass = {};
-	if(RB_IsMSAAEnabled() && RB_IsViewportFullscreen(&backEnd.viewParms)){
+	if(RB_IsMSAARequested() && backEnd.fullscreen3D){
+		backEnd.msaaActive = qtrue;
 		renderPass.colorTexture = backEnd.colorBufferMS;
 		renderPass.depthTexture = backEnd.depthBufferMS;
-		backEnd.msaaActive = qtrue;
+		
 		RHI_CmdBeginBarrier();
 		RHI_CmdTextureBarrier(backEnd.depthBufferMS, RHI_ResourceState_DepthWriteBit);
 		RHI_CmdTextureBarrier(backEnd.colorBufferMS, RHI_ResourceState_RenderTargetBit);
 		RHI_CmdEndBarrier();
 	}else{
+		backEnd.msaaActive = qfalse;
 		renderPass.colorTexture = backEnd.colorBuffer;
 		renderPass.depthTexture = backEnd.depthBuffer;
-		backEnd.msaaActive = qfalse;
+		
 		RHI_CmdBeginBarrier();
 		RHI_CmdTextureBarrier(backEnd.depthBuffer, RHI_ResourceState_DepthWriteBit);
 		RHI_CmdTextureBarrier(backEnd.colorBuffer, RHI_ResourceState_RenderTargetBit);
@@ -227,7 +228,8 @@ void RB_BeginDrawingView( void ) {
 	
 	renderPass.depth = 1.0f;
 	Vector4Copy(clearColor, renderPass.color);
-	renderPass.depthLoad = (clearBits & GL_DEPTH_BUFFER_BIT)? RHI_LoadOp_Clear : RHI_LoadOp_Load; 
+	//renderPass.depthLoad = (clearBits & GL_DEPTH_BUFFER_BIT)? RHI_LoadOp_Clear : RHI_LoadOp_Load; 
+	renderPass.depthLoad = RHI_LoadOp_Clear; 
 	renderPass.colorLoad = (clearBits & GL_COLOR_BUFFER_BIT) || backEnd.clearColor ? RHI_LoadOp_Clear : RHI_LoadOp_Load; 
 	RB_BeginRenderPass("3D", &renderPass);
 
@@ -552,7 +554,9 @@ void    RB_SetGL2D( void ) {
 	renderPass.colorTexture = backEnd.colorBuffer;
 	backEnd.clearColor = qfalse;
 
-	RB_ResolveMSAA();
+	const qbool prevFullscreen3D = backEnd.fullscreen3D;
+	backEnd.fullscreen3D = qfalse;
+	RB_FinishFullscreen3D(prevFullscreen3D);
 
 	RB_BeginRenderPass("2D", &renderPass);
 
@@ -1100,7 +1104,9 @@ const void  *RB_EndFrame( const void *data ) {
 		RB_EndSurface();
 	}
 
-	RB_ResolveMSAA();
+	const qbool prevFullscreen3D = backEnd.fullscreen3D;
+	backEnd.fullscreen3D = qfalse;
+	RB_FinishFullscreen3D(prevFullscreen3D);
 
 
 	cmd = (const swapBuffersCommand_t *)data;
@@ -1110,6 +1116,7 @@ const void  *RB_EndFrame( const void *data ) {
 	ri.CL_ImGUI_Update();
 
 	RB_DrawGamma(backEnd.colorBuffer2);
+
 	RB_ImGUI_Draw(backEnd.colorBuffer2);
 	RB_DrawBlit(backEnd.swapChainTextures[backEnd.swapChainImageIndex]);
 	RB_EndRenderPass();
@@ -1491,7 +1498,7 @@ int RB_GetSamplerIndex(qbool clamp, qbool anisotropy){
 	return (anisotropy * 2) + clamp;
 }
 
-qbool RB_IsMSAAEnabled(void){
+qbool RB_IsMSAARequested(void){
 	switch(r_msaa->integer){
 		case 2:
 		case 4:
@@ -1510,12 +1517,15 @@ qbool RB_IsViewportFullscreen(const viewParms_t *vp){
 			&& vp->viewportY == 0;
 }
 
-void RB_ResolveMSAA(void){
-	
-
-	if(backEnd.msaaActive){
+void RB_FinishFullscreen3D(qbool prevFullscreen3D){
+	if(prevFullscreen3D && !backEnd.fullscreen3D){
+		if(backEnd.msaaActive){
 		backEnd.msaaActive = qfalse;
 
 		RB_MSAA_Resolve();
+		} else {
+			//RB_DrawGamma(); //@TODO
+		}
 	}
+	
 }

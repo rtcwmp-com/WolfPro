@@ -320,7 +320,7 @@ static void InitVulkan( void ) {
 	backEnd.depthBuffer = RHI_CreateTexture(&depthTextureDesc);
 
 
-	if(RB_IsMSAAEnabled()){
+	if(RB_IsMSAARequested()){
 		depthTextureDesc.name = "Depth Buffer MS";
 		depthTextureDesc.sampleCount = r_msaa->integer;
 		backEnd.depthBufferMS = RHI_CreateTexture(&depthTextureDesc);
@@ -341,7 +341,7 @@ static void InitVulkan( void ) {
 	colorTextureDesc.name = "Color Buffer 2";
 	backEnd.colorBuffer2 = RHI_CreateTexture(&colorTextureDesc);
 
-	if(RB_IsMSAAEnabled()){
+	if(RB_IsMSAARequested()){
 		colorTextureDesc.name = "Color Buffer MS";
 		colorTextureDesc.sampleCount = r_msaa->integer;
 		colorTextureDesc.allowedStates = RHI_ResourceState_RenderTargetBit | RHI_ResourceState_ShaderInputBit | RHI_ResourceState_CopySourceBit;
@@ -354,7 +354,7 @@ static void InitVulkan( void ) {
 	RB_InitGamma(backEnd.colorBuffer, gammaSampler);
 	RB_InitBlit(backEnd.colorBuffer2, blitSampler);
 
-	if(RB_IsMSAAEnabled()){
+	if(RB_IsMSAARequested()){
 		RB_MSAA_Init(backEnd.colorBufferMS, backEnd.colorBuffer);
 	}
 	

@@ -990,6 +990,7 @@ typedef struct {
 	rhiTexture depthBufferMS;
 	rhiTexture colorBufferMS;
 	qbool msaaActive;
+	qbool fullscreen3D; //only valid when projection2D is false
 	
 	rhiTexture depthBuffer;
 	rhiTexture colorBuffer;
@@ -1646,9 +1647,9 @@ void RB_ClearPipelineCache(void);
 void RB_BeginRenderPass(const char* name, const RHI_RenderPass* rp);
 void RB_EndRenderPass(void);
 int RB_GetSamplerIndex(qbool clamp, qbool anisotropy);
-qbool RB_IsMSAAEnabled(void);
+qbool RB_IsMSAARequested(void);
 qbool RB_IsViewportFullscreen(const viewParms_t *vp);
-void RB_ResolveMSAA(void);
+void RB_FinishFullscreen3D(qbool prevFullscreen3D);
 /*
 =============================================================
 
