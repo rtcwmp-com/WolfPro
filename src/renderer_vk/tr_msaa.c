@@ -3,6 +3,15 @@
 #include "shaders/msaa_cs.h"
 
 
+#pragma pack(push,1)
+
+typedef struct MSAAPC {
+    float invGamma;
+    float brightness;
+} MSAAPC;
+
+#pragma pack(pop)
+
 rhiDescriptorSetLayout msaaDescSetLayout;
 rhiPipeline msaaPipeline;
 rhiDescriptorSet msaaDescSet[2];
@@ -25,6 +34,7 @@ void RB_MSAA_Init(void){
     rhiComputePipelineDesc desc = {};
     desc.name = "MSAA";
     desc.descLayout = msaaDescSetLayout;
+    desc.pushConstantsBytes = sizeof(MSAAPC);
 
     desc.shader.data = msaa_cs;
     desc.shader.byteCount = sizeof(msaa_cs);
@@ -44,6 +54,11 @@ void RB_MSAA_Resolve(rhiTexture MSTexture, rhiTexture resTexture){
     RHI_CmdTextureBarrier(MSTexture, RHI_ResourceState_ShaderInputBit);
     RHI_CmdEndBarrier();
 
+    MSAAPC gammaPC;
+    gammaPC.brightness = 1.0f;
+    gammaPC.invGamma = 1.0f / r_gamma->value;
+
+    RHI_CmdPushConstants(msaaPipeline, RHI_Shader_Compute, &gammaPC, sizeof(MSAAPC));
 
     RHI_CmdBindPipeline(msaaPipeline);
 
