@@ -610,7 +610,7 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 		pc.textureIndex = currentImage->descriptorIndex;
 		pc.alphaTest = AlphaTestMode(pStage->stateBits);
 		
-		if(backEnd.previousPipeline.h != pipeline.h){
+		if(backEnd.previousPipeline.h != pipeline.h || backEnd.pipelineLayoutDirty){
 			RHI_CmdBindPipeline(pipeline);
 			backEnd.previousPipeline = pipeline;
 			backEnd.pipelineChangeCount++;

@@ -1459,6 +1459,8 @@ void RB_CreateDynamicLightPipelines(void){
 			graphicsDesc.depthTestEqual = qtrue;
 			graphicsDesc.wireframe = qfalse;
 			graphicsDesc.colorFormat = R8G8B8A8_UNorm;
+			
+			graphicsDesc.sampleCount = r_msaa->integer == 0 ? 1 : r_msaa->integer;
 
 			backEnd.dynamicLightPipelines[RB_GetDynamicLightPipelineIndex(c, p)] = RHI_CreateGraphicsPipeline(&graphicsDesc);
 		}
