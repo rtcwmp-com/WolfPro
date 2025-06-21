@@ -41,7 +41,7 @@ void RB_MSAA_Init(void){
     desc.descLayout = msaaDescSetLayout;
     desc.pushConstantsBytes = sizeof(MSAAPC);
 
-    switch(r_msaa->integer){
+    switch(RB_GetMSAASampleCount()){
         case 2:
             desc.shader.data = msaa_2_cs;
             desc.shader.byteCount = sizeof(msaa_2_cs);

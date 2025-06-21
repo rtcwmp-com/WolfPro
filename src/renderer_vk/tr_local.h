@@ -1003,7 +1003,7 @@ typedef struct {
 	uint32_t pipelineChangeCount;
 	qbool clearColor;
 
-	rhiPipeline dynamicLightPipelines[6];
+	rhiPipeline dynamicLightPipelines[12];
 	qboolean pipelineLayoutDirty;
 } backEndState_t;
 
@@ -1643,7 +1643,7 @@ RENDERER BACK END FUNCTIONS
 void RB_ExecuteRenderCommands( const void *data );
 void RB_CreateGraphicsPipeline(shader_t *newShader);
 void RB_CreateDynamicLightPipelines(void);
-int RB_GetDynamicLightPipelineIndex(int cull, int polygonOffset);
+int RB_GetDynamicLightPipelineIndex(int cull, int polygonOffset, int msaa);
 void RB_ClearPipelineCache(void);
 void RB_BeginRenderPass(const char* name, const RHI_RenderPass* rp);
 void RB_EndRenderPass(void);
@@ -1651,6 +1651,7 @@ void RB_BeginComputePass(const char* name);
 void RB_EndComputePass(void);
 int RB_GetSamplerIndex(qbool clamp, qbool anisotropy);
 qbool RB_IsMSAARequested(void);
+uint32_t RB_GetMSAASampleCount(void);
 qbool RB_IsViewportFullscreen(const viewParms_t *vp);
 void RB_FinishFullscreen3D(qbool prevFullscreen3D);
 /*

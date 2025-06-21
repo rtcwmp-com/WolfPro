@@ -702,8 +702,8 @@ static void RB_DrawDynamicLight(void){
 
 	shader_t *shader = tess.shader;
 	
-	rhiPipeline pipeline = backEnd.dynamicLightPipelines[RB_GetDynamicLightPipelineIndex(shader->cullType, shader->polygonOffset)];
-	if(backEnd.previousPipeline.h != pipeline.h){
+	rhiPipeline pipeline = backEnd.dynamicLightPipelines[RB_GetDynamicLightPipelineIndex(shader->cullType, shader->polygonOffset, backEnd.msaaActive)];
+	if(backEnd.previousPipeline.h != pipeline.h || backEnd.pipelineLayoutDirty){
 		RHI_CmdBindPipeline(pipeline);
 		backEnd.previousPipeline = pipeline;
 		backEnd.pipelineChangeCount++;
@@ -976,7 +976,7 @@ void RB_StageIteratorLightmappedMultitexture( void ) {
 	pc.texEnv = GL_MODULATE;
 
 	
-	if(backEnd.previousPipeline.h != pipeline.h){
+	if(backEnd.previousPipeline.h != pipeline.h  || backEnd.pipelineLayoutDirty){
 		RHI_CmdBindPipeline(pipeline);
 		backEnd.previousPipeline = pipeline;
 		backEnd.pipelineChangeCount++;

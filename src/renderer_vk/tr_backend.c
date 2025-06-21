@@ -1383,7 +1383,7 @@ void RB_CreateGraphicsPipeline(shader_t *newShader){
 		cachedPipeline cached = {};
 
 		for(int i = 0; i < 2; i++){
-			graphicsDesc.sampleCount = i == 1? r_msaa->integer: 1;
+			graphicsDesc.sampleCount = i == 1? RB_GetMSAASampleCount(): 1;
 			if(!RB_GetCachedPipeline(hash, &cached.pipeline, &graphicsDesc)){
 				graphicsDesc.name = newShader->name;
 				cached.pipeline = RHI_CreateGraphicsPipeline(&graphicsDesc);
@@ -1400,71 +1400,79 @@ void RB_CreateGraphicsPipeline(shader_t *newShader){
 	}
 	
 }
-int RB_GetDynamicLightPipelineIndex(int cull, int polygonOffset){
-	return polygonOffset * CT_COUNT + cull;
+int RB_GetDynamicLightPipelineIndex(int cull, int polygonOffset, int msaa){
+	return polygonOffset * CT_COUNT + cull + msaa * CT_COUNT * 2;
 }
 
 #include "shaders/dynamiclight_ps.h"
 #include "shaders/dynamiclight_vs.h"
 
 void RB_CreateDynamicLightPipelines(void){
-	for(int c = 0; c < CT_COUNT; c++){
-		for(int p = 0; p < 2; p++){
-			rhiGraphicsPipelineDesc graphicsDesc = {};
-			graphicsDesc.name = va("Dynamic Light C: %d, P: %d", c, p);
-			graphicsDesc.descLayout = backEnd.descriptorSetLayout;
-			graphicsDesc.pushConstants.vsBytes = 64;
+	for(int m = 0; m < 2; m++){
+		for(int c = 0; c < CT_COUNT; c++){
+			for(int p = 0; p < 2; p++){
+				rhiGraphicsPipelineDesc graphicsDesc = {};
+				graphicsDesc.name = va("Dynamic Light C: %d, P: %d, M: %d", c, p, m);
+				graphicsDesc.descLayout = backEnd.descriptorSetLayout;
+				graphicsDesc.pushConstants.vsBytes = 64;
 
-			graphicsDesc.pushConstants.psBytes = sizeof(dynamicLightPushConstants);
-			graphicsDesc.vertexShader.data = dynamiclight_vs;
-			graphicsDesc.vertexShader.byteCount = sizeof(dynamiclight_vs);
-			graphicsDesc.pixelShader.data = dynamiclight_ps;
-			graphicsDesc.pixelShader.byteCount = sizeof(dynamiclight_ps);
+				graphicsDesc.pushConstants.psBytes = sizeof(dynamicLightPushConstants);
+				graphicsDesc.vertexShader.data = dynamiclight_vs;
+				graphicsDesc.vertexShader.byteCount = sizeof(dynamiclight_vs);
+				graphicsDesc.pixelShader.data = dynamiclight_ps;
+				graphicsDesc.pixelShader.byteCount = sizeof(dynamiclight_ps);
 
-			rhiVertexAttributeDesc *a;
-			a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
-			a->elementCount = 4; //position
-			a->elementFormat = RHI_VertexFormat_Float32;
-			a->bufferBinding = 0;
+				rhiVertexAttributeDesc *a;
+				a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
+				a->elementCount = 4; //position
+				a->elementFormat = RHI_VertexFormat_Float32;
+				a->bufferBinding = 0;
 
-			a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
-			a->elementCount = 2; //tc
-			a->elementFormat = RHI_VertexFormat_Float32;
-			a->bufferBinding = 1;
+				a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
+				a->elementCount = 2; //tc
+				a->elementFormat = RHI_VertexFormat_Float32;
+				a->bufferBinding = 1;
 
-			a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
-			a->elementCount = 4; //color
-			a->elementFormat = RHI_VertexFormat_UNorm8;
-			a->bufferBinding = 2;
-			
+				a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
+				a->elementCount = 4; //color
+				a->elementFormat = RHI_VertexFormat_UNorm8;
+				a->bufferBinding = 2;
+				
 
-			a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
-			a->elementCount = 4; //normal
-			a->elementFormat = RHI_VertexFormat_Float32;
-			a->bufferBinding = 3;
-	
-			
-			graphicsDesc.vertexBufferCount = 4;
-			graphicsDesc.vertexBuffers[0].stride = 4 * sizeof(float);
-			graphicsDesc.vertexBuffers[1].stride = 2 * sizeof(float);
-			graphicsDesc.vertexBuffers[2].stride = 4 * sizeof(byte);
-			graphicsDesc.vertexBuffers[3].stride = 4 * sizeof(float);
+				a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
+				a->elementCount = 4; //normal
+				a->elementFormat = RHI_VertexFormat_Float32;
+				a->bufferBinding = 3;
+		
+				
+				graphicsDesc.vertexBufferCount = 4;
+				graphicsDesc.vertexBuffers[0].stride = 4 * sizeof(float);
+				graphicsDesc.vertexBuffers[1].stride = 2 * sizeof(float);
+				graphicsDesc.vertexBuffers[2].stride = 4 * sizeof(byte);
+				graphicsDesc.vertexBuffers[3].stride = 4 * sizeof(float);
 
-			graphicsDesc.cullType = c;
-			graphicsDesc.polygonOffset = p;
-			graphicsDesc.srcBlend = GLS_SRCBLEND_ONE;
-			graphicsDesc.dstBlend = GLS_DSTBLEND_ONE;
-			graphicsDesc.depthTest = qtrue;
-			graphicsDesc.depthWrite = qfalse;
-			graphicsDesc.depthTestEqual = qtrue;
-			graphicsDesc.wireframe = qfalse;
-			graphicsDesc.colorFormat = R8G8B8A8_UNorm;
-			
-			graphicsDesc.sampleCount = r_msaa->integer == 0 ? 1 : r_msaa->integer;
+				graphicsDesc.cullType = c;
+				graphicsDesc.polygonOffset = p;
+				graphicsDesc.srcBlend = GLS_SRCBLEND_ONE;
+				graphicsDesc.dstBlend = GLS_DSTBLEND_ONE;
+				graphicsDesc.depthTest = qtrue;
+				graphicsDesc.depthWrite = qfalse;
+				graphicsDesc.depthTestEqual = qtrue;
+				graphicsDesc.wireframe = qfalse;
+				graphicsDesc.colorFormat = R8G8B8A8_UNorm;
+				
+				if(m == 0){
+					graphicsDesc.sampleCount = 1;
+				}else{
+					graphicsDesc.sampleCount = RB_GetMSAASampleCount();
+				}
+				
 
-			backEnd.dynamicLightPipelines[RB_GetDynamicLightPipelineIndex(c, p)] = RHI_CreateGraphicsPipeline(&graphicsDesc);
+				backEnd.dynamicLightPipelines[RB_GetDynamicLightPipelineIndex(c, p, m)] = RHI_CreateGraphicsPipeline(&graphicsDesc);
+			}
 		}
 	}
+	
 }
 
 
@@ -1508,14 +1516,18 @@ int RB_GetSamplerIndex(qbool clamp, qbool anisotropy){
 }
 
 qbool RB_IsMSAARequested(void){
-	switch(r_msaa->integer){
-		case 2:
-		case 4:
-		case 8:
-			return qtrue;
-		default:
-			return qfalse;
+	return RB_GetMSAASampleCount() >= 2;
+}
+
+uint32_t RB_GetMSAASampleCount(void){
+	if(r_msaa->integer >= 8){
+		return 8;
+	}else if(r_msaa->integer >= 4){
+		return 4;
+	}else if(r_msaa->integer >= 2){
+		return 2;
 	}
+	return 1;
 }
 
 qbool RB_IsViewportFullscreen(const viewParms_t *vp){
