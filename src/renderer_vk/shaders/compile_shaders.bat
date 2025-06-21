@@ -1,4 +1,4 @@
-set DXC=%VULKAN_SDK%\bin\dxc.exe
+set DXC=C:\Users\snapp\Downloads\dxc_2025_05_24\bin\x64\dxc.exe
 del *_vs.h
 del *_ps.h
 del *_cs.h
@@ -6,6 +6,7 @@ del *_cs.h
 %DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T vs_6_0 -E vs %cd%\generic.hlsl -Fh %cd%\generic_vs.h -Vn generic_vs -D VS
 %DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T ps_6_0 -E ps %cd%\generic.hlsl -Fh %cd%\generic_ps.h -Vn generic_ps -D PS
 %DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T ps_6_0 -E ps %cd%\generic.hlsl -Fh %cd%\generic_ps_at.h -Vn generic_ps_at -D PS -D AT
+%DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T ps_6_0 -E ps %cd%\generic.hlsl -Fh %cd%\generic_ps_at_a2c.h -Vn generic_ps_at_a2c -D PS -D AT -D A2C
 %DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T vs_6_0 -E vs %cd%\gamma.hlsl -Fh %cd%\gamma_vs.h -Vn gamma_vs -D VS
 %DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T ps_6_0 -E ps %cd%\gamma.hlsl -Fh %cd%\gamma_ps.h -Vn gamma_ps -D PS
 %DXC% -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -T vs_6_0 -E vs %cd%\imgui.hlsl -Fh %cd%\imgui_vs.h -Vn imgui_vs -D VS

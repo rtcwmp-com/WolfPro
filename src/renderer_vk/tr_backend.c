@@ -1226,6 +1226,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 
 #include "shaders/generic_ps.h"
 #include "shaders/generic_ps_at.h"
+#include "shaders/generic_ps_at_a2c.h"
 #include "shaders/generic_vs.h"
 #include "shaders/generic2s_ps.h"
 #include "shaders/generic2s_vs.h"
@@ -1383,7 +1384,17 @@ void RB_CreateGraphicsPipeline(shader_t *newShader){
 		cachedPipeline cached = {};
 
 		for(int i = 0; i < 2; i++){
-			graphicsDesc.sampleCount = i == 1? RB_GetMSAASampleCount(): 1;
+			if(i == 1 && RB_GetMSAASampleCount() >= 2){
+				graphicsDesc.sampleCount = RB_GetMSAASampleCount();
+				if(stage->stateBits & GLS_ATEST_BITS){
+					graphicsDesc.alphaToCoverage = qtrue;
+					graphicsDesc.pixelShader.data = generic_ps_at_a2c;
+					graphicsDesc.pixelShader.byteCount = sizeof(generic_ps_at_a2c);
+				}
+			}else{
+				graphicsDesc.sampleCount = 1;
+			}
+			
 			if(!RB_GetCachedPipeline(hash, &cached.pipeline, &graphicsDesc)){
 				graphicsDesc.name = newShader->name;
 				cached.pipeline = RHI_CreateGraphicsPipeline(&graphicsDesc);
