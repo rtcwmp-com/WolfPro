@@ -1253,6 +1253,7 @@ extern cvar_t   *r_fullscreenDesktop;
 extern cvar_t	*r_sleepThreshold;		// time cushion in us for a call to Sleep(1+)
 
 extern cvar_t *r_msaa;
+extern cvar_t *r_alphaboost;
 //====================================================================
 
 float R_NoiseGet4f( float x, float y, float z, float t );
@@ -1898,6 +1899,7 @@ typedef struct pixelShaderPushConstants {
 	uint32_t textureIndex;
 	uint32_t samplerIndex;
 	uint32_t alphaTest;
+	float alphaBoost;
 } pixelShaderPushConstants;
 
 typedef struct pixelShaderPushConstants2 {

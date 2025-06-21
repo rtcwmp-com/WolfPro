@@ -194,6 +194,7 @@ static void BuildLayerAndExtensionLists()
     int neededExtensionCount = 0;
     int wantedExtensionCount = 0;
     vk.extensionCount = 0;
+    vk.layerCount = 0;
 
 
     if(UseValidationLayer())

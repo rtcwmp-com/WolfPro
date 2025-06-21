@@ -46,6 +46,7 @@ struct RootConstants
 	uint textureIndex;
     uint samplerIndex;
     uint alphaTest;
+    float alphaBoost;
 };
 [[vk::push_constant]] RootConstants rc;
 
@@ -59,7 +60,7 @@ float4 ps(VOut input) : SV_Target
     
     float4 color = input.color * texture[rc.textureIndex].Sample(mySampler[rc.samplerIndex], input.tc);
     #if AT
-    AlphaTest(texture[rc.textureIndex], mySampler[rc.samplerIndex], rc.alphaTest, input.tc, 1.0, color.a);
+    AlphaTest(texture[rc.textureIndex], mySampler[rc.samplerIndex], rc.alphaTest, input.tc, rc.alphaBoost, color.a);
     #endif
     return color;
 }

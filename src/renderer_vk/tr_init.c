@@ -179,6 +179,7 @@ cvar_t *r_mipFilter;
 cvar_t *r_sleepThreshold;
 
 cvar_t *r_msaa;
+cvar_t *r_alphaboost;
 
 
 static void AssertCvarRange( cvar_t *cv, float minVal, float maxVal, qboolean shouldBeIntegral ) {
@@ -845,6 +846,7 @@ void R_Register( void ) {
 	r_sleepThreshold = ri.Cvar_Get("r_sleepThreshold", "2500", CVAR_ARCHIVE);
 
 	r_msaa = ri.Cvar_Get("r_msaa", "8", CVAR_ARCHIVE | CVAR_LATCH);
+	r_alphaboost = ri.Cvar_Get("r_alphaboost", "1.0", CVAR_ARCHIVE);
 
 	// make sure all the commands added here are also
 	// removed in R_Shutdown

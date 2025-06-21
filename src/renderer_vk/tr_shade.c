@@ -609,6 +609,7 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 		pc.samplerIndex = RB_GetSamplerIndex(clamp, anisotropy);
 		pc.textureIndex = currentImage->descriptorIndex;
 		pc.alphaTest = AlphaTestMode(pStage->stateBits);
+		pc.alphaBoost = r_alphaboost->value;
 		
 		if(backEnd.previousPipeline.h != pipeline.h || backEnd.pipelineLayoutDirty){
 			RHI_CmdBindPipeline(pipeline);
