@@ -370,7 +370,8 @@ typedef struct rhiGraphicsPipelineDesc {
 	uint32_t attributeCount;
 	qbool longLifetime;
 	rhiTextureFormatId colorFormat;
-
+	uint32_t sampleCount;
+	qbool alphaToCoverage;
 } rhiGraphicsPipelineDesc;
 
 typedef struct rhiComputePipelineDesc {

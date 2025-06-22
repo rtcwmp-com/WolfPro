@@ -347,7 +347,7 @@ typedef struct {
 
 	qboolean isDetail;
 	qboolean isFogged;              // used only for shaders that have fog disabled, so we can enable it for individual stages
-	rhiPipeline pipeline;
+	rhiPipeline pipeline[2];
 } shaderStage_t;
 
 struct shaderCommands_s;
@@ -987,10 +987,15 @@ typedef struct {
 	rhiPipeline previousPipeline;
 	rhiDescriptorSet currentDescriptorSet;
 
-	rhiTexture depthBuffer;
+	rhiTexture depthBufferMS;
+	rhiTexture colorBufferMS;
+	qbool msaaActive;
+	qbool fullscreen3D; //only valid when projection2D is false
 	
-	rhiTexture colorBuffer;
-	rhiTexture colorBuffer2; //ping pong between render targets
+	rhiTexture depthBuffer;
+	rhiTexture colorBuffer; //current active rendertarget
+	rhiTexture colorBuffers[2]; //ping pong between render targets
+	uint32_t colorBufferIndex;
 	
 	rhiDurationQuery frameDuration[RHI_FRAMES_IN_FLIGHT];
 	renderPass renderPasses[RHI_FRAMES_IN_FLIGHT][MAX_RENDERPASSES];
@@ -998,7 +1003,7 @@ typedef struct {
 	uint32_t pipelineChangeCount;
 	qbool clearColor;
 
-	rhiPipeline dynamicLightPipelines[6];
+	rhiPipeline dynamicLightPipelines[12];
 	qboolean pipelineLayoutDirty;
 } backEndState_t;
 
@@ -1246,6 +1251,9 @@ extern cvar_t *r_mipFilter;
 extern cvar_t   *r_fullscreenDesktop;
 
 extern cvar_t	*r_sleepThreshold;		// time cushion in us for a call to Sleep(1+)
+
+extern cvar_t *r_msaa;
+extern cvar_t *r_alphaboost;
 //====================================================================
 
 float R_NoiseGet4f( float x, float y, float z, float t );
@@ -1636,12 +1644,17 @@ RENDERER BACK END FUNCTIONS
 void RB_ExecuteRenderCommands( const void *data );
 void RB_CreateGraphicsPipeline(shader_t *newShader);
 void RB_CreateDynamicLightPipelines(void);
-int RB_GetDynamicLightPipelineIndex(int cull, int polygonOffset);
+int RB_GetDynamicLightPipelineIndex(int cull, int polygonOffset, int msaa);
 void RB_ClearPipelineCache(void);
 void RB_BeginRenderPass(const char* name, const RHI_RenderPass* rp);
 void RB_EndRenderPass(void);
+void RB_BeginComputePass(const char* name);
+void RB_EndComputePass(void);
 int RB_GetSamplerIndex(qbool clamp, qbool anisotropy);
-
+qbool RB_IsMSAARequested(void);
+uint32_t RB_GetMSAASampleCount(void);
+qbool RB_IsViewportFullscreen(const viewParms_t *vp);
+void RB_FinishFullscreen3D(qbool prevFullscreen3D);
 /*
 =============================================================
 
@@ -1886,6 +1899,7 @@ typedef struct pixelShaderPushConstants {
 	uint32_t textureIndex;
 	uint32_t samplerIndex;
 	uint32_t alphaTest;
+	float alphaBoost;
 } pixelShaderPushConstants;
 
 typedef struct pixelShaderPushConstants2 {
@@ -1909,16 +1923,21 @@ typedef struct dynamicLightPushConstants {
 
 void R_Gpulist_f(void);
 
-void RB_InitGamma(rhiTexture texture, rhiSampler sampler);
-void RB_DrawGamma(rhiTexture renderTarget);
+void RB_InitGamma(void);
+void RB_DrawGamma(rhiTexture texture, rhiSampler sampler, rhiTexture renderTarget);
 
-void RB_InitBlit(rhiTexture texture, rhiSampler sampler);
-void RB_DrawBlit(rhiTexture renderTarget);
+void RB_InitBlit(void);
+void RB_DrawBlit(rhiTexture texture, rhiSampler sampler, rhiTexture swapChainImage);
 
 void RB_ImGUI_Init(void);
 void RB_ImGUI_BeginFrame(void);
 void RB_ImGUI_Draw(rhiTexture renderTarget);
 void R_ComputeCursorPosition( int* x, int* y );
+
+void RB_MSAA_Init(void);
+void RB_MSAA_Resolve(rhiTexture MSTexture, rhiTexture resTexture);
+
+void DrawGUI_RHI(void);
 
 typedef struct RHIExport
 {

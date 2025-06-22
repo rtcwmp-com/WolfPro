@@ -194,6 +194,7 @@ static void BuildLayerAndExtensionLists()
     int neededExtensionCount = 0;
     int wantedExtensionCount = 0;
     vk.extensionCount = 0;
+    vk.layerCount = 0;
 
 
     if(UseValidationLayer())
@@ -2575,6 +2576,21 @@ VkFormat GetVkFormatFromVertexFormat(RHI_VertexFormat format, uint32_t elementCo
         default:
             assert(!"Invalid vertex format");
             return 0;
+    }
+}
+
+VkSampleCountFlagBits GetVkSampleCount(uint32_t samples){
+    switch(samples){
+        case 2:
+            return VK_SAMPLE_COUNT_2_BIT;
+        case 4:
+            return VK_SAMPLE_COUNT_4_BIT;
+        case 8:
+            return VK_SAMPLE_COUNT_8_BIT;
+        case 16:
+            return VK_SAMPLE_COUNT_16_BIT;
+        default:
+            return VK_SAMPLE_COUNT_1_BIT;
     }
 }
 

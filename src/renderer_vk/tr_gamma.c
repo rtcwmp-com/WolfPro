@@ -15,11 +15,9 @@ typedef struct GammaPC {
 
 rhiDescriptorSetLayout descSetLayout;
 rhiPipeline gammaPipeline;
-rhiDescriptorSet gammaDescSet;
-rhiTexture gammaTexture;
+rhiDescriptorSet gammaDescSet[2];
 
-void RB_InitGamma(rhiTexture texture, rhiSampler sampler){
-    gammaTexture = texture;
+void RB_InitGamma(void){
     rhiDescriptorSetLayoutDesc descriptorSetLayoutDesc = {};
     descriptorSetLayoutDesc.name = "Gamma Desc Set Layout";
     descriptorSetLayoutDesc.bindingCount = 2;
@@ -50,18 +48,18 @@ void RB_InitGamma(rhiTexture texture, rhiSampler sampler){
     desc.pushConstants.psBytes = sizeof(GammaPC);
 
     gammaPipeline = RHI_CreateGraphicsPipeline(&desc);
-    gammaDescSet = RHI_CreateDescriptorSet("Gamma", descSetLayout, qfalse);
+    gammaDescSet[0] = RHI_CreateDescriptorSet("Gamma 1", descSetLayout, qfalse);
+    gammaDescSet[1] = RHI_CreateDescriptorSet("Gamma 2", descSetLayout, qfalse);
 
-    RHI_UpdateDescriptorSet(gammaDescSet, 0, RHI_DescriptorType_ReadOnlyTexture, 0, 1, &texture, 0);
-    RHI_UpdateDescriptorSet(gammaDescSet, 1, RHI_DescriptorType_Sampler, 0, 1, &sampler, 0);
+    
 }
 
-void RB_DrawGamma(rhiTexture renderTarget){
+void RB_DrawGamma(rhiTexture texture, rhiSampler sampler, rhiTexture renderTarget){
     RB_EndRenderPass();
 
     RHI_CmdBeginBarrier();
     RHI_CmdTextureBarrier(renderTarget, RHI_ResourceState_RenderTargetBit);
-    RHI_CmdTextureBarrier(gammaTexture, RHI_ResourceState_ShaderInputBit);
+    RHI_CmdTextureBarrier(texture, RHI_ResourceState_ShaderInputBit);
     RHI_CmdEndBarrier();
 
     RHI_RenderPass renderPass = {};
@@ -78,7 +76,12 @@ void RB_DrawGamma(rhiTexture renderTarget){
     RHI_CmdSetViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight, 0.0f, 1.0f);
     RHI_CmdSetScissor(0, 0, glConfig.vidWidth, glConfig.vidHeight);
     RHI_CmdBindPipeline(gammaPipeline);
-    RHI_CmdBindDescriptorSet(gammaPipeline, gammaDescSet);
+
+    rhiDescriptorSet set = gammaDescSet[backEnd.currentFrameIndex];
+    RHI_UpdateDescriptorSet(set, 0, RHI_DescriptorType_ReadOnlyTexture, 0, 1, &texture, 0);
+    RHI_UpdateDescriptorSet(set, 1, RHI_DescriptorType_Sampler, 0, 1, &sampler, 0);
+
+    RHI_CmdBindDescriptorSet(gammaPipeline, set);
     RHI_CmdDraw(3, 0);
 
     RB_EndRenderPass();

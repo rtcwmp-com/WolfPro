@@ -1498,7 +1498,7 @@ void R_DecomposeSort( int64_t sort, int *entityNum, shader_t **shader,
 
 int64_t R_ComposeSort( shader_t *shader, int entityNum, int fogNum, int dlightMap ){
 	assert(shader->stages[0]);
-	uint32_t psoIndex = shader->stages[0] ? RHI_GetIndexFromHandle(shader->stages[0]->pipeline.h) : 0;
+	uint32_t psoIndex = shader->stages[0] ? RHI_GetIndexFromHandle(shader->stages[0]->pipeline[0].h) : 0;
 
 	return (int64_t)( 0
 	| ((int64_t)psoIndex << QSORT_PSONUM_SHIFT)

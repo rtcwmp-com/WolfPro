@@ -200,20 +200,36 @@ void RB_BeginDrawingView( void ) {
 		vec4_t zeroPlane = {0};
 		RB_UploadSceneView(backEnd.viewParms.vulkanProjectionMatrix, zeroPlane);
 	}
+	const qbool prevFullscreen3D = backEnd.fullscreen3D;
+	backEnd.fullscreen3D = RB_IsViewportFullscreen(&backEnd.viewParms);
+	RB_FinishFullscreen3D(prevFullscreen3D);
 
-
-	RHI_CmdBeginBarrier();
-	RHI_CmdTextureBarrier(backEnd.depthBuffer, RHI_ResourceState_DepthWriteBit);
-	RHI_CmdTextureBarrier(backEnd.colorBuffer, RHI_ResourceState_RenderTargetBit);
-	RHI_CmdEndBarrier();
 
 	RHI_RenderPass renderPass = {};
-
-	renderPass.colorTexture = backEnd.colorBuffer;
-	renderPass.depthTexture = backEnd.depthBuffer;
+	if(RB_IsMSAARequested() && backEnd.fullscreen3D){
+		backEnd.msaaActive = qtrue;
+		renderPass.colorTexture = backEnd.colorBufferMS;
+		renderPass.depthTexture = backEnd.depthBufferMS;
+		
+		RHI_CmdBeginBarrier();
+		RHI_CmdTextureBarrier(backEnd.depthBufferMS, RHI_ResourceState_DepthWriteBit);
+		RHI_CmdTextureBarrier(backEnd.colorBufferMS, RHI_ResourceState_RenderTargetBit);
+		RHI_CmdEndBarrier();
+	}else{
+		backEnd.msaaActive = qfalse;
+		renderPass.colorTexture = backEnd.colorBuffer;
+		renderPass.depthTexture = backEnd.depthBuffer;
+		
+		RHI_CmdBeginBarrier();
+		RHI_CmdTextureBarrier(backEnd.depthBuffer, RHI_ResourceState_DepthWriteBit);
+		RHI_CmdTextureBarrier(backEnd.colorBuffer, RHI_ResourceState_RenderTargetBit);
+		RHI_CmdEndBarrier();
+	}
+	
 	renderPass.depth = 1.0f;
 	Vector4Copy(clearColor, renderPass.color);
-	renderPass.depthLoad = (clearBits & GL_DEPTH_BUFFER_BIT)? RHI_LoadOp_Clear : RHI_LoadOp_Load; 
+	//renderPass.depthLoad = (clearBits & GL_DEPTH_BUFFER_BIT)? RHI_LoadOp_Clear : RHI_LoadOp_Load; 
+	renderPass.depthLoad = RHI_LoadOp_Clear; 
 	renderPass.colorLoad = (clearBits & GL_COLOR_BUFFER_BIT) || backEnd.clearColor ? RHI_LoadOp_Clear : RHI_LoadOp_Load; 
 	RB_BeginRenderPass("3D", &renderPass);
 
@@ -531,6 +547,14 @@ void    RB_SetGL2D( void ) {
 	};
 
 	memcpy(backEnd.or.modelMatrix, modelViewMatrix, sizeof(backEnd.or.modelMatrix));
+
+	const qbool prevFullscreen3D = backEnd.fullscreen3D;
+	backEnd.fullscreen3D = qfalse;
+	RB_FinishFullscreen3D(prevFullscreen3D);
+
+	RHI_CmdBeginBarrier();
+	RHI_CmdTextureBarrier(backEnd.colorBuffer, RHI_ResourceState_RenderTargetBit);
+	RHI_CmdEndBarrier();
 
 	RHI_RenderPass renderPass = {};
 	
@@ -921,6 +945,8 @@ const void  *RB_BeginFrame( const void *data ) {
 	backEnd.currentDescriptorSet.h = 0;
 	backEnd.pipelineChangeCount = 0;
 	backEnd.previousVertexBufferCount = 0;
+	backEnd.colorBufferIndex = 0;
+	backEnd.colorBuffer = backEnd.colorBuffers[backEnd.colorBufferIndex];
 	
 	backEnd.vertexBuffers[backEnd.currentFrameIndex].indexCount = 0; 
 	backEnd.vertexBuffers[backEnd.currentFrameIndex].indexFirst = 0; 
@@ -1006,6 +1032,7 @@ RB_EndFrame
 =============
 */
 
+
 void DrawGUI_Performance(void){
 	int f = (backEnd.currentFrameIndex - 1 + RHI_FRAMES_IN_FLIGHT) % RHI_FRAMES_IN_FLIGHT;
 	int p = (backEnd.currentFrameIndex - 2 + RHI_FRAMES_IN_FLIGHT) % RHI_FRAMES_IN_FLIGHT;
@@ -1024,20 +1051,23 @@ void DrawGUI_Performance(void){
 	GUI_AddMainMenuItem(ImGUI_MainMenu_Perf, "Frame breakdown", "Ctrl+Shift+F", &breakdownActive, qtrue);
 	if(breakdownActive){
 		if(igBegin("Frame breakdown", &breakdownActive, 0)){
-			igText("GPU: %s", RHI_GetDeviceName());
 			igNewLine();
-
-			igText("Renderpasses");
 			int32_t renderPassDuration = 0;
-			igText("Entire Frame %d", (int)s_fullFrameHistory.median);
-			for(int i = 0; i < backEnd.renderPassCount[f]; i++){
-				renderPass *currentRenderPass = &backEnd.renderPasses[f][i];
-				igText("%s %d", currentRenderPass->name, (int)s_history[i].median);
-				renderPassDuration += currentRenderPass->durationUs;
+			if(igBeginTable("Status",2,ImGuiTableFlags_RowBg,(ImVec2){0,0},0.0f)){
+				TableHeader(2, "Renderpass", "Duration");
+				TableRowInt("Entire Frame", (int)s_fullFrameHistory.median);
+				for(int i = 0; i < backEnd.renderPassCount[f]; i++){
+					renderPass *currentRenderPass = &backEnd.renderPasses[f][i];
+					TableRowInt(currentRenderPass->name, (int)s_history[i].median);
+					renderPassDuration += currentRenderPass->durationUs;
+				}
+				TableRowInt("Overhead", (int)duration - (int)renderPassDuration);
+				igEndTable();
 			}
-			igText("Overhead %d", (int)duration - (int)renderPassDuration);
+
 			igText("PSO changes: %d", (int)backEnd.pipelineChangeCount);
 			igText("Textures loaded: %d", (int)tr.numImages);
+			
 
 			static int previousSceneCount;
 			static int previousViewCount;
@@ -1084,16 +1114,23 @@ const void  *RB_EndFrame( const void *data ) {
 		RB_EndSurface();
 	}
 
+	const qbool prevFullscreen3D = backEnd.fullscreen3D;
+	backEnd.fullscreen3D = qfalse;
+	RB_FinishFullscreen3D(prevFullscreen3D);
+
 
 	cmd = (const swapBuffersCommand_t *)data;
 
 	GUI_DrawMainMenu();
 	DrawGUI_Performance();
 	ri.CL_ImGUI_Update();
+	DrawGUI_RHI();
 
-	RB_DrawGamma(backEnd.colorBuffer2);
-	RB_ImGUI_Draw(backEnd.colorBuffer2);
-	RB_DrawBlit(backEnd.swapChainTextures[backEnd.swapChainImageIndex]);
+	RB_ImGUI_Draw(backEnd.colorBuffer);
+
+	rhiSampler blitSampler = backEnd.sampler[RB_GetSamplerIndex(qtrue,qfalse)];
+
+	RB_DrawBlit(backEnd.colorBuffer, blitSampler, backEnd.swapChainTextures[backEnd.swapChainImageIndex]);
 	RB_EndRenderPass();
 
 	RHI_CmdBeginBarrier();
@@ -1194,6 +1231,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 
 #include "shaders/generic_ps.h"
 #include "shaders/generic_ps_at.h"
+#include "shaders/generic_ps_at_a2c.h"
 #include "shaders/generic_vs.h"
 #include "shaders/generic2s_ps.h"
 #include "shaders/generic2s_vs.h"
@@ -1349,87 +1387,108 @@ void RB_CreateGraphicsPipeline(shader_t *newShader){
 
 		uint32_t hash = RB_HashPipeline(&graphicsDesc);
 		cachedPipeline cached = {};
-		
-		if(!RB_GetCachedPipeline(hash, &cached.pipeline, &graphicsDesc)){
-			graphicsDesc.name = newShader->name;
-			cached.pipeline = RHI_CreateGraphicsPipeline(&graphicsDesc);
-			
-			graphicsDesc.name = NULL;
-			cached.desc = graphicsDesc;
-			cached.hash = hash;
-			RB_AddCachedPipeline(hash, &cached);
-			totalPipelines++;
-		}
-		assert(cached.pipeline.h != 0);
-		stage->pipeline = cached.pipeline;
 
-		
+		for(int i = 0; i < 2; i++){
+			if(i == 1 && RB_GetMSAASampleCount() >= 2){
+				graphicsDesc.sampleCount = RB_GetMSAASampleCount();
+				if(stage->stateBits & GLS_ATEST_BITS){
+					graphicsDesc.alphaToCoverage = qtrue;
+					graphicsDesc.pixelShader.data = generic_ps_at_a2c;
+					graphicsDesc.pixelShader.byteCount = sizeof(generic_ps_at_a2c);
+				}
+			}else{
+				graphicsDesc.sampleCount = 1;
+			}
+			
+			if(!RB_GetCachedPipeline(hash, &cached.pipeline, &graphicsDesc)){
+				graphicsDesc.name = newShader->name;
+				cached.pipeline = RHI_CreateGraphicsPipeline(&graphicsDesc);
+				
+				graphicsDesc.name = NULL;
+				cached.desc = graphicsDesc;
+				cached.hash = hash;
+				RB_AddCachedPipeline(hash, &cached);
+				totalPipelines++;
+			}
+			assert(cached.pipeline.h != 0);
+			stage->pipeline[i] = cached.pipeline;
+		}	
 	}
 	
 }
-int RB_GetDynamicLightPipelineIndex(int cull, int polygonOffset){
-	return polygonOffset * CT_COUNT + cull;
+int RB_GetDynamicLightPipelineIndex(int cull, int polygonOffset, int msaa){
+	return polygonOffset * CT_COUNT + cull + msaa * CT_COUNT * 2;
 }
 
 #include "shaders/dynamiclight_ps.h"
 #include "shaders/dynamiclight_vs.h"
 
 void RB_CreateDynamicLightPipelines(void){
-	for(int c = 0; c < CT_COUNT; c++){
-		for(int p = 0; p < 2; p++){
-			rhiGraphicsPipelineDesc graphicsDesc = {};
-			graphicsDesc.name = va("Dynamic Light C: %d, P: %d", c, p);
-			graphicsDesc.descLayout = backEnd.descriptorSetLayout;
-			graphicsDesc.pushConstants.vsBytes = 64;
+	for(int m = 0; m < 2; m++){
+		for(int c = 0; c < CT_COUNT; c++){
+			for(int p = 0; p < 2; p++){
+				rhiGraphicsPipelineDesc graphicsDesc = {};
+				graphicsDesc.name = va("Dynamic Light C: %d, P: %d, M: %d", c, p, m);
+				graphicsDesc.descLayout = backEnd.descriptorSetLayout;
+				graphicsDesc.pushConstants.vsBytes = 64;
 
-			graphicsDesc.pushConstants.psBytes = sizeof(dynamicLightPushConstants);
-			graphicsDesc.vertexShader.data = dynamiclight_vs;
-			graphicsDesc.vertexShader.byteCount = sizeof(dynamiclight_vs);
-			graphicsDesc.pixelShader.data = dynamiclight_ps;
-			graphicsDesc.pixelShader.byteCount = sizeof(dynamiclight_ps);
+				graphicsDesc.pushConstants.psBytes = sizeof(dynamicLightPushConstants);
+				graphicsDesc.vertexShader.data = dynamiclight_vs;
+				graphicsDesc.vertexShader.byteCount = sizeof(dynamiclight_vs);
+				graphicsDesc.pixelShader.data = dynamiclight_ps;
+				graphicsDesc.pixelShader.byteCount = sizeof(dynamiclight_ps);
 
-			rhiVertexAttributeDesc *a;
-			a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
-			a->elementCount = 4; //position
-			a->elementFormat = RHI_VertexFormat_Float32;
-			a->bufferBinding = 0;
+				rhiVertexAttributeDesc *a;
+				a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
+				a->elementCount = 4; //position
+				a->elementFormat = RHI_VertexFormat_Float32;
+				a->bufferBinding = 0;
 
-			a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
-			a->elementCount = 2; //tc
-			a->elementFormat = RHI_VertexFormat_Float32;
-			a->bufferBinding = 1;
+				a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
+				a->elementCount = 2; //tc
+				a->elementFormat = RHI_VertexFormat_Float32;
+				a->bufferBinding = 1;
 
-			a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
-			a->elementCount = 4; //color
-			a->elementFormat = RHI_VertexFormat_UNorm8;
-			a->bufferBinding = 2;
-			
+				a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
+				a->elementCount = 4; //color
+				a->elementFormat = RHI_VertexFormat_UNorm8;
+				a->bufferBinding = 2;
+				
 
-			a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
-			a->elementCount = 4; //normal
-			a->elementFormat = RHI_VertexFormat_Float32;
-			a->bufferBinding = 3;
-	
-			
-			graphicsDesc.vertexBufferCount = 4;
-			graphicsDesc.vertexBuffers[0].stride = 4 * sizeof(float);
-			graphicsDesc.vertexBuffers[1].stride = 2 * sizeof(float);
-			graphicsDesc.vertexBuffers[2].stride = 4 * sizeof(byte);
-			graphicsDesc.vertexBuffers[3].stride = 4 * sizeof(float);
+				a = &graphicsDesc.attributes[graphicsDesc.attributeCount++];
+				a->elementCount = 4; //normal
+				a->elementFormat = RHI_VertexFormat_Float32;
+				a->bufferBinding = 3;
+		
+				
+				graphicsDesc.vertexBufferCount = 4;
+				graphicsDesc.vertexBuffers[0].stride = 4 * sizeof(float);
+				graphicsDesc.vertexBuffers[1].stride = 2 * sizeof(float);
+				graphicsDesc.vertexBuffers[2].stride = 4 * sizeof(byte);
+				graphicsDesc.vertexBuffers[3].stride = 4 * sizeof(float);
 
-			graphicsDesc.cullType = c;
-			graphicsDesc.polygonOffset = p;
-			graphicsDesc.srcBlend = GLS_SRCBLEND_ONE;
-			graphicsDesc.dstBlend = GLS_DSTBLEND_ONE;
-			graphicsDesc.depthTest = qtrue;
-			graphicsDesc.depthWrite = qfalse;
-			graphicsDesc.depthTestEqual = qtrue;
-			graphicsDesc.wireframe = qfalse;
-			graphicsDesc.colorFormat = R8G8B8A8_UNorm;
+				graphicsDesc.cullType = c;
+				graphicsDesc.polygonOffset = p;
+				graphicsDesc.srcBlend = GLS_SRCBLEND_ONE;
+				graphicsDesc.dstBlend = GLS_DSTBLEND_ONE;
+				graphicsDesc.depthTest = qtrue;
+				graphicsDesc.depthWrite = qfalse;
+				graphicsDesc.depthTestEqual = qtrue;
+				graphicsDesc.wireframe = qfalse;
+				graphicsDesc.colorFormat = R8G8B8A8_UNorm;
+				
+				if(m == 0){
+					graphicsDesc.sampleCount = 1;
+				}else{
+					graphicsDesc.sampleCount = RB_GetMSAASampleCount();
+				}
+				
 
-			backEnd.dynamicLightPipelines[RB_GetDynamicLightPipelineIndex(c, p)] = RHI_CreateGraphicsPipeline(&graphicsDesc);
+				backEnd.dynamicLightPipelines[RB_GetDynamicLightPipelineIndex(c, p, m)] = RHI_CreateGraphicsPipeline(&graphicsDesc);
+			}
 		}
 	}
+	
 }
 
 
@@ -1470,4 +1529,68 @@ void RB_EndRenderPass(void){
 
 int RB_GetSamplerIndex(qbool clamp, qbool anisotropy){
 	return (anisotropy * 2) + clamp;
+}
+
+qbool RB_IsMSAARequested(void){
+	return RB_GetMSAASampleCount() >= 2;
+}
+
+uint32_t RB_GetMSAASampleCount(void){
+	if(r_msaa->integer >= 8){
+		return 8;
+	}else if(r_msaa->integer >= 4){
+		return 4;
+	}else if(r_msaa->integer >= 2){
+		return 2;
+	}
+	return 1;
+}
+
+qbool RB_IsViewportFullscreen(const viewParms_t *vp){
+	return vp->viewportHeight == glConfig.vidHeight 
+			&& vp->viewportWidth == glConfig.vidWidth 
+			&& vp->viewportX == 0 
+			&& vp->viewportY == 0;
+}
+
+void RB_FinishFullscreen3D(qbool prevFullscreen3D){
+	if(prevFullscreen3D && !backEnd.fullscreen3D){
+		if(backEnd.msaaActive){
+			backEnd.msaaActive = qfalse;
+			RB_MSAA_Resolve(backEnd.colorBufferMS, backEnd.colorBuffer);
+		} else {
+			rhiSampler gammaSampler = backEnd.sampler[RB_GetSamplerIndex(qtrue,qfalse)];
+			RB_DrawGamma(backEnd.colorBuffer, gammaSampler, backEnd.colorBuffers[backEnd.colorBufferIndex ^ 1]); 
+			backEnd.colorBufferIndex ^= 1;
+			backEnd.colorBuffer = backEnd.colorBuffers[backEnd.colorBufferIndex];
+			
+		}
+		backEnd.pipelineLayoutDirty = qtrue;
+	}
+	
+	
+}
+
+void RB_BeginComputePass(const char* name){
+	RHI_CmdBeginDebugLabel(name);
+	
+	if(backEnd.renderPassCount[backEnd.currentFrameIndex] < MAX_RENDERPASSES){
+		uint32_t i = backEnd.renderPassCount[backEnd.currentFrameIndex]++;
+		renderPass *currentPass = &backEnd.renderPasses[backEnd.currentFrameIndex][i];
+		currentPass->query = RHI_CmdBeginDurationQuery();
+		Q_strncpyz(currentPass->name, name, sizeof(currentPass->name));
+		uint32_t nameHash = 0;
+		CRC32_Begin(&nameHash);
+		CRC32_ProcessBlock(&nameHash, name, strlen(name));
+		CRC32_End(&nameHash);
+		currentPass->nameHash = nameHash;
+	}
+}
+
+void RB_EndComputePass(void){
+	assert(backEnd.renderPassCount[backEnd.currentFrameIndex] > 0);
+	uint32_t i = backEnd.renderPassCount[backEnd.currentFrameIndex] - 1;
+	renderPass *currentPass = &backEnd.renderPasses[backEnd.currentFrameIndex][i];
+	RHI_CmdEndDurationQuery(currentPass->query);
+	RHI_CmdEndDebugLabel();
 }

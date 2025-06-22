@@ -178,6 +178,9 @@ cvar_t *r_mipFilter;
 
 cvar_t *r_sleepThreshold;
 
+cvar_t *r_msaa;
+cvar_t *r_alphaboost;
+
 
 static void AssertCvarRange( cvar_t *cv, float minVal, float maxVal, qboolean shouldBeIntegral ) {
 	if ( shouldBeIntegral ) {
@@ -317,8 +320,16 @@ static void InitVulkan( void ) {
 	depthTextureDesc.width = glConfig.vidWidth;
 	backEnd.depthBuffer = RHI_CreateTexture(&depthTextureDesc);
 
+
+	if(RB_IsMSAARequested()){
+		depthTextureDesc.name = "Depth Buffer MS";
+		depthTextureDesc.sampleCount = RB_GetMSAASampleCount();
+		backEnd.depthBufferMS = RHI_CreateTexture(&depthTextureDesc);
+	}
+	
+
 	rhiTextureDesc colorTextureDesc = {};
-	colorTextureDesc.allowedStates = RHI_ResourceState_RenderTargetBit | RHI_ResourceState_ShaderInputBit | RHI_ResourceState_CopySourceBit;
+	colorTextureDesc.allowedStates = RHI_ResourceState_RenderTargetBit | RHI_ResourceState_ShaderInputBit | RHI_ResourceState_CopySourceBit | RHI_ResourceState_ShaderReadWriteBit;
 	colorTextureDesc.format = R8G8B8A8_UNorm;
 	colorTextureDesc.height = glConfig.vidHeight;
 	colorTextureDesc.initialState = RHI_ResourceState_RenderTargetBit;
@@ -327,15 +338,20 @@ static void InitVulkan( void ) {
 	colorTextureDesc.name = "Color Buffer";
 	colorTextureDesc.sampleCount = 1;
 	colorTextureDesc.width = glConfig.vidWidth;
-	backEnd.colorBuffer = RHI_CreateTexture(&colorTextureDesc);
+	backEnd.colorBuffers[0] = RHI_CreateTexture(&colorTextureDesc);
 	colorTextureDesc.name = "Color Buffer 2";
-	backEnd.colorBuffer2 = RHI_CreateTexture(&colorTextureDesc);
+	backEnd.colorBuffers[1] = RHI_CreateTexture(&colorTextureDesc);
 
-	rhiSampler blitSampler = backEnd.sampler[RB_GetSamplerIndex(qtrue,qfalse)];
-	rhiSampler gammaSampler = backEnd.sampler[RB_GetSamplerIndex(qtrue,qfalse)];
+	if(RB_IsMSAARequested()){
+		colorTextureDesc.name = "Color Buffer MS";
+		colorTextureDesc.sampleCount = RB_GetMSAASampleCount();
+		colorTextureDesc.allowedStates = RHI_ResourceState_RenderTargetBit | RHI_ResourceState_ShaderInputBit | RHI_ResourceState_CopySourceBit;
+		backEnd.colorBufferMS = RHI_CreateTexture(&colorTextureDesc);
+	}
 	
-	RB_InitGamma(backEnd.colorBuffer, gammaSampler);
-	RB_InitBlit(backEnd.colorBuffer2, blitSampler);
+	RB_InitGamma();
+	RB_InitBlit();
+	RB_MSAA_Init();
 	RB_ImGUI_Init();
 	RB_CreateDynamicLightPipelines();
 	
@@ -375,7 +391,7 @@ void R_TakeScreenshot(char *fileName ) {
 	tgaHeader[15] = height >> 8;
 	tgaHeader[16] = 32;    // pixel size
 
-	RHI_Screenshot( buffer, backEnd.colorBuffer2 );
+	RHI_Screenshot( buffer, backEnd.colorBuffer );
 	//swap rgb to bgr
 	c = width * height * 4;
 	for ( i = 0 ; i < c ; i += 4 ) {
@@ -407,7 +423,7 @@ void R_TakeScreenshotJPEG(char *fileName ) {
 
 	buffer = ri.Hunk_AllocateTempMemory( glConfig.vidWidth * glConfig.vidHeight * 4 );
 
-	RHI_Screenshot( buffer, backEnd.colorBuffer2 );
+	RHI_Screenshot( buffer, backEnd.colorBuffer );
 
 
 	ri.FS_WriteFile( fileName, buffer, 1 );     // create path
@@ -692,7 +708,7 @@ R_Register
 void R_Register( void ) {
 	//
 	// latched and archived variables
-	r_ext_texture_filter_anisotropic    = ri.Cvar_Get( "r_ext_texture_filter_anisotropic", "16", CVAR_ARCHIVE );
+	r_ext_texture_filter_anisotropic    = ri.Cvar_Get( "r_anisotropy", "16", CVAR_ARCHIVE | CVAR_LATCH );
 
 
 	r_picmip = ri.Cvar_Get( "r_picmip", "1", CVAR_ARCHIVE | CVAR_LATCH ); //----(SA)	mod for DM and DK for id build.  was "1" // JPW NERVE pushed back to 1
@@ -825,9 +841,12 @@ void R_Register( void ) {
 	r_debugUI = ri.Cvar_Get( "r_debugUI", "0", CVAR_TEMP);
 	r_debugInput = ri.Cvar_Get( "r_debugInput", "0", CVAR_TEMP);
 
-	r_mipFilter = ri.Cvar_Get( "r_mipFilter", "1", CVAR_ARCHIVE );
+	r_mipFilter = ri.Cvar_Get( "r_mipFilter", "1", CVAR_ARCHIVE | CVAR_LATCH);
 
 	r_sleepThreshold = ri.Cvar_Get("r_sleepThreshold", "2500", CVAR_ARCHIVE);
+
+	r_msaa = ri.Cvar_Get("r_msaa", "8", CVAR_ARCHIVE | CVAR_LATCH);
+	r_alphaboost = ri.Cvar_Get("r_alphaboost", "1.0", CVAR_ARCHIVE);
 
 	// make sure all the commands added here are also
 	// removed in R_Shutdown

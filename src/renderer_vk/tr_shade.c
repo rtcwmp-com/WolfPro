@@ -576,6 +576,8 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 			break;
 		}
 
+		rhiPipeline pipeline = pStage->pipeline[backEnd.msaaActive ? 1 : 0];
+
 		if (i > 0) {
 			//__debugbreak();
 			//break;
@@ -607,17 +609,18 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 		pc.samplerIndex = RB_GetSamplerIndex(clamp, anisotropy);
 		pc.textureIndex = currentImage->descriptorIndex;
 		pc.alphaTest = AlphaTestMode(pStage->stateBits);
+		pc.alphaBoost = r_alphaboost->value;
 		
-		if(backEnd.previousPipeline.h != pStage->pipeline.h){
-			RHI_CmdBindPipeline(pStage->pipeline);
-			backEnd.previousPipeline = pStage->pipeline;
+		if(backEnd.previousPipeline.h != pipeline.h || backEnd.pipelineLayoutDirty){
+			RHI_CmdBindPipeline(pipeline);
+			backEnd.previousPipeline = pipeline;
 			backEnd.pipelineChangeCount++;
 		}
 		if(backEnd.currentDescriptorSet.h == 0 || backEnd.pipelineLayoutDirty){
-		RHI_CmdBindDescriptorSet(pStage->pipeline, backEnd.descriptorSet);
-		backEnd.currentDescriptorSet = backEnd.descriptorSet;
-		backEnd.pipelineLayoutDirty = qfalse;
-	}
+			RHI_CmdBindDescriptorSet(pipeline, backEnd.descriptorSet);
+			backEnd.currentDescriptorSet = backEnd.descriptorSet;
+			backEnd.pipelineLayoutDirty = qfalse;
+		}
 
 		rhiBuffer buffers[] = {vb->position, vb->color[i], vb->textureCoord[i]};
 		if(backEnd.previousVertexBufferCount != ARRAY_LEN(buffers) 
@@ -628,8 +631,8 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 			backEnd.previousVertexBufferCount = ARRAY_LEN(buffers);
 		}
 
-		RHI_CmdPushConstants(pStage->pipeline, RHI_Shader_Vertex, backEnd.or.modelMatrix,sizeof(backEnd.or.modelMatrix));
-		RHI_CmdPushConstants(pStage->pipeline, RHI_Shader_Pixel, &pc, sizeof(pc));
+		RHI_CmdPushConstants(pipeline, RHI_Shader_Vertex, backEnd.or.modelMatrix,sizeof(backEnd.or.modelMatrix));
+		RHI_CmdPushConstants(pipeline, RHI_Shader_Pixel, &pc, sizeof(pc));
 
 		RHI_CmdDrawIndexed(tess.numIndexes, vb->indexFirst, vb->vertexFirst);
 	}
@@ -700,8 +703,8 @@ static void RB_DrawDynamicLight(void){
 
 	shader_t *shader = tess.shader;
 	
-	rhiPipeline pipeline = backEnd.dynamicLightPipelines[RB_GetDynamicLightPipelineIndex(shader->cullType, shader->polygonOffset)];
-	if(backEnd.previousPipeline.h != pipeline.h){
+	rhiPipeline pipeline = backEnd.dynamicLightPipelines[RB_GetDynamicLightPipelineIndex(shader->cullType, shader->polygonOffset, backEnd.msaaActive)];
+	if(backEnd.previousPipeline.h != pipeline.h || backEnd.pipelineLayoutDirty){
 		RHI_CmdBindPipeline(pipeline);
 		backEnd.previousPipeline = pipeline;
 		backEnd.pipelineChangeCount++;
@@ -926,6 +929,8 @@ void RB_StageIteratorLightmappedMultitexture( void ) {
 		return;
 	}
 
+	rhiPipeline pipeline = pStage->pipeline[backEnd.msaaActive ? 1 : 0];
+
 	VertexBuffers *vb = &backEnd.vertexBuffers[backEnd.currentFrameIndex];
 
 	if((vb->indexCount + tess.numIndexes) > IDX_MAX || (vb->vertexCount + tess.numVertexes) > VBA_MAX ){
@@ -972,13 +977,13 @@ void RB_StageIteratorLightmappedMultitexture( void ) {
 	pc.texEnv = GL_MODULATE;
 
 	
-	if(backEnd.previousPipeline.h != pStage->pipeline.h){
-		RHI_CmdBindPipeline(pStage->pipeline);
-		backEnd.previousPipeline = pStage->pipeline;
+	if(backEnd.previousPipeline.h != pipeline.h  || backEnd.pipelineLayoutDirty){
+		RHI_CmdBindPipeline(pipeline);
+		backEnd.previousPipeline = pipeline;
 		backEnd.pipelineChangeCount++;
 	}
 	if(backEnd.currentDescriptorSet.h == 0 || backEnd.pipelineLayoutDirty){
-		RHI_CmdBindDescriptorSet(pStage->pipeline, backEnd.descriptorSet);
+		RHI_CmdBindDescriptorSet(pipeline, backEnd.descriptorSet);
 		backEnd.currentDescriptorSet = backEnd.descriptorSet;
 		backEnd.pipelineLayoutDirty = qfalse;
 	}
@@ -992,8 +997,8 @@ void RB_StageIteratorLightmappedMultitexture( void ) {
 		backEnd.previousVertexBufferCount = ARRAY_LEN(buffers);
 	}
 
-	RHI_CmdPushConstants(pStage->pipeline, RHI_Shader_Vertex, backEnd.or.modelMatrix,sizeof(backEnd.or.modelMatrix));
-	RHI_CmdPushConstants(pStage->pipeline, RHI_Shader_Pixel, &pc, sizeof(pc));
+	RHI_CmdPushConstants(pipeline, RHI_Shader_Vertex, backEnd.or.modelMatrix,sizeof(backEnd.or.modelMatrix));
+	RHI_CmdPushConstants(pipeline, RHI_Shader_Pixel, &pc, sizeof(pc));
 
 	RHI_CmdDrawIndexed(tess.numIndexes, vb->indexFirst, vb->vertexFirst);
 

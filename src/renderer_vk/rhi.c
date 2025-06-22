@@ -1,6 +1,6 @@
 #include "rhi.h"
 #include "tr_vulkan.h"
-
+#include "../client/cl_imgui.h"
 
 static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger)
 {
@@ -290,9 +290,8 @@ rhiTexture RHI_CreateTexture(const rhiTextureDesc *desc)
 		imageInfo.format = format;
 		imageInfo.tiling = desc->memoryUsage == RHI_MemoryUsage_Readback ? VK_IMAGE_TILING_LINEAR : VK_IMAGE_TILING_OPTIMAL;
 		imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; 
-		//imageInfo.usage = desc->memoryUsage == RHI_MemoryUsage_Readback ? VK_IMAGE_USAGE_TRANSFER_DST_BIT : GetVkImageUsageFlags(desc->allowedStates);
         imageInfo.usage = GetVkImageUsageFlags(desc->allowedStates);
-		imageInfo.samples = VK_SAMPLE_COUNT_1_BIT; // @TODO: desc->sampleCount
+		imageInfo.samples = GetVkSampleCount(desc->sampleCount);
 		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		VK(vmaCreateImage(vk.allocator, &imageInfo, &allocCreateInfo, &image, &allocation, NULL));
 
@@ -539,7 +538,7 @@ rhiPipeline RHI_CreateComputePipeline(const rhiComputePipelineDesc *computeDesc)
     DescriptorSetLayout *descriptorSetLayout = GET_LAYOUT(computeDesc->descLayout);
 
     VkPushConstantRange pcr = {};
-    pcr.size = computeDesc->pushConstantsBytes;
+    pcr.size = max(computeDesc->pushConstantsBytes, 4);
     pcr.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
     VkPipelineLayout vkPipelineLayout = VK_NULL_HANDLE;
@@ -772,9 +771,10 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
 
     VkPipelineMultisampleStateCreateInfo multiSampling = {};
 	multiSampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-	multiSampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-	multiSampling.alphaToCoverageEnable = VK_FALSE;
-
+	multiSampling.rasterizationSamples = GetVkSampleCount(graphicsDesc->sampleCount);
+	//multiSampling.alphaToCoverageEnable = GetVkSampleCount(graphicsDesc->sampleCount) != VK_SAMPLE_COUNT_1_BIT;
+    multiSampling.alphaToCoverageEnable = graphicsDesc->alphaToCoverage;
+    
     VkPipelineDepthStencilStateCreateInfo depthStencil = {};
     depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depthStencil.depthWriteEnable = graphicsDesc->depthWrite;
@@ -1672,4 +1672,48 @@ qboolean RHI_IsFrameSleepEnabled(void){
             assert(!"Unknown presentMode");
             return qfalse;
     }
+}
+
+// #define RHI_PRINT_POOL(name, x) \
+//         TableRowInt(
+
+#define POOL_LIST(P) \
+        P(vk.commandBufferPool, "Command Buffers") \
+        P(vk.semaphorePool, "Semaphores") \
+        P(vk.texturePool, "Textures") \
+        P(vk.bufferPool, "Buffers") \
+        P(vk.descriptorSetLayoutPool, "Descriptor Set Layouts") \
+        P(vk.descriptorSetPool, "Descriptor Set") \
+        P(vk.pipelinePool, "Pipelines") \
+        P(vk.samplerPool, "Samplers") 
+
+
+
+void DrawGUI_RHI(void){
+
+    static qbool breakdownActive = qfalse;
+	ToggleBooleanWithShortcut(&breakdownActive, ImGuiKey_R, ImGUI_ShortcutOptions_Global);
+	GUI_AddMainMenuItem(ImGUI_MainMenu_Info, "RHI Status", "Ctrl+Shift+R", &breakdownActive, qtrue);
+	if(breakdownActive){
+		if(igBegin("RHI", &breakdownActive, 0)){
+			igNewLine();
+			int32_t renderPassDuration = 0;
+			if(igBeginTable("Status",2,ImGuiTableFlags_RowBg,(ImVec2){0,0},0.0f)){
+				TableHeader(2, "Pool", "Size");
+                #define POOL_ITEM(pool, name) TableRowInt(name, Pool_Size(&pool));
+                POOL_LIST(POOL_ITEM);
+                #undef POOL_ITEM
+				igEndTable();
+			}
+
+            if(igBeginTable("Other stats",2,ImGuiTableFlags_RowBg,(ImVec2){0,0},0.0f)){
+				TableRowInt("Images", tr.numImages);
+                TableRowInt("Shaders", tr.numShaders);
+
+            	igEndTable();
+			}
+		}
+
+		igEnd();
+	}
 }
