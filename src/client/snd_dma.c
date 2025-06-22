@@ -414,11 +414,6 @@ static sfx_t *S_FindName( const char *name ) {
 		Com_Error( ERR_FATAL, "Sound name too long: %s", name );
 	}
 
-	// Ridah, caching
-	if ( cl_cacheGathering->integer ) {
-		Cbuf_ExecuteText( EXEC_NOW, va( "cache_usedfile sound %s\n", name ) );
-	}
-
 	hash = S_HashSFXName( name );
 
 	sfx = sfxHash[hash];

@@ -7,7 +7,6 @@ console history save to disk
 autocomplete map names
 
 shader r_cache
-  disable backup
   use hashmap for shader text
 
 better gamma handling
@@ -28,7 +27,6 @@ MSAA + alpha2coverage
       - bind normal render target
 
 
-remove r_cache/r_cacheshaders
 remove r_measureoverdraw
 remove r_ignoreglerrors r_drawBuffer and stereo
 remove R_GammaCorrect s_gammatable
