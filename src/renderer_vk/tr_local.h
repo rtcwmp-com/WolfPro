@@ -1937,6 +1937,8 @@ void R_ComputeCursorPosition( int* x, int* y );
 void RB_MSAA_Init(void);
 void RB_MSAA_Resolve(rhiTexture MSTexture, rhiTexture resTexture);
 
+void DrawGUI_RHI(void);
+
 typedef struct RHIExport
 {
 	uint32_t renderToPresentUS;

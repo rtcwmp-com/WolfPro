@@ -1,6 +1,7 @@
 #define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
 #ifndef __CL_IMGUI__
 #include "../cimgui/cimgui.h"
+#include "client.h"
 
 
 
@@ -27,8 +28,16 @@ typedef enum ImGUI_ShortcutOptions
 	ImGUI_ShortcutOptions_Global = 1 << 0
 } ImGUI_ShortcutOptions;
 
-void GUI_AddMainMenuItem(ImGUI_MainMenu_Id menu, const char* item, const char* shortcut, bool* selected, bool enabled);
+void GUI_AddMainMenuItem(ImGUI_MainMenu_Id menu, const char* item, const char* shortcut, qbool* selected, qbool enabled);
 void GUI_DrawMainMenu();
-void ToggleBooleanWithShortcut(bool *value, ImGuiKey key, ImGUI_ShortcutOptions flags);
+void ToggleBooleanWithShortcut(qbool *value, ImGuiKey key, ImGUI_ShortcutOptions flags);
+qbool IsShortcutPressed(ImGuiKey key, ImGUI_ShortcutOptions flags);
+
+void TableHeader(int count, ...);
+void TableRow(int count, ...);
+void TableRowBool(const char* item0, qbool item1);
+void TableRowInt(const char* item0, int item1);
+void TableRowStr(const char* item0, float item1, const char* format);
+
 
 #endif

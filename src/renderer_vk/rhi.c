@@ -1,6 +1,6 @@
 #include "rhi.h"
 #include "tr_vulkan.h"
-
+#include "../client/cl_imgui.h"
 
 static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT messenger)
 {
@@ -1672,4 +1672,48 @@ qboolean RHI_IsFrameSleepEnabled(void){
             assert(!"Unknown presentMode");
             return qfalse;
     }
+}
+
+// #define RHI_PRINT_POOL(name, x) \
+//         TableRowInt(
+
+#define POOL_LIST(P) \
+        P(vk.commandBufferPool, "Command Buffers") \
+        P(vk.semaphorePool, "Semaphores") \
+        P(vk.texturePool, "Textures") \
+        P(vk.bufferPool, "Buffers") \
+        P(vk.descriptorSetLayoutPool, "Descriptor Set Layouts") \
+        P(vk.descriptorSetPool, "Descriptor Set") \
+        P(vk.pipelinePool, "Pipelines") \
+        P(vk.samplerPool, "Samplers") 
+
+
+
+void DrawGUI_RHI(void){
+
+    static qbool breakdownActive = qfalse;
+	ToggleBooleanWithShortcut(&breakdownActive, ImGuiKey_R, ImGUI_ShortcutOptions_Global);
+	GUI_AddMainMenuItem(ImGUI_MainMenu_Info, "RHI Status", "Ctrl+Shift+R", &breakdownActive, qtrue);
+	if(breakdownActive){
+		if(igBegin("RHI", &breakdownActive, 0)){
+			igNewLine();
+			int32_t renderPassDuration = 0;
+			if(igBeginTable("Status",2,ImGuiTableFlags_RowBg,(ImVec2){0,0},0.0f)){
+				TableHeader(2, "Pool", "Size");
+                #define POOL_ITEM(pool, name) TableRowInt(name, Pool_Size(&pool));
+                POOL_LIST(POOL_ITEM);
+                #undef POOL_ITEM
+				igEndTable();
+			}
+
+            if(igBeginTable("Other stats",2,ImGuiTableFlags_RowBg,(ImVec2){0,0},0.0f)){
+				TableRowInt("Images", tr.numImages);
+                TableRowInt("Shaders", tr.numShaders);
+
+            	igEndTable();
+			}
+		}
+
+		igEnd();
+	}
 }

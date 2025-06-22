@@ -1032,6 +1032,7 @@ RB_EndFrame
 =============
 */
 
+
 void DrawGUI_Performance(void){
 	int f = (backEnd.currentFrameIndex - 1 + RHI_FRAMES_IN_FLIGHT) % RHI_FRAMES_IN_FLIGHT;
 	int p = (backEnd.currentFrameIndex - 2 + RHI_FRAMES_IN_FLIGHT) % RHI_FRAMES_IN_FLIGHT;
@@ -1050,20 +1051,23 @@ void DrawGUI_Performance(void){
 	GUI_AddMainMenuItem(ImGUI_MainMenu_Perf, "Frame breakdown", "Ctrl+Shift+F", &breakdownActive, qtrue);
 	if(breakdownActive){
 		if(igBegin("Frame breakdown", &breakdownActive, 0)){
-			igText("GPU: %s", RHI_GetDeviceName());
 			igNewLine();
-
-			igText("Renderpasses");
 			int32_t renderPassDuration = 0;
-			igText("Entire Frame %d", (int)s_fullFrameHistory.median);
-			for(int i = 0; i < backEnd.renderPassCount[f]; i++){
-				renderPass *currentRenderPass = &backEnd.renderPasses[f][i];
-				igText("%s %d", currentRenderPass->name, (int)s_history[i].median);
-				renderPassDuration += currentRenderPass->durationUs;
+			if(igBeginTable("Status",2,ImGuiTableFlags_RowBg,(ImVec2){0,0},0.0f)){
+				TableHeader(2, "Renderpass", "Duration");
+				TableRowInt("Entire Frame", (int)s_fullFrameHistory.median);
+				for(int i = 0; i < backEnd.renderPassCount[f]; i++){
+					renderPass *currentRenderPass = &backEnd.renderPasses[f][i];
+					TableRowInt(currentRenderPass->name, (int)s_history[i].median);
+					renderPassDuration += currentRenderPass->durationUs;
+				}
+				TableRowInt("Overhead", (int)duration - (int)renderPassDuration);
+				igEndTable();
 			}
-			igText("Overhead %d", (int)duration - (int)renderPassDuration);
+
 			igText("PSO changes: %d", (int)backEnd.pipelineChangeCount);
 			igText("Textures loaded: %d", (int)tr.numImages);
+			
 
 			static int previousSceneCount;
 			static int previousViewCount;
@@ -1120,6 +1124,7 @@ const void  *RB_EndFrame( const void *data ) {
 	GUI_DrawMainMenu();
 	DrawGUI_Performance();
 	ri.CL_ImGUI_Update();
+	DrawGUI_RHI();
 
 	RB_ImGUI_Draw(backEnd.colorBuffer);
 
