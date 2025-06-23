@@ -759,14 +759,9 @@ image_t *R_CreateImage( const char *name, const byte *pic, int width, int height
 	}
 
 	// Ridah
-	image = tr.images[tr.numImages] = R_CacheImageAlloc( sizeof( image_t ) );
+	image = tr.images[tr.numImages] = ri.Hunk_Alloc( sizeof( image_t ), h_low );
 	int descriptorIndex = tr.textureDescriptorCount++;
 
-	// Ridah
-	if ( r_cacheShaders->integer ) {
-		R_FindFreeTexnum( image );
-	}
-	// done.
 
 	tr.numImages++;
 
@@ -1751,11 +1746,6 @@ image_t *R_FindImageFile( const char *name, qboolean mipmap, qboolean allowPicmi
 
 	hash = generateHashValue( name );
 
-	// Ridah, caching
-	if ( r_cacheGathering->integer ) {
-		ri.Cmd_ExecuteText( EXEC_NOW, va( "cache_usedfile image %s %i %i %i\n", name, mipmap, allowPicmip, glWrapClampMode ) );
-	}
-
 	//
 	// see if the image is already loaded
 	//
@@ -1777,12 +1767,7 @@ image_t *R_FindImageFile( const char *name, qboolean mipmap, qboolean allowPicmi
 		}
 	}
 
-	// Ridah, check the cache
-	// TTimo: assignment used as truth value
-	if ( ( image = R_FindCachedImage( name, hash ) ) ) {
-		return image;
-	}
-	// done.
+	
 
 	//
 	// load the pic from disk
@@ -2113,9 +2098,6 @@ R_InitImages
 void    R_InitImages( void ) {
 	memset( hashTable, 0, sizeof( hashTable ) );
 
-	// Ridah, caching system
-	R_InitTexnumImages( qfalse );
-	// done.
 
 	// build brightness translation tables
 	R_SetColorMappings();
@@ -2123,9 +2105,6 @@ void    R_InitImages( void ) {
 	// create default texture and white texture
 	R_CreateBuiltinImages();
 
-	// Ridah, load the cache media, if they were loaded previously, they'll be restored from the backupImages
-	R_LoadCacheImages();
-	// done.
 }
 
 /*
@@ -2135,9 +2114,6 @@ R_DeleteTextures
 */
 void R_DeleteTextures( void ) {
 	memset( tr.images, 0, sizeof( tr.images ) );
-	// Ridah
-	R_InitTexnumImages( qtrue );
-	// done.
 
 }
 
@@ -3097,297 +3073,4 @@ void R_CropImages_f( void ) {
 }
 // done.
 
-//==========================================================================================
-// Ridah, caching system
 
-static int numBackupImages = 0;
-static image_t  *backupHashTable[FILE_HASH_SIZE];
-
-static image_t  *texnumImages[MAX_DRAWIMAGES * 2];
-
-/*
-===============
-R_CacheImageAlloc
-
-  this will only get called to allocate the image_t structures, not that actual image pixels
-===============
-*/
-void *R_CacheImageAlloc( int size ) {
-	if ( r_cache->integer && r_cacheShaders->integer ) {
-		return malloc( size );
-//DAJ TEST		return ri.Z_Malloc( size );	//DAJ was CO
-	} else {
-		return ri.Hunk_Alloc( size, h_low );
-	}
-}
-
-/*
-===============
-R_CacheImageFree
-===============
-*/
-void R_CacheImageFree( void *ptr ) {
-	if ( r_cache->integer && r_cacheShaders->integer ) {
-		free( ptr );
-//DAJ TEST		ri.Free( ptr );	//DAJ was CO
-	}
-}
-
-/*
-===============
-R_TouchImage
-
-  remove this image from the backupHashTable and make sure it doesn't get overwritten
-===============
-*/
-qboolean R_TouchImage( image_t *inImage ) {
-	image_t *bImage, *bImagePrev;
-	int hash;
-	char *name;
-
-	if ( inImage == tr.dlightImage ||
-		 inImage == tr.whiteImage ||
-		 inImage == tr.defaultImage ||
-		 inImage->imgName[0] == '*' ) { // can't use lightmaps since they might have the same name, but different maps will have different actual lightmap pixels
-		return qfalse;
-	}
-
-	hash = inImage->hash;
-	name = inImage->imgName;
-
-	bImage = backupHashTable[hash];
-	bImagePrev = NULL;
-	while ( bImage ) {
-
-		if ( bImage == inImage ) {
-			// add it to the current images
-			if ( tr.numImages == MAX_DRAWIMAGES ) {
-				ri.Error( ERR_DROP, "R_CreateImage: MAX_DRAWIMAGES hit\n" );
-			}
-
-			tr.images[tr.numImages] = bImage;
-
-			// remove it from the backupHashTable
-			if ( bImagePrev ) {
-				bImagePrev->next = bImage->next;
-			} else {
-				backupHashTable[hash] = bImage->next;
-			}
-
-			// add it to the hashTable
-			bImage->next = hashTable[hash];
-			hashTable[hash] = bImage;
-
-			// get the new texture
-			tr.numImages++;
-
-			return qtrue;
-		}
-
-		bImagePrev = bImage;
-		bImage = bImage->next;
-	}
-
-	return qtrue;
-}
-
-/*
-===============
-R_PurgeImage
-===============
-*/
-void R_PurgeImage( image_t *image ) {
-
-	//texnumImages[image->texnum - 1024] = NULL;
-
-	R_CacheImageFree( image );
-
-}
-
-
-/*
-===============
-R_PurgeBackupImages
-
-  Can specify the number of Images to purge this call (used for background purging)
-===============
-*/
-void R_PurgeBackupImages( int purgeCount ) {
-	int i, cnt;
-	static int lastPurged = 0;
-	image_t *image;
-
-	if ( !numBackupImages ) {
-		// nothing to purge
-		lastPurged = 0;
-		return;
-	}
-
-
-	cnt = 0;
-	for ( i = lastPurged; i < FILE_HASH_SIZE; ) {
-		lastPurged = i;
-		// TTimo: assignment used as truth value
-		if ( ( image = backupHashTable[i] ) ) {
-			// kill it
-			backupHashTable[i] = image->next;
-			R_PurgeImage( image );
-			cnt++;
-
-			if ( cnt >= purgeCount ) {
-				return;
-			}
-		} else {
-			i++;    // no images in this slot, so move to the next one
-		}
-	}
-
-	// all done
-	numBackupImages = 0;
-	lastPurged = 0;
-}
-
-/*
-===============
-R_BackupImages
-===============
-*/
-void R_BackupImages( void ) {
-
-	if ( !r_cache->integer ) {
-		return;
-	}
-	if ( !r_cacheShaders->integer ) {
-		return;
-	}
-
-	// backup the hashTable
-	memcpy( backupHashTable, hashTable, sizeof( backupHashTable ) );
-
-	// pretend we have cleared the list
-	numBackupImages = tr.numImages;
-	tr.numImages = 0;
-
-}
-
-/*
-=============
-R_FindCachedImage
-=============
-*/
-image_t *R_FindCachedImage( const char *name, int hash ) {
-	image_t *bImage, *bImagePrev;
-
-	if ( !r_cacheShaders->integer ) {
-		return NULL;
-	}
-
-	if ( !numBackupImages ) {
-		return NULL;
-	}
-
-	bImage = backupHashTable[hash];
-	bImagePrev = NULL;
-	while ( bImage ) {
-
-		if ( !Q_stricmp( name, bImage->imgName ) ) {
-			// add it to the current images
-			if ( tr.numImages == MAX_DRAWIMAGES ) {
-				ri.Error( ERR_DROP, "R_CreateImage: MAX_DRAWIMAGES hit\n" );
-			}
-
-			R_TouchImage( bImage );
-			return bImage;
-		}
-
-		bImagePrev = bImage;
-		bImage = bImage->next;
-	}
-
-	return NULL;
-}
-
-/*
-===============
-R_InitTexnumImages
-===============
-*/
-static int last_i;
-void R_InitTexnumImages( qboolean force ) {
-	if ( force || !numBackupImages ) {
-		memset( texnumImages, 0, sizeof( texnumImages ) );
-		last_i = 0;
-	}
-}
-
-/*
-============
-R_FindFreeTexnum
-============
-*/
-void R_FindFreeTexnum( image_t *inImage ) {
-	int i, max;
-	image_t **image;
-
-	max = ( MAX_DRAWIMAGES * 2 );
-	if ( last_i && !texnumImages[last_i + 1] ) {
-		i = last_i + 1;
-	} else {
-		i = 0;
-		image = (image_t **)&texnumImages;
-		while ( i < max && *( image++ ) ) {
-			i++;
-		}
-	}
-
-	if ( i < max ) {
-		if ( i < max - 1 ) {
-			last_i = i;
-		} else {
-			last_i = 0;
-		}
-		texnumImages[i] = inImage;
-	} else {
-		ri.Error( ERR_DROP, "R_FindFreeTexnum: MAX_DRAWIMAGES hit\n" );
-	}
-}
-
-/*
-===============
-R_LoadCacheImages
-===============
-*/
-void R_LoadCacheImages( void ) {
-	int len;
-	byte *buf;
-	char    *token, *pString;
-	char name[MAX_QPATH];
-	int parms[3], i;
-
-	if ( numBackupImages ) {
-		return;
-	}
-
-	len = ri.FS_ReadFile( "image.cache", NULL );
-
-	if ( len <= 0 ) {
-		return;
-	}
-
-	buf = (byte *)ri.Hunk_AllocateTempMemory( len );
-	ri.FS_ReadFile( "image.cache", (void **)&buf );
-	pString = (char *)buf;
-
-	while ( ( token = COM_ParseExt( &pString, qtrue ) ) && token[0] ) {
-		Q_strncpyz( name, token, sizeof( name ) );
-		for ( i = 0; i < 3; i++ ) {
-			token = COM_ParseExt( &pString, qfalse );
-			parms[i] = atoi( token );
-		}
-		R_FindImageFile( name, parms[0], parms[1], parms[2] );
-	}
-
-	ri.Hunk_FreeTempMemory( buf );
-}
-// done.
-//==========================================================================================

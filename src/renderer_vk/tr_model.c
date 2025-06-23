@@ -115,11 +115,6 @@ qhandle_t RE_RegisterModel( const char *name ) {
 		return 0;
 	}
 
-	// Ridah, caching
-	if ( r_cacheGathering->integer ) {
-		ri.Cmd_ExecuteText( EXEC_NOW, va( "cache_usedfile model %s\n", name ) );
-	}
-
 	//
 	// search the currently loaded models
 	//
@@ -142,14 +137,6 @@ qhandle_t RE_RegisterModel( const char *name ) {
 
 	// only set the name after the model has been successfully loaded
 	Q_strncpyz( mod->name, name, sizeof( mod->name ) );
-
-
-
-	// Ridah, look for it cached
-	if ( R_FindCachedModel( name, mod ) ) {
-		return mod->index;
-	}
-	// done.
 
 	mod->numLods = 0;
 
@@ -1333,9 +1320,6 @@ void R_ModelInit( void ) {
 	mod = R_AllocModel();
 	mod->type = MOD_BAD;
 
-	// Ridah, load in the cacheModels
-	R_LoadCacheModels();
-	// done.
 }
 
 
@@ -1811,122 +1795,9 @@ void R_Hunk_Reset( void ) {
 	cursize = 0;
 }
 
-//=============================================================================
-// Ridah, model caching
 
-// TODO: convert the Hunk_Alloc's in the model loading to malloc's, so we don't have
-// to move so much memory around during transitions
 
-static model_t backupModels[MAX_MOD_KNOWN];
-static int numBackupModels = 0;
 
-/*
-===============
-R_CacheModelAlloc
-===============
-*/
-void *R_CacheModelAlloc( int size ) {
-	if ( r_cache->integer && r_cacheModels->integer ) {
-		return R_Hunk_Alloc( size );
-	} else {
-		return ri.Hunk_Alloc( size, h_low );
-	}
-}
-
-/*
-===============
-R_CacheModelFree
-===============
-*/
-void R_CacheModelFree( void *ptr ) {
-	if ( r_cache->integer && r_cacheModels->integer ) {
-		// TTimo: it's in the hunk, leave it there, next R_Hunk_Begin will clear it all
-	} else
-	{
-		// if r_cache 0, this is never supposed to get called anyway
-		Com_Printf( "FIXME: unexpected R_CacheModelFree call (r_cache 0)\n" );
-	}
-}
-
-/*
-===============
-R_PurgeModels
-===============
-*/
-void R_PurgeModels( int count ) {
-	static int lastPurged = 0;
-
-	if ( !numBackupModels ) {
-		return;
-	}
-
-	lastPurged = 0;
-	numBackupModels = 0;
-
-	// note: we can only do this since we only use the virtual memory for the model caching!
-	R_Hunk_Reset();
-}
-
-/*
-===============
-R_BackupModels
-===============
-*/
-void R_BackupModels( void ) {
-	int i, j;
-	model_t *mod, *modBack;
-
-	if ( !r_cache->integer ) {
-		return;
-	}
-	if ( !r_cacheModels->integer ) {
-		return;
-	}
-
-	if ( numBackupModels ) {
-		R_PurgeModels( numBackupModels + 1 ); // get rid of them all
-	}
-
-	// copy each model in memory across to the backupModels
-	modBack = backupModels;
-	for ( i = 0; i < tr.numModels; i++ ) {
-		mod = tr.models[i];
-
-		if ( mod->type && mod->type != MOD_BRUSH && mod->type != MOD_MDS ) {
-			memcpy( modBack, mod, sizeof( *mod ) );
-			switch ( mod->type ) {
-			case MOD_MESH:
-				for ( j = MD3_MAX_LODS - 1; j >= 0; j-- ) {
-					if ( j < mod->numLods && mod->md3[j] ) {
-						if ( ( j == MD3_MAX_LODS - 1 ) || ( mod->md3[j] != mod->md3[j + 1] ) ) {
-							modBack->md3[j] = R_CacheModelAlloc( mod->md3[j]->ofsEnd );
-							memcpy( modBack->md3[j], mod->md3[j], mod->md3[j]->ofsEnd );
-						} else {
-							modBack->md3[j] = modBack->md3[j + 1];
-						}
-					}
-				}
-				break;
-			case MOD_MDC:
-				for ( j = MD3_MAX_LODS - 1; j >= 0; j-- ) {
-					if ( j < mod->numLods && mod->mdc[j] ) {
-						if ( ( j == MD3_MAX_LODS - 1 ) || ( mod->mdc[j] != mod->mdc[j + 1] ) ) {
-							modBack->mdc[j] = R_CacheModelAlloc( mod->mdc[j]->ofsEnd );
-							memcpy( modBack->mdc[j], mod->mdc[j], mod->mdc[j]->ofsEnd );
-						} else {
-							modBack->mdc[j] = modBack->mdc[j + 1];
-						}
-					}
-				}
-				break;
-			default:
-				break; // MOD_BAD MOD_BRUSH MOD_MDS not handled
-			}
-			modBack++;
-			numBackupModels++;
-		}
-	}
-}
 
 
 /*
@@ -1988,116 +1859,3 @@ static void R_RegisterMD3Shaders( model_t *mod, int lod ) {
 		surf = ( md3Surface_t * )( (byte *)surf + surf->ofsEnd );
 	}
 }
-
-/*
-===============
-R_FindCachedModel
-
-  look for the given model in the list of backupModels
-===============
-*/
-qboolean R_FindCachedModel( const char *name, model_t *newmod ) {
-	int i,j, index;
-	model_t *mod;
-
-	// NOTE TTimo
-	// would need an r_cache check here too?
-
-	if ( !r_cacheModels->integer ) {
-		return qfalse;
-	}
-
-	if ( !numBackupModels ) {
-		return qfalse;
-	}
-
-	mod = backupModels;
-	for ( i = 0; i < numBackupModels; i++, mod++ ) {
-		if ( !Q_strncmp( mod->name, name, sizeof( mod->name ) ) ) {
-			// copy it to a new slot
-			index = newmod->index;
-			memcpy( newmod, mod, sizeof( model_t ) );
-			newmod->index = index;
-			switch ( mod->type ) {
-			case MOD_MDS:
-				return qfalse;  // not supported yet
-			case MOD_MESH:
-				for ( j = MD3_MAX_LODS - 1; j >= 0; j-- ) {
-					if ( j < mod->numLods && mod->md3[j] ) {
-						if ( ( j == MD3_MAX_LODS - 1 ) || ( mod->md3[j] != mod->md3[j + 1] ) ) {
-							newmod->md3[j] = ri.Hunk_Alloc( mod->md3[j]->ofsEnd, h_low );
-							memcpy( newmod->md3[j], mod->md3[j], mod->md3[j]->ofsEnd );
-							R_RegisterMD3Shaders( newmod, j );
-							R_CacheModelFree( mod->md3[j] );
-						} else {
-							newmod->md3[j] = mod->md3[j + 1];
-						}
-					}
-				}
-				break;
-			case MOD_MDC:
-				for ( j = MD3_MAX_LODS - 1; j >= 0; j-- ) {
-					if ( j < mod->numLods && mod->mdc[j] ) {
-						if ( ( j == MD3_MAX_LODS - 1 ) || ( mod->mdc[j] != mod->mdc[j + 1] ) ) {
-							newmod->mdc[j] = ri.Hunk_Alloc( mod->mdc[j]->ofsEnd, h_low );
-							memcpy( newmod->mdc[j], mod->mdc[j], mod->mdc[j]->ofsEnd );
-							R_RegisterMDCShaders( newmod, j );
-							R_CacheModelFree( mod->mdc[j] );
-						} else {
-							newmod->mdc[j] = mod->mdc[j + 1];
-						}
-					}
-				}
-				break;
-			default:
-				break; // MOD_BAD MOD_BRUSH
-			}
-
-			mod->type = MOD_BAD;    // don't try and purge it later
-			mod->name[0] = 0;
-			return qtrue;
-		}
-	}
-
-	return qfalse;
-}
-
-/*
-===============
-R_LoadCacheModels
-===============
-*/
-void R_LoadCacheModels( void ) {
-	int len;
-	byte *buf;
-	char    *token, *pString;
-	char name[MAX_QPATH];
-
-	if ( !r_cacheModels->integer ) {
-		return;
-	}
-
-	// don't load the cache list in between level loads, only on startup, or after a vid_restart
-	if ( numBackupModels > 0 ) {
-		return;
-	}
-
-	len = ri.FS_ReadFile( "model.cache", NULL );
-
-	if ( len <= 0 ) {
-		return;
-	}
-
-	buf = (byte *)ri.Hunk_AllocateTempMemory( len );
-	ri.FS_ReadFile( "model.cache", (void **)&buf );
-	pString = (char *)buf;
-
-	while ( ( token = COM_ParseExt( &pString, qtrue ) ) && token[0] ) {
-		Q_strncpyz( name, token, sizeof( name ) );
-		RE_RegisterModel( name );
-	}
-
-	ri.Hunk_FreeTempMemory( buf );
-}
-// done.
-//========================================================================
