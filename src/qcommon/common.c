@@ -3529,3 +3529,18 @@ const char* Q_itohex(uint64_t number, qbool uppercase, qbool prefix)
 
 	return buffer + startOffset;
 }
+
+const char* Com_FormatBytes(uint64_t numBytes)
+{
+	const char* units[] = { "bytes", "KB", "MB", "GB" };
+	const float dividers[] = { 1.0f, (float)(1 << 10), (float)(1 << 20), (float)(1 << 30) };
+
+	int unit = 0;
+	for (uint64_t vi = numBytes; vi >= 1024; vi >>= 10) {
+		unit++;
+	}
+
+	const float vf = (float)numBytes / dividers[unit];
+
+	return va("%.3f %s", vf, units[unit]);
+}
