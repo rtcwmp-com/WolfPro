@@ -1382,6 +1382,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 
 	if ( cg_debugEvents.integer ) {
 		CG_Printf( "ent:%3i  event:%3i ", es->number, event );
+		CG_PrintEntityState(es);
 	}
 
 	if ( !event ) {

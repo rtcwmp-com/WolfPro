@@ -41,6 +41,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "tr_types.h"
 #include "../game/bg_public.h"
 #include "cg_public.h"
+#include "cg_ndp.h"
 
 
 #define POWERUP_BLINKS      5
@@ -992,6 +993,7 @@ typedef struct {
 
 	pmoveExt_t pmext;
 
+	qbool ndpDemoEnabled;
 } cg_t;
 
 #define NUM_FUNNEL_SPRITES  21
@@ -1973,6 +1975,7 @@ void CG_AdjustPositionForMover( const vec3_t in, int moverNum, int fromTime, int
 void CG_PositionEntityOnTag( refEntity_t *entity, const refEntity_t *parent,
 							 char *tagName, int startIndex, vec3_t *offset );
 void CG_PositionRotatedEntityOnTag( refEntity_t *entity, const refEntity_t *parent, char *tagName );
+void CG_PrintEntityState(const entityState_t* ent);
 
 
 //----(SA)
@@ -2181,6 +2184,7 @@ void CG_RumbleEfx( float pitch, float yaw );
 // cg_snapshot.c
 //
 void CG_ProcessSnapshots( void );
+void CG_NDP_ProcessSnapshots( void );
 
 //
 // cg_spawn.c
@@ -2504,3 +2508,16 @@ extern vmCvar_t cg_customCrosshairYGap;
 extern vmCvar_t cg_customCrosshairColor;
 extern vmCvar_t cg_customCrosshairColorAlt;
 extern vmCvar_t cg_customCrosshairVMirror;
+
+// Get capabilities from the client
+qbool trap_GetValue(char* value, int valueSize, const char* key);
+int trap_Cvar_VariableIntegerValue(const char* var_name);
+
+typedef struct {
+	int trap_LocateInteropData;
+	int trap_CNQ3_NDP_Enable;
+	int trap_CNQ3_NDP_Seek;
+	int trap_CNQ3_NDP_ReadUntil;
+	int trap_CNQ3_NDP_StartVideo;
+	int trap_CNQ3_NDP_StopVideo;
+} cgExt_t;

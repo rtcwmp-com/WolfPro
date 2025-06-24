@@ -1621,6 +1621,10 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 #endif
 	DEBUGTIME
 
+	if (cg.demoPlayback && cg.ndpDemoEnabled) {
+		CG_NDP_SetGameTime();
+	}
+
 	// if we are only updating the screen as a loading
 	// pacifier, don't even try to read snapshots
 	if ( cg.infoScreenText[0] != 0 ) {

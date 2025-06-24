@@ -542,3 +542,36 @@ char* trap_TranslateString( const char *string ) {
 	return buf;
 }
 // -NERVE - SMF
+
+
+qbool trap_CNQ3_NDP_Enable(void) {
+	return syscall(CG_EXT_NDP_ENABLE, CG_NDP_ANALYZE_COMMAND, CG_NDP_GENERATE_COMMANDS, CG_NDP_IS_CS_NEEDED, CG_NDP_ANALYZE_SNAPSHOT, CG_NDP_END_ANALYSIS);
+}
+
+int trap_CNQ3_NDP_Seek(int serverTime) {
+	return syscall(CG_EXT_NDP_SEEK, serverTime);
+}
+
+void trap_CNQ3_NDP_ReadUntil(int serverTime) {
+	syscall(CG_EXT_NDP_READUNTIL, serverTime);
+}
+
+void trap_CNQ3_NDP_StartVideo(void) {
+	syscall(CG_EXT_NDP_STARTVIDEO);
+}
+
+void trap_CNQ3_NDP_StopVideo(void) {
+	syscall(CG_EXT_NDP_STOPVIDEO);
+}
+
+void trap_LocateInteropData(void *bufferIn, int bufferInSize, void *bufferOut, int bufferOutSize) {
+	syscall(CG_EXT_LOCATEINTEROPDATA, bufferIn, bufferInSize, bufferOut, bufferOutSize);
+}
+
+qbool trap_GetValue(char* value, int valueSize, const char* key) {
+	return syscall(CG_EXT_GETVALUE, value, valueSize, key);
+}
+
+int trap_Cvar_VariableIntegerValue(const char* var_name) {
+	return syscall(CG_CVAR_VARIABLEINTEGERVALUE, var_name);
+}
