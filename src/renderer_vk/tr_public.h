@@ -193,6 +193,7 @@ typedef struct {
 
 	qbool (*IsRecordingVideo)(void);
 	void (*CL_ImGUI_Update)(void);
+	void (*CL_CG_ImGUI_Update)(void);
 
 	
 

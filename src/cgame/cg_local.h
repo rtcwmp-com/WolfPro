@@ -1597,6 +1597,10 @@ typedef struct {
 	int readyState;		// Ready
 	int playersReady;   // number of players ready so far
 	int playerCount;	// number of players
+	void *igContext;
+	void *igAlloc;
+	void *igFree;
+	void **igUserData;
 } cgs_t;
 
 //==============================================================================
@@ -2520,4 +2524,9 @@ typedef struct {
 	int trap_CNQ3_NDP_ReadUntil;
 	int trap_CNQ3_NDP_StartVideo;
 	int trap_CNQ3_NDP_StopVideo;
+	int trap_CL_AddGuiMenu;
 } cgExt_t;
+
+void CG_ImGUI_Update(void);
+void CG_ImGUI_Share(void *ctx, void *alloc, void *free, void** user);
+int trap_CL_AddGuiMenu(int menu, const char* name, const char* shortcut, qbool* selected, qbool enabled);

@@ -1125,6 +1125,7 @@ const void  *RB_EndFrame( const void *data ) {
 	DrawGUI_Performance();
 	ri.CL_ImGUI_Update();
 	DrawGUI_RHI();
+	ri.CL_CG_ImGUI_Update();
 
 	RB_ImGUI_Draw(backEnd.colorBuffer);
 

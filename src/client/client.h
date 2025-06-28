@@ -309,6 +309,8 @@ enum {
 	UIVM_COUNT
 };
 
+typedef void* (*ImGuiMemAllocFunc)(size_t sz, void* user_data);
+typedef void (*ImGuiMemFreeFunc)(void* ptr, void* user_data);
 typedef struct {
 	connstate_t state;              // connection status
 	int keyCatchers;                // bit flags
@@ -374,6 +376,15 @@ typedef struct {
 
 	// extension: new demo player supported by the mod
 	qbool		cgameNewDemoPlayer;
+
+	qbool cgameImGUI;
+	
+	void *igContext;
+	
+	ImGuiMemAllocFunc igAlloc;
+	ImGuiMemFreeFunc igFree;
+	char igUser[2048][2048];
+	
 } clientStatic_t;
 
 extern clientStatic_t cls;
@@ -780,6 +791,7 @@ extern cvar_t* cl_StreamingSelfSignedCert;
 #ifdef RTCW_VULKAN
 void CL_GetSnapshotInfo(void);
 void CL_ImGUI_Update(void);
+void CL_CG_ImGUI_Update(void);
 #endif
 
 //
@@ -793,5 +805,8 @@ qbool CL_NDP_GetServerCommand(int serverCommandNumber);
 int CL_NDP_Seek(int serverTime);
 void CL_NDP_ReadUntil(int serverTime);
 void CL_NDP_HandleError(void);
+
+qboolean CL_CG_ImGUI_Support(void);
+void CL_CG_ImGUI_Share(void);
 
 #endif

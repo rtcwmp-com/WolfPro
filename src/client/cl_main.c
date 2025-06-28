@@ -2636,6 +2636,7 @@ void CL_InitRef( void ) {
 	#ifdef RTCW_VULKAN
 	ri.IsRecordingVideo = CL_IsRecordingVideo;
 	ri.CL_ImGUI_Update = CL_ImGUI_Update;
+	ri.CL_CG_ImGUI_Update = CL_CG_ImGUI_Update;
 	#endif
 
 	ret = GetRefAPI( REF_API_VERSION, &ri );

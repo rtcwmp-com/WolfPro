@@ -575,3 +575,7 @@ qbool trap_GetValue(char* value, int valueSize, const char* key) {
 int trap_Cvar_VariableIntegerValue(const char* var_name) {
 	return syscall(CG_CVAR_VARIABLEINTEGERVALUE, var_name);
 }
+
+int trap_CL_AddGuiMenu(int menu, const char* name, const char* shortcut, qbool* selected, qbool enabled){
+	return syscall(CG_ADD_IMGUI_MENU, menu, name, shortcut, selected, enabled);
+}

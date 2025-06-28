@@ -238,7 +238,8 @@ typedef enum {
 	CG_EXT_NDP_SEEK,
 	CG_EXT_NDP_READUNTIL,
 	CG_EXT_NDP_STARTVIDEO,
-	CG_EXT_NDP_STOPVIDEO
+	CG_EXT_NDP_STOPVIDEO, 
+	CG_ADD_IMGUI_MENU
 } cgameImport_t;
 
 
@@ -308,8 +309,14 @@ typedef enum {
 	CG_NDP_ANALYZE_SNAPSHOT,
 // qbool CG_NDP_AnalyzeSnapshot(int progress);
 
-	CG_NDP_END_ANALYSIS
+	CG_NDP_END_ANALYSIS,
 // void CG_NDP_EndAnalysis(const char* filePath, int firstServerTime, int lastServerTime, qboolean videoRestart)
+
+	CG_IMGUI_UPDATE,
+// void CG_ImGUI_Update(void);
+
+	CG_IMGUI_SHARE
+//void CG_ImGUI_Share(void *ctx, void *alloc, void *free);
 
 } cgameExport_t;
 

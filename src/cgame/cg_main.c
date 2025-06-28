@@ -109,6 +109,12 @@ int vmMain( int command, int arg0, int arg1, int arg2, int arg3, int arg4, int a
 	case CG_NDP_END_ANALYSIS:
 		CG_NDP_EndAnalysis((char*)arg0, arg1, arg2, (qboolean)arg3);
 		return 0;
+	case CG_IMGUI_UPDATE:
+		CG_ImGUI_Update();
+		return 0;
+	case CG_IMGUI_SHARE:
+		CG_ImGUI_Share((void*)arg0, (void*)arg1, (void*)arg2, (void**)arg3);
+		return 0;
 	default:
 		CG_Error( "vmMain: unknown command %i", command );
 		break;
@@ -2363,6 +2369,8 @@ void CG_LoadExtensions(void) {
 		else {
 			cg.ndpDemoEnabled = qfalse;
 		}
+
+		GET_TRAP(trap_CL_AddGuiMenu);
 	}
 }
 

@@ -32,6 +32,8 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "../game/botlib.h"
 
+#include "cl_imgui.h"
+
 //pointer for the mod to the engine
 static const byte* interopBufferIn;
 static int interopBufferInSize;
@@ -530,7 +532,8 @@ static qbool CL_CG_GetValue(char* value, int valueSize, const char* key)
 		{ "trap_CNQ3_NDP_Seek", CG_EXT_NDP_SEEK },
 		{ "trap_CNQ3_NDP_ReadUntil", CG_EXT_NDP_READUNTIL },
 		{ "trap_CNQ3_NDP_StartVideo", CG_EXT_NDP_STARTVIDEO },
-		{ "trap_CNQ3_NDP_StopVideo", CG_EXT_NDP_STOPVIDEO }
+		{ "trap_CNQ3_NDP_StopVideo", CG_EXT_NDP_STOPVIDEO },
+		{ "trap_CL_AddGuiMenu", CG_ADD_IMGUI_MENU }
 	};
 
 	for (int i = 0; i < ARRAY_LEN(syscalls); ++i) {
@@ -1041,6 +1044,12 @@ int CL_CgameSystemCalls( int *args ) {
 		//CL_CloseAVI();
 		return 0;
 
+	case CG_ADD_IMGUI_MENU:
+#ifdef RTCW_VULKAN
+		GUI_AddMainMenuItem(args[1], VMA(2), VMA(3), VMA(4), args[5]);
+#endif
+		return 0;
+
 	default:
 		Com_Error( ERR_DROP, "Bad cgame system trap: %i", args[0] );
 	}
@@ -1203,6 +1212,9 @@ void CL_InitCGame( void ) {
 
 	// Ridah, update the memory usage file
 	CL_UpdateLevelHunkUsage();
+
+	cls.cgameImGUI = CL_CG_ImGUI_Support();
+	CL_CG_ImGUI_Share();
 }
 
 
@@ -1486,4 +1498,31 @@ qboolean CL_GetTag( int clientNum, char *tagname, orientation_t *or ) {
 	}
 
 	return VM_Call( cgvm, CG_GET_TAG, clientNum, tagname, or );
+}
+
+
+/*
+====================
+ImGUI cgame
+====================
+*/
+qboolean CL_CG_ImGUI_Support( void ) {
+	if ( !cgvm ) {
+		return qfalse;
+	}
+
+	Cmd_TokenizeString( "drawgui\n" );
+	return VM_Call( cgvm, CG_CONSOLE_COMMAND );
+}
+
+void CL_CG_ImGUI_Update(void){
+	if(cls.cgameImGUI){
+		VM_Call( cgvm, CG_IMGUI_UPDATE );
+	}
+}
+
+void CL_CG_ImGUI_Share(void){
+	if(cls.cgameImGUI && cls.igContext){
+		VM_Call( cgvm, CG_IMGUI_SHARE, cls.igContext, cls.igAlloc, cls.igFree, cls.igUser );
+	}
 }
