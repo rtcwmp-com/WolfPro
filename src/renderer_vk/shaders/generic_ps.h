@@ -92,7 +92,7 @@ float4 ps(VOut input) : SV_Target
          %82 = OpString "9efbb6c3"
          %83 = OpString " -E ps -T ps_6_0 -fspv-debug=vulkan-with-source -O0 -Qembed_debug -Zi -spirv -D PS -D PS"
          %85 = OpString "C:\\Users\\snapp\\Documents\\GitHub\\RTCW-MP\\src\\renderer_vk\\shaders/game_textures.hlsli"
-         %86 = OpString "[[vk::binding(0)]] Texture2D texture[1200];
+         %86 = OpString "[[vk::binding(0)]] Texture2D texture[2048];
 [[vk::binding(1)]] SamplerState mySampler[4];"
          %90 = OpString "@type.sampler"
          %91 = OpString "type.sampler"
@@ -228,10 +228,10 @@ float4 unpackColorR11G11B10(uint color){
 %_ptr_Uniform_type_ConstantBuffer_SceneView = OpTypePointer Uniform %type_ConstantBuffer_SceneView
 %type_PushConstant_RootConstants = OpTypeStruct %uint %uint %uint %float
 %_ptr_PushConstant_type_PushConstant_RootConstants = OpTypePointer PushConstant %type_PushConstant_RootConstants
-  %uint_1200 = OpConstant %uint 1200
+  %uint_2048 = OpConstant %uint 2048
 %type_2d_image = OpTypeImage %float 2D 2 0 0 1 Unknown
-%_arr_type_2d_image_uint_1200 = OpTypeArray %type_2d_image %uint_1200
-%_ptr_UniformConstant__arr_type_2d_image_uint_1200 = OpTypePointer UniformConstant %_arr_type_2d_image_uint_1200
+%_arr_type_2d_image_uint_2048 = OpTypeArray %type_2d_image %uint_2048
+%_ptr_UniformConstant__arr_type_2d_image_uint_2048 = OpTypePointer UniformConstant %_arr_type_2d_image_uint_2048
      %uint_4 = OpConstant %uint 4
 %type_sampler = OpTypeSampler
 %_arr_type_sampler_uint_4 = OpTypeArray %type_sampler %uint_4
@@ -294,7 +294,7 @@ float4 unpackColorR11G11B10(uint color){
     %uint_65 = OpConstant %uint 65
   %sceneView = OpVariable %_ptr_Uniform_type_ConstantBuffer_SceneView Uniform
          %rc = OpVariable %_ptr_PushConstant_type_PushConstant_RootConstants PushConstant
-    %texture = OpVariable %_ptr_UniformConstant__arr_type_2d_image_uint_1200 UniformConstant
+    %texture = OpVariable %_ptr_UniformConstant__arr_type_2d_image_uint_2048 UniformConstant
   %mySampler = OpVariable %_ptr_UniformConstant__arr_type_sampler_uint_4 UniformConstant
 %gl_FragCoord = OpVariable %_ptr_Input_v4float Input
 %in_var_COLOR0 = OpVariable %_ptr_Input_v4float Input
@@ -326,7 +326,7 @@ float4 unpackColorR11G11B10(uint color){
          %99 = OpExtInst %void %1 DebugTypeComposite %97 %uint_0 %87 %uint_0 %uint_0 %88 %98 %89 %uint_3
         %101 = OpExtInst %void %1 DebugTypeTemplateParameter %100 %42 %89 %87 %uint_0 %uint_0
         %102 = OpExtInst %void %1 DebugTypeTemplate %99 %101
-        %103 = OpExtInst %void %1 DebugTypeArray %102 %uint_1200
+        %103 = OpExtInst %void %1 DebugTypeArray %102 %uint_2048
         %105 = OpExtInst %void %1 DebugGlobalVariable %104 %103 %87 %uint_1 %uint_30 %88 %104 %texture %uint_8
         %109 = OpExtInst %void %1 DebugTypeComposite %107 %uint_1 %87 %uint_0 %uint_0 %88 %108 %89 %uint_3
         %112 = OpExtInst %void %1 DebugSource %110 %111
@@ -589,7 +589,7 @@ const unsigned char generic_ps[] = {
   0x5b, 0x5b, 0x76, 0x6b, 0x3a, 0x3a, 0x62, 0x69, 0x6e, 0x64, 0x69, 0x6e,
   0x67, 0x28, 0x30, 0x29, 0x5d, 0x5d, 0x20, 0x54, 0x65, 0x78, 0x74, 0x75,
   0x72, 0x65, 0x32, 0x44, 0x20, 0x74, 0x65, 0x78, 0x74, 0x75, 0x72, 0x65,
-  0x5b, 0x31, 0x32, 0x30, 0x30, 0x5d, 0x3b, 0x0d, 0x0a, 0x5b, 0x5b, 0x76,
+  0x5b, 0x32, 0x30, 0x34, 0x38, 0x5d, 0x3b, 0x0d, 0x0a, 0x5b, 0x5b, 0x76,
   0x6b, 0x3a, 0x3a, 0x62, 0x69, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x28, 0x31,
   0x29, 0x5d, 0x5d, 0x20, 0x53, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x72, 0x53,
   0x74, 0x61, 0x74, 0x65, 0x20, 0x6d, 0x79, 0x53, 0x61, 0x6d, 0x70, 0x6c,
@@ -884,7 +884,7 @@ const unsigned char generic_ps[] = {
   0x0f, 0x00, 0x00, 0x00, 0x0f, 0x00, 0x00, 0x00, 0x15, 0x00, 0x00, 0x00,
   0x20, 0x00, 0x04, 0x00, 0x16, 0x00, 0x00, 0x00, 0x09, 0x00, 0x00, 0x00,
   0x17, 0x00, 0x00, 0x00, 0x2b, 0x00, 0x04, 0x00, 0x0f, 0x00, 0x00, 0x00,
-  0x1b, 0x00, 0x00, 0x00, 0xb0, 0x04, 0x00, 0x00, 0x19, 0x00, 0x09, 0x00,
+  0x1b, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x19, 0x00, 0x09, 0x00,
   0x1c, 0x00, 0x00, 0x00, 0x15, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
   0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
   0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1c, 0x00, 0x04, 0x00,
