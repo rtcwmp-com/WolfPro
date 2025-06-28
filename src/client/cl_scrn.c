@@ -31,6 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "client.h"
 
 qboolean scr_initialized;           // ready to draw
+int scr_recursiveUpdate;
 
 cvar_t      *cl_timegraph;
 cvar_t      *cl_debuggraph;
@@ -525,18 +526,19 @@ This is called every frame, and can also be called explicitly to flush
 text to the screen.
 ==================
 */
+
 void SCR_UpdateScreen( void ) {
-	static int recursive;
+	
 
 	if ( !scr_initialized ) {
 		return;             // not initialized yet
 	}
 
-	if ( ++recursive >= 2 ) {
+	if ( ++scr_recursiveUpdate >= 2 ) {
 		return;
 		//Com_Error( ERR_FATAL, "SCR_UpdateScreen: recursively called" );
 	}
-	recursive = 1;
+	scr_recursiveUpdate = 1;
 
 	// if running in stereo, we need to draw the frame twice
 	if ( cls.glconfig.stereoEnabled ) {
@@ -552,5 +554,5 @@ void SCR_UpdateScreen( void ) {
 		re.EndFrame( NULL, NULL );
 	}
 
-	recursive = 0;
+	scr_recursiveUpdate = 0;
 }
