@@ -2802,6 +2802,7 @@ static void Com_FrameSleep( qbool demoPlayback )
 Com_Frame
 =================
 */
+
 void Com_Frame( void ) {
 
 	int msec, minMsec;
@@ -2814,6 +2815,9 @@ void Com_Frame( void ) {
 	int timeAfter;
 
 	if ( setjmp( abortframe ) ) {
+#ifndef DEDICATED
+		scr_recursiveUpdate = 0;
+#endif
 		return;         // an ERR_DROP was thrown
 	}
 

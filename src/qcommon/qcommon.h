@@ -989,7 +989,7 @@ void Key_WriteBindings( fileHandle_t f );
 void S_ClearSoundBuffer( void );
 // call before filesystem access
 
-void SCR_DebugGraph( float value, int color );   // FIXME: move logging to common?
+
 
 
 //
@@ -1251,6 +1251,8 @@ void	Cmd_TokenizeLine(const char* text_in, const char* delim, char* pos);
 void Cvar_RestrictedList_f(void);
 
 const char* Q_itohex(uint64_t number, qbool uppercase, qbool prefix);
+
+extern int scr_recursiveUpdate;
 
 
 #endif // _QCOMMON_H_
