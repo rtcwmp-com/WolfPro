@@ -1048,7 +1048,37 @@ void DrawGUI_ShaderTrace(void){
 
 			
 			if(shaderIndex < tr.numShaders){
-				igText(tr.shaders[shaderIndex]->name);
+				shader_t *sh = tr.shaders[shaderIndex];
+				
+				igText(sh->name);
+				igNewLine();
+				igText("Images:");
+				for(int i = 0; i < MAX_SHADER_STAGES; i++){
+					shaderStage_t *stage = sh->stages[i];
+					if(stage == NULL || !stage->active){
+						break;
+					}
+					for(int b = 0; b < 2; b++){
+						image_t *img = stage->bundle[b].image[0];
+						if(img != NULL){
+							igSelectable_Bool(img->imgName, 0, 0, (ImVec2){0.0f, 0.0f});
+							if(igIsItemHovered(ImGuiHoveredFlags_DelayShort)){
+								igText("Source: %d x %d", img->width, img->height);
+								igText("Upload: %d x %d", img->uploadWidth, img->uploadHeight);
+								igText("Mipmap: %d", (int)img->mipmap);
+								igText("Picmip: %d", (int)img->allowPicmip);
+								igText("Lightmap: %d", (int)img->lightMap);
+								if(igBeginTooltip()){
+									igImage(img->descriptorIndex, (ImVec2){img->width, img->height},(ImVec2){0.0f, 0.0f},(ImVec2){1.0f, 1.0f},(ImVec4){1.0f, 1.0f, 1.0f, 1.0f}, (ImVec4){0.0f, 0.0f, 0.0f, 1.0f});
+								
+									igEndTooltip();
+								}
+							}
+						}
+					}
+					
+				}
+				
 			}
 			igNewLine();
 			
@@ -1056,6 +1086,7 @@ void DrawGUI_ShaderTrace(void){
 			
 		}
 		igEnd();
+		
 	}
 	
 }
