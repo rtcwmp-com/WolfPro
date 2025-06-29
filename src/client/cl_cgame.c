@@ -1516,13 +1516,13 @@ qboolean CL_CG_ImGUI_Support( void ) {
 }
 
 void CL_CG_ImGUI_Update(void){
-	if(cls.cgameImGUI){
-		VM_Call( cgvm, CG_IMGUI_UPDATE );
+	if(cls.cgameImGUI && cgvm){
+		VM_Call(cgvm, CG_IMGUI_UPDATE);
 	}
 }
 
 void CL_CG_ImGUI_Share(void){
-	if(cls.cgameImGUI && cls.igContext){
+	if(cls.cgameImGUI && cls.igContext && cgvm){
 		VM_Call( cgvm, CG_IMGUI_SHARE, cls.igContext, cls.igAlloc, cls.igFree, cls.igUser );
 	}
 }

@@ -9,6 +9,9 @@ void CG_ImGUI_Share(void *ctx, void *alloc, void *free, void **user){
 }
 
 void CG_ImGUI_Update(void) {
+	if (cgs.igContext == NULL) {
+		return;
+	}
 	igSetCurrentContext((ImGuiContext*)cgs.igContext);
 	igSetAllocatorFunctions((ImGuiMemAllocFunc)cgs.igAlloc, (ImGuiMemFreeFunc)cgs.igFree, cgs.igUserData);
 
@@ -30,11 +33,13 @@ void CG_ImGUI_Update(void) {
 	trap_CL_AddGuiMenu(ImGUI_MainMenu_Info, "Demo Tools", "", &demoTimelineActive, cg.demoPlayback);
    
 	if(demoTimelineActive){
-		int percent;
+		static int percent;
 		if(igBegin("Timeline", &demoTimelineActive, 0)){
-			igSliderInt("playback slider", &percent, 0, 100, "", 0);
+			float width = igGetWindowWidth();
 
-			
+			igSliderInt("playback slider", &percent, 0, 100, "", 0);
+			int serverTimeAtPercent = (int)((float)((m_lastServerTime - m_firstServerTime) * percent)) + m_firstServerTime;
+			CG_NDP_SeekAbsolute(serverTimeAtPercent);
         }
         igEnd();
     }
