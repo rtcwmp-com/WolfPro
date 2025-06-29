@@ -40,7 +40,10 @@ VOut vs(VIn input)
 #endif
 
 #if PS
-
+//texture index 11 bits 22
+//sampler index 2 bits 4
+//alpha test 2 bits
+//texenv 2 bits
 struct RootConstants
 {
     [[vk::offset(64)]]

@@ -590,7 +590,7 @@ void RB_UploadSceneView(const float *projectionMatrix, const float *clipPlane){
 	RHI_CmdCopyBuffer(backEnd.sceneViewGPUBuffer, 0, currentScene, backEnd.sceneViewCount * sizeof(sceneView), sizeof(sceneView));
 	
 	RHI_CmdBeginBarrier();
-	RHI_CmdBufferBarrier(backEnd.sceneViewGPUBuffer, RHI_ResourceState_UniformBufferBit);
+	RHI_CmdBufferBarrier(backEnd.sceneViewGPUBuffer, RHI_ResourceState_ShaderInputBit);
 	RHI_CmdEndBarrier();
 
 	backEnd.sceneViewCount++;

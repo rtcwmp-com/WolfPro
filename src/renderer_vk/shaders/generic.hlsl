@@ -43,10 +43,13 @@ VOut vs(VIn input)
 struct RootConstants
 {
     [[vk::offset(64)]]
-	uint textureIndex;
-    uint samplerIndex;
-    uint alphaTest;
-    float alphaBoost;
+	uint textureIndex; //11 bits
+    uint samplerIndex; //2
+    uint alphaTest; //2
+    float alphaBoost; //8
+    //coordinates of center pixel 32 bits
+    //shader index 13 bits
+    //is enabled 1 bit
 };
 [[vk::push_constant]] RootConstants rc;
 

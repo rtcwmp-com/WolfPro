@@ -1005,6 +1005,9 @@ typedef struct {
 
 	rhiPipeline dynamicLightPipelines[12];
 	qboolean pipelineLayoutDirty;
+	
+	rhiBuffer shaderIndexBuffer;
+	rhiBuffer shaderIndexReadbackBuffer;
 } backEndState_t;
 
 /*
