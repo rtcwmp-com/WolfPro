@@ -43,10 +43,7 @@ VOut vs(VIn input)
 struct RootConstants
 {
     [[vk::offset(64)]]
-	uint textureIndex; //11 bits
-    uint samplerIndex; //2
-    uint alphaTest; //2
-    float alphaBoost; //8
+    uint packedData;
     uint pixelCenterXY;
     uint shaderIndex;
 };
@@ -54,15 +51,33 @@ struct RootConstants
 
 #include "game_textures.hlsli"
 
+struct UnpackedData {
+    uint textureIndex; //11 bits
+    uint samplerIndex; //2
+    uint alphaTest; //2
+    float alphaBoost; //8
+};
+
+UnpackedData unpackPushConstants(uint packed){
+    UnpackedData unpack;
+    unpack.textureIndex = packed & 0x3FFu; //11 bits
+    unpack.samplerIndex = (packed >> 11u) & 3u; //2
+    unpack.alphaTest = (packed >> 13u) & 0x3u;
+    unpack.alphaBoost = float((packed >> 15u) & 0xFFu) / 255.0;
+    return unpack;
+}
+
 #if !AT
 [earlydepthstencil]
 #endif
 float4 ps(VOut input) : SV_Target
 {
      
-    float4 color = input.color * texture[rc.textureIndex].Sample(mySampler[rc.samplerIndex], input.tc);
+    UnpackedData uc = unpackPushConstants(rc.packedData);
+
+    float4 color = input.color * texture[uc.textureIndex].Sample(mySampler[uc.samplerIndex], input.tc);
     #if AT
-    AlphaTest(texture[rc.textureIndex], mySampler[rc.samplerIndex], rc.alphaTest, input.tc, rc.alphaBoost, color.a);
+    AlphaTest(texture[uc.textureIndex], mySampler[uc.samplerIndex], uc.alphaTest, input.tc, uc.alphaBoost, color.a);
     #endif
 
     ShaderIndex index = unpackShaderIndex(rc.shaderIndex);

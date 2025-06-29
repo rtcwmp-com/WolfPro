@@ -1866,10 +1866,7 @@ qboolean RHI_IsFrameSleepEnabled(void);
 
 #pragma pack(push, 1)
 typedef struct pixelShaderPushConstants {
-	uint32_t textureIndex;
-	uint32_t samplerIndex;
-	uint32_t alphaTest;
-	float alphaBoost;
+	uint32_t packedData;
 	uint32_t pixelCenterXY; //0-15 X, 16-31 Y
 	uint32_t shaderIndex; //0-12 shaderIndex, 13 frame index, 14 writing enabled
 } pixelShaderPushConstants;

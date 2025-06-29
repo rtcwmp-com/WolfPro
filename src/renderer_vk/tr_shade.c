@@ -606,10 +606,11 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 		qbool clamp = currentImage->wrapClampMode == GL_CLAMP;
 		qbool anisotropy = r_ext_texture_filter_anisotropic->integer > 1 && !backEnd.projection2D && !currentImage->lightMap;
 
-		pc.samplerIndex = RB_GetSamplerIndex(clamp, anisotropy);
-		pc.textureIndex = currentImage->descriptorIndex;
-		pc.alphaTest = AlphaTestMode(pStage->stateBits);
-		pc.alphaBoost = r_alphaboost->value;
+		pc.packedData = 0;
+		pc.packedData |= currentImage->descriptorIndex;
+		pc.packedData |= RB_GetSamplerIndex(clamp, anisotropy) << 11;
+		pc.packedData |= AlphaTestMode(pStage->stateBits) << 13;
+		pc.packedData |= ((uint32_t)(Com_Clamp(0.0f, 1.0f, r_alphaboost->value) * 255.0f)) << 15;
 
 		int writeShaderIndex = RB_IsViewportFullscreen(&backEnd.viewParms) && !backEnd.projection2D;
 		pc.pixelCenterXY = (glConfig.vidWidth / 2) | ((glConfig.vidHeight / 2) << 16);
