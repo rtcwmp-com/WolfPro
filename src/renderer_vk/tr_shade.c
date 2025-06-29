@@ -145,7 +145,11 @@ static void ComputeColors( shaderStage_t *pStage ) {
 		break;
 	default:
 	case CGEN_IDENTITY_LIGHTING:
-		memset( tess.svars.colors, tr.identityLightByte, tess.numVertexes * 4 );
+		if(tess.shader->lightmapIndex == LIGHTMAP_2D){
+			memset( tess.svars.colors, 255, tess.numVertexes * 4 );	
+		}else{
+			memset( tess.svars.colors, tr.identityLightByte, tess.numVertexes * 4 );
+		}
 		break;
 	case CGEN_LIGHTING_DIFFUSE:
 		RB_CalcDiffuseColor( ( unsigned char * ) tess.svars.colors );
@@ -159,7 +163,7 @@ static void ComputeColors( shaderStage_t *pStage ) {
 		}
 		break;
 	case CGEN_VERTEX:
-		if ( tr.identityLight == 1 ) {
+		if ( tr.identityLight == 1 || tess.shader->lightmapIndex == LIGHTMAP_2D) {
 			memcpy( tess.svars.colors, tess.vertexColors, tess.numVertexes * sizeof( tess.vertexColors[0] ) );
 		} else
 		{
@@ -173,7 +177,7 @@ static void ComputeColors( shaderStage_t *pStage ) {
 		}
 		break;
 	case CGEN_ONE_MINUS_VERTEX:
-		if ( tr.identityLight == 1 ) {
+		if ( tr.identityLight == 1 || tess.shader->lightmapIndex == LIGHTMAP_2D) {
 			for ( i = 0; i < tess.numVertexes; i++ )
 			{
 				tess.svars.colors[i][0] = 255 - tess.vertexColors[i][0];
