@@ -1875,13 +1875,7 @@ typedef struct pixelShaderPushConstants {
 } pixelShaderPushConstants;
 
 typedef struct pixelShaderPushConstants2 {
-	//@TODO: reduce to 1 uint32_t 
-	uint32_t textureIndex1;
-	uint32_t samplerIndex1;
-	uint32_t textureIndex2;
-	uint32_t samplerIndex2;
-	uint32_t alphaTest;
-	uint32_t texEnv;
+	uint32_t packedData;
 	uint32_t pixelCenterXY; //0-15 X, 16-31 Y
 	uint32_t shaderIndex; //0-12 shaderIndex, 13 frame index, 14 writing enabled
 } pixelShaderPushConstants2;

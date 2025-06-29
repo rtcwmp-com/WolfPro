@@ -1319,6 +1319,7 @@ void RB_CreateGraphicsPipeline(shader_t *newShader){
 
 	qbool isMT = newShader->isMultitextured; //newShader->optimalStageIteratorFunc == RB_StageIteratorLightmappedMultitexture;
 	
+	uint32_t pcBytes = max(sizeof(pixelShaderPushConstants2), sizeof(pixelShaderPushConstants));
 	
 	
 	for(int i = 0; i < MAX_SHADER_STAGES; i++){
@@ -1338,7 +1339,7 @@ void RB_CreateGraphicsPipeline(shader_t *newShader){
 		
 
 		if(isMT){
-			graphicsDesc.pushConstants.psBytes = sizeof(pixelShaderPushConstants2);
+			graphicsDesc.pushConstants.psBytes = pcBytes;
 			graphicsDesc.vertexShader.data = generic2s_vs;
 			graphicsDesc.vertexShader.byteCount = sizeof(generic2s_vs);
 			graphicsDesc.pixelShader.data = generic2s_ps;
@@ -1367,7 +1368,7 @@ void RB_CreateGraphicsPipeline(shader_t *newShader){
 
 			
 		}else{
-			graphicsDesc.pushConstants.psBytes = sizeof(pixelShaderPushConstants2);
+			graphicsDesc.pushConstants.psBytes = pcBytes;
 			graphicsDesc.vertexShader.data = generic_vs;
 			graphicsDesc.vertexShader.byteCount = sizeof(generic_vs);
 

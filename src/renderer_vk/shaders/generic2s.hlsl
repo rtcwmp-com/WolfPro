@@ -40,19 +40,15 @@ VOut vs(VIn input)
 #endif
 
 #if PS
-//texture index 11 bits 22
-//sampler index 2 bits 4
-//alpha test 2 bits
-//texenv 2 bits
+
 struct RootConstants
 {
     [[vk::offset(64)]]
-    uint textureIndex1;
-    uint samplerIndex1;
-    uint textureIndex2;
-    uint samplerIndex2;
-    uint alphaTest;
-    uint texEnv;
+    //texture index 11 bits 22
+    //sampler index 2 bits 4
+    //alpha test 2 bits
+    //texenv 2 bits
+    uint packedData; 
     uint pixelCenterXY;
     uint shaderIndex;
     
@@ -60,6 +56,22 @@ struct RootConstants
 [[vk::push_constant]] RootConstants rc;
 
 #include "game_textures.hlsli"
+
+struct UnpackedConstants {
+    uint textureIndex1;
+    uint samplerIndex1;
+    uint textureIndex2;
+    uint samplerIndex2;
+};
+
+UnpackedConstants unpackConstants(uint packed){
+    UnpackedConstants unpack;
+    unpack.textureIndex1 = packed & 0x7FFu;
+    unpack.samplerIndex1 = (packed >> 11u) & 3u;
+    unpack.textureIndex2 = (packed >> 13u) & 0x7FFu;
+    unpack.samplerIndex2 = (packed >> 24u) & 3u;
+    return unpack;
+}
 
 float4 texEnv(float4 p, float4 s, uint texEnv){
     if(texEnv == 100){ //MODULATE
@@ -79,14 +91,17 @@ float4 texEnv(float4 p, float4 s, uint texEnv){
 [earlydepthstencil]
 float4 ps(VOut input) : SV_Target
 {
+    
     ShaderIndex index = unpackShaderIndex(rc.shaderIndex);
     uint2 XY = unpackPixelCenter(rc.pixelCenterXY);
     if(all(uint2(input.position.xy) == XY) && index.writeEnabled){
         shaderIndex.Store(index.writeIndex * 4, index.shaderIndex);
     }
-    float4 color1 = texture[rc.textureIndex1].Sample(mySampler[rc.samplerIndex1], input.tc1);
-    float4 color2 = texture[rc.textureIndex2].Sample(mySampler[rc.samplerIndex2], input.tc2);
-    return texEnv(color1, color2, rc.texEnv);
+
+    UnpackedConstants uc = unpackConstants(rc.packedData);
+    float4 color1 = texture[uc.textureIndex1].Sample(mySampler[uc.samplerIndex1], input.tc1);
+    float4 color2 = texture[uc.textureIndex2].Sample(mySampler[uc.samplerIndex2], input.tc2);
+    return color1 * color2;
 }
 
 #endif
