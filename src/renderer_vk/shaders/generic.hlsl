@@ -47,9 +47,8 @@ struct RootConstants
     uint samplerIndex; //2
     uint alphaTest; //2
     float alphaBoost; //8
-    //coordinates of center pixel 32 bits
-    //shader index 13 bits
-    //is enabled 1 bit
+    uint pixelCenterXY;
+    uint shaderIndex;
 };
 [[vk::push_constant]] RootConstants rc;
 
@@ -60,11 +59,18 @@ struct RootConstants
 #endif
 float4 ps(VOut input) : SV_Target
 {
-    
+     
     float4 color = input.color * texture[rc.textureIndex].Sample(mySampler[rc.samplerIndex], input.tc);
     #if AT
     AlphaTest(texture[rc.textureIndex], mySampler[rc.samplerIndex], rc.alphaTest, input.tc, rc.alphaBoost, color.a);
     #endif
+
+    ShaderIndex index = unpackShaderIndex(rc.shaderIndex);
+    uint2 XY = unpackPixelCenter(rc.pixelCenterXY);
+    if(all(uint2(input.position.xy) == XY) && index.writeEnabled){
+        shaderIndex.Store(index.writeIndex * 4, index.shaderIndex);
+    }
+
     return color;
 }
 

@@ -610,6 +610,11 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 		pc.textureIndex = currentImage->descriptorIndex;
 		pc.alphaTest = AlphaTestMode(pStage->stateBits);
 		pc.alphaBoost = r_alphaboost->value;
+
+		int writeShaderIndex = RB_IsViewportFullscreen(&backEnd.viewParms) && !backEnd.projection2D;
+		pc.pixelCenterXY = (glConfig.vidWidth / 2) | ((glConfig.vidHeight / 2) << 16);
+		pc.shaderIndex = (tess.shader->index) | ((backEnd.currentFrameIndex) << 13) | (writeShaderIndex << 14);
+
 		
 		if(backEnd.previousPipeline.h != pipeline.h || backEnd.pipelineLayoutDirty){
 			RHI_CmdBindPipeline(pipeline);
@@ -975,6 +980,10 @@ void RB_StageIteratorLightmappedMultitexture( void ) {
 
 	pc.alphaTest = AlphaTestMode(pStage->stateBits);
 	pc.texEnv = GL_MODULATE;
+
+	int writeShaderIndex = RB_IsViewportFullscreen(&backEnd.viewParms) && !backEnd.projection2D;
+	pc.pixelCenterXY = (glConfig.vidWidth / 2) | ((glConfig.vidHeight / 2) << 16);
+	pc.shaderIndex = (tess.shader->index) | ((backEnd.currentFrameIndex) << 13) | (writeShaderIndex << 14);
 
 	
 	if(backEnd.previousPipeline.h != pipeline.h  || backEnd.pipelineLayoutDirty){

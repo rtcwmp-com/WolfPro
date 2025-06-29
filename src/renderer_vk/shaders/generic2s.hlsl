@@ -53,6 +53,8 @@ struct RootConstants
     uint samplerIndex2;
     uint alphaTest;
     uint texEnv;
+    uint pixelCenterXY;
+    uint shaderIndex;
     
 };
 [[vk::push_constant]] RootConstants rc;
@@ -77,7 +79,11 @@ float4 texEnv(float4 p, float4 s, uint texEnv){
 [earlydepthstencil]
 float4 ps(VOut input) : SV_Target
 {
-
+    ShaderIndex index = unpackShaderIndex(rc.shaderIndex);
+    uint2 XY = unpackPixelCenter(rc.pixelCenterXY);
+    if(all(uint2(input.position.xy) == XY) && index.writeEnabled){
+        shaderIndex.Store(index.writeIndex * 4, index.shaderIndex);
+    }
     float4 color1 = texture[rc.textureIndex1].Sample(mySampler[rc.samplerIndex1], input.tc1);
     float4 color2 = texture[rc.textureIndex2].Sample(mySampler[rc.samplerIndex2], input.tc2);
     return texEnv(color1, color2, rc.texEnv);

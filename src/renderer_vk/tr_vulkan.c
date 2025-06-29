@@ -549,6 +549,7 @@ static void CreateDevice()
     features2.features.samplerAnisotropy = VK_TRUE;
     //features2.features.shaderClipDistance = VK_TRUE;
     features2.features.depthClamp = vk.deviceFeatures.depthClamp;
+    features2.features.fragmentStoresAndAtomics = VK_TRUE;
     features2.pNext = &vk13f;
 
     VkDeviceCreateInfo createInfo = {};

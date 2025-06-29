@@ -1032,6 +1032,34 @@ RB_EndFrame
 =============
 */
 
+void DrawGUI_ShaderTrace(void){
+
+	static bool breakdownActive = false;
+	ToggleBooleanWithShortcut(&breakdownActive, ImGuiKey_T, ImGUI_ShortcutOptions_Global);
+	GUI_AddMainMenuItem(ImGUI_MainMenu_Perf, "Shader Trace", "Ctrl+Shift+T", &breakdownActive, qtrue);
+	
+	if(breakdownActive){
+		if(igBegin("Shader Trace", &breakdownActive, 0)){
+			
+			uint32_t* buffer = (uint32_t*)RHI_MapBuffer(backEnd.shaderIndexReadbackBuffer);
+			uint32_t shaderIndex = buffer[backEnd.currentFrameIndex ^ 1];
+			igText("%d %d", (int)buffer[0], (int)buffer[1]);
+			RHI_UnmapBuffer(backEnd.shaderIndexReadbackBuffer);
+
+			
+			if(shaderIndex < tr.numShaders){
+				igText(tr.shaders[shaderIndex]->name);
+			}
+			igNewLine();
+			
+
+			
+		}
+		igEnd();
+	}
+	
+}
+
 
 void DrawGUI_Performance(void){
 	int f = (backEnd.currentFrameIndex - 1 + RHI_FRAMES_IN_FLIGHT) % RHI_FRAMES_IN_FLIGHT;
@@ -1123,6 +1151,7 @@ const void  *RB_EndFrame( const void *data ) {
 
 	GUI_DrawMainMenu();
 	DrawGUI_Performance();
+	DrawGUI_ShaderTrace();
 	ri.CL_ImGUI_Update();
 	DrawGUI_RHI();
 
@@ -1137,7 +1166,7 @@ const void  *RB_EndFrame( const void *data ) {
 	RHI_CmdTextureBarrier(backEnd.swapChainTextures[backEnd.swapChainImageIndex], RHI_ResourceState_PresentBit);
 	RHI_CmdEndBarrier();
 
-	
+	RHI_CmdCopyBuffer(backEnd.shaderIndexReadbackBuffer, 0, backEnd.shaderIndexBuffer, 0, 8);
 	RHI_CmdEndDurationQuery(backEnd.frameDuration[backEnd.currentFrameIndex]);
 
 	RHI_EndCommandBuffer();
