@@ -60,7 +60,7 @@ struct UnpackedData {
 
 UnpackedData unpackPushConstants(uint packed){
     UnpackedData unpack;
-    unpack.textureIndex = packed & 0x3FFu; //11 bits
+    unpack.textureIndex = packed & 0x7FFu; //11 bits
     unpack.samplerIndex = (packed >> 11u) & 3u; //2
     unpack.alphaTest = (packed >> 13u) & 0x3u;
     unpack.alphaBoost = float((packed >> 15u) & 0xFFu) / 255.0;
