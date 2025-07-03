@@ -532,6 +532,7 @@ static void CreateDevice()
 	vk12f.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
 	vk12f.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
     vk12f.descriptorBindingStorageImageUpdateAfterBind = VK_TRUE; //@TODO: some older hardware may not support update after bind for storage images
+    vk12f.descriptorBindingStorageBufferUpdateAfterBind = VK_TRUE;
     vk12f.timelineSemaphore = VK_TRUE;
 
     VkPhysicalDeviceVulkan13Features vk13f = {};
@@ -548,6 +549,7 @@ static void CreateDevice()
     features2.features.samplerAnisotropy = VK_TRUE;
     //features2.features.shaderClipDistance = VK_TRUE;
     features2.features.depthClamp = vk.deviceFeatures.depthClamp;
+    features2.features.fragmentStoresAndAtomics = VK_TRUE;
     features2.pNext = &vk13f;
 
     VkDeviceCreateInfo createInfo = {};
@@ -2267,9 +2269,9 @@ VkAccessFlags2 GetVkAccessFlagsFromResource(RHI_ResourceState state)
             return VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT;
         case RHI_ResourceState_IndexBufferBit:
             return VK_ACCESS_2_INDEX_READ_BIT;
-        case RHI_ResourceState_StorageBufferBit:
+        case RHI_ResourceState_ShaderReadWriteBit:
             return VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_SHADER_WRITE_BIT;
-        case RHI_ResourceState_UniformBufferBit:
+        case RHI_ResourceState_ShaderInputBit:
             return VK_ACCESS_2_SHADER_READ_BIT;
         default:
             assert(!"Unhandled resource state access flags");
@@ -2289,10 +2291,10 @@ VkPipelineStageFlags2 GetVkStageFlagsFromResource(RHI_ResourceState state)
             return VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT;
         case RHI_ResourceState_IndexBufferBit:
             return VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT;
-        case RHI_ResourceState_StorageBufferBit:
-            return VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
-        case RHI_ResourceState_UniformBufferBit:
-            return VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT;
+        case RHI_ResourceState_ShaderReadWriteBit:
+            return VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+        case RHI_ResourceState_ShaderInputBit:
+            return VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
         default:
             assert(!"Unhandled resource state stage flags");
             return 0;
@@ -2344,19 +2346,6 @@ VkImageLayout GetVkImageLayout(RHI_ResourceState state)
         }
     }
     
-    
-	// const Pair pairs[] =
-	// {
-	// 	{ galResourceState::CopySourceBit, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL },
-	// 	{ galResourceState::CopyDestinationBit, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL },
-	// 	{ galResourceState::RenderTargetBit, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL },
-	// 	{ galResourceState::DepthWriteBit, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL },
-	// 	{ galResourceState::DepthReadBit, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL },
-	// 	{ galResourceState::UnorderedAccessBit, VK_IMAGE_LAYOUT_GENERAL },
-	// 	{ galResourceState::ShaderInputBit, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
-	// 	{ galResourceState::PresentBit, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR }
-	// };
-
 
 
     assert(!"Should have a resource state");
@@ -2389,9 +2378,9 @@ VkBufferUsageFlags GetVkBufferUsageFlags(RHI_ResourceState state)
 		{ RHI_ResourceState_IndexBufferBit, VK_BUFFER_USAGE_INDEX_BUFFER_BIT },
 		{ RHI_ResourceState_CopySourceBit, VK_BUFFER_USAGE_TRANSFER_SRC_BIT },
 		{ RHI_ResourceState_CopyDestinationBit, VK_BUFFER_USAGE_TRANSFER_DST_BIT },
-        { RHI_ResourceState_UniformBufferBit, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT },
+        { RHI_ResourceState_ShaderInputBit, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT },
 		// { galResourceState::IndirectCommandBit, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT },
-		{ RHI_ResourceState_StorageBufferBit, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT }
+		{ RHI_ResourceState_ShaderReadWriteBit, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT }
 	};
 
 	VkBufferUsageFlags flags = 0;

@@ -80,13 +80,11 @@ typedef enum RHI_ResourceState {
 	RHI_ResourceState_PresentBit = RHI_BIT(1),
 	RHI_ResourceState_VertexBufferBit = RHI_BIT(2),
 	RHI_ResourceState_IndexBufferBit = RHI_BIT(3),
-	RHI_ResourceState_StorageBufferBit = RHI_BIT(4),
-	RHI_ResourceState_DepthWriteBit = RHI_BIT(5),
-	RHI_ResourceState_CopySourceBit = RHI_BIT(6),
-	RHI_ResourceState_CopyDestinationBit = RHI_BIT(7),
-	RHI_ResourceState_ShaderInputBit = RHI_BIT(8),
-	RHI_ResourceState_UniformBufferBit = RHI_BIT(9),
-	RHI_ResourceState_ShaderReadWriteBit = RHI_BIT(10)
+	RHI_ResourceState_DepthWriteBit = RHI_BIT(4),
+	RHI_ResourceState_CopySourceBit = RHI_BIT(5),
+	RHI_ResourceState_CopyDestinationBit = RHI_BIT(6),
+	RHI_ResourceState_ShaderInputBit = RHI_BIT(7),
+	RHI_ResourceState_ShaderReadWriteBit = RHI_BIT(8)
 } RHI_ResourceState;
 
 typedef enum RHI_LoadOp {
