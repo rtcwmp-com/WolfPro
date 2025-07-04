@@ -1400,6 +1400,15 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		return;
 	}
 
+	if (cg.demoPlayback && cg.ndpDemoEnabled) {
+		if (isRtcwPro) {
+			if (event >= 70) {
+				event--;
+			}
+		}
+	}
+
+
 	switch ( event ) {
 		//
 		// movement generated events

@@ -29,17 +29,28 @@ void CG_ImGUI_Update(void) {
     }
 
 	static qbool demoTimelineActive = qfalse;
+	if (cg.demoPlayback) {
+		demoTimelineActive = qtrue;
+	}
+
 	ToggleBooleanWithShortcut(&demoTimelineActive, ImGuiKey_D, ImGUI_ShortcutOptions_Global);
 	trap_CL_AddGuiMenu(ImGUI_MainMenu_Info, "Demo Tools", "", &demoTimelineActive, cg.demoPlayback);
    
 	if(demoTimelineActive){
-		static int percent;
+		
 		if(igBegin("Timeline", &demoTimelineActive, 0)){
-			float width = igGetWindowWidth();
+			int demoDuration = (m_lastServerTime - m_firstServerTime);
+			int currentOffset = (m_currServerTime - m_firstServerTime);
 
-			igSliderInt("playback slider", &percent, 0, 100, "", 0);
-			int serverTimeAtPercent = (int)((float)((m_lastServerTime - m_firstServerTime) * percent)) + m_firstServerTime;
-			CG_NDP_SeekAbsolute(serverTimeAtPercent);
+			float percent = ((float)currentOffset / (float)demoDuration) * 100.0f;
+			float origPercent = percent;
+			igPushItemWidth(igGetWindowWidth() - 16.0f);
+			igSliderFloat("##timeline", &percent, 0.0f, 100.0f, "", ImGuiSliderFlags_None);
+			if(percent != origPercent){
+				int serverTimeAtPercent = (int)((float)((m_lastServerTime - m_firstServerTime) * percent / 100.0f)) + m_firstServerTime;
+				CG_NDP_SeekAbsolute(serverTimeAtPercent);
+			}
+			
         }
         igEnd();
     }
