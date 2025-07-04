@@ -515,6 +515,18 @@ void RHI_UpdateDescriptorSet(rhiDescriptorSet descriptorHandle, uint32_t binding
         write.pImageInfo = imageInfo;
         vkUpdateDescriptorSets(vk.device, 1, &write, 0, NULL);
 
+    }
+    else if (type == RHI_DescriptorType_ReadWriteBuffer) {
+        assert(descriptorCount <= ARRAY_LEN(bufferInfo));
+        const rhiBuffer* bufferHandle = (const rhiBuffer*)handles;
+        for (int i = 0; i < descriptorCount; i++) {
+            bufferInfo[i].buffer = GET_BUFFER(bufferHandle[i])->buffer;
+            bufferInfo[i].offset = 0;
+            bufferInfo[i].range = VK_WHOLE_SIZE;
+        }
+
+        write.pBufferInfo = bufferInfo;
+        vkUpdateDescriptorSets(vk.device, 1, &write, 0, NULL);
     }else{
         assert(!"Unhandled descriptor type");
     }

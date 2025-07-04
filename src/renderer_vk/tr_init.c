@@ -256,11 +256,27 @@ static void InitVulkan( void ) {
 	}
 
 	uniformBufferDesc.initialState = RHI_ResourceState_CopyDestinationBit;
-	uniformBufferDesc.allowedStates = RHI_ResourceState_UniformBufferBit | RHI_ResourceState_CopyDestinationBit;
+	uniformBufferDesc.allowedStates = RHI_ResourceState_ShaderInputBit | RHI_ResourceState_CopyDestinationBit;
 	uniformBufferDesc.memoryUsage = RHI_MemoryUsage_DeviceLocal;
 	uniformBufferDesc.name = "Scene View GPU";
 	uniformBufferDesc.byteCount = sizeof(SceneView);
 	backEnd.sceneViewGPUBuffer = RHI_CreateBuffer(&uniformBufferDesc);
+
+	rhiBufferDesc shaderIndexBufferDesc = {};
+	shaderIndexBufferDesc.initialState = RHI_ResourceState_ShaderReadWriteBit;
+	shaderIndexBufferDesc.memoryUsage = RHI_MemoryUsage_DeviceLocal;
+	shaderIndexBufferDesc.allowedStates = RHI_ResourceState_ShaderReadWriteBit | RHI_ResourceState_CopySourceBit;
+	shaderIndexBufferDesc.byteCount = 8;
+	shaderIndexBufferDesc.name = "Shader Index";
+	backEnd.shaderIndexBuffer = RHI_CreateBuffer(&shaderIndexBufferDesc);
+
+	rhiBufferDesc shaderIndexReadbackDesc = {};
+	shaderIndexReadbackDesc.initialState = RHI_ResourceState_CopyDestinationBit;
+	shaderIndexReadbackDesc.memoryUsage = RHI_MemoryUsage_Readback;
+	shaderIndexReadbackDesc.allowedStates = RHI_ResourceState_CopyDestinationBit;
+	shaderIndexReadbackDesc.byteCount = 8;
+	shaderIndexReadbackDesc.name = "Shader Index Readback";
+	backEnd.shaderIndexReadbackBuffer = RHI_CreateBuffer(&shaderIndexReadbackDesc);
 
 	backEnd.renderComplete = RHI_CreateTimelineSemaphore(qfalse);
 	backEnd.renderCompleteBinary = RHI_CreateBinarySemaphore();
@@ -283,8 +299,11 @@ static void InitVulkan( void ) {
 	descSetLayoutDesc.bindings[2].descriptorType = RHI_DescriptorType_ReadOnlyBuffer;
 	descSetLayoutDesc.bindings[2].stageFlags = RHI_PipelineStage_VertexBit | RHI_PipelineStage_PixelBit;
 
+	descSetLayoutDesc.bindings[3].descriptorCount = 1;
+	descSetLayoutDesc.bindings[3].descriptorType = RHI_DescriptorType_ReadWriteBuffer;
+	descSetLayoutDesc.bindings[3].stageFlags = RHI_PipelineStage_PixelBit;
 
-	descSetLayoutDesc.bindingCount = 3;
+	descSetLayoutDesc.bindingCount = 4;
 	backEnd.descriptorSetLayout = RHI_CreateDescriptorSetLayout(&descSetLayoutDesc);
 
 
@@ -302,6 +321,7 @@ static void InitVulkan( void ) {
 	
 	RHI_UpdateDescriptorSet(backEnd.descriptorSet, 1, RHI_DescriptorType_Sampler, 0, ARRAY_LEN(backEnd.sampler), backEnd.sampler, 0);
 	RHI_UpdateDescriptorSet(backEnd.descriptorSet, 2, RHI_DescriptorType_ReadOnlyBuffer, 0, 1, &backEnd.sceneViewGPUBuffer, 0);
+	RHI_UpdateDescriptorSet(backEnd.descriptorSet, 3, RHI_DescriptorType_ReadWriteBuffer, 0, 1, &backEnd.shaderIndexBuffer, 0);
 
 	rhiTextureDesc depthTextureDesc = {};
 	depthTextureDesc.allowedStates = RHI_ResourceState_DepthWriteBit;

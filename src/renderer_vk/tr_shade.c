@@ -145,7 +145,11 @@ static void ComputeColors( shaderStage_t *pStage ) {
 		break;
 	default:
 	case CGEN_IDENTITY_LIGHTING:
-		memset( tess.svars.colors, tr.identityLightByte, tess.numVertexes * 4 );
+		if(tess.shader->lightmapIndex == LIGHTMAP_2D){
+			memset( tess.svars.colors, 255, tess.numVertexes * 4 );	
+		}else{
+			memset( tess.svars.colors, tr.identityLightByte, tess.numVertexes * 4 );
+		}
 		break;
 	case CGEN_LIGHTING_DIFFUSE:
 		RB_CalcDiffuseColor( ( unsigned char * ) tess.svars.colors );
@@ -159,7 +163,7 @@ static void ComputeColors( shaderStage_t *pStage ) {
 		}
 		break;
 	case CGEN_VERTEX:
-		if ( tr.identityLight == 1 ) {
+		if ( tr.identityLight == 1 || tess.shader->lightmapIndex == LIGHTMAP_2D) {
 			memcpy( tess.svars.colors, tess.vertexColors, tess.numVertexes * sizeof( tess.vertexColors[0] ) );
 		} else
 		{
@@ -173,7 +177,7 @@ static void ComputeColors( shaderStage_t *pStage ) {
 		}
 		break;
 	case CGEN_ONE_MINUS_VERTEX:
-		if ( tr.identityLight == 1 ) {
+		if ( tr.identityLight == 1 || tess.shader->lightmapIndex == LIGHTMAP_2D) {
 			for ( i = 0; i < tess.numVertexes; i++ )
 			{
 				tess.svars.colors[i][0] = 255 - tess.vertexColors[i][0];
@@ -606,10 +610,16 @@ static void RB_IterateStagesGenericVulkan(shaderCommands_t *input ){
 		qbool clamp = currentImage->wrapClampMode == GL_CLAMP;
 		qbool anisotropy = r_ext_texture_filter_anisotropic->integer > 1 && !backEnd.projection2D && !currentImage->lightMap;
 
-		pc.samplerIndex = RB_GetSamplerIndex(clamp, anisotropy);
-		pc.textureIndex = currentImage->descriptorIndex;
-		pc.alphaTest = AlphaTestMode(pStage->stateBits);
-		pc.alphaBoost = r_alphaboost->value;
+		pc.packedData = 0;
+		pc.packedData |= currentImage->descriptorIndex;
+		pc.packedData |= RB_GetSamplerIndex(clamp, anisotropy) << 11;
+		pc.packedData |= AlphaTestMode(pStage->stateBits) << 13;
+		pc.packedData |= ((uint32_t)(Com_Clamp(0.0f, 1.0f, r_alphaboost->value) * 255.0f)) << 15;
+
+		int writeShaderIndex = RB_IsViewportFullscreen(&backEnd.viewParms) && !backEnd.projection2D;
+		pc.pixelCenterXY = (glConfig.vidWidth / 2) | ((glConfig.vidHeight / 2) << 16);
+		pc.shaderIndex = (tess.shader->index) | ((backEnd.currentFrameIndex) << 13) | (writeShaderIndex << 14);
+
 		
 		if(backEnd.previousPipeline.h != pipeline.h || backEnd.pipelineLayoutDirty){
 			RHI_CmdBindPipeline(pipeline);
@@ -966,15 +976,18 @@ void RB_StageIteratorLightmappedMultitexture( void ) {
 		clamp[i] = image[i]->wrapClampMode == GL_CLAMP;
 		anisotropy[i] = r_ext_texture_filter_anisotropic->integer > 1 && !backEnd.projection2D && !image[i]->lightMap;
 	}
+
 	
-	pc.samplerIndex1 = RB_GetSamplerIndex(clamp[0], anisotropy[0]);
-	pc.textureIndex1 = image[0]->descriptorIndex;
+	pc.packedData = 0;
+	pc.packedData |= image[0]->descriptorIndex;
+	pc.packedData |= RB_GetSamplerIndex(clamp[0], anisotropy[0]) << 11;
+	pc.packedData |= image[1]->descriptorIndex << 13;
+	pc.packedData |= RB_GetSamplerIndex(clamp[1], anisotropy[1]) << 24;
+	
 
-	pc.samplerIndex2 = RB_GetSamplerIndex(clamp[1], anisotropy[1]);
-	pc.textureIndex2 = image[1]->descriptorIndex;
-
-	pc.alphaTest = AlphaTestMode(pStage->stateBits);
-	pc.texEnv = GL_MODULATE;
+	int writeShaderIndex = RB_IsViewportFullscreen(&backEnd.viewParms) && !backEnd.projection2D;
+	pc.pixelCenterXY = (glConfig.vidWidth / 2) | ((glConfig.vidHeight / 2) << 16);
+	pc.shaderIndex = (tess.shader->index) | ((backEnd.currentFrameIndex) << 13) | (writeShaderIndex << 14);
 
 	
 	if(backEnd.previousPipeline.h != pipeline.h  || backEnd.pipelineLayoutDirty){

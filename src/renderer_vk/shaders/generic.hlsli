@@ -47,6 +47,7 @@ struct SceneView
   float4 clipPlane;
 };
 [[vk::binding(2)]] ConstantBuffer<SceneView> sceneView;
+[[vk::binding(3)]] RWByteAddressBuffer shaderIndex;
 
 float4 unpackColorR8G8B8A8(uint color){
     uint4 res = uint4(color, (color >> 8), (color >> 16), (color >> 24)) & uint4(0xFF, 0xFF, 0xFF, 0xFF);
@@ -56,4 +57,22 @@ float4 unpackColorR8G8B8A8(uint color){
 float4 unpackColorR11G11B10(uint color){
     uint4 res = uint4(color, (color >> 11), (color >> 22), 0xFF) & uint4(0x7FF, 0x7FF, 0x3FF, 0xFF);
     return float4(res)/float4(2047.0, 2047.0, 1023.0, 255.0);
+}
+
+uint2 unpackPixelCenter(uint pixelCenterXY){
+	return uint2(pixelCenterXY & 0xFFFFu, pixelCenterXY >> 16u);
+}
+
+struct ShaderIndex {
+	uint shaderIndex;
+	uint writeIndex;
+	uint writeEnabled;
+};
+
+ShaderIndex unpackShaderIndex(uint packed){
+	ShaderIndex idx;
+	idx.shaderIndex = packed & 0x1FFF;
+	idx.writeIndex = (packed >> 13u) & 1u;
+	idx.writeEnabled = (packed >> 14u) & 1u;
+	return idx;
 }
