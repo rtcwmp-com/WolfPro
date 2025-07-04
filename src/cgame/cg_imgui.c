@@ -46,6 +46,7 @@ void CG_ImGUI_Update(void) {
 			float origPercent = percent;
 			igPushItemWidth(igGetWindowWidth() - 16.0f);
 			igSliderFloat("##timeline", &percent, 0.0f, 100.0f, "", ImGuiSliderFlags_None);
+			igPopItemWidth();
 			if(percent != origPercent){
 				int serverTimeAtPercent = (int)((float)((m_lastServerTime - m_firstServerTime) * percent / 100.0f)) + m_firstServerTime;
 				CG_NDP_SeekAbsolute(serverTimeAtPercent);
