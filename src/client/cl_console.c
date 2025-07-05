@@ -379,6 +379,8 @@ void Con_Init( void ) {
 	Cmd_AddCommand( "stopLimboMode", Con_StopLimboMode_f );           // NERVE - SMF
 	Cmd_AddCommand( "clear", Con_Clear_f );
 	Cmd_AddCommand( "condump", Con_Dump_f );
+
+	con.xadjust = 0;
 }
 
 
@@ -536,7 +538,7 @@ void Con_DrawInput( void ) {
 
 	re.SetColor( con.color );
 
-	SCR_DrawSmallChar( con.xadjust + 1 * SMALLCHAR_WIDTH, y, ']' );
+	SCR_DrawSmallChar( con.xadjust + 1 * SMALLCHAR_WIDTH, y, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, ']' );
 
 	Field_Draw( &g_consoleField, con.xadjust + 2 * SMALLCHAR_WIDTH, y,
 				SCREEN_WIDTH - 3 * SMALLCHAR_WIDTH, qtrue );
@@ -594,7 +596,7 @@ void Con_DrawNotify( void ) {
 				currentColor = ( text[x] >> 8 ) & 7;
 				re.SetColor( g_color_table[currentColor] );
 			}
-			SCR_DrawSmallChar( cl_conXOffset->integer + con.xadjust + ( x + 1 ) * SMALLCHAR_WIDTH, v, text[x] & 0xff );
+			SCR_DrawSmallChar( cl_conXOffset->integer + con.xadjust + ( x + 1 ) * SMALLCHAR_WIDTH, v, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, text[x] & 0xff );
 		}
 
 		v += SMALLCHAR_HEIGHT;
@@ -638,7 +640,8 @@ Draws the console with the solid background
 */
 
 void Con_DrawSolidConsole( float frac ) {
-	int i, x, y;
+	int i, x;
+	float y;
 	int rows;
 	short           *text;
 	int row;
@@ -660,9 +663,7 @@ void Con_DrawSolidConsole( float frac ) {
 		lines = cls.glconfig.vidHeight;
 	}
 
-	// on wide screens, we will center the text
-	con.xadjust = 0;
-	SCR_AdjustFrom640( &con.xadjust, NULL, NULL, NULL );
+	
 
 	// draw the background
 	y = frac * SCREEN_HEIGHT - 2;
@@ -700,9 +701,9 @@ void Con_DrawSolidConsole( float frac ) {
 
 	for ( x = 0 ; x < i ; x++ ) {
 
-		SCR_DrawSmallChar( cls.glconfig.vidWidth - ( i - x ) * charW,
+		SCR_DrawSmallChar( cls.glconfig.vidWidth - ( i - x + 1 ) * charW,
 
-						   ( lines - ( charH + charH / 2 ) ), Q3_VERSION[x] );
+						   ( lines - ( charH + charH / 2 ) ), charW, charH, Q3_VERSION[x] );
 
 	}
 
@@ -718,7 +719,7 @@ void Con_DrawSolidConsole( float frac ) {
 		// draw arrows to show the buffer is backscrolled
 		re.SetColor( g_color_table[ColorIndex( COLOR_WHITE )] );
 		for ( x = 0 ; x < con.linewidth ; x += 4 )
-			SCR_DrawSmallChar( con.xadjust + ( x + 1 ) * charW, y, '^' );
+			SCR_DrawSmallChar( con.xadjust + ( x + 1 ) * charW, y, charW, charH, '^' );
 		y -= charH;
 		rows--;
 	}
@@ -753,7 +754,7 @@ void Con_DrawSolidConsole( float frac ) {
 				currentColor = ( text[x] >> 8 ) & 7;
 				re.SetColor( g_color_table[currentColor] );
 			}
-			SCR_DrawSmallChar(  con.xadjust + ( x + 1 ) * charW, y, text[x] & 0xff );
+			SCR_DrawSmallChar(  con.xadjust + ( x + 1 ) * charW, y, charW, charH, text[x] & 0xff );
 		}
 	}
 

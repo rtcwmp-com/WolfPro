@@ -778,7 +778,7 @@ void Field_VariableSizeDraw( field_t *edit, int x, int y, int width, int size, q
 	i = drawLen - ( Q_PrintStrlen( str ) + 1 );
 
 	if ( size == SMALLCHAR_WIDTH ) {
-		SCR_DrawSmallChar( x + ( edit->cursor - prestep - i ) * size, y, cursorChar );
+		SCR_DrawSmallChar( x + ( edit->cursor - prestep - i ) * size, y, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, cursorChar );
 	} else {
 		str[0] = cursorChar;
 		str[1] = 0;

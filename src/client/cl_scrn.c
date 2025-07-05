@@ -165,7 +165,7 @@ static void SCR_DrawChar( float x, float y, float size, int ch ) {
 ** SCR_DrawSmallChar
 ** small chars are drawn at native screen resolution
 */
-void SCR_DrawSmallChar( int x, int y, int ch ) {
+void SCR_DrawSmallChar( float x, float y, float w, float h, int ch ) {
 	int row, col;
 	float frow, fcol;
 	float size;
@@ -176,7 +176,7 @@ void SCR_DrawSmallChar( int x, int y, int ch ) {
 		return;
 	}
 
-	if ( y < -SMALLCHAR_HEIGHT ) {
+	if ( y < -h ) {
 		return;
 	}
 
@@ -187,7 +187,7 @@ void SCR_DrawSmallChar( int x, int y, int ch ) {
 	fcol = col * 0.0625f;
 	size = 0.0625f;
 
-	re.DrawStretchPic( x, y, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT,
+	re.DrawStretchPic( x, y, w, h,
 					   fcol, frow,
 					   fcol + size, frow + size,
 					   cls.charSetShader );
@@ -290,7 +290,7 @@ void SCR_DrawSmallStringExt( int x, int y, const char *string, float *setColor, 
 			s += 2;
 			continue;
 		}
-		SCR_DrawSmallChar( xx, y, *s );
+		SCR_DrawSmallChar( xx, y, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, *s );
 		xx += SMALLCHAR_WIDTH;
 		s++;
 	}
