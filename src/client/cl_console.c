@@ -614,7 +614,11 @@ void Con_DrawNotify( void ) {
 	if ( cls.keyCatchers & KEYCATCH_MESSAGE ) {
 		float width = BIGCHAR_WIDTH;
 		float height = BIGCHAR_HEIGHT;
-		SCR_AdjustFrom640(0, 0, &width, &height);
+		float yscale = cls.glconfig.vidHeight / 480.0f;
+
+		width *= yscale;
+		height *= yscale;
+
 		if ( chat_team ) {
 			char buf[128];
 			CL_TranslateString( "say_team:", buf );
