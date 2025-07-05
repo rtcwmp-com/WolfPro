@@ -70,6 +70,7 @@ console_t con;
 cvar_t      *con_debug;
 cvar_t      *con_conspeed;
 cvar_t      *con_notifytime;
+cvar_t      *con_scale;
 
 // DHM - Nerve :: Must hold CTRL + SHIFT + ~ to get console
 cvar_t      *con_restricted;
@@ -360,6 +361,7 @@ void Con_Init( void ) {
 	con_conspeed = Cvar_Get( "scr_conspeed", "3", 0 );
 	con_debug = Cvar_Get( "con_debug", "0", CVAR_ARCHIVE ); //----(SA)	added
 	con_restricted = Cvar_Get( "con_restricted", "0", CVAR_INIT );      // DHM - Nerve
+	con_scale = Cvar_Get( "con_scale", "1.0", CVAR_ARCHIVE );
 
 	Field_Clear( &g_consoleField );
 	g_consoleField.widthInChars = g_console_field_width;
@@ -644,6 +646,11 @@ void Con_DrawSolidConsole( float frac ) {
 	int currentColor;
 	vec4_t color;
 
+	float scale = con_scale->value;
+	float charW = SMALLCHAR_WIDTH * scale;
+	float charH = SMALLCHAR_HEIGHT * scale;
+	
+
 	lines = cls.glconfig.vidHeight * frac;
 	if ( lines <= 0 ) {
 		return;
@@ -693,26 +700,26 @@ void Con_DrawSolidConsole( float frac ) {
 
 	for ( x = 0 ; x < i ; x++ ) {
 
-		SCR_DrawSmallChar( cls.glconfig.vidWidth - ( i - x ) * SMALLCHAR_WIDTH,
+		SCR_DrawSmallChar( cls.glconfig.vidWidth - ( i - x ) * charW,
 
-						   ( lines - ( SMALLCHAR_HEIGHT + SMALLCHAR_HEIGHT / 2 ) ), Q3_VERSION[x] );
+						   ( lines - ( charH + charH / 2 ) ), Q3_VERSION[x] );
 
 	}
 
 
 	// draw the text
 	con.vislines = lines;
-	rows = ( lines - SMALLCHAR_WIDTH ) / SMALLCHAR_WIDTH;     // rows of text to draw
+	rows = ( lines - charW ) / charW;     // rows of text to draw
 
-	y = lines - ( SMALLCHAR_HEIGHT * 3 );
+	y = lines - ( charH * 3 );
 
 	// draw from the bottom up
 	if ( con.display != con.current ) {
 		// draw arrows to show the buffer is backscrolled
 		re.SetColor( g_color_table[ColorIndex( COLOR_WHITE )] );
 		for ( x = 0 ; x < con.linewidth ; x += 4 )
-			SCR_DrawSmallChar( con.xadjust + ( x + 1 ) * SMALLCHAR_WIDTH, y, '^' );
-		y -= SMALLCHAR_HEIGHT;
+			SCR_DrawSmallChar( con.xadjust + ( x + 1 ) * charW, y, '^' );
+		y -= charH;
 		rows--;
 	}
 
@@ -725,7 +732,7 @@ void Con_DrawSolidConsole( float frac ) {
 	currentColor = 7;
 	re.SetColor( g_color_table[currentColor] );
 
-	for ( i = 0 ; i < rows ; i++, y -= SMALLCHAR_HEIGHT, row-- )
+	for ( i = 0 ; i < rows ; i++, y -= charH, row-- )
 	{
 		if ( row < 0 ) {
 			break;
@@ -746,7 +753,7 @@ void Con_DrawSolidConsole( float frac ) {
 				currentColor = ( text[x] >> 8 ) & 7;
 				re.SetColor( g_color_table[currentColor] );
 			}
-			SCR_DrawSmallChar(  con.xadjust + ( x + 1 ) * SMALLCHAR_WIDTH, y, text[x] & 0xff );
+			SCR_DrawSmallChar(  con.xadjust + ( x + 1 ) * charW, y, text[x] & 0xff );
 		}
 	}
 
