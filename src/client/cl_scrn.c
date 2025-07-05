@@ -268,10 +268,9 @@ SCR_DrawSmallString[Color]
 Draws a multi-colored string with a drop shadow, optionally forcing
 to a fixed color.
 
-Coordinates are at 640 by 480 virtual resolution
 ==================
 */
-void SCR_DrawSmallStringExt( int x, int y, const char *string, float *setColor, qboolean forceColor ) {
+void SCR_DrawSmallStringExt(float x, float y, float w, float h, const char *string, float *setColor, qboolean forceColor ) {
 	vec4_t color;
 	const char  *s;
 	int xx;
@@ -290,8 +289,8 @@ void SCR_DrawSmallStringExt( int x, int y, const char *string, float *setColor, 
 			s += 2;
 			continue;
 		}
-		SCR_DrawSmallChar( xx, y, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, *s );
-		xx += SMALLCHAR_WIDTH;
+		SCR_DrawSmallChar( xx, y, w, h, *s );
+		xx += w;
 		s++;
 	}
 	re.SetColor( NULL );

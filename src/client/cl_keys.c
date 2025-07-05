@@ -705,7 +705,7 @@ Handles horizontal scrolling and cursor blinking
 x, y, amd width are in pixels
 ===================
 */
-void Field_VariableSizeDraw( field_t *edit, int x, int y, int size ) {
+void Field_Draw( field_t *edit, float x, float y, float w, float h) {
 	int len;
 	int drawLen;
 	int prestep;
@@ -750,11 +750,11 @@ void Field_VariableSizeDraw( field_t *edit, int x, int y, int size ) {
 	str[ drawLen ] = 0;
 
 	// draw it
-	if ( size == SMALLCHAR_WIDTH ) {
+	if (1) {
 		float color[4];
 
 		color[0] = color[1] = color[2] = color[3] = 1.0;
-		SCR_DrawSmallStringExt( x, y, str, color, qfalse );
+		SCR_DrawSmallStringExt( x, y, w, h, str, color, qfalse );
 	} else {
 		// draw big string with drop shadow
 		SCR_DrawBigString( x, y, str, 1.0 );
@@ -772,23 +772,16 @@ void Field_VariableSizeDraw( field_t *edit, int x, int y, int size ) {
 
 	i = drawLen - ( Q_PrintStrlen( str ) + 1 );
 
-	if ( size == SMALLCHAR_WIDTH ) {
-		SCR_DrawSmallChar( x + ( edit->cursor - prestep - i ) * size, y, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, cursorChar );
+	if (1) {
+		SCR_DrawSmallChar( x + ( edit->cursor - prestep - i ) * w, y, w, h, cursorChar );
 	} else {
 		str[0] = cursorChar;
 		str[1] = 0;
-		SCR_DrawBigString( x + ( edit->cursor - prestep - i ) * size, y, str, 1.0 );
+		SCR_DrawBigString( x + ( edit->cursor - prestep - i ) * w, y, str, 1.0 );
 
 	}
 }
 
-void Field_Draw( field_t *edit, int x, int y) {
-	Field_VariableSizeDraw( edit, x, y, SMALLCHAR_WIDTH);
-}
-
-void Field_BigDraw( field_t *edit, int x, int y) {
-	Field_VariableSizeDraw( edit, x, y, BIGCHAR_WIDTH);
-}
 
 /*
 ================

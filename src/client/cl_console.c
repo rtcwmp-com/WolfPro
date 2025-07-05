@@ -383,9 +383,7 @@ void Con_Init( void ) {
 	Cmd_AddCommand( "condump", Con_Dump_f );
 
 	con.xadjust = 0;
-	float scale = con_scale->value;
-	con.cw = SMALLCHAR_WIDTH * scale;
-	con.ch = SMALLCHAR_HEIGHT * scale;
+	
 }
 
 
@@ -545,7 +543,7 @@ void Con_DrawInput( void ) {
 
 	SCR_DrawSmallChar( con.xadjust + 1 * con.cw, y, con.cw, con.ch, ']' );
 
-	Field_Draw( &g_consoleField, con.xadjust + 2 * con.cw, y);
+	Field_Draw( &g_consoleField, con.xadjust + 2 * con.cw, y, con.cw, con.ch);
 }
 
 
@@ -627,7 +625,7 @@ void Con_DrawNotify( void ) {
 			skip = strlen( buf ) + 1;
 		}
 
-		Field_BigDraw( &chatField, skip * BIGCHAR_WIDTH, v);
+		Field_Draw( &chatField, skip * BIGCHAR_WIDTH, v, BIGCHAR_WIDTH, BIGCHAR_HEIGHT);
 
 		v += BIGCHAR_HEIGHT;
 	}
@@ -771,6 +769,10 @@ Con_DrawConsole
 ==================
 */
 void Con_DrawConsole( void ) {
+	float scale = con_scale->value;
+	con.cw = SMALLCHAR_WIDTH * scale;
+	con.ch = SMALLCHAR_HEIGHT * scale;
+	
 	// check for console width changes from a vid mode change
 	Con_CheckResize();
 
