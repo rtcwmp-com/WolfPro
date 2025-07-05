@@ -598,10 +598,10 @@ void Con_DrawNotify( void ) {
 				currentColor = ( text[x] >> 8 ) & 7;
 				re.SetColor( g_color_table[currentColor] );
 			}
-			SCR_DrawSmallChar( cl_conXOffset->integer + con.xadjust + ( x + 1 ) * SMALLCHAR_WIDTH, v, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, text[x] & 0xff );
+			SCR_DrawSmallChar( cl_conXOffset->integer + con.xadjust + ( x + 1 ) * con.cw, v, con.cw, con.ch, text[x] & 0xff );
 		}
 
-		v += SMALLCHAR_HEIGHT;
+		v += con.ch;
 	}
 
 	re.SetColor( NULL );
@@ -612,20 +612,23 @@ void Con_DrawNotify( void ) {
 
 	// draw the chat line
 	if ( cls.keyCatchers & KEYCATCH_MESSAGE ) {
+		float width = BIGCHAR_WIDTH;
+		float height = BIGCHAR_HEIGHT;
+		SCR_AdjustFrom640(0, 0, &width, &height);
 		if ( chat_team ) {
 			char buf[128];
 			CL_TranslateString( "say_team:", buf );
-			SCR_DrawBigString( 8, v, buf, 1.0f );
-			skip = strlen( buf ) + 2;
+			SCR_DrawSmallStringExt(8, v, width, height, buf, NULL, qfalse);
+			skip = strlen( buf ) + 1;
 		} else
 		{
 			char buf[128];
 			CL_TranslateString( "say:", buf );
-			SCR_DrawBigString( 8, v, buf, 1.0f );
+			SCR_DrawSmallStringExt(8, v, width, height, buf, NULL, qfalse);
 			skip = strlen( buf ) + 1;
 		}
 
-		Field_Draw( &chatField, skip * BIGCHAR_WIDTH, v, BIGCHAR_WIDTH, BIGCHAR_HEIGHT);
+		Field_Draw( &chatField, skip * width, v, width, height);
 
 		v += BIGCHAR_HEIGHT;
 	}
@@ -772,7 +775,7 @@ void Con_DrawConsole( void ) {
 	float scale = con_scale->value;
 	con.cw = SMALLCHAR_WIDTH * scale;
 	con.ch = SMALLCHAR_HEIGHT * scale;
-	
+
 	// check for console width changes from a vid mode change
 	Con_CheckResize();
 
