@@ -61,6 +61,8 @@ typedef struct {
 	int times[NUM_CON_TIMES];       // cls.realtime time the line was generated
 	// for transparent notify lines
 	vec4_t color;
+	float cw;
+	float ch;
 } console_t;
 
 extern console_t con;
@@ -381,6 +383,9 @@ void Con_Init( void ) {
 	Cmd_AddCommand( "condump", Con_Dump_f );
 
 	con.xadjust = 0;
+	float scale = con_scale->value;
+	con.cw = SMALLCHAR_WIDTH * scale;
+	con.ch = SMALLCHAR_HEIGHT * scale;
 }
 
 
@@ -534,14 +539,13 @@ void Con_DrawInput( void ) {
 		return;
 	}
 
-	y = con.vislines - ( SMALLCHAR_HEIGHT * 2 );
+	y = con.vislines - ( con.ch * 2 );
 
 	re.SetColor( con.color );
 
-	SCR_DrawSmallChar( con.xadjust + 1 * SMALLCHAR_WIDTH, y, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, ']' );
+	SCR_DrawSmallChar( con.xadjust + 1 * con.cw, y, con.cw, con.ch, ']' );
 
-	Field_Draw( &g_consoleField, con.xadjust + 2 * SMALLCHAR_WIDTH, y,
-				SCREEN_WIDTH - 3 * SMALLCHAR_WIDTH, qtrue );
+	Field_Draw( &g_consoleField, con.xadjust + 2 * con.cw, y);
 }
 
 
@@ -623,8 +627,7 @@ void Con_DrawNotify( void ) {
 			skip = strlen( buf ) + 1;
 		}
 
-		Field_BigDraw( &chatField, skip * BIGCHAR_WIDTH, v,
-					   SCREEN_WIDTH - ( skip + 1 ) * BIGCHAR_WIDTH, qtrue );
+		Field_BigDraw( &chatField, skip * BIGCHAR_WIDTH, v);
 
 		v += BIGCHAR_HEIGHT;
 	}
@@ -648,10 +651,6 @@ void Con_DrawSolidConsole( float frac ) {
 	int lines;
 	int currentColor;
 	vec4_t color;
-
-	float scale = con_scale->value;
-	float charW = SMALLCHAR_WIDTH * scale;
-	float charH = SMALLCHAR_HEIGHT * scale;
 	
 
 	lines = cls.glconfig.vidHeight * frac;
@@ -701,26 +700,26 @@ void Con_DrawSolidConsole( float frac ) {
 
 	for ( x = 0 ; x < i ; x++ ) {
 
-		SCR_DrawSmallChar( cls.glconfig.vidWidth - ( i - x + 1 ) * charW,
+		SCR_DrawSmallChar( cls.glconfig.vidWidth - ( i - x + 1 ) * con.cw,
 
-						   ( lines - ( charH + charH / 2 ) ), charW, charH, Q3_VERSION[x] );
+						   ( lines - ( con.ch + con.ch / 2 ) ), con.cw, con.ch, Q3_VERSION[x] );
 
 	}
 
 
 	// draw the text
 	con.vislines = lines;
-	rows = ( lines - charW ) / charW;     // rows of text to draw
+	rows = ( lines - con.cw) / con.cw;     // rows of text to draw
 
-	y = lines - ( charH * 3 );
+	y = lines - (con.ch * 3 );
 
 	// draw from the bottom up
 	if ( con.display != con.current ) {
 		// draw arrows to show the buffer is backscrolled
 		re.SetColor( g_color_table[ColorIndex( COLOR_WHITE )] );
 		for ( x = 0 ; x < con.linewidth ; x += 4 )
-			SCR_DrawSmallChar( con.xadjust + ( x + 1 ) * charW, y, charW, charH, '^' );
-		y -= charH;
+			SCR_DrawSmallChar( con.xadjust + ( x + 1 ) * con.cw, y, con.cw, con.ch, '^' );
+		y -= con.ch;
 		rows--;
 	}
 
@@ -733,7 +732,7 @@ void Con_DrawSolidConsole( float frac ) {
 	currentColor = 7;
 	re.SetColor( g_color_table[currentColor] );
 
-	for ( i = 0 ; i < rows ; i++, y -= charH, row-- )
+	for ( i = 0 ; i < rows ; i++, y -= con.ch, row-- )
 	{
 		if ( row < 0 ) {
 			break;
@@ -754,7 +753,7 @@ void Con_DrawSolidConsole( float frac ) {
 				currentColor = ( text[x] >> 8 ) & 7;
 				re.SetColor( g_color_table[currentColor] );
 			}
-			SCR_DrawSmallChar(  con.xadjust + ( x + 1 ) * charW, y, charW, charH, text[x] & 0xff );
+			SCR_DrawSmallChar(  con.xadjust + ( x + 1 ) * con.cw, y, con.cw, con.ch, text[x] & 0xff );
 		}
 	}
 

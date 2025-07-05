@@ -705,7 +705,7 @@ Handles horizontal scrolling and cursor blinking
 x, y, amd width are in pixels
 ===================
 */
-void Field_VariableSizeDraw( field_t *edit, int x, int y, int width, int size, qboolean showCursor ) {
+void Field_VariableSizeDraw( field_t *edit, int x, int y, int size ) {
 	int len;
 	int drawLen;
 	int prestep;
@@ -760,11 +760,6 @@ void Field_VariableSizeDraw( field_t *edit, int x, int y, int width, int size, q
 		SCR_DrawBigString( x, y, str, 1.0 );
 	}
 
-	// draw the cursor
-	if ( !showCursor ) {
-		return;
-	}
-
 	if ( (int)( cls.realtime >> 8 ) & 1 ) {
 		return;     // off blink
 	}
@@ -787,12 +782,12 @@ void Field_VariableSizeDraw( field_t *edit, int x, int y, int width, int size, q
 	}
 }
 
-void Field_Draw( field_t *edit, int x, int y, int width, qboolean showCursor ) {
-	Field_VariableSizeDraw( edit, x, y, width, SMALLCHAR_WIDTH, showCursor );
+void Field_Draw( field_t *edit, int x, int y) {
+	Field_VariableSizeDraw( edit, x, y, SMALLCHAR_WIDTH);
 }
 
-void Field_BigDraw( field_t *edit, int x, int y, int width, qboolean showCursor ) {
-	Field_VariableSizeDraw( edit, x, y, width, BIGCHAR_WIDTH, showCursor );
+void Field_BigDraw( field_t *edit, int x, int y) {
+	Field_VariableSizeDraw( edit, x, y, BIGCHAR_WIDTH);
 }
 
 /*
