@@ -326,7 +326,7 @@ void CreateInstance()
     }
 
     VK(vkCreateInstance(&createInfo, NULL, &vk.instance));
-
+    volkLoadInstance(vk.instance);
 
     if (vk.ext.EXT_debug_utils)
     {
@@ -562,7 +562,7 @@ static void CreateDevice()
     createInfo.pNext = &features2;
 
     VK(vkCreateDevice(vk.physicalDevice, &createInfo, NULL, &vk.device));
-
+    volkLoadDevice(vk.device);
     vkGetDeviceQueue(vk.device, vk.queues.graphicsFamily, 0, &vk.queues.graphics);
     vkGetDeviceQueue(vk.device, vk.queues.presentFamily, 0, &vk.queues.present);
 }
@@ -575,6 +575,11 @@ static void CreateAllocator()
     allocatorInfo.device = vk.device;
     allocatorInfo.instance = vk.instance;
     allocatorInfo.flags = 0;
+
+    VmaVulkanFunctions vkFuncs;
+    VK(vmaImportVulkanFunctionsFromVolk(&allocatorInfo, &vkFuncs));
+    allocatorInfo.pVulkanFunctions = &vkFuncs;
+    
     VK(vmaCreateAllocator(&allocatorInfo, &vk.allocator));
 }
 
@@ -2604,7 +2609,7 @@ void RHI_Init( void ) {
     Pool_Init(&vk.samplerPool, 16, sizeof(Sampler), 0);
     
     
-
+    VK(volkInitialize());
     vk.instance = VK_NULL_HANDLE;
     BuildLayerAndExtensionLists();
     CreateInstance();
