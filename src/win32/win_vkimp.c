@@ -6,8 +6,7 @@
 #include "glw_win.h"
 #include "../client/client.h"
 
-#define VK_USE_PLATFORM_WIN32_KHR
-#include <vulkan/vulkan.h>
+#include "../renderer_vk/volk.h"
 
 vkwstate_t vkw_state;
 
