@@ -122,45 +122,6 @@ void SCR_DrawPic( float x, float y, float width, float height, qhandle_t hShader
 }
 
 
-
-/*
-** SCR_DrawChar
-** chars are drawn at 640*480 virtual screen size
-*/
-static void SCR_DrawChar( float x, float y, float size, int ch ) {
-	int row, col;
-	float frow, fcol;
-	float ax, ay, aw, ah;
-
-	ch &= 255;
-
-	if ( ch == ' ' ) {
-		return;
-	}
-
-	if ( y < -size ) {
-		return;
-	}
-
-	ax = x;
-	ay = y;
-	aw = size;
-	ah = size;
-	SCR_AdjustFrom640( &ax, &ay, &aw, &ah );
-
-	row = ch >> 4;
-	col = ch & 15;
-
-	frow = row * 0.0625f;
-	fcol = col * 0.0625f;
-	size = 0.0625f;
-
-	re.DrawStretchPic( ax, ay, aw, ah,
-					   fcol, frow,
-					   fcol + size, frow + size,
-					   cls.charSetShader );
-}
-
 /*
 ** SCR_DrawChar
 ** small chars are drawn at native screen resolution
