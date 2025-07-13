@@ -541,7 +541,7 @@ void Con_DrawInput( void ) {
 
 	re.SetColor( con.color );
 
-	SCR_DrawSmallChar( con.xadjust + 1 * con.cw, y, con.cw, con.ch, ']' );
+	SCR_DrawChar( con.xadjust + 1 * con.cw, y, con.cw, con.ch, ']' );
 
 	Field_Draw( &g_consoleField, con.xadjust + 2 * con.cw, y, con.cw, con.ch, qfalse);
 }
@@ -611,10 +611,10 @@ void Con_DrawNotify( void ) {
 			}
 			line[linePos++] = text[x] & 0xff;
 			
-			// SCR_DrawSmallChar( cl_conXOffset->integer + con.xadjust + ( x + 1 ) * con.cw, v, con.cw, con.ch, text[x] & 0xff );
+			// SCR_DrawChar( cl_conXOffset->integer + con.xadjust + ( x + 1 ) * con.cw, v, con.cw, con.ch, text[x] & 0xff );
 		}
 		line[linePos] = '\0';
-		SCR_DrawSmallStringExt(cl_conXOffset->integer + con.xadjust + con.cw, v, con.cw, con.ch, line, colorWhite, qfalse, qtrue);
+		SCR_DrawString(cl_conXOffset->integer + con.xadjust + con.cw, v, con.cw, con.ch, line, colorWhite, qfalse, qtrue);
 
 		v += con.ch;
 	}
@@ -637,13 +637,13 @@ void Con_DrawNotify( void ) {
 		if ( chat_team ) {
 			char buf[128];
 			CL_TranslateString( "say_team:", buf );
-			SCR_DrawSmallStringExt(8, v, width, height, buf, colorWhite, qfalse, qtrue);
+			SCR_DrawString(8, v, width, height, buf, colorWhite, qfalse, qtrue);
 			skip = strlen( buf ) + 1;
 		} else
 		{
 			char buf[128];
 			CL_TranslateString( "say:", buf );
-			SCR_DrawSmallStringExt(8, v, width, height, buf, colorWhite, qfalse, qtrue);
+			SCR_DrawString(8, v, width, height, buf, colorWhite, qfalse, qtrue);
 			skip = strlen( buf ) + 1;
 		}
 
@@ -720,7 +720,7 @@ void Con_DrawSolidConsole( float frac ) {
 
 	for ( x = 0 ; x < i ; x++ ) {
 
-		SCR_DrawSmallChar( cls.glconfig.vidWidth - ( i - x + 1 ) * con.cw,
+		SCR_DrawChar( cls.glconfig.vidWidth - ( i - x + 1 ) * con.cw,
 
 						   ( lines - ( con.ch + con.ch / 2 ) ), con.cw, con.ch, Q3_VERSION[x] );
 
@@ -738,7 +738,7 @@ void Con_DrawSolidConsole( float frac ) {
 		// draw arrows to show the buffer is backscrolled
 		re.SetColor( g_color_table[ColorIndex( COLOR_WHITE )] );
 		for ( x = 0 ; x < con.linewidth ; x += 4 )
-			SCR_DrawSmallChar( con.xadjust + ( x + 1 ) * con.cw, y, con.cw, con.ch, '^' );
+			SCR_DrawChar( con.xadjust + ( x + 1 ) * con.cw, y, con.cw, con.ch, '^' );
 		y -= con.ch;
 		rows--;
 	}
@@ -773,7 +773,7 @@ void Con_DrawSolidConsole( float frac ) {
 				currentColor = ( text[x] >> 8 ) & 7;
 				re.SetColor( g_color_table[currentColor] );
 			}
-			SCR_DrawSmallChar(  con.xadjust + ( x + 1 ) * con.cw, y, con.cw, con.ch, text[x] & 0xff );
+			SCR_DrawChar(  con.xadjust + ( x + 1 ) * con.cw, y, con.cw, con.ch, text[x] & 0xff );
 		}
 	}
 

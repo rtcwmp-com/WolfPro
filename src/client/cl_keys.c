@@ -742,7 +742,7 @@ void Field_Draw( field_t *edit, float x, float y, float w, float h, qboolean dro
 	str[ drawLen ] = 0;
 
 	// draw it
-	SCR_DrawSmallStringExt( x, y, w, h, str, colorWhite, qfalse, dropShadow );
+	SCR_DrawString( x, y, w, h, str, colorWhite, qfalse, dropShadow );
 
 	if ( (int)( cls.realtime >> 8 ) & 1 ) {
 		return;     // off blink
@@ -758,7 +758,7 @@ void Field_Draw( field_t *edit, float x, float y, float w, float h, qboolean dro
 
 	str[0] = cursorChar;
 	str[1] = 0;
-	SCR_DrawSmallStringExt( x + ( edit->cursor - prestep - i ) * w, y, w, h, str, colorWhite, qfalse, dropShadow );
+	SCR_DrawString( x + ( edit->cursor - prestep - i ) * w, y, w, h, str, colorWhite, qfalse, dropShadow );
 
 }
 

@@ -162,10 +162,10 @@ static void SCR_DrawChar( float x, float y, float size, int ch ) {
 }
 
 /*
-** SCR_DrawSmallChar
+** SCR_DrawChar
 ** small chars are drawn at native screen resolution
 */
-void SCR_DrawSmallChar( float x, float y, float w, float h, int ch ) {
+void SCR_DrawChar( float x, float y, float w, float h, int ch ) {
 	int row, col;
 	float frow, fcol;
 	float size;
@@ -194,71 +194,6 @@ void SCR_DrawSmallChar( float x, float y, float w, float h, int ch ) {
 }
 
 
-/*
-==================
-SCR_DrawBigString[Color]
-
-Draws a multi-colored string with a drop shadow, optionally forcing
-to a fixed color.
-
-Coordinates are at 640 by 480 virtual resolution
-==================
-*/
-void SCR_DrawStringExt( int x, int y, float size, const char *string, float *setColor, qboolean forceColor ) {
-	vec4_t color;
-	const char  *s;
-	int xx;
-
-	// draw the drop shadow
-	color[0] = color[1] = color[2] = 0;
-	color[3] = setColor[3];
-	re.SetColor( color );
-	s = string;
-	xx = x;
-	while ( *s ) {
-		if ( Q_IsColorString( s ) ) {
-			s += 2;
-			continue;
-		}
-		SCR_DrawChar( xx + 2 * 640.0f / cls.glconfig.vidWidth, y + 2 * 480.0f / cls.glconfig.vidHeight, size, *s );
-		xx += size;
-		s++;
-	}
-
-
-	// draw the colored text
-	s = string;
-	xx = x;
-	re.SetColor( setColor );
-	while ( *s ) {
-		if ( Q_IsColorString( s ) ) {
-			if ( !forceColor ) {
-				memcpy( color, g_color_table[ColorIndex( *( s + 1 ) )], sizeof( color ) );
-				color[3] = setColor[3];
-				re.SetColor( color );
-			}
-			s += 2;
-			continue;
-		}
-		SCR_DrawChar( xx, y, size, *s );
-		xx += size;
-		s++;
-	}
-	re.SetColor( NULL );
-}
-
-
-void SCR_DrawBigString( int x, int y, const char *s, float alpha ) {
-	float color[4];
-
-	color[0] = color[1] = color[2] = 1.0;
-	color[3] = alpha;
-	SCR_DrawStringExt( x, y, BIGCHAR_WIDTH, s, color, qfalse );
-}
-
-void SCR_DrawBigStringColor( int x, int y, const char *s, vec4_t color ) {
-	SCR_DrawStringExt( x, y, BIGCHAR_WIDTH, s, color, qtrue );
-}
 
 
 /*
@@ -270,7 +205,7 @@ to a fixed color.
 
 ==================
 */
-void SCR_DrawSmallStringExt(float x, float y, float w, float h, const char *string, float *setColor, qboolean forceColor, qboolean dropShadow ) {
+void SCR_DrawString(float x, float y, float w, float h, const char *string, float *setColor, qboolean forceColor, qboolean dropShadow ) {
 	vec4_t color;
 	const char  *s;
 	int xx;
@@ -289,7 +224,7 @@ void SCR_DrawSmallStringExt(float x, float y, float w, float h, const char *stri
 				continue;
 			}
 
-			SCR_DrawSmallChar( xx + offset, y + offset, w, h, *s );
+			SCR_DrawChar( xx + offset, y + offset, w, h, *s );
 			xx += w;
 			s++;
 		}
@@ -310,7 +245,7 @@ void SCR_DrawSmallStringExt(float x, float y, float w, float h, const char *stri
 			s += 2;
 			continue;
 		}
-		SCR_DrawSmallChar( xx, y, w, h, *s );
+		SCR_DrawChar( xx, y, w, h, *s );
 		xx += w;
 		s++;
 	}
@@ -362,9 +297,17 @@ void SCR_DrawDemoRecording( void ) {
 	}
 
 	pos = FS_FTell( clc.demofile );
-	sprintf( string, "RECORDING %s: %ik", clc.demoName, pos / 1024 );
+	Com_sprintf( string, sizeof(string), "RECORDING %s: %ik", clc.demoName, pos / 1024 );
+	float x = 5;
+	float y = 470;
+	float w = 8;
+	float h = 8;
 
-	SCR_DrawStringExt( 5, 470, 8, string, g_color_table[7], qtrue );
+	SCR_AdjustFrom640(&x, &y, &w, &h);
+
+	w = h;
+
+	SCR_DrawString( x, y, w, h, string, colorWhite, qtrue, qtrue );
 }
 
 

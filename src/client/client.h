@@ -555,7 +555,6 @@ qboolean CL_UpdateVisiblePings_f( int source );
 //
 // console
 //
-void Con_DrawCharacter( int cx, int line, int num );
 
 void Con_CheckResize( void );
 void Con_Init( void );
@@ -588,10 +587,8 @@ void    SCR_FillRect( float x, float y, float width, float height,
 void    SCR_DrawPic( float x, float y, float width, float height, qhandle_t hShader );
 void    SCR_DrawNamedPic( float x, float y, float width, float height, const char *picname );
 
-void    SCR_DrawBigString( int x, int y, const char *s, float alpha );          // draws a string with embedded color control characters with fade
-void    SCR_DrawBigStringColor( int x, int y, const char *s, vec4_t color );    // ignores embedded color control characters
-void    SCR_DrawSmallStringExt( float x, float y, float w, float h, const char *string, float *setColor, qboolean forceColor, qboolean dropShadow );
-void    SCR_DrawSmallChar( float x, float y, float w, float h, int ch );
+void    SCR_DrawString( float x, float y, float w, float h, const char *string, float *setColor, qboolean forceColor, qboolean dropShadow );
+void    SCR_DrawChar( float x, float y, float w, float h, int ch );
 
 
 //
