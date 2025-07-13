@@ -705,7 +705,7 @@ Handles horizontal scrolling and cursor blinking
 x, y, amd width are in pixels
 ===================
 */
-void Field_Draw( field_t *edit, float x, float y, float w, float h) {
+void Field_Draw( field_t *edit, float x, float y, float w, float h, qboolean dropShadow) {
 	int len;
 	int drawLen;
 	int prestep;
@@ -727,14 +727,6 @@ void Field_Draw( field_t *edit, float x, float y, float w, float h) {
 			}
 		}
 		prestep = edit->scroll;
-
-/*
-		if ( edit->cursor < len - drawLen ) {
-			prestep = edit->cursor;	// cursor at start
-		} else {
-			prestep = len - drawLen;
-		}
-*/
 	}
 
 	if ( prestep + drawLen > len ) {
@@ -750,15 +742,7 @@ void Field_Draw( field_t *edit, float x, float y, float w, float h) {
 	str[ drawLen ] = 0;
 
 	// draw it
-	if (1) {
-		float color[4];
-
-		color[0] = color[1] = color[2] = color[3] = 1.0;
-		SCR_DrawSmallStringExt( x, y, w, h, str, color, qfalse );
-	} else {
-		// draw big string with drop shadow
-		SCR_DrawBigString( x, y, str, 1.0 );
-	}
+	SCR_DrawSmallStringExt( x, y, w, h, str, colorWhite, qfalse, dropShadow );
 
 	if ( (int)( cls.realtime >> 8 ) & 1 ) {
 		return;     // off blink
@@ -772,14 +756,10 @@ void Field_Draw( field_t *edit, float x, float y, float w, float h) {
 
 	i = drawLen - ( Q_PrintStrlen( str ) + 1 );
 
-	if (1) {
-		SCR_DrawSmallChar( x + ( edit->cursor - prestep - i ) * w, y, w, h, cursorChar );
-	} else {
-		str[0] = cursorChar;
-		str[1] = 0;
-		SCR_DrawBigString( x + ( edit->cursor - prestep - i ) * w, y, str, 1.0 );
+	str[0] = cursorChar;
+	str[1] = 0;
+	SCR_DrawSmallStringExt( x + ( edit->cursor - prestep - i ) * w, y, w, h, str, colorWhite, qfalse, dropShadow );
 
-	}
 }
 
 

@@ -270,10 +270,31 @@ to a fixed color.
 
 ==================
 */
-void SCR_DrawSmallStringExt(float x, float y, float w, float h, const char *string, float *setColor, qboolean forceColor ) {
+void SCR_DrawSmallStringExt(float x, float y, float w, float h, const char *string, float *setColor, qboolean forceColor, qboolean dropShadow ) {
 	vec4_t color;
 	const char  *s;
 	int xx;
+
+	if(dropShadow){
+		// draw the drop shadow
+		color[0] = color[1] = color[2] = 0.0f;
+		color[3] = 1.0f;
+		re.SetColor( color );
+		s = string;
+		xx = x;
+		float offset = max(min(w, h) / 16.0f, 1.0f);
+		while ( *s ) {
+			if ( Q_IsColorString( s ) ) {
+				s += 2;
+				continue;
+			}
+
+			SCR_DrawSmallChar( xx + offset, y + offset, w, h, *s );
+			xx += w;
+			s++;
+		}
+	}
+	
 
 	// draw the colored text
 	s = string;

@@ -543,7 +543,7 @@ void Con_DrawInput( void ) {
 
 	SCR_DrawSmallChar( con.xadjust + 1 * con.cw, y, con.cw, con.ch, ']' );
 
-	Field_Draw( &g_consoleField, con.xadjust + 2 * con.cw, y, con.cw, con.ch);
+	Field_Draw( &g_consoleField, con.xadjust + 2 * con.cw, y, con.cw, con.ch, qfalse);
 }
 
 
@@ -570,6 +570,8 @@ void Con_DrawNotify( void ) {
 	currentColor = 7;
 	re.SetColor( g_color_table[currentColor] );
 
+	char line[256];
+
 	v = 0;
 	for ( i = con.current - NUM_CON_TIMES + 1 ; i <= con.current ; i++ )
 	{
@@ -586,20 +588,33 @@ void Con_DrawNotify( void ) {
 		}
 		text = con.text + ( i % con.totallines ) * con.linewidth;
 
+
 		if ( cl.snap.ps.pm_type != PM_INTERMISSION && cls.keyCatchers & ( KEYCATCH_UI | KEYCATCH_CGAME ) ) {
 			continue;
 		}
 
+		int linePos = 0;
+
 		for ( x = 0 ; x < con.linewidth ; x++ ) {
-			if ( ( text[x] & 0xff ) == ' ' ) {
-				continue;
+			if(linePos >= ARRAY_LEN(line) - 3){
+				break;
 			}
-			if ( ( ( text[x] >> 8 ) & 7 ) != currentColor ) {
-				currentColor = ( text[x] >> 8 ) & 7;
-				re.SetColor( g_color_table[currentColor] );
+			short colorCode = (text[x] >> 8);
+			if(colorCode >= ARRAY_LEN(g_color_table)){
+				colorCode = 7;
 			}
-			SCR_DrawSmallChar( cl_conXOffset->integer + con.xadjust + ( x + 1 ) * con.cw, v, con.cw, con.ch, text[x] & 0xff );
+
+			if ( colorCode != currentColor ) {
+				currentColor = colorCode;
+				line[linePos++] = '^';
+				line[linePos++] = '0' + colorCode;
+			}
+			line[linePos++] = text[x] & 0xff;
+			
+			// SCR_DrawSmallChar( cl_conXOffset->integer + con.xadjust + ( x + 1 ) * con.cw, v, con.cw, con.ch, text[x] & 0xff );
 		}
+		line[linePos] = '\0';
+		SCR_DrawSmallStringExt(cl_conXOffset->integer + con.xadjust + con.cw, v, con.cw, con.ch, line, colorWhite, qfalse, qtrue);
 
 		v += con.ch;
 	}
@@ -622,19 +637,19 @@ void Con_DrawNotify( void ) {
 		if ( chat_team ) {
 			char buf[128];
 			CL_TranslateString( "say_team:", buf );
-			SCR_DrawSmallStringExt(8, v, width, height, buf, NULL, qfalse);
+			SCR_DrawSmallStringExt(8, v, width, height, buf, colorWhite, qfalse, qtrue);
 			skip = strlen( buf ) + 1;
 		} else
 		{
 			char buf[128];
 			CL_TranslateString( "say:", buf );
-			SCR_DrawSmallStringExt(8, v, width, height, buf, NULL, qfalse);
+			SCR_DrawSmallStringExt(8, v, width, height, buf, colorWhite, qfalse, qtrue);
 			skip = strlen( buf ) + 1;
 		}
 
-		Field_Draw( &chatField, skip * width, v, width, height);
+		Field_Draw( &chatField, skip * width, v, width, height, qtrue);
 
-		v += BIGCHAR_HEIGHT;
+		v += height;
 	}
 
 }
