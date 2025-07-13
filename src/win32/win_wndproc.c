@@ -431,6 +431,14 @@ LONG WINAPI MainWndProc(
 			temp |= 4;
 		}
 
+		if (wParam & MK_XBUTTON1) {
+			temp |= 8;
+		}
+
+		if (wParam & MK_XBUTTON2) {
+			temp |= 16;
+		}
+
 		IN_MouseEvent( temp );
 	}
 	break;
