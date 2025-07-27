@@ -105,6 +105,10 @@ void CG_ImGUI_Update(void) {
 						
 					}
 				}
+				float test[] = {0.0f, 1.0f};
+				TimelineEvent("test", test, 2);
+				float test2[] = {0.0f, 1.0f};
+				TimelineEvent("test2", test2, 2);
 				EndTimeline();
 			}
 			
@@ -161,8 +165,8 @@ qbool BeginTimeline(const char* str_id)
 }
 
 
-static const float TIMELINE_RADIUS = 20.0f;
-static const float delta = 5.0f;
+static const float TIMELINE_RADIUS = 4.0f;
+static const float delta = 2.0f;
 
 qbool TimelineEvent(const char* str_id, float* values, int numVals)
 {
@@ -172,7 +176,7 @@ qbool TimelineEvent(const char* str_id, float* values, int numVals)
 	const ImU32 inactive_color = igColorConvertFloat4ToU32(ctx->Style.Colors[ImGuiCol_Button]);
 	const ImU32 active_color = igColorConvertFloat4ToU32(ctx->Style.Colors[ImGuiCol_ButtonHovered]);
 	const ImU32 line_color = igColorConvertFloat4ToU32(ctx->Style.Colors[ImGuiCol_ButtonActive]);
-	const ImU32 background = igColorConvertFloat4ToU32(ctx->Style.Colors[ImGuiCol_FrameBgActive]);
+	const ImU32 background = 0xFF26382A;
 	qbool changed = qfalse;
 	ImVec2 localMin = win->DC.CursorPos;
 	
@@ -201,6 +205,7 @@ qbool TimelineEvent(const char* str_id, float* values, int numVals)
 		
 		igPopID();
 		ImDrawList_AddCircleFilled(igGetWindowDrawList(), pos, TIMELINE_RADIUS, igIsItemActive() || igIsItemHovered(0) ? active_color : inactive_color, 0);
+		
 	}
 
 	minBgRect.x = min(minBgRect.x, localMin.x);
@@ -225,18 +230,29 @@ qbool TimelineEvent(const char* str_id, float* values, int numVals)
 
 void EndTimeline(void)
 {
+	ImGuiWindow* win = igGetCurrentWindow();
 	ImVec2 start, end;
 	int demoDuration = (m_lastServerTime - m_firstServerTime);
 	int currentOffset = (m_currServerTime - m_firstServerTime);
 	float pc = (float)currentOffset / (float)demoDuration;
 	ImGuiContext *ctx = igGetCurrentContext();
-	const ImU32 color = igColorConvertFloat4ToU32(ctx->Style.Colors[ImGuiCol_PlotLines]);
+	const ImU32 color = 0xFF0000FF;
 	float barWidth = 2.0f;
 	ImVec2 localMin, localMax;
+	localMin.x = minRect.x;
+	localMin.y = win->DC.CursorPos.y;
+	localMax.x = localMin.x +  pc * (maxRect.x - minRect.x);
+	localMax.y = win->DC.CursorPos.y + TIMELINE_RADIUS;
+
+	//igSetCursorScreenPos((ImVec2){localMin.x - TIMELINE_RADIUS, localMin.y - TIMELINE_RADIUS - delta});
+	//igDummy((ImVec2) { 2 * TIMELINE_RADIUS, 2 * TIMELINE_RADIUS + 2 * delta });
+	igDummy((ImVec2) { maxBgRect.x - minBgRect.x, TIMELINE_RADIUS});
+	ImDrawList_AddRectFilled(igGetWindowDrawList(), localMin, localMax, color, 0.0f, 0);
+
 	localMin.x = minRect.x + pc * (maxRect.x - minRect.x) - 0.5f * barWidth;
-	localMin.y = minBgRect.y;
+	localMin.y = minBgRect.y ;
 	localMax.x = localMin.x + 0.5f * barWidth;
-	localMax.y = maxBgRect.y;
+	localMax.y = maxBgRect.y + 2 * delta;
 	
 	ImDrawList_AddRectFilled(igGetWindowDrawList(),localMin, localMax, color, 0.0f, 0);
 	igEndChild();
