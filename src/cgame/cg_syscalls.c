@@ -577,5 +577,13 @@ int trap_Cvar_VariableIntegerValue(const char* var_name) {
 }
 
 int trap_CL_AddGuiMenu(int menu, const char* name, const char* shortcut, qbool* selected, qbool enabled){
-	return syscall(CG_ADD_IMGUI_MENU, menu, name, shortcut, selected, enabled);
+	return syscall(CG_IMGUI_ADDMENU, menu, name, shortcut, selected, enabled);
+}
+
+void trap_IgImage(qhandle_t shader, float x, float y){
+	syscall(CG_IMGUI_IMAGE, shader, PASSFLOAT(x), PASSFLOAT(y));
+}
+
+void trap_IgImageEx(qhandle_t shader, float x, float y, float s1, float t1, float s2, float t2){
+	syscall(CG_IMGUI_IMAGE_EX, shader, PASSFLOAT(x), PASSFLOAT(y), PASSFLOAT(s1), PASSFLOAT(t1), PASSFLOAT(s2), PASSFLOAT(t2));
 }

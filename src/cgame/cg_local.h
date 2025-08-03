@@ -1486,6 +1486,9 @@ typedef struct {
 	qhandle_t selectCursor;
 	qhandle_t sizeCursor;
 
+	qhandle_t skullIcon;
+	qhandle_t exclamationIcon;
+
 } cgMedia_t;
 
 
@@ -2530,3 +2533,5 @@ typedef struct {
 void CG_ImGUI_Update(void);
 void CG_ImGUI_Share(void *ctx, void *alloc, void *free, void** user);
 int trap_CL_AddGuiMenu(int menu, const char* name, const char* shortcut, qbool* selected, qbool enabled);
+void trap_IgImage(qhandle_t shader, float x, float y);
+void trap_IgImageEx(qhandle_t shader, float x, float y, float s1, float t1, float s2, float t2);

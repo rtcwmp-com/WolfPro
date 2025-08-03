@@ -1489,6 +1489,9 @@ static void CG_RegisterGraphics( void ) {
 		cgs.media.shardJunk[i] = trap_R_RegisterModel( name );
 	}
 
+	cgs.media.exclamationIcon = trap_R_RegisterShaderNoMip("gfx/2d/treasure");
+	cgs.media.skullIcon = trap_R_RegisterShaderNoMip("gfx/2d/multi_dead");
+
 	memset( cg_items, 0, sizeof( cg_items ) );
 	memset( cg_weapons, 0, sizeof( cg_weapons ) );
 

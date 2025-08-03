@@ -56,7 +56,7 @@ typedef enum ImGUI_ShortcutOptions
 } ImGUI_ShortcutOptions;
 
 void GUI_AddMainMenuItem(ImGUI_MainMenu_Id menu, const char* item, const char* shortcut, qbool* selected, qbool enabled);
-void GUI_DrawMainMenu();
+void GUI_DrawMainMenu(void);
 void ToggleBooleanWithShortcut(qbool *value, ImGuiKey key, ImGUI_ShortcutOptions flags);
 qbool IsShortcutPressed(ImGuiKey key, ImGUI_ShortcutOptions flags);
 

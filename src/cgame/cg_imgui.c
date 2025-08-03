@@ -23,6 +23,10 @@ char* GetStringTimestamp(int seconds){
 	return va("%02d:%02d", minute, second);
 }
 
+static const float TIMELINE_RADIUS = 8.0f;
+static const float delta = 3.0f;
+static const float TIMELINE_HEIGHT = TIMELINE_RADIUS * 2.0f + delta * 2;
+
 void CG_ImGUI_Update(void) {
 	if (cgs.igContext == NULL) {
 		return;
@@ -95,20 +99,20 @@ void CG_ImGUI_Update(void) {
 							for(int k = 0; k < ndp_myKillsSize; k++){
 								killAtPercent[k] =  (float)(ndp_myKills[k] - m_firstServerTime) / demoDuration;
 							}
-							TimelineEvent(event_types[i], killAtPercent, ndp_myKillsSize);
+							trap_IgImage(cgs.media.skullIcon, TIMELINE_HEIGHT, TIMELINE_HEIGHT);
+							igSameLine(0.0f, 2.0f);
+							TimelineEvent(event_types[i], killAtPercent, ndp_myKillsSize );
 							break;
 						}
 						case 1:
+							trap_IgImageEx(cgs.media.exclamationIcon, TIMELINE_HEIGHT, TIMELINE_HEIGHT, 0.23f, 0.23f, 0.77f, 0.77f);
+							igSameLine(0.0f, 2.0f);
 							TimelineEvent(event_types[i], docsPickupAtPercent, ndp_docPickupSize);
 							break;
 						}
 						
 					}
 				}
-				float test[] = {0.0f, 1.0f};
-				TimelineEvent("test", test, 2);
-				float test2[] = {0.0f, 1.0f};
-				TimelineEvent("test2", test2, 2);
 				EndTimeline();
 			}
 			
@@ -165,8 +169,7 @@ qbool BeginTimeline(const char* str_id)
 }
 
 
-static const float TIMELINE_RADIUS = 4.0f;
-static const float delta = 2.0f;
+
 
 qbool TimelineEvent(const char* str_id, float* values, int numVals)
 {

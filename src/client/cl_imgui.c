@@ -230,7 +230,7 @@ void GUI_AddMainMenuItem(ImGUI_MainMenu_Id menu, const char* name, const char* s
 	mm.itemCountPerMenu[menu]++;
 }
 
-void GUI_DrawMainMenu()
+void GUI_DrawMainMenu(void)
 {
 	if(igBeginMainMenuBar())
 	{
@@ -264,4 +264,3 @@ void GUI_DrawMainMenu()
 	mm.itemCount = 0;
 	memset(mm.itemCountPerMenu, 0, sizeof(mm.itemCountPerMenu));
 }
-

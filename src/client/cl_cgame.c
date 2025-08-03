@@ -533,7 +533,9 @@ static qbool CL_CG_GetValue(char* value, int valueSize, const char* key)
 		{ "trap_CNQ3_NDP_ReadUntil", CG_EXT_NDP_READUNTIL },
 		{ "trap_CNQ3_NDP_StartVideo", CG_EXT_NDP_STARTVIDEO },
 		{ "trap_CNQ3_NDP_StopVideo", CG_EXT_NDP_STOPVIDEO },
-		{ "trap_CL_AddGuiMenu", CG_ADD_IMGUI_MENU }
+		{ "trap_CL_AddGuiMenu", CG_IMGUI_ADDMENU },
+		{ "trap_IgImage", CG_IMGUI_IMAGE },
+		{ "trap_IgImageEx", CG_IMGUI_IMAGE_EX },
 	};
 
 	for (int i = 0; i < ARRAY_LEN(syscalls); ++i) {
@@ -1043,13 +1045,17 @@ int CL_CgameSystemCalls( int *args ) {
 	case CG_EXT_NDP_STOPVIDEO:
 		//CL_CloseAVI();
 		return 0;
-
-	case CG_ADD_IMGUI_MENU:
 #ifdef RTCW_VULKAN
+	case CG_IMGUI_ADDMENU:
 		GUI_AddMainMenuItem(args[1], VMA(2), VMA(3), VMA(4), args[5]);
-#endif
 		return 0;
-
+	case CG_IMGUI_IMAGE:
+		RE_GUI_Image(args[1], VMF(2), VMF(3));
+		return 0;
+	case CG_IMGUI_IMAGE_EX:
+		RE_GUI_Image_Ex(args[1], VMF(2), VMF(3), VMF(4), VMF(5), VMF(6), VMF(7));
+		return 0;
+#endif
 	default:
 		Com_Error( ERR_DROP, "Bad cgame system trap: %i", args[0] );
 	}
