@@ -26,7 +26,8 @@ target_include_directories(cimgui PRIVATE src/cimgui)
 
 target_link_libraries(renderer_vk renderer_vk_libraries renderer_libraries vk_vma_alloc)
 target_include_directories(renderer_vk PRIVATE src/renderer_vk)
-
+LIST(APPEND WOLF_COMPILE_DEF "VK_USE_PLATFORM_WIN32_KHR")
+message(STATUS "Renderer Compile defs: " ${WOLF_COMPILE_DEF})
 set_target_properties(renderer_vk PROPERTIES
 	COMPILE_DEFINITIONS "${WOLF_COMPILE_DEF}"
 	RUNTIME_OUTPUT_DIRECTORY "${WOLF_OUTPUT_DIR}"

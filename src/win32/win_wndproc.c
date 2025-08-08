@@ -305,6 +305,13 @@ LONG WINAPI MainWndProc(
 
 	switch ( uMsg )
 	{
+		// RTCWPro - raw input
+#ifndef DEDICATED
+	case WM_INPUT:
+		IN_RawInput_MouseRead((HANDLE)lParam);
+		break;
+#endif
+		// raw input end
 	case WM_MOUSEWHEEL:
 		//
 		//
@@ -422,6 +429,14 @@ LONG WINAPI MainWndProc(
 
 		if ( wParam & MK_MBUTTON ) {
 			temp |= 4;
+		}
+
+		if (wParam & MK_XBUTTON1) {
+			temp |= 8;
+		}
+
+		if (wParam & MK_XBUTTON2) {
+			temp |= 16;
 		}
 
 		IN_MouseEvent( temp );

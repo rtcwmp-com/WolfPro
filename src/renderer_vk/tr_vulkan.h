@@ -2,9 +2,10 @@
 #define TR_VULKAN_H
 //#pragma once
 
-#include <vulkan/vulkan.h>
+#include "volk.h"
 #include "tr_local.h"
-#include <vma/vk_mem_alloc.h>
+#include "volk.h"
+#include "vk_mem_alloc.h"
 #include "memorypool.h"
 
 #define GET_SEMAPHORE(handle) ((Semaphore*)Pool_Get(&vk.semaphorePool, handle.h))

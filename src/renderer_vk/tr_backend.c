@@ -590,7 +590,7 @@ void RB_UploadSceneView(const float *projectionMatrix, const float *clipPlane){
 	RHI_CmdCopyBuffer(backEnd.sceneViewGPUBuffer, 0, currentScene, backEnd.sceneViewCount * sizeof(sceneView), sizeof(sceneView));
 	
 	RHI_CmdBeginBarrier();
-	RHI_CmdBufferBarrier(backEnd.sceneViewGPUBuffer, RHI_ResourceState_UniformBufferBit);
+	RHI_CmdBufferBarrier(backEnd.sceneViewGPUBuffer, RHI_ResourceState_ShaderInputBit);
 	RHI_CmdEndBarrier();
 
 	backEnd.sceneViewCount++;
@@ -1032,6 +1032,65 @@ RB_EndFrame
 =============
 */
 
+void DrawGUI_ShaderTrace(void){
+
+	static bool breakdownActive = false;
+	ToggleBooleanWithShortcut(&breakdownActive, ImGuiKey_T, ImGUI_ShortcutOptions_Global);
+	GUI_AddMainMenuItem(ImGUI_MainMenu_Perf, "Shader Trace", "Ctrl+Shift+T", &breakdownActive, qtrue);
+	
+	if(breakdownActive){
+		if(igBegin("Shader Trace", &breakdownActive, 0)){
+			
+			uint32_t* buffer = (uint32_t*)RHI_MapBuffer(backEnd.shaderIndexReadbackBuffer);
+			uint32_t shaderIndex = buffer[backEnd.currentFrameIndex ^ 1];
+			igText("%d %d", (int)buffer[0], (int)buffer[1]);
+			RHI_UnmapBuffer(backEnd.shaderIndexReadbackBuffer);
+
+			
+			if(shaderIndex < tr.numShaders){
+				shader_t *sh = tr.shaders[shaderIndex];
+				
+				igText(sh->name);
+				igNewLine();
+				igText("Images:");
+				for(int i = 0; i < MAX_SHADER_STAGES; i++){
+					shaderStage_t *stage = sh->stages[i];
+					if(stage == NULL || !stage->active){
+						break;
+					}
+					for(int b = 0; b < 2; b++){
+						image_t *img = stage->bundle[b].image[0];
+						if(img != NULL){
+							igSelectable_Bool(img->imgName, 0, 0, (ImVec2){0.0f, 0.0f});
+							if(igIsItemHovered(ImGuiHoveredFlags_DelayShort)){
+								igText("Source: %d x %d", img->width, img->height);
+								igText("Upload: %d x %d", img->uploadWidth, img->uploadHeight);
+								igText("Mipmap: %d", (int)img->mipmap);
+								igText("Picmip: %d", (int)img->allowPicmip);
+								igText("Lightmap: %d", (int)img->lightMap);
+								if(igBeginTooltip()){
+									igImage(img->descriptorIndex, (ImVec2){img->width, img->height},(ImVec2){0.0f, 0.0f},(ImVec2){1.0f, 1.0f},(ImVec4){1.0f, 1.0f, 1.0f, 1.0f}, (ImVec4){0.0f, 0.0f, 0.0f, 1.0f});
+								
+									igEndTooltip();
+								}
+							}
+						}
+					}
+					
+				}
+				
+			}
+			igNewLine();
+			
+
+			
+		}
+		igEnd();
+		
+	}
+	
+}
+
 
 void DrawGUI_Performance(void){
 	int f = (backEnd.currentFrameIndex - 1 + RHI_FRAMES_IN_FLIGHT) % RHI_FRAMES_IN_FLIGHT;
@@ -1123,6 +1182,7 @@ const void  *RB_EndFrame( const void *data ) {
 
 	GUI_DrawMainMenu();
 	DrawGUI_Performance();
+	DrawGUI_ShaderTrace();
 	ri.CL_ImGUI_Update();
 	DrawGUI_RHI();
 
@@ -1137,7 +1197,7 @@ const void  *RB_EndFrame( const void *data ) {
 	RHI_CmdTextureBarrier(backEnd.swapChainTextures[backEnd.swapChainImageIndex], RHI_ResourceState_PresentBit);
 	RHI_CmdEndBarrier();
 
-	
+	RHI_CmdCopyBuffer(backEnd.shaderIndexReadbackBuffer, 0, backEnd.shaderIndexBuffer, 0, 8);
 	RHI_CmdEndDurationQuery(backEnd.frameDuration[backEnd.currentFrameIndex]);
 
 	RHI_EndCommandBuffer();
@@ -1290,6 +1350,7 @@ void RB_CreateGraphicsPipeline(shader_t *newShader){
 
 	qbool isMT = newShader->isMultitextured; //newShader->optimalStageIteratorFunc == RB_StageIteratorLightmappedMultitexture;
 	
+	uint32_t pcBytes = max(sizeof(pixelShaderPushConstants2), sizeof(pixelShaderPushConstants));
 	
 	
 	for(int i = 0; i < MAX_SHADER_STAGES; i++){
@@ -1309,7 +1370,7 @@ void RB_CreateGraphicsPipeline(shader_t *newShader){
 		
 
 		if(isMT){
-			graphicsDesc.pushConstants.psBytes = sizeof(pixelShaderPushConstants2);
+			graphicsDesc.pushConstants.psBytes = pcBytes;
 			graphicsDesc.vertexShader.data = generic2s_vs;
 			graphicsDesc.vertexShader.byteCount = sizeof(generic2s_vs);
 			graphicsDesc.pixelShader.data = generic2s_ps;
@@ -1338,7 +1399,7 @@ void RB_CreateGraphicsPipeline(shader_t *newShader){
 
 			
 		}else{
-			graphicsDesc.pushConstants.psBytes = sizeof(pixelShaderPushConstants2);
+			graphicsDesc.pushConstants.psBytes = pcBytes;
 			graphicsDesc.vertexShader.data = generic_vs;
 			graphicsDesc.vertexShader.byteCount = sizeof(generic_vs);
 
