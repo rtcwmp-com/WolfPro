@@ -2552,7 +2552,7 @@ void CG_OwnerDraw( float x, float y, float w, float h, float text_x, float text_
 void CG_MouseEvent( int x, int y ) {
 	int n;
 
-	if ( ( cg.predictedPlayerState.pm_type == PM_NORMAL || cg.predictedPlayerState.pm_type == PM_SPECTATOR ) && cg.showScores == qfalse ) {
+	if ( !cg.demoPlayback && ( cg.predictedPlayerState.pm_type == PM_NORMAL || cg.predictedPlayerState.pm_type == PM_SPECTATOR ) && cg.showScores == qfalse ) {
 		trap_Key_SetCatcher( 0 );
 		return;
 	}
@@ -2627,6 +2627,8 @@ void CG_EventHandling( int type ) {
 	} else if ( type == CGAME_EVENT_TEAMMENU ) {
 		//CG_ShowTeamMenu();
 	} else if ( type == CGAME_EVENT_SCOREBOARD ) {
+	} else if( type == CGAME_EVENT_DEMO){
+
 	}
 
 }

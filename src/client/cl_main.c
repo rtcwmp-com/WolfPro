@@ -97,6 +97,8 @@ cvar_t  *cl_updateavailable;
 cvar_t  *cl_updatefiles;
 // DHM - Nerve
 
+cvar_t* cl_demoPlayer;
+
 clientActive_t cl;
 clientConnection_t clc;
 clientStatic_t cls;
@@ -559,7 +561,8 @@ demo <demoname>
 
 ====================
 */
-void CL_PlayDemo_f( void ) {
+void CL_PlayDemo(qbool videoRestart)
+{
 	char name[MAX_OSPATH], extension[32];
 	char        *arg;
 
@@ -579,11 +582,11 @@ void CL_PlayDemo_f( void ) {
 
 	// open the demo file
 	arg = Cmd_Argv( 1 );
-	Com_sprintf( extension, sizeof( extension ), ".dm_%d", PROTOCOL_VERSION );
+	Com_sprintf( extension, sizeof( extension ), ".dm_%d", GAME_PROTOCOL_VERSION );
 	if ( !Q_stricmp( arg + strlen( arg ) - strlen( extension ), extension ) ) {
 		Com_sprintf( name, sizeof( name ), "demos/%s", arg );
 	} else {
-		Com_sprintf( name, sizeof( name ), "demos/%s.dm_%d", arg, PROTOCOL_VERSION );
+		Com_sprintf( name, sizeof( name ), "demos/%s.dm_%d", arg, GAME_PROTOCOL_VERSION );
 	}
 
 	FS_FOpenFileRead( name, &clc.demofile, qtrue );
@@ -605,6 +608,14 @@ void CL_PlayDemo_f( void ) {
 
 	Q_strncpyz( cls.servername, Cmd_Argv( 1 ), sizeof( cls.servername ) );
 
+	if (cl_demoPlayer->integer) {
+		//while (CL_MapDownload_Active()) {
+		//	Sys_Sleep(50);
+		//}
+		CL_NDP_PlayDemo(videoRestart);
+		return;
+	}
+
 	// read demo messages until connected
 	while ( cls.state >= CA_CONNECTED && cls.state < CA_PRIMED ) {
 		CL_ReadDemoMessage();
@@ -619,6 +630,17 @@ void CL_PlayDemo_f( void ) {
 		CL_WriteWaveClose();
 		clc.waverecording = qfalse;
 	}
+}
+
+/*
+====================
+CL_PlayDemo_f
+
+demo <demoname>
+====================
+*/
+void CL_PlayDemo_f(void) {
+	CL_PlayDemo(qfalse);
 }
 
 
@@ -1324,8 +1346,15 @@ void CL_Vid_Restart_f( void ) {
 	// startup all the client stuff
 	CL_StartHunkUsers();
 
+	// we don't really technically need to run everything again,
+	// but trying to optimize parts out is very likely to lead to nasty bugs
+	if (clc.demoplaying && clc.newDemoPlayer) {
+		Cmd_TokenizeString(va("demo \"%s\"", clc.demoName));
+		CL_PlayDemo(qtrue);
+	}
+
 	// start the cgame if connected
-	if ( cls.state > CA_CONNECTED && cls.state != CA_CINEMATIC ) {
+	else if ( cls.state > CA_CONNECTED && cls.state != CA_CINEMATIC ) {
 		cls.cgameStarted = qtrue;
 		CL_InitCGame();
 		// send pure checksums
@@ -2608,6 +2637,7 @@ void CL_InitRef( void ) {
 	#ifdef RTCW_VULKAN
 	ri.IsRecordingVideo = CL_IsRecordingVideo;
 	ri.CL_ImGUI_Update = CL_ImGUI_Update;
+	ri.CL_CG_ImGUI_Update = CL_CG_ImGUI_Update;
 	#endif
 
 	ret = GetRefAPI( REF_API_VERSION, &ri );
@@ -2771,6 +2801,9 @@ void CL_Init( void ) {
 
 	cl_motdString = Cvar_Get( "cl_motdString", "", CVAR_ROM );
 
+	cl_demoPlayer = Cvar_Get("cl_demoPlayer", "1", CVAR_ARCHIVE);
+
+
 	Cvar_Get( "cl_maxPing", "800", CVAR_ARCHIVE );
 
 	// NERVE - SMF
@@ -2893,6 +2926,9 @@ void CL_Init( void ) {
 	Cbuf_Execute();
 
 	Cvar_Set( "cl_running", "1" );
+
+	// Allow cgame to interrogate the client if it supports extensions
+	Cvar_Set("//trap_GetValue", "700");
 
 	// DHM - Nerve
 	autoupdateChecked = qfalse;

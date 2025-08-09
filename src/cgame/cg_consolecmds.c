@@ -524,7 +524,6 @@ static void CG_DumpLocation_f( void ) {
 			   (int) cg.snap->ps.origin[0], (int) cg.snap->ps.origin[1], (int) cg.snap->ps.origin[2] );
 }
 
-
 typedef struct {
 	char    *cmd;
 	void ( *function )( void );
@@ -592,17 +591,18 @@ Cmd_Argc() / Cmd_Argv()
 =================
 */
 qboolean CG_ConsoleCommand( void ) {
-	const char  *cmd;
-	int i;
+	const char* cmd = CG_Argv(0);
+
+	if (!Q_stricmp(cmd, "drawgui")) {
+		return qtrue;
+	}
 
 	// Arnout - don't allow console commands until a snapshot is present
-	if ( !cg.snap ) {
+	if ( !cg.snap) {
 		return qfalse;
 	}
 
-	cmd = CG_Argv( 0 );
-
-	for ( i = 0 ; i < sizeof( commands ) / sizeof( commands[0] ) ; i++ ) {
+	for (int i = 0 ; i < sizeof( commands ) / sizeof( commands[0] ) ; i++ ) {
 		if ( !Q_stricmp( cmd, commands[i].cmd ) ) {
 			commands[i].function();
 			return qtrue;

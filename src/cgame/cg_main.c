@@ -45,6 +45,8 @@ int autoReloadModificationCount = -1;
 void CG_Init( int serverMessageNum, int serverCommandSequence, int clientNum );
 void CG_Shutdown( void );
 
+static byte interopIn[4096];
+static byte interopOut[4096];
 
 /*
 ================
@@ -92,6 +94,27 @@ int vmMain( int command, int arg0, int arg1, int arg2, int arg3, int arg4, int a
 		return CG_GetTag( arg0, (char *)arg1, (orientation_t *)arg2 );
 	case CG_CHECKCENTERVIEW:
 		return CG_CheckCenterView();
+	case CG_NDP_ANALYZE_COMMAND:
+		CG_NDP_AnalyzeCommand(arg0);
+		return 0;
+	case CG_NDP_GENERATE_COMMANDS:
+		//item timer commands
+		//special strings to synchronize 
+		return 0;
+	case CG_NDP_IS_CS_NEEDED:
+		return 0;
+	case CG_NDP_ANALYZE_SNAPSHOT:
+		CG_NDP_AnalyzeSnapshot(arg0);
+		return 0;
+	case CG_NDP_END_ANALYSIS:
+		CG_NDP_EndAnalysis((char*)arg0, arg1, arg2, (qboolean)arg3);
+		return 0;
+	case CG_IMGUI_UPDATE:
+		CG_ImGUI_Update();
+		return 0;
+	case CG_IMGUI_SHARE:
+		CG_ImGUI_Share((void*)arg0, (void*)arg1, (void*)arg2, (void**)arg3);
+		return 0;
 	default:
 		CG_Error( "vmMain: unknown command %i", command );
 		break;
@@ -1504,6 +1527,9 @@ static void CG_RegisterGraphics( void ) {
 		cgs.media.shardJunk[i] = trap_R_RegisterModel( name );
 	}
 
+	cgs.media.exclamationIcon = trap_R_RegisterShaderNoMip("gfx/2d/treasure");
+	cgs.media.skullIcon = trap_R_RegisterShaderNoMip("gfx/2d/multi_dead");
+
 	memset( cg_items, 0, sizeof( cg_items ) );
 	memset( cg_weapons, 0, sizeof( cg_weapons ) );
 
@@ -2335,6 +2361,60 @@ void CG_ClearTrails( void );
 extern qboolean initparticles;
 void CG_ClearParticles( void );
 
+#define GET_TRAP(Name) \
+	do { \
+		rtcwPro_ext.Name = 0; \
+		if (trap_GetValue(extValue, sizeof(extValue), #Name) && \
+			sscanf(extValue, "%d", &syscallId) == 1 && \
+			syscallId != 0) { \
+			rtcwPro_ext.Name = syscallId; \
+		} \
+	} while (0)
+
+
+void CG_LoadExtensions(void) {
+
+	cgExt_t rtcwPro_ext;
+
+	int hasTrap_GetValue = trap_Cvar_VariableIntegerValue("//trap_GetValue");
+
+	if (hasTrap_GetValue == 0) {
+		// Engine extensions are not supported on the client
+		return;
+	}
+	else {
+		// Begin loading supported extensions...
+		char extValue[11];
+		int syscallId;
+
+		GET_TRAP(trap_LocateInteropData);
+		if (rtcwPro_ext.trap_LocateInteropData){
+			memset(interopIn, 0, sizeof(interopIn));
+			memset(interopOut, 0, sizeof(interopOut));
+			trap_LocateInteropData(interopIn, sizeof(interopIn), interopOut, sizeof(interopOut));
+		}
+
+		GET_TRAP(trap_CNQ3_NDP_Enable);
+		GET_TRAP(trap_CNQ3_NDP_Seek);
+		GET_TRAP(trap_CNQ3_NDP_ReadUntil);
+		GET_TRAP(trap_CNQ3_NDP_StartVideo);
+		GET_TRAP(trap_CNQ3_NDP_StopVideo);
+
+		if (rtcwPro_ext.trap_CNQ3_NDP_Enable &&
+			rtcwPro_ext.trap_CNQ3_NDP_Seek &&
+			rtcwPro_ext.trap_CNQ3_NDP_ReadUntil &&
+			rtcwPro_ext.trap_CNQ3_NDP_StartVideo &&
+			rtcwPro_ext.trap_CNQ3_NDP_StopVideo) {
+			cg.ndpDemoEnabled = trap_CNQ3_NDP_Enable();
+		}
+		else {
+			cg.ndpDemoEnabled = qfalse;
+		}
+
+		GET_TRAP(trap_CL_AddGuiMenu);
+	}
+}
+
 /*
 =================
 CG_Init
@@ -2463,6 +2543,15 @@ void CG_Init( int serverMessageNum, int serverCommandSequence, int clientNum ) {
 	}
 	// jpw
 	// -NERVE - SMF
+
+	CG_LoadExtensions();
+}
+
+static void SaveSession(void)
+{
+	float speed;
+	//What else needs to be saved? Pause states? 
+	trap_Cvar_Set("demo_SessionData", va("%d %f", m_currServerTime, cg_timescale.value ));
 }
 
 /*
@@ -2475,5 +2564,15 @@ Called before every level change or subsystem restart
 void CG_Shutdown( void ) {
 	// some mods may need to do cleanup work here,
 	// like closing files or archiving session data
+	if (cg.demoPlayback && cg.ndpDemoEnabled) {
+		ndp_myKillsSize = 0;
+		ndp_alliesWinsSize = 0;
+		ndp_axisWinsSize = 0;
+		ndp_round1EndSize = 0;
+		ndp_round2EndSize = 0;
+		ndp_docDropSize = 0;
+		ndp_docPickupSize = 0;
+		SaveSession();
+	}
 }
 

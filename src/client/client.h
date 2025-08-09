@@ -232,6 +232,7 @@ typedef struct {
 	qboolean demowaiting;       // don't record until a non-delta message is received
 	qboolean firstDemoFrameSkipped;
 	fileHandle_t demofile;
+	qboolean newDemoPlayer;
 
 	qboolean waverecording;
 	fileHandle_t wavefile;
@@ -291,6 +292,25 @@ typedef struct {
 } serverAddress_t;
 
 #define MAX_AUTOUPDATE_SERVERS  5
+
+// CGame VM calls that are extensions
+enum {
+	CGVM_NDP_END_ANALYSIS,
+	CGVM_NDP_ANALYZE_SNAPSHOT,
+	CGVM_NDP_ANALYZE_COMMAND,
+	CGVM_NDP_GENERATE_COMMANDS, // generate synchronization commands
+	CGVM_NDP_IS_CS_NEEDED,      // does this config string need to be re-submitted?
+	CGVM_COUNT
+};
+
+// UI VM calls that are extensions
+enum {
+	UIVM_ERROR_CALLBACK, // forward errors to UI?
+	UIVM_COUNT
+};
+
+typedef void* (*ImGuiMemAllocFunc)(size_t sz, void* user_data);
+typedef void (*ImGuiMemFreeFunc)(void* ptr, void* user_data);
 typedef struct {
 	connstate_t state;              // connection status
 	int keyCatchers;                // bit flags
@@ -348,6 +368,23 @@ typedef struct {
 	qhandle_t whiteShader;
 	qhandle_t consoleShader;
 	qhandle_t consoleShader2;       // NERVE - SMF - merged from WolfSP
+
+	// extensions VM calls indices
+	// 0 when not available
+	int			cgvmCalls[CGVM_COUNT];
+	int			uivmCalls[UIVM_COUNT];
+
+	// extension: new demo player supported by the mod
+	qbool		cgameNewDemoPlayer;
+
+	qbool cgameImGUI;
+	
+	void *igContext;
+	
+	ImGuiMemAllocFunc igAlloc;
+	ImGuiMemFreeFunc igFree;
+	char igUser[2048][2048];
+	
 } clientStatic_t;
 
 extern clientStatic_t cls;
@@ -413,6 +450,8 @@ extern cvar_t  *cl_waitForFire;
 // NERVE - SMF - localization
 extern cvar_t  *cl_language;
 // -NERVE - SMF
+
+extern cvar_t* cl_demoPlayer;
 
 //=================================================
 
@@ -620,6 +659,12 @@ void CL_SetCGameTime( void );
 void CL_FirstSnapshot( void );
 void CL_ShaderStateChanged( void );
 void CL_UpdateLevelHunkUsage( void );
+void CL_ConfigstringModified(void);
+void CL_CGNDP_EndAnalysis(const char* filePath, int firstServerTime, int lastServerTime, qbool videoRestart);
+qbool CL_CGNDP_AnalyzeSnapshot(int progress); // qtrue when a server pause is active
+void CL_CGNDP_AnalyzeCommand(int serverTime);
+void CL_CGNDP_GenerateCommands(const char** commands, int* numCommandBytes);
+qbool CL_CGNDP_IsConfigStringNeeded(int csIndex);
 //
 // cl_ui.c
 //
@@ -744,5 +789,22 @@ extern cvar_t* cl_StreamingSelfSignedCert;
 #ifdef RTCW_VULKAN
 void CL_GetSnapshotInfo(void);
 void CL_ImGUI_Update(void);
+void CL_CG_ImGUI_Update(void);
 #endif
+
+//
+// cl_demo.c
+//
+void CL_NDP_PlayDemo(qbool videoRestart);
+void CL_NDP_SetCGameTime(void);
+void CL_NDP_GetCurrentSnapshotNumber(int* snapshotNumber, int* serverTime);
+qbool CL_NDP_GetSnapshot(int snapshotNumber, snapshot_t* snapshot);
+qbool CL_NDP_GetServerCommand(int serverCommandNumber);
+int CL_NDP_Seek(int serverTime);
+void CL_NDP_ReadUntil(int serverTime);
+void CL_NDP_HandleError(void);
+
+qboolean CL_CG_ImGUI_Support(void);
+void CL_CG_ImGUI_Share(void);
+
 #endif

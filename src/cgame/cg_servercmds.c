@@ -98,6 +98,9 @@ CG_ParseTeamInfo
 =================
 */
 static void CG_ParseTeamInfo( void ) {
+	if(cg.demoPlayback){
+		return;
+	}
 	int i;
 	int client;
 

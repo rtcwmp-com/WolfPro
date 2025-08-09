@@ -249,3 +249,26 @@ void RE_DrawMainMenuBarInfo(void)
 	//igSameLine(offset);
 	igText(info);
 }
+
+
+void RE_GUI_Image(qhandle_t handle, float x, float y){
+    shader_t *result = R_GetShaderByHandle(handle);
+    if(result->stages[0] != NULL && result->stages[0]->active){
+        image_t *image = result->stages[0]->bundle[0].image[0];
+        if(image != NULL){
+            igImage((ImTextureID)image->descriptorIndex, (ImVec2){x, y}, (ImVec2){0.0f, 0.0f},
+                     (ImVec2){1.0f, 1.0f}, (ImVec4){1.0f, 1.0f, 1.0f, 1.0f}, (ImVec4){1.0f, 1.0f, 1.0f, 0.0f});
+        }
+    }
+}
+
+void RE_GUI_Image_Ex(qhandle_t handle, float x, float y, float s1, float t1, float s2, float t2){
+    shader_t *result = R_GetShaderByHandle(handle);
+    if(result->stages[0] != NULL && result->stages[0]->active){
+        image_t *image = result->stages[0]->bundle[0].image[0];
+        if(image != NULL){
+            igImage((ImTextureID)image->descriptorIndex, (ImVec2){x, y}, (ImVec2){s1, t1},
+                     (ImVec2){s2, t2}, (ImVec4){1.0f, 1.0f, 1.0f, 1.0f}, (ImVec4){1.0f, 1.0f, 1.0f, 0.0f});
+        }
+    }
+}

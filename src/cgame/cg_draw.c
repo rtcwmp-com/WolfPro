@@ -2306,7 +2306,7 @@ static void CG_ActivateLimboMenu( void ) {
 	qboolean test;
 	char buf[32];
 
-	if ( cgs.gametype < GT_WOLF ) {
+	if ( cgs.gametype < GT_WOLF || cg.demoPlayback ) {
 		return;
 	}
 
