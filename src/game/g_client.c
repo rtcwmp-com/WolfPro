@@ -1128,7 +1128,7 @@ void SetWolfSpawnWeapons( gclient_t *client ) {
 ClientCheckName
 ============
 */
-static void ClientCleanName( const char *in, char *out, int outSize ) {
+void G_ClientCleanName( const char *in, char *out, int outSize ) {
 	int len, colorlessLen;
 	char ch;
 	char    *p;
@@ -1403,7 +1403,7 @@ void ClientUserinfoChanged( int clientNum ) {
 	// set name
 	Q_strncpyz( oldname, client->pers.netname, sizeof( oldname ) );
 	s = Info_ValueForKey( userinfo, "name" );
-	ClientCleanName( s, client->pers.netname, sizeof( client->pers.netname ) );
+	G_ClientCleanName( s, client->pers.netname, sizeof( client->pers.netname ) );
 
 	if ( client->sess.sessionTeam == TEAM_SPECTATOR ) {
 		if ( client->sess.spectatorState == SPECTATOR_SCOREBOARD ) {
