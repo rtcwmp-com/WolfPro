@@ -1,7 +1,9 @@
 #define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
 #ifndef __CL_IMGUI__
 #include "../cimgui/cimgui.h"
-#include "client.h"
+#include "../game/q_shared.h"
+
+
 
 
 
@@ -21,6 +23,31 @@ typedef enum ImGUI_MainMenu_Id
 
 #undef M
 
+#define M(Enum, Desc) Desc,
+static const char* mainMenuNames[ImGUI_MainMenu_Count + 1] =
+{
+	MAIN_MENU_LIST(M)
+	""
+};
+#undef M
+
+typedef struct MainMenuItem
+{
+	ImGUI_MainMenu_Id menu;
+	const char* name;
+	const char* shortcut;
+	bool* selected;
+	bool enabled;
+} MainMenuItem;
+
+typedef struct MainMenu
+{
+	MainMenuItem items[64];
+	int itemCount;
+	int itemCountPerMenu[ImGUI_MainMenu_Count]; // effectively a histogram
+} MainMenu;
+
+
 typedef enum ImGUI_ShortcutOptions
 {
 	ImGUI_ShortcutOptions_None = 0,
@@ -29,7 +56,7 @@ typedef enum ImGUI_ShortcutOptions
 } ImGUI_ShortcutOptions;
 
 void GUI_AddMainMenuItem(ImGUI_MainMenu_Id menu, const char* item, const char* shortcut, qbool* selected, qbool enabled);
-void GUI_DrawMainMenu();
+void GUI_DrawMainMenu(void);
 void ToggleBooleanWithShortcut(qbool *value, ImGuiKey key, ImGUI_ShortcutOptions flags);
 qbool IsShortcutPressed(ImGuiKey key, ImGUI_ShortcutOptions flags);
 

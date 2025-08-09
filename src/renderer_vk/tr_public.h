@@ -193,6 +193,7 @@ typedef struct {
 
 	qbool (*IsRecordingVideo)(void);
 	void (*CL_ImGUI_Update)(void);
+	void (*CL_CG_ImGUI_Update)(void);
 
 	
 
@@ -205,5 +206,7 @@ typedef struct {
 refexport_t*GetRefAPI( int apiVersion, refimport_t *rimp );
 
 void RE_DrawMainMenuBarInfo(void);
+void RE_GUI_Image(qhandle_t handle, float x, float y);
+void RE_GUI_Image_Ex(qhandle_t handle, float x, float y, float s1, float t1, float s2, float t2);
 
 #endif  // __TR_PUBLIC_H

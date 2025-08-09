@@ -701,13 +701,9 @@ Ket_SetCatcher
 ====================
 */
 void Key_SetCatcher( int catcher ) {
-	// NERVE - SMF - console overrides everything
-	if ( cls.keyCatchers & KEYCATCH_CONSOLE ) {
-		cls.keyCatchers = catcher | KEYCATCH_CONSOLE;
-	} else {
-		cls.keyCatchers = catcher;
-	}
+	int guiConsoleMask = cls.keyCatchers & (KEYCATCH_IMGUI | KEYCATCH_CONSOLE);
 
+	cls.keyCatchers = catcher | guiConsoleMask;
 }
 
 

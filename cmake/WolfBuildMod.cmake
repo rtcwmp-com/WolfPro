@@ -17,7 +17,7 @@ endif(UNIX)
 #
 if(BUILD_CLIENT_MOD)
 	add_library(cgame MODULE ${CGAME_SRC})
-	target_link_libraries(cgame cgame_libraries mod_libraries)
+	target_link_libraries(cgame cgame_libraries mod_libraries cimgui)
 
 	set_target_properties(cgame
 		PROPERTIES
