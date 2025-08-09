@@ -33,6 +33,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "q_shared.h"
 #include "bg_public.h"
 #include "g_public.h"
+#include "g_unlagged.h"
 
 //==================================================================
 
@@ -513,6 +514,8 @@ typedef struct {
 
 	//Competition
 	qboolean ready;
+
+	int antilag;
 } clientPersistant_t;
 
 typedef struct {
@@ -529,6 +532,42 @@ typedef struct {
 
 #define LT_SPECIAL_PICKUP_MOD   3       // JPW NERVE # of times (minus one for modulo) LT must drop ammo before scoring a point
 #define MEDIC_SPECIAL_PICKUP_MOD    4   // JPW NERVE same thing for medic
+
+//unlagged - backward reconciliation #1
+// the size of history we'll keep
+#define NUM_CLIENT_HISTORY 17
+
+// everything we need to know to backward reconcile
+typedef struct {
+	vec3_t		mins, maxs;
+	vec3_t		currentOrigin;
+	int			leveltime;
+	//clientAnimationInfo_t animInfo;
+} clientHistory_t;
+
+typedef struct unlagged_s {
+	//unlagged - backward reconciliation #1
+	// the serverTime the button was pressed
+	// (stored before pmove_fixed changes serverTime)
+	int attackTime;
+	// the head of the history queue
+	int	historyHead;
+	// the history queue
+	clientHistory_t	history[NUM_CLIENT_HISTORY];
+	// the client's saved position
+	clientHistory_t	saved;			// used to restore after time shift
+	// an approximation of the actual server time we received this
+	// command (not in 50ms increments)
+	int			frameOffset;
+//unlagged - backward reconciliation #1
+
+	//unlagged - smooth clients #1
+	// the last frame number we got an update from this client
+	int			lastUpdateFrame;
+	//unlagged - smooth clients #1
+	qboolean        spawnprotected;
+} unlagged_t;
+
 
 // this structure is cleared on each ClientSpawn(),
 // except for 'client->pers' and 'client->sess'
@@ -628,6 +667,8 @@ struct gclient_s {
 	gentity_t       *tempHead;  // Gordon: storing a temporary head for bullet head shot detection
 
 	pmoveExt_t pmext;
+
+	unlagged_t unlag;
 };
 
 
@@ -1141,6 +1182,10 @@ float AngleDifference( float ang1, float ang2 );
 // g_props.c
 void Props_Chair_Skyboxtouch( gentity_t *ent );
 
+//g_unlagged.c
+void G_DoTimeShiftFor( gentity_t *ent );
+void G_UndoTimeShiftFor( gentity_t *ent );
+
 #include "g_team.h" // teamplay specific stuff
 
 
@@ -1256,6 +1301,12 @@ extern vmCvar_t g_swapteams;
 extern vmCvar_t g_antilag;
 
 extern vmCvar_t g_dbgRevive;
+
+extern vmCvar_t g_floatPlayerPosition;
+extern vmCvar_t g_delagHitscan;
+extern vmCvar_t g_maxExtrapolatedFrames;
+extern vmCvar_t g_maxLagCompensation;
+extern vmCvar_t g_delagMissiles;
 
 void    trap_Printf( const char *fmt );
 void    trap_Error( const char *fmt );

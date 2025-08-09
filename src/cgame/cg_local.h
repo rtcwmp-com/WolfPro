@@ -1781,6 +1781,8 @@ extern vmCvar_t cg_descriptiveText;
 extern vmCvar_t cg_autoReload;
 extern vmCvar_t cg_antilag;
 
+extern vmCvar_t cg_uinfo;
+
 //
 // cg_main.c
 //

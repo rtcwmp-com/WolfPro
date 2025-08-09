@@ -171,6 +171,13 @@ vmCvar_t match_readypercent;
 vmCvar_t match_latejoin;
 vmCvar_t match_warmupDamage;
 
+ // unlagged
+vmCvar_t g_floatPlayerPosition;
+vmCvar_t g_delagHitscan;
+vmCvar_t g_maxExtrapolatedFrames;
+vmCvar_t g_maxLagCompensation;
+vmCvar_t g_delagMissiles;
+
 cvarTable_t gameCvarTable[] = {
 	// don't override the cheat state set by the system
 	{ &g_cheats, "sv_cheats", "", 0, qfalse },
@@ -312,7 +319,13 @@ cvarTable_t gameCvarTable[] = {
 	{ &match_timeoutcount, "match_timeoutcount", "3", 0, 0, qfalse, qtrue },
 	{ &match_readypercent, "match_readypercent", "100", 0, 0, qfalse, qtrue },
 	{ &match_latejoin, "match_latejoin", "1", 0, 0, qfalse, qfalse },
-	{ &match_warmupDamage, "match_warmupDamage", "1", 0, 0, qfalse }
+	{ &match_warmupDamage, "match_warmupDamage", "1", 0, 0, qfalse }, 
+
+	// unlagged
+	{ &g_delagHitscan, "g_delagHitscan", "1", CVAR_ARCHIVE | CVAR_SERVERINFO, 0, qtrue },
+	{ &g_maxExtrapolatedFrames, "g_maxExtrapolatedFrames", "2", 0 , 0, qfalse },
+	{ &g_maxLagCompensation, "g_maxLagCompensation", "500", CVAR_ARCHIVE | CVAR_SERVERINFO, 0, qtrue },
+	{ &g_delagMissiles, "g_delagMissiles", "0", CVAR_ARCHIVE | CVAR_SERVERINFO, 0, qtrue }
 };
 
 // bk001129 - made static to avoid aliasing

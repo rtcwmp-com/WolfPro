@@ -1592,8 +1592,18 @@ Bullet_Fire
 void Bullet_Fire( gentity_t *ent, float spread, int damage ) {
 	vec3_t end;
 
+	if (ent->client && (ent->client->pers.antilag) && g_antilag.integer == 2) 
+	{
+		G_DoTimeShiftFor(ent);
+	}
+
 	Bullet_Endpos( ent, spread, &end );
 	Bullet_Fire_Extended( ent, ent, muzzleTrace, end, spread, damage );
+
+	if (ent->client && (ent->client->pers.antilag) && g_antilag.integer == 2)
+	{
+		G_UndoTimeShiftFor(ent);
+	}
 }
 
 
@@ -1943,6 +1953,12 @@ void VenomPattern( vec3_t origin, vec3_t origin2, int seed, gentity_t *ent ) {
 
 	oldScore = ent->client->ps.persistant[PERS_SCORE];
 
+	
+	if (ent->client && (ent->client->pers.antilag) && g_antilag.integer == 2) 
+	{
+		G_DoTimeShiftFor(ent);
+	}
+
 	// generate the "random" spread pattern
 	for ( i = 0 ; i < DEFAULT_VENOM_COUNT ; i++ ) {
 		r = Q_crandom( &seed ) * DEFAULT_VENOM_SPREAD;
@@ -1954,6 +1970,11 @@ void VenomPattern( vec3_t origin, vec3_t origin2, int seed, gentity_t *ent ) {
 			hitClient = qtrue;
 			ent->client->ps.persistant[PERS_ACCURACY_HITS]++;
 		}
+	}
+
+	if (ent->client && (ent->client->pers.antilag) && g_antilag.integer == 2)
+	{
+		G_UndoTimeShiftFor(ent);
 	}
 }
 
