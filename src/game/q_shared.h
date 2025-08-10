@@ -504,7 +504,20 @@ extern vec4_t colorDkGrey;
 #define COLOR_CYAN      '5'
 #define COLOR_MAGENTA   '6'
 #define COLOR_WHITE     '7'
-#define ColorIndex( c )   ( ( ( c ) - '0' ) & 7 )
+#define COLOR_ORANGE    '8'
+#define COLOR_MDGREY    '9'
+#define COLOR_LTGREY    ':'
+#define COLOR_MDGREEN   '<'
+#define COLOR_MDYELLOW  '='
+#define COLOR_MDBLUE    '>'
+#define COLOR_MDRED     '?'
+#define COLOR_LTORANGE  'A'
+#define COLOR_MDCYAN    'B'
+#define COLOR_MDPURPLE  'C'
+#define COLOR_NULL      '*'
+
+#define COLOR_BITS  31
+#define ColorIndex( c )   ( ( ( c ) - '0' ) & COLOR_BITS )
 
 #define S_COLOR_BLACK   "^0"
 #define S_COLOR_RED     "^1"
@@ -514,8 +527,19 @@ extern vec4_t colorDkGrey;
 #define S_COLOR_CYAN    "^5"
 #define S_COLOR_MAGENTA "^6"
 #define S_COLOR_WHITE   "^7"
+#define S_COLOR_ORANGE      "^8"
+#define S_COLOR_MDGREY      "^9"
+#define S_COLOR_LTGREY      "^:"
+#define S_COLOR_MDGREEN     "^<"
+#define S_COLOR_MDYELLOW    "^="
+#define S_COLOR_MDBLUE      "^>"
+#define S_COLOR_MDRED       "^?"
+#define S_COLOR_LTORANGE    "^A"
+#define S_COLOR_MDCYAN      "^B"
+#define S_COLOR_MDPURPLE    "^C"
+#define S_COLOR_NULL        "^*"
 
-extern vec4_t g_color_table[8];
+extern vec4_t g_color_table[32];
 
 #define MAKERGB( v, r, g, b ) v[0] = r; v[1] = g; v[2] = b
 #define MAKERGBA( v, r, g, b, a ) v[0] = r; v[1] = g; v[2] = b; v[3] = a
