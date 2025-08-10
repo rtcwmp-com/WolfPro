@@ -325,6 +325,8 @@ vmCvar_t cg_customCrosshairColor;
 vmCvar_t cg_customCrosshairColorAlt;
 vmCvar_t cg_customCrosshairVMirror;
 
+vmCvar_t cg_uinfo;
+
 typedef struct {
 	vmCvar_t    *vmCvar;
 	char        *cvarName;
@@ -541,7 +543,9 @@ cvarTable_t cvarTable[] = {
 	{ &cg_customCrosshairYOffset, "cg_customCrosshairYOffset", "0", CVAR_ARCHIVE },
 	{ &cg_customCrosshairXGap, "cg_customCrosshairXGap", "0", CVAR_ARCHIVE },
 	{ &cg_customCrosshairYGap, "cg_customCrosshairYGap", "0", CVAR_ARCHIVE },
-	{ &cg_customCrosshairVMirror, "cg_customCrosshairVMirror", "1", CVAR_ARCHIVE }
+	{ &cg_customCrosshairVMirror, "cg_customCrosshairVMirror", "1", CVAR_ARCHIVE }, 
+
+	{ &cg_uinfo, "cg_uinfo", "0", CVAR_ROM | CVAR_USERINFO }
 };
 int cvarTableSize = sizeof( cvarTable ) / sizeof( cvarTable[0] );
 
@@ -593,6 +597,38 @@ static void CG_ForceModelChange( void ) {
 	}
 }
 
+void CG_setClientFlags(void) {
+
+	if (cg.demoPlayback) {
+		return;
+	}
+
+	cg.pmext.bAutoReload = (cg_autoReload.integer > 0);
+	trap_Cvar_Set("cg_uinfo", va("%d",
+		// // Client Flags
+		// (
+		// 	((cg_autoReload.integer > 0) ? CGF_AUTORELOAD : 0) |
+		// 	((cg_autoAction.integer & AA_STATSDUMP) ? CGF_STATSDUMP : 0) |
+		// 	((cg_autoactivate.integer > 0) ? CGF_AUTOACTIVATE : 0) |
+		// 	((cg_predictItems.integer > 0) ? CGF_PREDICTITEMS : 0)
+		// 	// Add more in here, as needed
+		// ),
+
+		// // Timenudge
+		// int_cl_timenudge.integer,
+		// // MaxPackets
+		// int_cl_maxpackets.integer,
+		// // hitsounds
+		// cg_hitsounds.integer,
+		// cg_hitsoundBodyStyle.integer,
+		// cg_hitsoundHeadStyle.integer,
+		// // GUID
+		// str_cl_guid.string,
+		// Antilag
+		cg_antilag.integer
+	));
+}
+
 /*
 =================
 CG_UpdateCvars
@@ -620,6 +656,8 @@ void CG_UpdateCvars( void ) {
 		}
 		autoReloadModificationCount = cg_autoReload.modificationCount;
 	}
+
+	CG_setClientFlags();
 }
 
 

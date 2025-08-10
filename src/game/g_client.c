@@ -1374,6 +1374,10 @@ void ClientUserinfoChanged( int clientNum ) {
 		client->pers.localClient = qtrue;
 	}
 
+		s = Info_ValueForKey(userinfo, "cg_uinfo");
+	sscanf(s, "%i", &client->pers.antilag);
+
+
 	// check the item prediction
 	s = Info_ValueForKey( userinfo, "cg_predictItems" );
 	if ( !atoi( s ) ) {
@@ -2051,9 +2055,6 @@ void ClientSpawn( gentity_t *ent, qboolean revived ) {
 
 	// clear entity state values
 	BG_PlayerStateToEntityState( &client->ps, &ent->s, qtrue );
-
-	// show_bug.cgi?id=569
-	G_ResetMarkers( ent );
 }
 
 

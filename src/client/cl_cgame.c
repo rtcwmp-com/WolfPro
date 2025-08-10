@@ -1364,6 +1364,75 @@ void CL_FirstSnapshot( void ) {
 
 /*
 ==================
+CL_AvgPing
+Calculates Average Ping from snapshots in buffer. Used by AutoNudge.
+==================
+*/
+static float CL_AvgPing( void ) {
+	int ping[PACKET_BACKUP];
+	int count = 0;
+	float result;
+
+	for (int i = 0; i < PACKET_BACKUP; i++ ) {
+		if ( cl.snapshots[i].ping > 0 && cl.snapshots[i].ping < 999 ) {
+			ping[count] = cl.snapshots[i].ping;
+			count++;
+		}
+	}
+
+	if ( count == 0 )
+		return 0;
+
+	// sort ping array
+	int iTemp;
+	for (int i = count - 1; i > 0; --i ) {
+		for (int j = 0; j < i; ++j ) {
+			if (ping[j] > ping[j + 1]) {
+				iTemp = ping[j];
+				ping[j] = ping[j + 1];
+				ping[j + 1] = iTemp;
+			}
+		}
+	}
+
+	// use median average ping
+	if ( (count % 2) == 0 )
+		result = (ping[count / 2] + ping[(count / 2) - 1]) / 2.0f;
+	else
+		result = ping[count / 2];
+
+	return result;
+}
+
+
+/*
+==================
+CL_TimeNudge
+Returns either auto-nudge or cl_timeNudge value.
+==================
+*/
+static int CL_TimeNudge( void ) {
+	float autoNudge = Com_Clamp(0.0f, 1.0f, cl_autoNudge->value);
+	
+	if ( autoNudge != 0.0f ) {
+		return (int)((CL_AvgPing() * autoNudge) + 0.5f) * -1;
+	}
+	else {
+		int tn = cl_timeNudge->integer;
+		if (tn < -30) {
+			tn = -30;
+		}
+		else if (tn > 30) {
+			tn = 30;
+		}
+		return tn;
+	}
+}
+
+
+
+/*
+==================
 CL_SetCGameTime
 ==================
 */
@@ -1427,7 +1496,7 @@ void CL_SetCGameTime( void ) {
 		// cl_timeNudge is a user adjustable cvar that allows more
 		// or less latency to be added in the interest of better
 		// smoothness or better responsiveness.
-		int tn;
+		/*int tn;
 
 		tn = cl_timeNudge->integer;
 		if ( tn < -30 ) {
@@ -1436,7 +1505,8 @@ void CL_SetCGameTime( void ) {
 			tn = 30;
 		}
 
-		cl.serverTime = cls.realtime + cl.serverTimeDelta - tn;
+	cl.serverTime = cls.realtime + cl.serverTimeDelta - tn;*/
+	cl.serverTime = cls.realtime + cl.serverTimeDelta - CL_TimeNudge();
 
 		// guarantee that time will never flow backwards, even if
 		// serverTimeDelta made an adjustment or cl_timeNudge was changed
