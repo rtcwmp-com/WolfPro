@@ -1592,8 +1592,18 @@ Bullet_Fire
 void Bullet_Fire( gentity_t *ent, float spread, int damage ) {
 	vec3_t end;
 
+	if (ent->client && (ent->client->pers.antilag) && g_antilag.integer == 2) 
+	{
+		G_DoTimeShiftFor(ent);
+	}
+
 	Bullet_Endpos( ent, spread, &end );
 	Bullet_Fire_Extended( ent, ent, muzzleTrace, end, spread, damage );
+
+	if (ent->client && (ent->client->pers.antilag) && g_antilag.integer == 2)
+	{
+		G_UndoTimeShiftFor(ent);
+	}
 }
 
 
@@ -1610,10 +1620,27 @@ void Bullet_Fire_Extended( gentity_t *source, gentity_t *attacker, vec3_t start,
 	trace_t tr;
 	gentity_t   *tent;
 	gentity_t   *traceEnt;
-
+	vec3_t dir;
+	int res;
 	damage *= s_quadFactor;
 
-	G_HistoricalTrace( source, &tr, start, NULL, NULL, end, source->s.number, MASK_SHOT );
+	//G_HistoricalTrace( source, &tr, start, NULL, NULL, end, source->s.number, MASK_SHOT );
+	G_AttachBodyParts( source ) ;
+
+	trap_Trace( &tr, start, NULL, NULL, end, source->s.number, MASK_SHOT );
+	
+	res = G_SwitchBodyPartEntity( &g_entities[tr.entityNum] );
+
+
+	if ( res != tr.entityNum ) {							 
+		VectorSubtract( end, start, dir );						  
+		VectorNormalizeFast( dir );								  
+																	
+		VectorMA( tr.endpos, -1, dir, tr.endpos );	  
+		tr.entityNum = res;								
+	}
+
+	G_DettachBodyParts();
 
 	// DHM - Nerve :: only in single player
 	if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
@@ -1943,6 +1970,12 @@ void VenomPattern( vec3_t origin, vec3_t origin2, int seed, gentity_t *ent ) {
 
 	oldScore = ent->client->ps.persistant[PERS_SCORE];
 
+	
+	if (ent->client && (ent->client->pers.antilag) && g_antilag.integer == 2) 
+	{
+		G_DoTimeShiftFor(ent);
+	}
+
 	// generate the "random" spread pattern
 	for ( i = 0 ; i < DEFAULT_VENOM_COUNT ; i++ ) {
 		r = Q_crandom( &seed ) * DEFAULT_VENOM_SPREAD;
@@ -1954,6 +1987,11 @@ void VenomPattern( vec3_t origin, vec3_t origin2, int seed, gentity_t *ent ) {
 			hitClient = qtrue;
 			ent->client->ps.persistant[PERS_ACCURACY_HITS]++;
 		}
+	}
+
+	if (ent->client && (ent->client->pers.antilag) && g_antilag.integer == 2)
+	{
+		G_UndoTimeShiftFor(ent);
 	}
 }
 
