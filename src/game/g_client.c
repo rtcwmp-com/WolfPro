@@ -2055,9 +2055,6 @@ void ClientSpawn( gentity_t *ent, qboolean revived ) {
 
 	// clear entity state values
 	BG_PlayerStateToEntityState( &client->ps, &ent->s, qtrue );
-
-	// show_bug.cgi?id=569
-	G_ResetMarkers( ent );
 }
 
 

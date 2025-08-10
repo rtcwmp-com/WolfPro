@@ -831,6 +831,7 @@ typedef struct {
 	int dwBlueReinfOffset;	// Reinforcements offset
 	int dwRedReinfOffset;	// Reinforcements offset
 
+	int frameStartTime;
 } level_locals_t;
 
 extern qboolean reloading;                  // loading up a savegame
@@ -1185,6 +1186,9 @@ void Props_Chair_Skyboxtouch( gentity_t *ent );
 //g_unlagged.c
 void G_DoTimeShiftFor( gentity_t *ent );
 void G_UndoTimeShiftFor( gentity_t *ent );
+void G_DettachBodyParts(void);
+void G_AttachBodyParts( gentity_t* ent );
+int G_SwitchBodyPartEntity( gentity_t* ent );
 
 #include "g_team.h" // teamplay specific stuff
 

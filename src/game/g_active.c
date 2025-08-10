@@ -814,6 +814,11 @@ void ClientThink_real( gentity_t *ent ) {
 
 	ent->client->ps.identifyClient = ucmd->identClient;     // NERVE - SMF
 
+	client->unlag.frameOffset = trap_Milliseconds() - level.frameStartTime;
+	client->unlag.attackTime = ucmd->serverTime;
+	client->unlag.lastUpdateFrame = level.framenum;
+
+
 // JPW NERVE -- update counter for capture & hold display
 	if ( g_gametype.integer == GT_WOLF_CPH ) {
 		client->ps.stats[STAT_CAPTUREHOLD_RED] = level.capturetimes[TEAM_RED];
@@ -1160,9 +1165,6 @@ void ClientThink_real( gentity_t *ent ) {
 
 	// NOTE: now copy the exact origin over otherwise clients can be snapped into solid
 	VectorCopy( ent->client->ps.origin, ent->r.currentOrigin );
-
-	// store the client's current position for antilag traces
-	G_StoreClientPosition( ent );
 
 	// touch other objects
 	ClientImpacts( ent, &pm );

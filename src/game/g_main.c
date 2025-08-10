@@ -2868,6 +2868,8 @@ void G_RunFrame( int levelTime ) {
 
 	// Ridah, check if we are reloading, and times have expired
 	CheckReloadStatus();
+
+	level.frameStartTime = trap_Milliseconds();
 }
 
 
