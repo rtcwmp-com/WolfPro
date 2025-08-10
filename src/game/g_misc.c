@@ -1581,7 +1581,22 @@ void Fire_Lead( gentity_t *ent, gentity_t *activator, float spread, int damage )
 	VectorMA( end, r, right, end );
 	VectorMA( end, u, up, end );
 
+	vec3_t dir;
+	int res;
+	
+	G_AttachBodyParts( ent ) ;
+
 	trap_Trace(&tr, muzzle, NULL, NULL, end, ent->s.number, MASK_SHOT );
+
+	if ( res != tr.entityNum ) {							 
+		VectorSubtract( end, muzzle, dir );						  
+		VectorNormalizeFast( dir );								  
+																	
+		VectorMA( tr.endpos, -1, dir, tr.endpos );	  
+		tr.entityNum = res;								
+	}
+
+	G_DettachBodyParts();
 
 	if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
 		AICast_ProcessBullet( activator, muzzle, tr.endpos );
