@@ -1045,6 +1045,7 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 void AddScore( gentity_t *ent, int score );
 void CalculateRanks( void );
 qboolean SpotWouldTelefrag( gentity_t *spot );
+void G_ClientCleanName( const char *in, char *out, int outSize );
 
 //
 // g_svcmds.c
@@ -1545,6 +1546,7 @@ void    trap_BotResetWeaponState( int weaponstate );
 int     trap_GeneticParentsAndChildSelection( int numranks, float *ranks, int *parent1, int *parent2, int *child );
 
 void    trap_SnapVector( float *v );
+void    trap_Cmd_ArgsFrom(int arg, char *buffer, int buffersize);
 
 typedef enum
 {
