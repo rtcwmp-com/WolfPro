@@ -886,7 +886,7 @@ void ClientThink_real( gentity_t *ent ) {
 		return;
 	}
 
-if ( ( client->ps.eFlags & EF_VIEWING_CAMERA ) || level.paused != PAUSE_NONE ) {
+	if ( ( client->ps.eFlags & EF_VIEWING_CAMERA ) || level.paused != PAUSE_NONE ) {
 		ucmd->buttons = 0;
 		ucmd->forwardmove = 0;
 		ucmd->rightmove = 0;
@@ -1483,6 +1483,13 @@ extern vec3_t playerMins, playerMaxs;
 void WolfRevivePushEnt( gentity_t *self, gentity_t *other ) {
 	vec3_t dir, push;
 
+	if (self->client && other->client) {
+		// no push in pause state
+		if (self->client->ps.pm_type == PM_FREEZE || other->client->ps.pm_type == PM_FREEZE) {
+			return;
+		}
+	}
+
 	VectorSubtract( self->r.currentOrigin, other->r.currentOrigin, dir );
 	dir[2] = 0;
 	VectorNormalizeFast( dir );
@@ -1537,6 +1544,10 @@ void WolfReviveBbox( gentity_t *self ) {
 
 					// Reset value so we don't continue to warp them
 					self->props_frame_state = -1;
+
+					// reset push velocity, otherwise player will fly away if is velocity too strong
+					VectorClear(self->s.pos.trDelta);
+					VectorClear(self->client->ps.velocity);
 				}
 			} else if ( hit->health > 0 ) {
 				if ( hit->s.number != self->s.number ) {

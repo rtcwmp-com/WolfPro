@@ -3597,7 +3597,7 @@ static void CG_PausePrint( void ) {
 
 	if (cgs.match_paused == PAUSE_ON) {
 		s = va("%s", CG_TranslateString("^nMatch is Paused!"));
-		s2 = va("%s", CG_TranslateString(va("Timeout expires in ^n%i ^7seconds", cgs.match_resumes - cgs.pause_elapsed)));
+		s2 = va("%s", CG_TranslateString(va("Match resumes in ^n%i ^7seconds", cgs.match_resumes - cgs.pause_elapsed)));
 
 		color[3] = fabs(sin(cg.time * 0.001)) * cg_hudAlpha.value;
 
@@ -3607,7 +3607,7 @@ static void CG_PausePrint( void ) {
 		}
 	}
 	else if (cgs.match_paused == PAUSE_RESUMING) {
-		s = va("%s", CG_TranslateString("^3Prepare to fight!"));
+		s = va("%s", CG_TranslateString("^3Get Psyched!"));
 		if (cgs.pause_elapsed < 10) {
 			s2 = va("%s", CG_TranslateString(va("Resuming Match in ^3%d", 10 - cgs.pause_elapsed)));
 		}
