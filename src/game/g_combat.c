@@ -273,8 +273,6 @@ char    *modNames[] = {
 player_die
 ==================
 */
-void limbo( gentity_t *ent, qboolean makeCorpse ); // JPW NERVE
-
 void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int damage, int meansOfDeath ) {
 	gentity_t   *ent;
 	// TTimo might be used uninitialized

@@ -171,6 +171,18 @@ vmCvar_t match_readypercent;
 vmCvar_t match_latejoin;
 vmCvar_t match_warmupDamage;
 
+ // unlagged
+vmCvar_t g_floatPlayerPosition;
+vmCvar_t g_delagHitscan;
+vmCvar_t g_maxExtrapolatedFrames;
+vmCvar_t g_maxLagCompensation;
+vmCvar_t g_delagMissiles;
+
+vmCvar_t match_timeoutlength;
+vmCvar_t match_timeoutcount;
+
+vmCvar_t g_allowForceTapout;
+
 cvarTable_t gameCvarTable[] = {
 	// don't override the cheat state set by the system
 	{ &g_cheats, "sv_cheats", "", 0, qfalse },
@@ -312,7 +324,17 @@ cvarTable_t gameCvarTable[] = {
 	{ &match_timeoutcount, "match_timeoutcount", "3", 0, 0, qfalse, qtrue },
 	{ &match_readypercent, "match_readypercent", "100", 0, 0, qfalse, qtrue },
 	{ &match_latejoin, "match_latejoin", "1", 0, 0, qfalse, qfalse },
-	{ &match_warmupDamage, "match_warmupDamage", "1", 0, 0, qfalse }
+	{ &match_warmupDamage, "match_warmupDamage", "1", 0, 0, qfalse }, 
+	{ &match_timeoutlength, "match_timeoutlength", "180", 0, 0, qfalse, qtrue },
+	{ &match_timeoutcount, "match_timeoutcount", "3", 0, 0, qfalse, qtrue },
+
+	{ &g_allowForceTapout, "g_allowForceTapout", "1", CVAR_ARCHIVE, qtrue },
+
+	// unlagged
+	{ &g_delagHitscan, "g_delagHitscan", "1", CVAR_ARCHIVE | CVAR_SERVERINFO, 0, qtrue },
+	{ &g_maxExtrapolatedFrames, "g_maxExtrapolatedFrames", "2", 0 , 0, qfalse },
+	{ &g_maxLagCompensation, "g_maxLagCompensation", "500", CVAR_ARCHIVE | CVAR_SERVERINFO, 0, qtrue },
+	{ &g_delagMissiles, "g_delagMissiles", "0", CVAR_ARCHIVE | CVAR_SERVERINFO, 0, qtrue }
 };
 
 // bk001129 - made static to avoid aliasing
@@ -1273,6 +1295,9 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 
 	G_RemapTeamShaders();
 
+	// Disconnect while paused is handled in client side.
+	trap_SetConfigstring( CS_PAUSED,  va( "%i", PAUSE_NONE ));
+
 	if (g_tournament.integer && g_gamestate.integer == GS_PLAYING)
 	{
 		teamInfo[TEAM_RED].timeouts = match_timeoutcount.integer;
@@ -2171,7 +2196,7 @@ void CheckExitRules( void ) {
 		return;
 	}
 
-	if ( g_timelimit.value && !level.warmupTime ) {
+	if ( g_timelimit.value && !level.warmupTime && level.paused == PAUSE_NONE) {
 		if ( level.time - level.startTime >= g_timelimit.value * 60000 ) {
 
 			// check for sudden death
@@ -2474,12 +2499,9 @@ void CheckWolfMP() {
 		return;
 	}
 
-	// if the warmup time has counted down, restart
-	if ( level.time > level.warmupTime ) {
-		level.warmupTime += 10000;
-		trap_Cvar_Set( "g_restarted", "1" );
-		trap_SendConsoleCommand( EXEC_APPEND, "map_restart 0\n" );
-		level.restarted = qtrue;
+	if (level.time > level.warmupTime - 7100 && !level.cnStarted) {
+		level.cnStarted = qtrue;
+		CountDown();
 		return;
 	}
 }
@@ -2604,6 +2626,11 @@ Runs thinking code for this frame if necessary
 */
 void G_RunThink( gentity_t *ent ) {
 	float thinktime;
+
+	if ( level.paused != PAUSE_NONE && ( ent - g_entities ) >= g_maxclients.integer &&
+		 ent->nextthink > level.time && strstr( ent->classname, "DPRINTF_" ) == NULL ) {
+		ent->nextthink += level.time - level.previousTime;
+	}
 
 	// RF, run scripting
 	if ( ent->s.number >= MAX_CLIENTS ) {
@@ -2767,7 +2794,19 @@ void G_RunFrame( int levelTime ) {
 			 || ent->s.eType == ET_FIRE_COLUMN_SMOKE
 			 || ent->s.eType == ET_EXPLO_PART
 			 || ent->s.eType == ET_RAMJET ) {
-			G_RunMissile( ent );
+			if ( level.paused == PAUSE_NONE ) {
+				if (g_antilag.integer != 2) {
+					G_RunMissile(ent);
+				}
+			} else {
+				// During a pause, gotta keep track of stuff in the air
+				ent->s.pos.trTime += level.time - level.previousTime;
+				// Keep pulsing right for dynmamite
+				if ( ent->methodOfDeath == MOD_DYNAMITE ) {
+					ent->s.effect1Time += level.time - level.previousTime;
+				}
+				G_RunThink( ent );
+			}
 			continue;
 		}
 
@@ -2800,7 +2839,31 @@ void G_RunFrame( int levelTime ) {
 			continue;
 		}
 
-		G_RunThink( ent );
+		if (g_antilag.integer == 2) // unlagged
+		{
+			// NOW run the missiles, with all players backward-reconciled
+			// to the positions they were in exactly 50ms ago, at the end
+			// of the last server frame
+			G_TimeShiftAllClients(level.previousTime, NULL);
+
+			ent = &g_entities[0];
+			for (i = 0; i < level.num_entities; i++, ent++) {
+				if (!ent->inuse) {
+					continue;
+				}
+
+				// temporary entities don't think
+				if (ent->freeAfterEvent) {
+					continue;
+				}
+
+				if (level.paused == PAUSE_NONE && ent->s.eType == ET_MISSILE) {
+					G_RunMissile(ent);
+				}
+			}
+
+			G_UnTimeShiftAllClients(NULL);
+		}
 	}
 //end = trap_Milliseconds();
 
@@ -2841,6 +2904,10 @@ void G_RunFrame( int levelTime ) {
 	// for tracking changes
 	CheckCvars();
 
+	if ((level.time > level.cnPush) && (g_gamestate.integer == GS_WARMUP_COUNTDOWN)) {
+		CountDown();
+	}
+
 	if ( g_listEntity.integer ) {
 		for ( i = 0; i < MAX_GENTITIES; i++ ) {
 			G_Printf( "%4i: %s\n", i, g_entities[i].classname );
@@ -2855,6 +2922,16 @@ void G_RunFrame( int levelTime ) {
 
 	// Ridah, check if we are reloading, and times have expired
 	CheckReloadStatus();
+
+	qboolean isServerRestarting = trap_Cvar_VariableIntegerValue("sv_serverRestarting");
+	if (!isServerRestarting) {
+		// L0 - Count active players..
+		SortedActivePlayers();
+		// L0 - Check Team Lock status..
+		HandleEmptyTeams();
+	}
+
+	level.frameStartTime = trap_Milliseconds();
 }
 
 
@@ -2884,5 +2961,20 @@ void HandleEmptyTeams(void) {
 			if (level.paused == PAUSE_NONE && g_gamestate.integer == GS_PLAYING)
 				Svcmd_ResetMatch_f(qtrue, qtrue);
 		}
+	}
+}
+
+void SortedActivePlayers(void) {
+	int i;
+	level.axisPlayers = 0;
+	level.alliedPlayers = 0;
+
+	for(i = 0; i < level.maxclients; i++){
+		if (level.clients[i].pers.connected != CON_CONNECTED)
+			continue;
+		if (level.clients[i].sess.sessionTeam == TEAM_RED)
+			level.axisPlayers++;
+		if (level.clients[i].sess.sessionTeam == TEAM_BLUE)
+			level.alliedPlayers++;
 	}
 }

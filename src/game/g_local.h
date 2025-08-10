@@ -901,6 +901,7 @@ qboolean G_RadiusDamage( vec3_t origin, gentity_t *attacker, float damage, float
 void body_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int damage, int meansOfDeath );
 void TossClientItems( gentity_t *self );
 gentity_t* G_BuildHead( gentity_t *ent );
+void limbo( gentity_t *ent, qboolean makeCorpse );
 
 // damage flags
 #define DAMAGE_RADIUS           0x00000001  // damage was indirect
@@ -1048,6 +1049,8 @@ void SendScoreboardMessageToAllClients( void );
 void QDECL G_Printf( const char *fmt, ... );
 void QDECL G_DPrintf( const char *fmt, ... );
 void QDECL G_Error( const char *fmt, ... );
+void SortedActivePlayers(void);
+void HandleEmptyTeams(void);
 
 //
 // g_client.c
@@ -1140,6 +1143,26 @@ float AngleDifference( float ang1, float ang2 );
 
 // g_props.c
 void Props_Chair_Skyboxtouch( gentity_t *ent );
+
+//g_unlagged.c
+void G_DoTimeShiftFor( gentity_t *ent );
+void G_UndoTimeShiftFor( gentity_t *ent );
+void G_DettachBodyParts(void);
+void G_AttachBodyParts( gentity_t* ent );
+int G_SwitchBodyPartEntity( gentity_t* ent );
+
+//g_match.c
+void CountDown(void);
+void G_spawnPrintf(int print_type, int print_time, gentity_t *owner);
+void G_handlePause(qboolean dPause, int time);
+
+typedef enum
+{
+	DP_PAUSEINFO = 0,   ///< Print current pause info
+	DP_UNPAUSING,       ///< Print unpause countdown + unpause
+	DP_CONNECTINFO,     ///< Display info on connect
+	DP_MVSPAWN          ///< Set up MV views for clients who need them
+} enum_t_dp;
 
 #include "g_team.h" // teamplay specific stuff
 
@@ -1256,6 +1279,17 @@ extern vmCvar_t g_swapteams;
 extern vmCvar_t g_antilag;
 
 extern vmCvar_t g_dbgRevive;
+
+extern vmCvar_t g_floatPlayerPosition;
+extern vmCvar_t g_delagHitscan;
+extern vmCvar_t g_maxExtrapolatedFrames;
+extern vmCvar_t g_maxLagCompensation;
+extern vmCvar_t g_delagMissiles;
+
+extern vmCvar_t match_timeoutcount;
+extern vmCvar_t match_timeoutlength;
+
+extern vmCvar_t g_allowForceTapout;
 
 void    trap_Printf( const char *fmt );
 void    trap_Error( const char *fmt );
@@ -1523,6 +1557,12 @@ void G_teamReset(int, qboolean, qboolean);
 qboolean playerCmds (gentity_t *ent, char *cmd );
 void Svcmd_ResetMatch_f(qboolean fDoReset, qboolean fDoRestart);
 void G_swapTeams( void );
+
+void DecolorString( char *in, char *out);
+
+//g_unlagged.c
+void G_TimeShiftAllClients(int time, gentity_t* skip);
+void G_UnTimeShiftAllClients(gentity_t* skip);
 
 // Macros
 //

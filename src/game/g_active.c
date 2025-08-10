@@ -881,6 +881,29 @@ void ClientThink_real( gentity_t *ent ) {
 		return;
 	}
 
+if ( ( client->ps.eFlags & EF_VIEWING_CAMERA ) || level.paused != PAUSE_NONE ) {
+		ucmd->buttons = 0;
+		ucmd->forwardmove = 0;
+		ucmd->rightmove = 0;
+		ucmd->upmove = 0;
+		ucmd->wbuttons = 0;
+
+		// freeze player (RELOAD_FAILED still allowed to move/look)
+		if ( level.paused != PAUSE_NONE ) {
+			client->ps.pm_type = PM_FREEZE;
+		} else if ( ( client->ps.eFlags & EF_VIEWING_CAMERA )) {
+			VectorClear( client->ps.velocity );
+			client->ps.pm_type = PM_FREEZE;
+		}
+	} else if ( client->noclip ) {
+		client->ps.pm_type = PM_NOCLIP;
+	} else if ( client->ps.stats[STAT_HEALTH] <= 0 ) {
+		client->ps.pm_type = PM_DEAD;
+	} else {
+		client->ps.pm_type = PM_NORMAL;
+	}
+	
+
 	// JPW NERVE do some time-based muzzle flip -- this never gets touched in single player (see g_weapon.c)
 	// #define RIFLE_SHAKE_TIME 150 // JPW NERVE this one goes with the commented out old damped "realistic" behavior below
 	#define RIFLE_SHAKE_TIME 300 // per Id request, longer recoil time
@@ -973,16 +996,21 @@ void ClientThink_real( gentity_t *ent ) {
 		return;
 	}
 
-	if ( reloading || client->cameraPortal ) {
+	if ( reloading || client->cameraPortal || level.paused != PAUSE_NONE) {
 		ucmd->buttons = 0;
 		ucmd->forwardmove = 0;
 		ucmd->rightmove = 0;
 		ucmd->upmove = 0;
 		ucmd->wbuttons = 0;
 		ucmd->wolfkick = 0;
-		if ( client->cameraPortal ) {
+		if ( level.paused != PAUSE_NONE ) {
+			client->ps.pm_type = PM_FREEZE;
+		} else if ( client->cameraPortal ) {
+			VectorClear( client->ps.velocity );
 			client->ps.pm_type = PM_FREEZE;
 		}
+	} else if ( level.paused != PAUSE_NONE ) {
+		client->ps.pm_type = PM_FREEZE;
 	} else if ( client->noclip ) {
 		client->ps.pm_type = PM_NOCLIP;
 	} else if ( client->ps.stats[STAT_HEALTH] <= 0 ) {
@@ -1150,7 +1178,9 @@ void ClientThink_real( gentity_t *ent ) {
 	ent->watertype = pm.watertype;
 
 	// execute client events
-	ClientEvents( ent, oldEventSequence );
+	if ( level.paused == PAUSE_NONE ) {
+		ClientEvents( ent, oldEventSequence );
+	}
 
 	// link entity now, after any personal teleporters have been used
 	trap_LinkEntity( ent );
@@ -1252,7 +1282,9 @@ void ClientThink_real( gentity_t *ent ) {
 	}
 
 	// perform once-a-second actions
-	ClientTimerActions( ent, msec );
+	if ( level.paused == PAUSE_NONE ) {
+		ClientTimerActions( ent, msec );
+	}
 }
 
 /*
@@ -1573,7 +1605,13 @@ void ClientEndFrame( gentity_t *ent ) {
 				ent->client->ps.powerups[ i ] = 0;
 			}
 		}
-	}
+
+		// Make sure we dont let stuff like CTF flags expire.
+		if ( level.paused != PAUSE_NONE &&
+				ent->client->ps.powerups[i] != INT_MAX ) {
+			ent->client->ps.powerups[i] += level.time - level.previousTime;
+		}
+}
 
 	// save network bandwidth
 #if 0
@@ -1583,6 +1621,26 @@ void ClientEndFrame( gentity_t *ent ) {
 	}
 #endif
 
+
+	if ( level.paused != PAUSE_NONE ) {
+		int time_delta = level.time - level.previousTime;
+
+		ent->client->airOutTime += time_delta;
+		ent->client->inactivityTime += time_delta;
+		ent->client->lastBurnTime += time_delta;
+		ent->client->pers.connectTime += time_delta;
+		ent->client->pers.enterTime += time_delta;
+		ent->client->pers.teamState.lastreturnedflag += time_delta;
+		ent->client->pers.teamState.lasthurtcarrier += time_delta;
+		ent->client->pers.teamState.lastfraggedcarrier += time_delta;
+		ent->client->ps.classWeaponTime += time_delta;
+		ent->client->respawnTime += time_delta;
+		ent->client->sniperRifleFiredTime += time_delta;
+		ent->lastHintCheckTime += time_delta;
+		ent->pain_debounce_time += time_delta;
+		ent->s.onFireEnd += time_delta;
+	}
+
 	//
 	// If the end of unit layout is displayed, don't give
 	// the player any normal movement attributes
@@ -1590,6 +1648,8 @@ void ClientEndFrame( gentity_t *ent ) {
 	if ( level.intermissiontime ) {
 		return;
 	}
+
+	
 
 	// burn from lava, etc
 	P_WorldEffects( ent );
@@ -1639,4 +1699,6 @@ void ClientEndFrame( gentity_t *ent ) {
 		ent->count2 = 0;
 	}
 	// dhm
+
+	
 }

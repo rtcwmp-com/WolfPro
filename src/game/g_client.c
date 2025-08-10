@@ -2179,6 +2179,8 @@ void ClientDisconnect( int clientNum ) {
 
 	CalculateRanks();
 
+	HandleEmptyTeams();
+
 	if ( ent->r.svFlags & SVF_BOT ) {
 		BotAIShutdownClient( clientNum );
 	}

@@ -575,7 +575,7 @@ void Svcmd_ResetMatch_f(qboolean fDoReset, qboolean fDoRestart) {
 		trap_Cvar_Set( "g_nextTimeLimit", "0" );
 	}
 
-	if (fDoRestart && !g_noTeamSwitching.integer || ( g_minGameClients.integer > 1 && level.numPlayingClients >= g_minGameClients.integer ) ) {
+	if ((fDoRestart && !g_noTeamSwitching.integer) || ( g_minGameClients.integer > 1 && level.numPlayingClients >= g_minGameClients.integer ) ) {
 		trap_SendConsoleCommand( EXEC_APPEND, va( "map_restart 0 %i\n", GS_WARMUP ) );
 		return;
 	} else {

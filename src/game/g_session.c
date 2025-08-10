@@ -114,8 +114,8 @@ void G_ReadSessionData( gclient_t *client ) {
 	}
 
 	if (g_gametype.integer == GT_WOLF_STOPWATCH && test) {
-		if (g_tournament.integer && level.warmupSwap ||
-			!g_tournament.integer && level.warmupTime > 0
+		if ((g_tournament.integer && level.warmupSwap) ||
+			(!g_tournament.integer && level.warmupTime) > 0
 		) {
 		    G_ClientSwap( client );
 		}

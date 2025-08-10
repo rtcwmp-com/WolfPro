@@ -325,6 +325,12 @@ vmCvar_t cg_customCrosshairColor;
 vmCvar_t cg_customCrosshairColorAlt;
 vmCvar_t cg_customCrosshairVMirror;
 
+vmCvar_t cg_showPriorityText;
+vmCvar_t cg_priorityTextX;
+vmCvar_t cg_priorityTextY;
+
+vmCvar_t cg_uinfo;
+
 typedef struct {
 	vmCvar_t    *vmCvar;
 	char        *cvarName;
@@ -541,7 +547,13 @@ cvarTable_t cvarTable[] = {
 	{ &cg_customCrosshairYOffset, "cg_customCrosshairYOffset", "0", CVAR_ARCHIVE },
 	{ &cg_customCrosshairXGap, "cg_customCrosshairXGap", "0", CVAR_ARCHIVE },
 	{ &cg_customCrosshairYGap, "cg_customCrosshairYGap", "0", CVAR_ARCHIVE },
-	{ &cg_customCrosshairVMirror, "cg_customCrosshairVMirror", "1", CVAR_ARCHIVE }
+	{ &cg_customCrosshairVMirror, "cg_customCrosshairVMirror", "1", CVAR_ARCHIVE }, 
+
+	{ &cg_showPriorityText, "cg_showPriorityText", "1", CVAR_ARCHIVE },
+	{ &cg_priorityTextX, "cg_priorityTextX", "0", CVAR_ARCHIVE },
+	{ &cg_priorityTextY, "cg_priorityTextY", "350", CVAR_ARCHIVE },
+
+	{ &cg_uinfo, "cg_uinfo", "0", CVAR_ROM | CVAR_USERINFO }
 };
 int cvarTableSize = sizeof( cvarTable ) / sizeof( cvarTable[0] );
 

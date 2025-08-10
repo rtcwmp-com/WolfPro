@@ -849,6 +849,9 @@ void Cmd_FollowCycle_f( gentity_t *ent, int dir ) {
 	int clientnum;
 	int original;
 
+	if (level.paused != PAUSE_NONE && ent->client->sess.sessionTeam != TEAM_SPECTATOR)  //added to allow spectators to cycle during pause
+		return;
+
 	// if they are playing a tournement game, count as a loss
 	if ( g_gametype.integer == GT_TOURNAMENT && ent->client->sess.sessionTeam == TEAM_FREE ) {
 		ent->client->sess.losses++;
@@ -2476,6 +2479,21 @@ void ClientCommand( int clientNum ) {
 		Cmd_EntityCount_f( ent );
 	} else if ( Q_stricmp( cmd, "setspawnpt" ) == 0 )  {
 		Cmd_SetSpawnPoint_f( ent );
+	} else if (!Q_stricmp(cmd, "forcetapout")) {
+		if (!g_allowForceTapout.integer)
+		{
+			return;
+		}
+
+		 if (!ent || !ent->client || level.paused != PAUSE_NONE) { // Do not allow forcetapout during pause
+			 return;
+		 }
+
+		 if (ent->client->ps.stats[STAT_HEALTH] <= 0 && (ent->client->sess.sessionTeam == TEAM_RED || ent->client->sess.sessionTeam == TEAM_BLUE)) {
+			 limbo(ent, qtrue);
+		 }
+
+		 return;
 	} else {
 		trap_SendServerCommand( clientNum, va( "print \"unknown cmd[lof] %s\n\"", cmd ) );
 	}
