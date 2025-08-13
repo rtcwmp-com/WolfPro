@@ -1646,7 +1646,10 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 	CG_ProcessSnapshots();
 
 	if(cgs.match_paused != PAUSE_NONE){
-		cg.time = cg.snap->serverTime;
+		if(cg.snap){
+			cg.time = cg.snap->serverTime;
+		}
+		
 	}
 
 	DEBUGTIME
