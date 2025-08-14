@@ -2794,11 +2794,7 @@ void G_RunFrame( int levelTime ) {
 			 || ent->s.eType == ET_FIRE_COLUMN_SMOKE
 			 || ent->s.eType == ET_EXPLO_PART
 			 || ent->s.eType == ET_RAMJET ) {
-			if ( level.paused == PAUSE_NONE ) {
-				if (g_antilag.integer != 2) {
-					G_RunMissile(ent);
-				}
-			} else {
+			if ( level.paused != PAUSE_NONE ) {
 				// During a pause, gotta keep track of stuff in the air
 				ent->s.pos.trTime += level.time - level.previousTime;
 				// Keep pulsing right for dynmamite
@@ -2806,7 +2802,9 @@ void G_RunFrame( int levelTime ) {
 					ent->s.effect1Time += level.time - level.previousTime;
 				}
 				G_RunThink( ent );
+				continue;
 			}
+			G_RunMissile(ent);
 			continue;
 		}
 
@@ -2839,31 +2837,7 @@ void G_RunFrame( int levelTime ) {
 			continue;
 		}
 
-		if (g_antilag.integer == 2) // unlagged
-		{
-			// NOW run the missiles, with all players backward-reconciled
-			// to the positions they were in exactly 50ms ago, at the end
-			// of the last server frame
-			G_TimeShiftAllClients(level.previousTime, NULL);
-
-			ent = &g_entities[0];
-			for (i = 0; i < level.num_entities; i++, ent++) {
-				if (!ent->inuse) {
-					continue;
-				}
-
-				// temporary entities don't think
-				if (ent->freeAfterEvent) {
-					continue;
-				}
-
-				if (level.paused == PAUSE_NONE && ent->s.eType == ET_MISSILE) {
-					G_RunMissile(ent);
-				}
-			}
-
-			G_UnTimeShiftAllClients(NULL);
-		}
+		G_RunThink( ent );
 	}
 //end = trap_Milliseconds();
 
