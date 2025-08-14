@@ -183,6 +183,11 @@ vmCvar_t match_timeoutcount;
 
 vmCvar_t g_allowForceTapout;
 
+vmCvar_t match_timeoutlength;
+vmCvar_t match_timeoutcount;
+
+vmCvar_t g_allowForceTapout;
+
 cvarTable_t gameCvarTable[] = {
 	// don't override the cheat state set by the system
 	{ &g_cheats, "sv_cheats", "", 0, qfalse },
@@ -2794,11 +2799,7 @@ void G_RunFrame( int levelTime ) {
 			 || ent->s.eType == ET_FIRE_COLUMN_SMOKE
 			 || ent->s.eType == ET_EXPLO_PART
 			 || ent->s.eType == ET_RAMJET ) {
-			if ( level.paused == PAUSE_NONE ) {
-				if (g_antilag.integer != 2) {
-					G_RunMissile(ent);
-				}
-			} else {
+			if ( level.paused != PAUSE_NONE ) {
 				// During a pause, gotta keep track of stuff in the air
 				ent->s.pos.trTime += level.time - level.previousTime;
 				// Keep pulsing right for dynmamite
@@ -2806,7 +2807,9 @@ void G_RunFrame( int levelTime ) {
 					ent->s.effect1Time += level.time - level.previousTime;
 				}
 				G_RunThink( ent );
+				continue;
 			}
+			G_RunMissile(ent);
 			continue;
 		}
 
