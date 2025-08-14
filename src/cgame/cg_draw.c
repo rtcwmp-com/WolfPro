@@ -1487,6 +1487,59 @@ static void CG_DrawCenterString( void ) {
 	trap_R_SetColor( NULL );
 }
 
+/*
+===================
+OSPx - Cg_PopinPrint
+
+Pops in messages
+===================
+*/
+#define CP_PMWIDTH 84
+void CG_PopinPrint(const char *str, int charWidth, qboolean blink) {
+	char    *s;
+	int i, len;                         // NERVE - SMF
+	qboolean neednewline = qfalse;      // NERVE - SMF
+
+	// if (cgs.clientinfo[cg.clientNum].shoutStatus)
+	// 	return;
+
+	int x = cg_priorityTextX.integer;
+	int y = cg_priorityTextY.integer;
+
+	Q_strncpyz(cg.popinPrint, str, sizeof(cg.popinPrint));
+
+	// Turn spaces into newlines, if we've run over the linewidth
+	len = strlen(cg.popinPrint);
+	for (i = 0; i < len; i++) {
+
+		// Subtract a few chars here so long words still get displayed properly
+		if (i % (CP_PMWIDTH - 20) == 0 && i > 0) {
+			neednewline = qtrue;
+		}
+		if (cg.popinPrint[i] == ' ' && neednewline) {
+			cg.popinPrint[i] = '\n';
+			neednewline = qfalse;
+		}
+	}
+	// -NERVE - SMF
+
+	cg.popinPrintTime = cg.time;
+	cg.popinPrintX = x;
+	cg.popinPrintY = y;
+	cg.popinPrintCharWidth = charWidth;
+	cg.popinBlink = blink;
+
+	// count the number of lines for centering
+	cg.popinPrintLines = 1;
+	s = cg.popinPrint;
+	while (*s) {
+		if (*s == '\n') {
+			cg.popinPrintLines++;
+		}
+		s++;
+	}
+}
+
 
 
 /*
@@ -3533,6 +3586,111 @@ static void CG_DrawCompass( void ) {
 }
 // -NERVE - SMF
 
+static void CG_PausePrint( void ) {
+	const char* s, * s2 = "";
+	float color[4];
+	int w;
+
+	// Not in warmup...
+	if (cg.warmup)
+		return;
+
+	if (cgs.match_paused == PAUSE_ON) {
+		s = va("%s", CG_TranslateString("^nMatch is Paused!"));
+		s2 = va("%s", CG_TranslateString(va("Match resumes in ^n%i ^7seconds", cgs.match_resumes - cgs.pause_elapsed)));
+
+		color[3] = fabs(sin(cg.time * 0.001)) * cg_hudAlpha.value;
+
+		if (cg.time > cgs.match_stepTimer) {
+			cgs.pause_elapsed++;
+			cgs.match_stepTimer = cg.time + 1000;
+		}
+	}
+	else if (cgs.match_paused == PAUSE_RESUMING) {
+		s = va("%s", CG_TranslateString("^3Get Psyched!"));
+		if (cgs.pause_elapsed < 10) {
+			s2 = va("%s", CG_TranslateString(va("Resuming Match in ^3%d", 10 - cgs.pause_elapsed)));
+		}
+
+		color[3] = fabs(sin(cg.time * 0.002)) * cg_hudAlpha.value;
+
+		if (cg.time > cgs.match_stepTimer) {
+			cgs.pause_elapsed++;
+			cgs.match_stepTimer = cg.time + 1000;
+		}
+
+	}
+	else {
+		return;
+	}
+
+	color[0] = color[1] = color[2] = 1.0;
+
+	w = CG_DrawStrlen(s);
+	CG_DrawStringExt(320 - w * 6, 100, s, color, qfalse, qtrue, 12, 18, 0);
+
+	w = CG_DrawStrlen(s2);
+	CG_DrawStringExt(320 - w * 6, 120, s2, colorWhite, qfalse, qtrue, 12, 18, 0);
+}
+
+static void CG_DrawPopinString(void) {
+	char    *start;
+	int l, x, y;
+	float   *color;
+
+	if (!cg.popinPrintTime) {
+		return;
+	}
+
+	/*int x = cg_priorityTextX.integer;
+	int y = cg_priorityTextY.integer;*/
+
+	color = CG_FadeColor(cg.popinPrintTime, 1000 * 7);
+	if (!color) {
+		cg.popinPrintTime = 0;
+		return;
+	}
+
+	trap_R_SetColor(color);
+	start = cg.popinPrint;
+
+	y = (cg.popinPrintY - 7) - cg.popinPrintLines * TINYCHAR_HEIGHT / 2;
+	x = cg.popinPrintX + (cg.popinPrintLines * TINYCHAR_HEIGHT / 2);
+
+	if (cg.popinBlink)
+		color[3] = Q_fabs(sin(cg.time * 0.001)) * cg_hudAlpha.value;
+
+	while (1) {
+		char linebuffer[1024];
+
+		for (l = 0; l < CP_PMWIDTH; l++) {          // NERVE - SMF - added CP_LINEWIDTH
+			if (!start[l] || start[l] == '\n') {
+				break;
+			}
+			linebuffer[l] = start[l];
+		}
+		linebuffer[l] = 0;
+
+		if (cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR)
+			CG_DrawStringExt(x, y, linebuffer, color, qfalse, qfalse,
+			TINYCHAR_WIDTH, TINYCHAR_HEIGHT, 0);
+		else
+			CG_DrawStringExt(x, y, linebuffer, color, qfalse, qfalse,
+			TINYCHAR_WIDTH, TINYCHAR_HEIGHT, 0);
+
+		y += cg.popinPrintCharWidth * 1.5;
+
+		while (*start && (*start != '\n')) {
+			start++;
+		}
+		if (!*start) {
+			break;
+		}
+		start++;
+	}
+	trap_R_SetColor(NULL);
+}
+
 /*
 =================
 CG_Draw2D
@@ -3614,6 +3772,8 @@ static void CG_Draw2D( void ) {
 	if ( !CG_DrawScoreboard() ) {
 		CG_DrawCenterString();
 
+		CG_PausePrint();
+		CG_DrawPopinString();
 		CG_DrawFollow();
 		CG_DrawWarmup();
 

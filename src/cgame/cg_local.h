@@ -994,6 +994,14 @@ typedef struct {
 	pmoveExt_t pmext;
 
 	qbool ndpDemoEnabled;
+
+	int popinPrintTime;
+	int popinPrintCharWidth;
+	int popinPrintX;
+	int popinPrintY;
+	char popinPrint[1024];
+	int popinPrintLines;
+	qboolean popinBlink;
 } cg_t;
 
 #define NUM_FUNNEL_SPRITES  21
@@ -1491,6 +1499,11 @@ typedef struct {
 
 } cgMedia_t;
 
+typedef enum {
+	PAUSE_NONE,
+	PAUSE_ON,
+	PAUSE_RESUMING
+} cPauseSts_t;
 
 // The client game static (cgs) structure hold everything
 // loaded or calculated from the gamestate.  It will NOT
@@ -1604,6 +1617,11 @@ typedef struct {
 	void *igAlloc;
 	void *igFree;
 	void **igUserData;
+
+	cPauseSts_t match_paused;
+	int match_resumes;
+	int pause_elapsed;
+	int match_stepTimer;
 } cgs_t;
 
 //==============================================================================
@@ -2496,6 +2514,9 @@ const char* CG_LocalizeServerCommand( const char *buf ); // L0 - So it's more ac
 int is_ready( int clientNum );
 const char* WM_TimeToString(float msec);
 
+//Pause
+void CG_ParsePause( const char *pTime );
+
 // OSP's macro's
 #define Pri( x ) CG_Printf( "[cgnotify]%s", CG_LocalizeServerCommand( x ) )
 #define CPri( x ) CG_CenterPrint( CG_LocalizeServerCommand( x ), SCREEN_HEIGHT - ( SCREEN_HEIGHT * 0.2 ), SMALLCHAR_WIDTH );
@@ -2518,6 +2539,10 @@ extern vmCvar_t cg_customCrosshairColor;
 extern vmCvar_t cg_customCrosshairColorAlt;
 extern vmCvar_t cg_customCrosshairVMirror;
 
+extern vmCvar_t cg_showPriorityText;
+extern vmCvar_t cg_priorityTextX;
+extern vmCvar_t cg_priorityTextY;
+
 // Get capabilities from the client
 qbool trap_GetValue(char* value, int valueSize, const char* key);
 int trap_Cvar_VariableIntegerValue(const char* var_name);
@@ -2537,3 +2562,5 @@ void CG_ImGUI_Share(void *ctx, void *alloc, void *free, void** user);
 int trap_CL_AddGuiMenu(int menu, const char* name, const char* shortcut, qbool* selected, qbool enabled);
 void trap_IgImage(qhandle_t shader, float x, float y);
 void trap_IgImageEx(qhandle_t shader, float x, float y, float s1, float t1, float s2, float t2);
+
+void CG_PopinPrint(const char *str, int charWidth, qboolean blink);

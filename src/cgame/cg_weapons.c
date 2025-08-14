@@ -3851,6 +3851,10 @@ CG_LastWeaponUsed_f
 void CG_LastWeaponUsed_f( void ) {
 	int lastweap;
 
+	if ( cg.snap->ps.pm_type == PM_FREEZE ) {
+		return;
+	}
+
 	if ( cg.time - cg.weaponSelectTime < cg_weaponCycleDelay.integer ) {
 		return; // force pause so holding it down won't go too fast
 
@@ -3883,6 +3887,10 @@ CG_NextWeaponInBank_f
 */
 void CG_NextWeaponInBank_f( void ) {
 
+	if ( cg.snap->ps.pm_type == PM_FREEZE ) {
+		return;
+	} 
+
 	if ( cg.time - cg.weaponSelectTime < cg_weaponCycleDelay.integer ) {
 		return; // force pause so holding it down won't go too fast
 
@@ -3910,6 +3918,10 @@ CG_PrevWeaponInBank_f
 ==============
 */
 void CG_PrevWeaponInBank_f( void ) {
+
+	if ( cg.snap->ps.pm_type == PM_FREEZE ) {
+		return;
+	}
 
 	if ( cg.time - cg.weaponSelectTime < cg_weaponCycleDelay.integer ) {
 		return; // force pause so holding it down won't go too fast
@@ -3943,6 +3955,11 @@ void CG_NextWeapon_f( void ) {
 	if ( !cg.snap ) {
 		return;
 	}
+
+	if ( cg.snap->ps.pm_type == PM_FREEZE ) {
+		return;
+	} 
+
 	if ( cg.snap->ps.pm_flags & PMF_FOLLOW ) {
 		return;
 	}
@@ -3990,6 +4007,11 @@ void CG_PrevWeapon_f( void ) {
 	if ( !cg.snap ) {
 		return;
 	}
+
+	if ( cg.snap->ps.pm_type == PM_FREEZE ) {
+		return;
+	}
+
 	if ( cg.snap->ps.pm_flags & PMF_FOLLOW ) {
 		return;
 	}
@@ -4033,6 +4055,10 @@ void CG_WeaponBank_f( void ) {
 	int curbank = 0, curcycle = 0, bank = 0, cycle = 0;
 
 	if ( !cg.snap ) {
+		return;
+	}
+
+	if ( cg.snap->ps.pm_type == PM_FREEZE ) {
 		return;
 	}
 
@@ -4109,6 +4135,10 @@ void CG_Weapon_f( void ) {
 		return;
 	}
 
+	if ( cg.snap->ps.pm_type == PM_FREEZE ) {
+		return;
+	}
+	
 	if ( cg.snap->ps.pm_flags & PMF_FOLLOW ) {
 		return;
 	}
