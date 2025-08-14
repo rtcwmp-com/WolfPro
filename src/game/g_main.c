@@ -2780,7 +2780,17 @@ void G_RunFrame( int levelTime ) {
 			 || ent->s.eType == ET_FIRE_COLUMN_SMOKE
 			 || ent->s.eType == ET_EXPLO_PART
 			 || ent->s.eType == ET_RAMJET ) {
-			G_RunMissile( ent );
+			if ( level.paused != PAUSE_NONE ) {
+				// During a pause, gotta keep track of stuff in the air
+				ent->s.pos.trTime += level.time - level.previousTime;
+				// Keep pulsing right for dynmamite
+				if ( ent->methodOfDeath == MOD_DYNAMITE ) {
+					ent->s.effect1Time += level.time - level.previousTime;
+				}
+				G_RunThink( ent );
+				continue;
+			}
+			G_RunMissile(ent);
 			continue;
 		}
 
