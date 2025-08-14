@@ -575,7 +575,7 @@ void Svcmd_ResetMatch_f(qboolean fDoReset, qboolean fDoRestart) {
 		trap_Cvar_Set( "g_nextTimeLimit", "0" );
 	}
 
-	if (fDoRestart && !g_noTeamSwitching.integer || ( g_minGameClients.integer > 1 && level.numPlayingClients >= g_minGameClients.integer ) ) {
+	if ((fDoRestart && !g_noTeamSwitching.integer) || ( g_minGameClients.integer > 1 && level.numPlayingClients >= g_minGameClients.integer ) ) {
 		trap_SendConsoleCommand( EXEC_APPEND, va( "map_restart 0 %i\n", GS_WARMUP ) );
 		return;
 	} else {
@@ -614,6 +614,29 @@ void Svcmd_SwapTeams_f() {
 
 	trap_Cvar_Set( "g_swapteams", "1" );
 	trap_SendConsoleCommand( EXEC_APPEND, va( "map_restart 0 %i\n", GS_WARMUP ) );
+}
+
+void G_Rename_f(void){
+	if(trap_Argc() < 2){
+		return;
+	}
+
+	char argvBuf[1024];
+	trap_Argv(1, argvBuf, sizeof(argvBuf));
+
+	int clientNum = atoi(argvBuf);
+
+	trap_Cmd_ArgsFrom(2, argvBuf, sizeof(argvBuf));
+
+	char clientName[64];
+	G_ClientCleanName(argvBuf, clientName, sizeof(clientName));
+
+	char userinfo[MAX_INFO_STRING];
+	trap_GetUserinfo(clientNum, userinfo, sizeof(userinfo));
+	Info_SetValueForKey(userinfo, "name", clientName);
+	trap_SetUserinfo(clientNum, userinfo);
+
+	ClientUserinfoChanged( clientNum );
 }
 
 
@@ -696,6 +719,11 @@ qboolean    ConsoleCommand( void ) {
 		}
 		// everything else will also be printed as a say command
 		trap_SendServerCommand( -1, va( "print \"server:[lof] %s\"", ConcatArgs( 0 ) ) );
+		return qtrue;
+	}
+
+	if ( Q_stricmp( cmd, "rename" ) == 0 ) {
+		G_Rename_f();
 		return qtrue;
 	}
 

@@ -293,9 +293,15 @@ Called on load to set the initial values from configure strings
 ================
 */
 void CG_SetConfigValues( void ) {
-#ifdef MISSIONPACK
-	const char *s;
-#endif
+	int pState = atoi(CG_ConfigString(CS_PAUSED));
+	cgs.match_resumes = (pState > 0 ? pState : 0);
+
+	if (pState && pState == 10000)
+		cgs.match_paused = PAUSE_RESUMING;
+	else if (pState && (pState > 0 && pState < 10000))
+		cgs.match_paused = PAUSE_ON;
+	else if (!pState || pState == 0)
+		cgs.match_paused = PAUSE_NONE;
 
 	cgs.scores1 = atoi( CG_ConfigString( CS_SCORES1 ) );
 	cgs.scores2 = atoi( CG_ConfigString( CS_SCORES2 ) );
@@ -449,7 +455,9 @@ static void CG_ConfigStringModified( void ) {
 	} // Ready
 	else if ( num == CS_READY ) {
 		CG_ParseReady( str );
-	}
+	} else if ( num == CS_PAUSED ) {
+		CG_ParsePause( str );
+	} 
 }
 
 
@@ -1464,6 +1472,36 @@ static void CG_ServerCommand( void ) {
 		return;
 	}
 
+		if ( !strcmp( cmd, "@print" ) ) {
+		CG_Printf( "[skipnotify]%s\n", CG_Argv( 1 )  );  // Add to console so people can toggle it and see it again..
+		return;
+	}
+	// End
+	// Pop In
+	if (!Q_stricmp(cmd, "popin")) {
+		int args = trap_Argc();
+		qboolean fade=qfalse;
+
+		if (args >= 3) {
+			fade = qtrue;
+		}
+		CG_PopinPrint(CG_LocalizeServerCommand(CG_Argv(1)), SMALLCHAR_HEIGHT, fade);
+		return;
+	}
+	if (!Q_stricmp(cmd, "prioritypopin")) {
+		if (cg_showPriorityText.integer)
+		{
+			int args = trap_Argc();
+			qboolean fade = qfalse;
+
+			if (args >= 3) {
+				fade = qtrue;
+			}
+			CG_PopinPrint(CG_LocalizeServerCommand(CG_Argv(1)), SMALLCHAR_HEIGHT, fade);
+		}
+		return;
+	}
+
 	if ( !strcmp( cmd, "cs" ) ) {
 		CG_ConfigStringModified();
 		return;
@@ -1649,4 +1687,23 @@ Parse Ready state
 */
 void CG_ParseReady(const char* pState) {
 	cgs.readyState = atoi(pState);
+}
+
+void CG_ParsePause( const char *pTime ) {
+
+	if (atoi(pTime) == 10000) {
+		cgs.match_paused = PAUSE_RESUMING;
+		cgs.match_resumes = 0;
+		cgs.pause_elapsed = 0;
+	}
+	else if (atoi(pTime) > 0) {
+		cgs.match_paused = PAUSE_ON;
+		cgs.match_resumes = atoi(pTime);
+		cgs.pause_elapsed = 0;
+	}
+	else {
+		cgs.match_paused = PAUSE_NONE;
+		cgs.match_resumes = 0;
+		cgs.pause_elapsed = 0;
+	}
 }

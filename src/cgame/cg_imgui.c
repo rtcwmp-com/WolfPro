@@ -27,6 +27,10 @@ static const float TIMELINE_RADIUS = 8.0f;
 static const float delta = 3.0f;
 static const float TIMELINE_HEIGHT = TIMELINE_RADIUS * 2.0f + delta * 2;
 
+float prev_times[64];
+int prev_time_index;
+
+
 void CG_ImGUI_Update(void) {
 	if (cgs.igContext == NULL) {
 		return;
@@ -42,7 +46,15 @@ void CG_ImGUI_Update(void) {
 		
 		if(igBegin("CGame info", &windowActive, 0)){
 			igText("hello from CGame");
-			igShowDemoWindow(&windowActive);
+			prev_times[prev_time_index++] = cg.time % 50;
+			prev_time_index %= ARRAY_LEN(prev_times);
+			//igShowDemoWindow(&windowActive);
+			igPlotLines_FloatPtr("cg.time", prev_times, ARRAY_LEN(prev_times), prev_time_index, "", 0.0f, 50.0f, (ImVec2){300.0f, 100.0f}, sizeof(float));
+			for(int i = 0; i < ARRAY_LEN(cg_entities); i++){
+				if(cg_entities[i].currentState.eType == ET_MISSILE){
+					igText("%d", cg_entities[i].currentState.pos.trTime);
+				}
+			}
         }
         igEnd();
     }

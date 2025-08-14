@@ -4080,3 +4080,17 @@ void BG_PlayerStateToEntityStateExtraPolate( playerState_t *ps, entityState_t *s
 	s->teamNum = ps->teamNum;
 	s->aiState = ps->aiState;
 }
+
+
+void DecolorString(char* in, char* out)
+{
+	while (*in) {
+		if (*in == 27 || *in == '^') {
+			in++;		// skip color code
+			if (*in) in++;
+			continue;
+		}
+		*out++ = *in++;
+	}
+	*out = 0;
+}

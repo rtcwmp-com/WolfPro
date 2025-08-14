@@ -889,9 +889,7 @@ static int CG_CalcFov( void ) {
 			lastfov = fov_x;
 		} else {                    // binoc zooming out
 			f = ( cg.time - cg.zoomTime ) / (float)ZOOM_TIME;
-			if ( f > 1.0 ) {
-				fov_x = fov_x;
-			} else {
+			if ( f <= 1.0 ) {
 				fov_x = zoomFov + f * ( fov_x - zoomFov );
 			}
 		}
@@ -936,7 +934,10 @@ static int CG_CalcFov( void ) {
 	cg.refdef.fov_x = fov_x;
 	cg.refdef.fov_y = fov_y;
 
-	if ( !cg.zoomedBinoc ) {
+	if ( cg.snap->ps.pm_type == PM_FREEZE ) {
+		// No movement for pauses
+		cg.zoomSensitivity = 0;
+	} else if ( !cg.zoomedBinoc ) {
 		// NERVE - SMF - fix for zoomed in/out movement bug
 		if ( cg.zoomval ) {
 			if ( cg.snap->ps.weapon == WP_SNOOPERSCOPE ) {
@@ -1462,9 +1463,7 @@ void CG_DrawSkyBoxPortal( void ) {
 			lastfov = fov_x;
 		} else {                    // binoc zooming out
 			f = ( cg.time - cg.zoomTime ) / (float)ZOOM_TIME;
-			if ( f > 1.0 ) {
-				fov_x = fov_x;
-			} else {
+			if ( f <= 1.0 ) {
 				fov_x = zoomFov + f * ( fov_x - zoomFov );
 			}
 		}
@@ -1645,6 +1644,13 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 
 	// set up cg.snap and possibly cg.nextSnap
 	CG_ProcessSnapshots();
+
+	if(cgs.match_paused != PAUSE_NONE){
+		if(cg.snap){
+			cg.time = cg.snap->serverTime;
+		}
+		
+	}
 
 	DEBUGTIME
 

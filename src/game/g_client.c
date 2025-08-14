@@ -1128,7 +1128,7 @@ void SetWolfSpawnWeapons( gclient_t *client ) {
 ClientCheckName
 ============
 */
-static void ClientCleanName( const char *in, char *out, int outSize ) {
+void G_ClientCleanName( const char *in, char *out, int outSize ) {
 	int len, colorlessLen;
 	char ch;
 	char    *p;
@@ -1159,12 +1159,6 @@ static void ClientCleanName( const char *in, char *out, int outSize ) {
 			// solo trailing carat is not a color prefix
 			if ( !*in ) {
 				break;
-			}
-
-			// don't allow black in a name, period
-			if ( ColorIndex( *in ) == 0 ) {
-				in++;
-				continue;
 			}
 
 			// make sure room in dest for both chars
@@ -1407,7 +1401,7 @@ void ClientUserinfoChanged( int clientNum ) {
 	// set name
 	Q_strncpyz( oldname, client->pers.netname, sizeof( oldname ) );
 	s = Info_ValueForKey( userinfo, "name" );
-	ClientCleanName( s, client->pers.netname, sizeof( client->pers.netname ) );
+	G_ClientCleanName( s, client->pers.netname, sizeof( client->pers.netname ) );
 
 	if ( client->sess.sessionTeam == TEAM_SPECTATOR ) {
 		if ( client->sess.spectatorState == SPECTATOR_SCOREBOARD ) {
@@ -2179,6 +2173,8 @@ void ClientDisconnect( int clientNum ) {
 	trap_SetConfigstring( CS_PLAYERS + clientNum, "" );
 
 	CalculateRanks();
+
+	HandleEmptyTeams();
 
 	if ( ent->r.svFlags & SVF_BOT ) {
 		BotAIShutdownClient( clientNum );
