@@ -1534,14 +1534,14 @@ void CG_RegisterItemVisuals( int itemNum ) {
 	}
 // if player runs out of SMG ammunition, it shouldn't *also* deplete pistol ammunition.  If you change this, change
 // g_spawn.c as well
-	if ( cg_gameType.integer != GT_SINGLE_PLAYER ) {
-		item = BG_FindItem( "Thompson" );
-		item->giAmmoIndex = WP_THOMPSON;
-		item = BG_FindItem( "Sten" );
-		item->giAmmoIndex = WP_STEN;
-		item = BG_FindItem( "MP40" );
-		item->giAmmoIndex = WP_MP40;
-	}
+	
+	item = BG_FindItem( "Thompson" );
+	item->giAmmoIndex = WP_THOMPSON;
+	item = BG_FindItem( "Sten" );
+	item->giAmmoIndex = WP_STEN;
+	item = BG_FindItem( "MP40" );
+	item->giAmmoIndex = WP_MP40;
+	
 // jpw
 }
 
@@ -2084,9 +2084,6 @@ void CG_PlayerTeslaCoilFire( centity_t *cent, vec3_t flashorigin ) {
 	if (cent->currentState.weapon != WP_TESLA)
 		return;
 
-// JPW NERVE no tesla in multiplayer
-	if ( cg_gameType.integer != GT_SINGLE_PLAYER )
-		return;
 
 	//if (cent->currentState.number == cg.snap->ps.clientNum)
 	//	VectorCopy( cg.snap->ps.viewangles, viewAngles );
@@ -2125,37 +2122,6 @@ void CG_PlayerTeslaCoilFire( centity_t *cent, vec3_t flashorigin ) {
 			}
 		}
 
-		if (cgs.localServer && cgs.gametype == GT_SINGLE_PLAYER) {
-			// check for AI's getting hurt (TODO: bot support?)
-			for (ctrav=cg_entities, i=0; i<cgs.maxclients && numEnemies<16; ctrav++, i++) {
-				// RF, proto and supersoldier are invulnerable to tesla
-				switch (ctrav->currentState.aiChar) {
-				case AICHAR_SUPERSOLDIER:
-				case AICHAR_PROTOSOLDIER:
-					continue;
-				}
-
-				if (ctrav->currentState.aiChar &&
-					(ctrav != cent) &&
-					(ctrav->currentState.teamNum != playerTeam) &&
-					!(ctrav->currentState.eFlags & EF_DEAD) &&
-					ctrav->currentValid &&	// is in the visible frame
-					(Distance( tagPos, ctrav->lerpOrigin ) < TESLA_LIGHTNING_MAX_DIST))
-				{
-					VectorSubtract( ctrav->lerpOrigin, traceOrg, vec );
-					VectorNormalize( vec );
-
-					if (DotProduct(viewDir, vec) > 0.8) {
-						CG_Trace( &tr, traceOrg, NULL, NULL, ctrav->lerpOrigin, ctrav->currentState.number, MASK_SHOT & ~CONTENTS_BODY );
-						if (tr.fraction == 1 || tr.entityNum == ctrav->currentState.number) {
-							visDists[numEnemies] = Distance( tagPos, ctrav->lerpOrigin );
-							visEnemies[numEnemies++] = ctrav->currentState.number;
-						}
-					}
-				}
-			}
-		}
-
 		// now sort by distance
 		for (j=0; j<MAX_TESLA_BOLTS; j++) {
 			visEnemiesSorted[j] = -1;
@@ -2184,7 +2150,6 @@ void CG_PlayerTeslaCoilFire( centity_t *cent, vec3_t flashorigin ) {
 				j = i%numSorted;
 				cent->pe.teslaEnemy[i] = visEnemiesSorted[j];
 				// apply damage
-				CG_ClientDamage( visEnemiesSorted[j], cent->currentState.number, CLDMG_TESLA );
 				// show the effect
 				cg_entities[ visEnemiesSorted[j] ].pe.teslaDamagedTime = cg.time;
 			} else {
@@ -4281,20 +4246,20 @@ void CG_OutOfAmmoChange( void ) {
 	CG_WeaponIndex( cg.weaponSelect, &bank, &cycle );     // get bank/cycle of current weapon
 
 // JPW NERVE -- more useful weapon changes -- check if rifle or pistol is still working, and use that if available
-	if ( cg_gameType.integer != GT_SINGLE_PLAYER ) {
-		for ( i = 0; i < MAX_WEAPS_IN_BANK_MP; i++ )
-			if ( CG_WeaponSelectable( weapBanksMultiPlayer[3][i] ) ) { // find a rifle
-				cg.weaponSelect = weapBanksMultiPlayer[3][i];
-				CG_FinishWeaponChange( cg.predictedPlayerState.weapon, cg.weaponSelect );
-				return;
-			}
-		for ( i = 0; i < MAX_WEAPS_IN_BANK_MP; i++ )
-			if ( CG_WeaponSelectable( weapBanksMultiPlayer[2][i] ) ) { // find a pistol
-				cg.weaponSelect = weapBanksMultiPlayer[2][i];
-				CG_FinishWeaponChange( cg.predictedPlayerState.weapon, cg.weaponSelect );
-				return;
-			}
-	}
+	
+	for ( i = 0; i < MAX_WEAPS_IN_BANK_MP; i++ )
+		if ( CG_WeaponSelectable( weapBanksMultiPlayer[3][i] ) ) { // find a rifle
+			cg.weaponSelect = weapBanksMultiPlayer[3][i];
+			CG_FinishWeaponChange( cg.predictedPlayerState.weapon, cg.weaponSelect );
+			return;
+		}
+	for ( i = 0; i < MAX_WEAPS_IN_BANK_MP; i++ )
+		if ( CG_WeaponSelectable( weapBanksMultiPlayer[2][i] ) ) { // find a pistol
+			cg.weaponSelect = weapBanksMultiPlayer[2][i];
+			CG_FinishWeaponChange( cg.predictedPlayerState.weapon, cg.weaponSelect );
+			return;
+		}
+	
 	// otherwise just do something
 // jpw
 
@@ -4988,12 +4953,9 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, in
 	case WP_VENOM_FULL:
 
 		// actually yeah.  meant that.  very rare.
-		if ( cg_gameType.integer == GT_SINGLE_PLAYER ) { // JPW NERVE
-			r = rand() & 31;
-		} else {
-			r = ( rand() & 3 ) + 1; // JPW NERVE increased spark frequency so players can tell where rounds are coming from in MP
+		
+		r = ( rand() & 3 ) + 1; // JPW NERVE increased spark frequency so players can tell where rounds are coming from in MP
 
-		}
 		if ( r == 3 ) {
 			sfx = cgs.media.sfx_ric1;
 		} else if ( r == 2 ) {
@@ -5062,13 +5024,13 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, in
 			// (SA) needed to do the CG_WaterRipple using a localent since I needed the timer reset on the shader for each shot
 			CG_WaterRipple( cgs.media.wakeMarkShaderAnim, origin, tv( 0, 0, 1 ), 32, 1000 );
 // JPW NERVE
-			if ( cg_gameType.integer != GT_SINGLE_PLAYER ) {
-				CG_AddDirtBulletParticles( origin, dir,
-										   190, // speed
-										   900, // duration
-										   5, // count
-										   0.5, 80, 16, 0.125, "water_splash" ); // rand scale
-			}
+			
+			CG_AddDirtBulletParticles( origin, dir,
+										190, // speed
+										900, // duration
+										5, // count
+										0.5, 80, 16, 0.125, "water_splash" ); // rand scale
+			
 // jpw
 			break;  // (SA) testing
 
@@ -5193,61 +5155,45 @@ void CG_Shard(centity_t *cent, vec3_t origin, vec3_t dir)
 		lightColor[2] = 0.1;
 
 		VectorScale( dir, 16, sprVel );
-		if ( cg_gameType.integer == GT_SINGLE_PLAYER ) { // JPW NERVE
+		
+// check for water/dirt spurt
+		if ( trap_CM_PointContents( origin, 0 ) & CONTENTS_WATER ) {
+			VectorCopy( origin,tmpv );
+			tmpv[2] += 10000;
+
+			trap_CM_BoxTrace( &trace, tmpv,origin, NULL, NULL, 0, MASK_WATER );
+			CG_WaterRipple( cgs.media.wakeMarkShaderAnim, trace.endpos, dir, 150, 1000 );
+
+			CG_AddDirtBulletParticles( trace.endpos, dir,
+										900, // speed
+										1800, // duration
+										15, // count
+										0.5, 350,128, 0.125, "water_splash" );
+		} else {
+			VectorCopy( origin,tmpv );
+			tmpv[2] += 20;
+			VectorCopy( origin,tmpv2 );
+			tmpv2[2] -= 20;
+			trap_CM_BoxTrace( &trace,tmpv,tmpv2,NULL,NULL,0,MASK_SHOT );
+			if ( trace.surfaceFlags & SURF_GRASS || trace.surfaceFlags & SURF_GRAVEL ) {
+				CG_AddDirtBulletParticles( origin, dir,
+											600, // speed
+											2000, // duration
+											10, // count
+											0.5, 275,125, 0.25, "dirt_splash" ); // 128,64
+
+			}
 			for ( i = 0; i < 5; i++ ) {
 				for ( j = 0; j < 3; j++ )
 					sprOrg[j] = origin[j] + 64 * dir[j] + 24 * crandom();
 				sprVel[2] += rand() % 50;
-//			CG_ParticleExplosion( 2, sprOrg, sprVel, 1000+rand()%250, 20, 40+rand()%60 );
 				CG_ParticleExplosion( "blacksmokeanim", sprOrg, sprVel, 3500 + rand() % 250, 10, 250 + rand() % 60 ); // JPW NERVE was animb
 			}
-
 			VectorMA( origin, 24, dir, sprOrg );
 			VectorScale( dir, 64, sprVel );
-			// RF, I like this new animation, feel free to revert
-			CG_ParticleExplosion( "expblue", sprOrg, sprVel, 1000, 20, 300 );
-			//CG_ParticleExplosion( "explode1", sprOrg, sprVel, 1200, 9, 300 );
+			CG_ParticleExplosion( "explode1", sprOrg, sprVel, 1000, 20, 300 );
 		}
-// JPW NERVE
-		else {
-// check for water/dirt spurt
-			if ( trap_CM_PointContents( origin, 0 ) & CONTENTS_WATER ) {
-				VectorCopy( origin,tmpv );
-				tmpv[2] += 10000;
 
-				trap_CM_BoxTrace( &trace, tmpv,origin, NULL, NULL, 0, MASK_WATER );
-				CG_WaterRipple( cgs.media.wakeMarkShaderAnim, trace.endpos, dir, 150, 1000 );
-
-				CG_AddDirtBulletParticles( trace.endpos, dir,
-										   900, // speed
-										   1800, // duration
-										   15, // count
-										   0.5, 350,128, 0.125, "water_splash" );
-			} else {
-				VectorCopy( origin,tmpv );
-				tmpv[2] += 20;
-				VectorCopy( origin,tmpv2 );
-				tmpv2[2] -= 20;
-				trap_CM_BoxTrace( &trace,tmpv,tmpv2,NULL,NULL,0,MASK_SHOT );
-				if ( trace.surfaceFlags & SURF_GRASS || trace.surfaceFlags & SURF_GRAVEL ) {
-					CG_AddDirtBulletParticles( origin, dir,
-											   600, // speed
-											   2000, // duration
-											   10, // count
-											   0.5, 275,125, 0.25, "dirt_splash" ); // 128,64
-
-				}
-				for ( i = 0; i < 5; i++ ) {
-					for ( j = 0; j < 3; j++ )
-						sprOrg[j] = origin[j] + 64 * dir[j] + 24 * crandom();
-					sprVel[2] += rand() % 50;
-					CG_ParticleExplosion( "blacksmokeanim", sprOrg, sprVel, 3500 + rand() % 250, 10, 250 + rand() % 60 ); // JPW NERVE was animb
-				}
-				VectorMA( origin, 24, dir, sprOrg );
-				VectorScale( dir, 64, sprVel );
-				CG_ParticleExplosion( "explode1", sprOrg, sprVel, 1000, 20, 300 );
-			}
-		}
 // jpw
 		break;
 
@@ -5353,60 +5299,40 @@ void CG_Shard(centity_t *cent, vec3_t origin, vec3_t dir)
 		VectorMA( origin, 16, dir, sprOrg );
 		VectorScale( dir, 100, sprVel );
 
-		if ( cg_gameType.integer == GT_SINGLE_PLAYER ) { // JPW NERVE
-			// RF, testing new explosion animation
-			CG_ParticleExplosion( "expblue", sprOrg, sprVel, 700, 20, 160 );
-			//CG_ParticleExplosion( "twiltb", sprOrg, sprVel, 600, 9, 100 );
-			//CG_ParticleExplosion( 3, sprOrg, sprVel, 900, 9, 250 );
-			/*
-					r = 2 + rand()%3;
-					for (i=0; i<3; i++) {
-						for (j=0;j<3;j++) sprOrg[j] = origin[j] + 14*dir[j] + 14*crandom();
-						CG_ParticleExplosion( 3, sprOrg, sprVel, 800+rand()%250, 9, 60+rand()%200 );
-					}
-			*/
-			// Ridah, throw some debris
-			CG_AddDebris( origin, dir,
-						  280,      // speed
-						  1400,     // duration
-						  // 15 + rand()%5 );	// count
-						  7 + rand() % 2 ); // count
-		}
-// JPW NERVE
-		else {
+		
 // check for water/dirt spurt
-			if ( trap_CM_PointContents( origin, 0 ) & CONTENTS_WATER ) {
-				VectorCopy( origin,tmpv );
-				tmpv[2] += 10000;
+		if ( trap_CM_PointContents( origin, 0 ) & CONTENTS_WATER ) {
+			VectorCopy( origin,tmpv );
+			tmpv[2] += 10000;
 
-				trap_CM_BoxTrace( &trace, tmpv,origin, NULL, NULL, 0, MASK_WATER );
-				CG_WaterRipple( cgs.media.wakeMarkShaderAnim, trace.endpos, dir, 150, 1000 );
+			trap_CM_BoxTrace( &trace, tmpv,origin, NULL, NULL, 0, MASK_WATER );
+			CG_WaterRipple( cgs.media.wakeMarkShaderAnim, trace.endpos, dir, 150, 1000 );
 
-				CG_AddDirtBulletParticles( trace.endpos, dir,
-										   400, // speed
-										   900, // duration
-										   15, // count
-										   0.5, 256,128, 0.125, "water_splash" );
-			} else {
-				VectorCopy( origin,tmpv );
-				tmpv[2] += 20;
-				VectorCopy( origin,tmpv2 );
-				tmpv2[2] -= 20;
-				trap_CM_BoxTrace( &trace,tmpv,tmpv2,NULL,NULL,0,MASK_SHOT );
-				if ( trace.surfaceFlags & SURF_GRASS || trace.surfaceFlags & SURF_GRAVEL ) {
-					CG_AddDirtBulletParticles( origin, dir,
-											   400, // speed
-											   2000, // duration
-											   10, // count
-											   0.5, 200,75, 0.25, "dirt_splash" ); // 128,64
-				}
-				CG_ParticleExplosion( "explode1", sprOrg, sprVel, 700, 60, 240 );
-				CG_AddDebris( origin, dir,
-							  280,
-							  1400,
-							  7 + rand() % 2 );
+			CG_AddDirtBulletParticles( trace.endpos, dir,
+										400, // speed
+										900, // duration
+										15, // count
+										0.5, 256,128, 0.125, "water_splash" );
+		} else {
+			VectorCopy( origin,tmpv );
+			tmpv[2] += 20;
+			VectorCopy( origin,tmpv2 );
+			tmpv2[2] -= 20;
+			trap_CM_BoxTrace( &trace,tmpv,tmpv2,NULL,NULL,0,MASK_SHOT );
+			if ( trace.surfaceFlags & SURF_GRASS || trace.surfaceFlags & SURF_GRAVEL ) {
+				CG_AddDirtBulletParticles( origin, dir,
+											400, // speed
+											2000, // duration
+											10, // count
+											0.5, 200,75, 0.25, "dirt_splash" ); // 128,64
 			}
+			CG_ParticleExplosion( "explode1", sprOrg, sprVel, 700, 60, 240 );
+			CG_AddDebris( origin, dir,
+							280,
+							1400,
+							7 + rand() % 2 );
 		}
+
 
 // jpw
 		break;
@@ -5437,96 +5363,68 @@ void CG_Shard(centity_t *cent, vec3_t origin, vec3_t dir)
 		VectorMA( origin, 24, dir, sprOrg );
 		VectorScale( dir, 64, sprVel );
 // JPW NERVE
-		if ( cg_gameType.integer == GT_SINGLE_PLAYER ) {
-			if ( weapon == VERYBIGEXPLOSION ) {
-				CG_ParticleExplosion( "explode1", sprOrg, sprVel, 1200, 20, 300 );
-			} else {
-				CG_ParticleExplosion( "explode1", sprOrg, sprVel, 1400, 40, 70 );
-			}
-
-			// NOTE: these must all have the same duration, so that we are less likely to use a wider range of images per scene
-			r = 2 + rand() % 3;
-			for ( i = 0; i < 4; i++ ) {
-				if ( weapon == VERYBIGEXPLOSION ) {
-					for ( j = 0; j < 3; j++ ) sprOrg[j] = origin[j] + 32 * dir[j] + 32 * crandom();
-					CG_ParticleExplosion( "explode1", sprOrg, sprVel, 1200, 40, 160 + rand() % 120 );
-				} else if ( i < 2 ) {
-					for ( j = 0; j < 3; j++ ) sprOrg[j] = origin[j] + 24 * dir[j] + 16 * crandom();
-					CG_ParticleExplosion( "explode1", sprOrg, sprVel, 1400, 15, 40 + rand() % 30 );
-				}
-			}
-
-			// Ridah, throw some debris
-			CG_AddDebris( origin, dir,
-						  120,      // speed
-						  2000,  //350,	// duration
-						  // 15 + rand()%5 );	// count
-						  7 + rand() % 2 ); // count
-		}
-// JPW NERVE -- multiplayer explosions over the top due to large damage radiusesesizes
-		else {
+		
 // check for water/dirt spurt
-			if ( trap_CM_PointContents( origin, 0 ) & CONTENTS_WATER ) {
+		if ( trap_CM_PointContents( origin, 0 ) & CONTENTS_WATER ) {
 /*
-				VectorCopy(origin,tmpv);
-				tmpv[2] += 10000;
+			VectorCopy(origin,tmpv);
+			tmpv[2] += 10000;
 
-				trap_CM_BoxTrace( &trace, tmpv,origin, NULL, NULL, 0, MASK_WATER );
-				CG_WaterRipple(cgs.media.wakeMarkShaderAnim, trace.endpos, dir, 300, 2000);
+			trap_CM_BoxTrace( &trace, tmpv,origin, NULL, NULL, 0, MASK_WATER );
+			CG_WaterRipple(cgs.media.wakeMarkShaderAnim, trace.endpos, dir, 300, 2000);
 
-				CG_AddDirtBulletParticles( trace.endpos, dir,
-								400+random()*200,	// speed
-								900,	// duration
-								15,	// count
-								0.5, 512,128, 0.125, "water_splash" );
+			CG_AddDirtBulletParticles( trace.endpos, dir,
+							400+random()*200,	// speed
+							900,	// duration
+							15,	// count
+							0.5, 512,128, 0.125, "water_splash" );
 */
-				VectorCopy( origin,tmpv );
-				tmpv[2] += 10000;
+			VectorCopy( origin,tmpv );
+			tmpv[2] += 10000;
 
-				trap_CM_BoxTrace( &trace, tmpv,origin, NULL, NULL, 0, MASK_WATER );
-				CG_WaterRipple( cgs.media.wakeMarkShaderAnim, trace.endpos, dir, 300, 2000 );
+			trap_CM_BoxTrace( &trace, tmpv,origin, NULL, NULL, 0, MASK_WATER );
+			CG_WaterRipple( cgs.media.wakeMarkShaderAnim, trace.endpos, dir, 300, 2000 );
 
-				CG_AddDirtBulletParticles( trace.endpos, dir,
-										   400 + random() * 200, // speed
-										   900, // duration
-										   15, // count
-										   0.5, 512,128, 0.125, "water_splash" );
-				CG_AddDirtBulletParticles( trace.endpos, dir, // flat splashy bits
-										   400 + random() * 600, // speed
-										   1400, // duration
-										   15, // count
-										   0.5, 128,512, 0.125, "water_splash" );
-			} else {
-				VectorCopy( origin,tmpv );
-				tmpv[2] += 20;
-				VectorCopy( origin,tmpv2 );
-				tmpv2[2] -= 20;
-				trap_CM_BoxTrace( &trace,tmpv,tmpv2,NULL,NULL,0,MASK_SHOT );
+			CG_AddDirtBulletParticles( trace.endpos, dir,
+										400 + random() * 200, // speed
+										900, // duration
+										15, // count
+										0.5, 512,128, 0.125, "water_splash" );
+			CG_AddDirtBulletParticles( trace.endpos, dir, // flat splashy bits
+										400 + random() * 600, // speed
+										1400, // duration
+										15, // count
+										0.5, 128,512, 0.125, "water_splash" );
+		} else {
+			VectorCopy( origin,tmpv );
+			tmpv[2] += 20;
+			VectorCopy( origin,tmpv2 );
+			tmpv2[2] -= 20;
+			trap_CM_BoxTrace( &trace,tmpv,tmpv2,NULL,NULL,0,MASK_SHOT );
 // I'm still not happy with this chunk but I think the particle system is jacked...  not sure the best fix for it -- JPW
-				if ( trace.surfaceFlags & SURF_GRASS || trace.surfaceFlags & SURF_GRAVEL ) {
-					CG_AddDirtBulletParticles( origin, dir,
-											   400 + random() * 200, // speed
-											   3000, // duration
-											   10, // count
-											   0.5, 400,256, 0.25, "dirt_splash" ); // 128,64
-				}
-				CG_ParticleExplosion( "explode1", sprOrg, sprVel, 1600, 20, 200 + random() * 400 );
-				for ( i = 0; i < 4; i++ ) { // JPW random vector based on plane normal so explosions move away from walls/dirt/etc
-					for ( j = 0; j < 3; j++ ) {
-						sprOrg[j] = origin[j] + 50 * crandom();
-						sprVel[j] = 0.35 * crandom();
-					}
-					VectorAdd( sprVel, trace.plane.normal, sprVel );
-					VectorScale( sprVel,300,sprVel );
-					CG_ParticleExplosion( "explode1", sprOrg, sprVel, 1600, 40, 260 + rand() % 120 );
-				}
-				CG_AddDebris( origin, dir,
-							  400 + random() * 200, // speed
-							  rand() % 2000 + 1000, //350,	// duration
-							  // 15 + rand()%5 );	// count
-							  5 + rand() % 5 ); // count
-
+			if ( trace.surfaceFlags & SURF_GRASS || trace.surfaceFlags & SURF_GRAVEL ) {
+				CG_AddDirtBulletParticles( origin, dir,
+											400 + random() * 200, // speed
+											3000, // duration
+											10, // count
+											0.5, 400,256, 0.25, "dirt_splash" ); // 128,64
 			}
+			CG_ParticleExplosion( "explode1", sprOrg, sprVel, 1600, 20, 200 + random() * 400 );
+			for ( i = 0; i < 4; i++ ) { // JPW random vector based on plane normal so explosions move away from walls/dirt/etc
+				for ( j = 0; j < 3; j++ ) {
+					sprOrg[j] = origin[j] + 50 * crandom();
+					sprVel[j] = 0.35 * crandom();
+				}
+				VectorAdd( sprVel, trace.plane.normal, sprVel );
+				VectorScale( sprVel,300,sprVel );
+				CG_ParticleExplosion( "explode1", sprOrg, sprVel, 1600, 40, 260 + rand() % 120 );
+			}
+			CG_AddDebris( origin, dir,
+							400 + random() * 200, // speed
+							rand() % 2000 + 1000, //350,	// duration
+							// 15 + rand()%5 );	// count
+							5 + rand() % 5 ); // count
+
 		}
 // jpw
 /*
@@ -5561,27 +5459,22 @@ void CG_Shard(centity_t *cent, vec3_t origin, vec3_t dir)
 
 //----(SA)	added
 	if ( sfx2 ) {  // distant sounds for weapons with a broadcast fire sound (so you /always/ hear dynamite explosions)
-		if ( cg_gameType.integer == GT_SINGLE_PLAYER ) { // JPW NERVE
-			trap_S_StartLocalSound( sfx2, CHAN_AUTO );
-		}
-// JPW NERVE
-		else {
-			vec3_t porg, gorg, norm;    // player/gun origin
-			float gdist;
+		vec3_t porg, gorg, norm;    // player/gun origin
+		float gdist;
 
 //			cent = &cg_entities[ent->number];
-			VectorCopy( origin, gorg );
-			VectorCopy( cg.refdef.vieworg, porg );
-			VectorSubtract( gorg, porg, norm );
-			gdist = VectorNormalize( norm );
-			if ( gdist > 1200 && gdist < 8000 ) {  // 1200 is max cam shakey dist (2*600)
-				// use gorg as the new sound origin
-				VectorMA( cg.refdef.vieworg, sfx2range, norm, gorg ); // JPW NERVE non-distance falloff makes more sense; sfx2range was gdist*0.2
-																	  // sfx2range is variable to give us minimum volume control different explosion sizes (see mortar, panzerfaust, and grenade)
+		VectorCopy( origin, gorg );
+		VectorCopy( cg.refdef.vieworg, porg );
+		VectorSubtract( gorg, porg, norm );
+		gdist = VectorNormalize( norm );
+		if ( gdist > 1200 && gdist < 8000 ) {  // 1200 is max cam shakey dist (2*600)
+			// use gorg as the new sound origin
+			VectorMA( cg.refdef.vieworg, sfx2range, norm, gorg ); // JPW NERVE non-distance falloff makes more sense; sfx2range was gdist*0.2
+																	// sfx2range is variable to give us minimum volume control different explosion sizes (see mortar, panzerfaust, and grenade)
 //				CG_Printf("d=%f\n",(gdist-1200)*3);
-				trap_S_StartSoundEx( gorg, ENTITYNUM_WORLD, CHAN_WEAPON, sfx2, SND_NOCUT );
-			}
+			trap_S_StartSoundEx( gorg, ENTITYNUM_WORLD, CHAN_WEAPON, sfx2, SND_NOCUT );
 		}
+		
 	}
 // jpw
 
@@ -6283,35 +6176,15 @@ void CG_Bullet( vec3_t end, int sourceEntityNum, vec3_t normal, qboolean flesh, 
 			VectorMA( end, 64, dir, dir );
 			trap_CM_BoxTrace( &trace, start2, dir, NULL, NULL, 0, MASK_SHOT );
 			// JPW NERVE -- water check
-			if ( cg_gameType.integer != GT_SINGLE_PLAYER ) {
-				trap_CM_BoxTrace( &trace2, start2, dir, NULL, NULL, 0, CONTENTS_WATER | MASK_SHOT );
-				if ( trace.fraction != trace2.fraction ) {
-					trap_CM_BoxTrace( &trace2, start, end, NULL, NULL, 0, CONTENTS_WATER );
-					CG_MissileHitWall( fromweap, 2, trace2.endpos, trace2.plane.normal, trace2.surfaceFlags );
-					return;
-				}
+			trap_CM_BoxTrace( &trace2, start2, dir, NULL, NULL, 0, CONTENTS_WATER | MASK_SHOT );
+			if ( trace.fraction != trace2.fraction ) {
+				trap_CM_BoxTrace( &trace2, start, end, NULL, NULL, 0, CONTENTS_WATER );
+				CG_MissileHitWall( fromweap, 2, trace2.endpos, trace2.plane.normal, trace2.surfaceFlags );
+				return;
 			}
 
 			CG_MissileHitWall( fromweap, 1, end, normal, trace.surfaceFlags );   // smoke puff	//	(SA) modified to send missilehitwall surface parameters
 
 		}
 	}
-}
-
-/*
-============
-CG_ClientDamage
-============
-*/
-void CG_ClientDamage( int entnum, int enemynum, int id ) {
-	// NERVE - SMF - don't do this in multiplayer
-	if ( cgs.gametype != GT_SINGLE_PLAYER ) {
-		return;
-	}
-
-	if ( id > CLDMG_MAX ) {
-		CG_Error( "CG_ClientDamage: unknown damage type: %i\n", id );
-	}
-
-	trap_SendClientCommand( va( "cld %i %i %i", entnum, enemynum, id ) );
 }

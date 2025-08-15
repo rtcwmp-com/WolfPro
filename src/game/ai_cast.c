@@ -337,121 +337,7 @@ AICast_CreateCharacter
 ============
 */
 gentity_t *AICast_CreateCharacter( gentity_t *ent, float *attributes, cast_weapon_info_t *weaponInfo, char *castname, char *model, char *head, char *sex, char *color, char *handicap ) {
-	gentity_t       *newent;
-	gclient_t       *client;
-	cast_state_t    *cs;
-	char            **ppStr;
-	int j;
-
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) { // no cast AI in multiplayer
-		return NULL;
-	}
-	// are bots enabled?
-	if ( !trap_Cvar_VariableIntegerValue( "bot_enable" ) ) {
-		G_Printf( S_COLOR_RED "ERROR: Unable to spawn %s, 'bot_enable' is not set\n", ent->classname );
-		return NULL;
-	}
-	//
-	// make sure we have a free slot for them
-	//
-	if ( level.numPlayingClients + 1 > aicast_maxclients ) {
-		G_Error( "Exceeded sv_maxclients (%d), unable to create %s\n", aicast_maxclients, ent->classname );
-		return NULL;
-	}
-	//
-	// add it to the list (only do this if everything else passed)
-	//
-
-	newent = AICast_AddCastToGame( ent, castname, model, head, sex, color, handicap );
-
-	if ( !newent ) {
-		return NULL;
-	}
-	client = newent->client;
-	//
-	// setup the character..
-	//
-	cs = AICast_GetCastState( newent->s.number );
-	//
-	// setup the attributes
-	memcpy( cs->attributes, attributes, sizeof( cs->attributes ) );
-	ppStr = &ent->aiAttributes;
-	AICast_CheckLevelAttributes( cs, ent, ppStr );
-	//
-	AICast_SetAASIndex( cs );
-	// make sure they face the right direction
-	VectorCopy( ent->s.angles, cs->bs->ideal_viewangles );
-	// factor in the delta_angles
-	for ( j = 0; j < 3; j++ ) {
-		cs->bs->viewangles[j] = AngleMod( newent->s.angles[j] - SHORT2ANGLE( newent->client->ps.delta_angles[j] ) );
-	}
-	VectorCopy( ent->s.angles, newent->s.angles );
-	VectorCopy( ent->s.origin, cs->startOrigin );
-	//
-	cs->lastEnemy = -1;
-	cs->bs->enemy = -1;
-	cs->leaderNum = -1;
-	cs->castScriptStatus.scriptGotoEnt = -1;
-	cs->aiCharacter = ent->aiCharacter;
-	//
-	newent->aiName = ent->aiName;
-	newent->aiTeam = ent->aiTeam;
-	newent->targetname = ent->targetname;
-	//
-	newent->AIScript_AlertEntity = ent->AIScript_AlertEntity;
-	newent->aiInactive = ent->aiInactive;
-	newent->aiCharacter = cs->aiCharacter;
-	//
-	// parse the AI script for this character (if applicable)
-	cs->aiFlags |= AIFL_CORPSESIGHTING;     // this is on by default for all characters, disabled if they have a "friendlysightcorpse" script event
-	AICast_ScriptParse( cs );
-	//
-	// setup bounding boxes
-	//VectorCopy( mins, client->ps.mins );
-	//VectorCopy( maxs, client->ps.maxs );
-	AIChar_SetBBox( newent, cs );
-	client->ps.friction = cs->attributes[RUNNING_SPEED] / 300.0;
-	//
-	// clear weapons/ammo
-	client->ps.weapon = 0;
-	memcpy( client->ps.weapons, weaponInfo->startingWeapons, sizeof( weaponInfo->startingWeapons ) );
-	memcpy( client->ps.ammo, weaponInfo->startingAmmo, sizeof( client->ps.ammo ) );
-	//
-	// starting health
-	if ( ent->health ) {
-		newent->health = client->ps.stats[STAT_HEALTH] = client->ps.stats[STAT_MAX_HEALTH] = ent->health;
-	} else {
-		newent->health = client->ps.stats[STAT_HEALTH] = client->ps.stats[STAT_MAX_HEALTH] = cs->attributes[STARTING_HEALTH];
-	}
-	//
-	cs->weaponInfo = weaponInfo;
-	//
-	cs->lastThink = level.time;
-	//
-	newent->pain = AICast_Pain;
-	newent->die = AICast_Die;
-	//
-	//update the attack inventory values
-	AICast_UpdateBattleInventory( cs, cs->bs->enemy );
-
-//----(SA)	make sure all clips are loaded so we don't hear everyone loading up
-//			(we don't want to do this inside AICast_UpdateBattleInventory(), only on spawn or giveweapon)
-	for ( j = 0; j < MAX_WEAPONS; j++ ) {
-		Fill_Clip( &client->ps, j );
-	}
-//----(SA)	end
-
-	// select a weapon
-	AICast_ChooseWeapon( cs, qfalse );
-
-	//
-	// set the default function, overwrite if necessary
-	cs->aiFlags |= AIFL_JUST_SPAWNED;
-	AIFunc_DefaultStart( cs );
-	//
-	numcast++;
-	//
-	return newent;
+	return NULL;
 }
 
 /*
@@ -811,19 +697,13 @@ AICast_NoFlameDamage
 ================
 */
 qboolean AICast_NoFlameDamage( int entNum ) {
-	cast_state_t *cs;
-
 	if ( entNum >= MAX_CLIENTS ) {
 		return qfalse;
 	}
 
-	// DHM - Nerve :: Not in multiplayer
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-		return qfalse;
-	}
+	return qfalse;
+	
 
-	cs = AICast_GetCastState( entNum );
-	return ( ( cs->aiFlags & AIFL_NO_FLAME_DAMAGE ) != 0 );
 }
 
 /*

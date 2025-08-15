@@ -774,14 +774,7 @@ static void CG_MapRestart( void ) {
 		trap_S_StartLocalSound( cgs.media.countFightSound, CHAN_ANNOUNCER );
 		CG_CenterPrint( "FIGHT!", 120, GIANTCHAR_WIDTH * 2 );
 	}
-#ifdef MISSIONPACK
-	if ( cg_singlePlayerActive.integer ) {
-		trap_Cvar_Set( "ui_matchStartTime", va( "%i", cg.time ) );
-		if ( cg_recordSPDemo.integer && cg_recordSPDemoName.string && *cg_recordSPDemoName.string ) {
-			trap_SendConsoleCommand( va( "set g_synchronousclients 1 ; record %s \n", cg_recordSPDemoName.string ) );
-		}
-	}
-#endif
+
 	trap_Cvar_Set( "cg_thirdPerson", "0" );
 }
 
@@ -1628,11 +1621,6 @@ static void CG_ServerCommand( void ) {
 		CG_MapRestart();
 		return;
 	}
-
-//	if ( !strcmp( cmd, "startCam" ) ) {
-//		CG_StartCamera( CG_Argv(1), atoi(CG_Argv(2)) );
-//		return;
-//	}
 
 	if ( !strcmp( cmd, "mvspd" ) ) {
 		CG_RequestMoveSpeed( CG_Argv( 1 ) );

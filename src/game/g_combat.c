@@ -52,13 +52,6 @@ void AddScore( gentity_t *ent, int score ) {
 		return;
 	}
 
-	// Ridah, no scoring during single player
-	// DHM - Nerve :: fix typo
-	if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
-		return;
-	}
-	// done.
-
 
 	ent->client->ps.persistant[PERS_SCORE] += score;
 	if ( g_gametype.integer >= GT_TEAM ) { // JPW NERVE changed to >=
@@ -337,18 +330,17 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 	self->client->ps.persistant[PERS_KILLED]++;
 
 // JPW NERVE -- if player is holding ticking grenade, drop it
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-		if ( ( self->client->ps.grenadeTimeLeft ) && ( self->s.weapon != WP_DYNAMITE ) ) {
-			launchvel[0] = crandom();
-			launchvel[1] = crandom();
-			launchvel[2] = random();
-			VectorScale( launchvel, 160, launchvel );
-			VectorCopy( self->r.currentOrigin, launchspot );
-			launchspot[2] += 40;
-			fire_grenade( self, launchspot, launchvel, self->s.weapon );
+	if ( ( self->client->ps.grenadeTimeLeft ) && ( self->s.weapon != WP_DYNAMITE ) ) {
+		launchvel[0] = crandom();
+		launchvel[1] = crandom();
+		launchvel[2] = random();
+		VectorScale( launchvel, 160, launchvel );
+		VectorCopy( self->r.currentOrigin, launchspot );
+		launchspot[2] += 40;
+		fire_grenade( self, launchspot, launchvel, self->s.weapon );
 
-		}
 	}
+
 // jpw
 
 	if ( attacker && attacker->client ) {
@@ -392,66 +384,59 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 	Team_FragBonuses( self, inflictor, attacker );
 
 	// if client is in a nodrop area, don't drop anything
-// JPW NERVE new drop behavior
-	if ( g_gametype.integer == GT_SINGLE_PLAYER ) {   // only drop here in single player; in multiplayer, drop @ limbo
-		contents = trap_PointContents( self->r.currentOrigin, -1 );
-		if ( !( contents & CONTENTS_NODROP ) ) {
-			TossClientItems( self );
-		}
-	}
 
 	// drop flag regardless
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-		if ( self->client->ps.powerups[PW_REDFLAG] ) {
-			item = BG_FindItem( "Red Flag" );
-			if ( !item ) {
-				item = BG_FindItem( "Objective" );
-			}
 
-			self->client->ps.powerups[PW_REDFLAG] = 0;
-		}
-		if ( self->client->ps.powerups[PW_BLUEFLAG] ) {
-			item = BG_FindItem( "Blue Flag" );
-			if ( !item ) {
-				item = BG_FindItem( "Objective" );
-			}
-
-			self->client->ps.powerups[PW_BLUEFLAG] = 0;
+	if ( self->client->ps.powerups[PW_REDFLAG] ) {
+		item = BG_FindItem( "Red Flag" );
+		if ( !item ) {
+			item = BG_FindItem( "Objective" );
 		}
 
-		if ( item ) {
-			launchvel[0] = crandom() * 20;
-			launchvel[1] = crandom() * 20;
-			launchvel[2] = 10 + random() * 10;
-
-			flag = LaunchItem( item,self->r.currentOrigin,launchvel,self->s.number );
-			flag->s.modelindex2 = self->s.otherEntityNum2; // JPW NERVE FIXME set player->otherentitynum2 with old modelindex2 from flag and restore here
-			flag->message = self->message;  // DHM - Nerve :: also restore item name
-			// Clear out player's temp copies
-			self->s.otherEntityNum2 = 0;
-			self->message = NULL;
+		self->client->ps.powerups[PW_REDFLAG] = 0;
+	}
+	if ( self->client->ps.powerups[PW_BLUEFLAG] ) {
+		item = BG_FindItem( "Blue Flag" );
+		if ( !item ) {
+			item = BG_FindItem( "Objective" );
 		}
 
-		// send a fancy "MEDIC!" scream.  Sissies, ain' they?
-		if ( self->client != NULL ) {
-			if ( self->health > GIB_HEALTH && meansOfDeath != MOD_SUICIDE ) {
+		self->client->ps.powerups[PW_BLUEFLAG] = 0;
+	}
 
-				if ( self->client->sess.sessionTeam == TEAM_RED ) {
-					if ( random() > 0.5 ) {
-						G_AddEvent( self, EV_GENERAL_SOUND, G_SoundIndex( "sound/multiplayer/axis/g-medic2.wav" ) );
-					} else {
-						G_AddEvent( self, EV_GENERAL_SOUND, G_SoundIndex( "sound/multiplayer/axis/g-medic3.wav" ) );
-					}
+	if ( item ) {
+		launchvel[0] = crandom() * 20;
+		launchvel[1] = crandom() * 20;
+		launchvel[2] = 10 + random() * 10;
+
+		flag = LaunchItem( item,self->r.currentOrigin,launchvel,self->s.number );
+		flag->s.modelindex2 = self->s.otherEntityNum2; // JPW NERVE FIXME set player->otherentitynum2 with old modelindex2 from flag and restore here
+		flag->message = self->message;  // DHM - Nerve :: also restore item name
+		// Clear out player's temp copies
+		self->s.otherEntityNum2 = 0;
+		self->message = NULL;
+	}
+
+	// send a fancy "MEDIC!" scream.  Sissies, ain' they?
+	if ( self->client != NULL ) {
+		if ( self->health > GIB_HEALTH && meansOfDeath != MOD_SUICIDE ) {
+
+			if ( self->client->sess.sessionTeam == TEAM_RED ) {
+				if ( random() > 0.5 ) {
+					G_AddEvent( self, EV_GENERAL_SOUND, G_SoundIndex( "sound/multiplayer/axis/g-medic2.wav" ) );
 				} else {
-					if ( random() > 0.5 ) {
-						G_AddEvent( self, EV_GENERAL_SOUND, G_SoundIndex( "sound/multiplayer/allies/a-medic3.wav" ) );
-					} else {
-						G_AddEvent( self, EV_GENERAL_SOUND, G_SoundIndex( "sound/multiplayer/allies/a-medic2.wav" ) );
-					}
+					G_AddEvent( self, EV_GENERAL_SOUND, G_SoundIndex( "sound/multiplayer/axis/g-medic3.wav" ) );
+				}
+			} else {
+				if ( random() > 0.5 ) {
+					G_AddEvent( self, EV_GENERAL_SOUND, G_SoundIndex( "sound/multiplayer/allies/a-medic3.wav" ) );
+				} else {
+					G_AddEvent( self, EV_GENERAL_SOUND, G_SoundIndex( "sound/multiplayer/allies/a-medic2.wav" ) );
 				}
 			}
 		}
 	}
+	
 // jpw
 
 	Cmd_Score_f( self );        // show scores
@@ -478,12 +463,8 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 	prevPowerups = self->s.powerups;
 	self->s.powerups = 0;
 // JPW NERVE -- only corpse in SP; in MP, need CONTENTS_BODY so medic can operate
-	if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
-		self->s.weapon = WP_NONE;
-		self->s.angles[0] = 0;
-	} else {
-		self->client->limboDropWeapon = self->s.weapon; // store this so it can be dropped in limbo
-	}
+	self->client->limboDropWeapon = self->s.weapon; // store this so it can be dropped in limbo
+	
 // jpw
 	self->s.angles[2] = 0;
 	LookAtKiller( self, inflictor, attacker );
@@ -1146,7 +1127,7 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 		}
 
 // JPW NERVE overcome previous chunk of code for making grenades work again
-		if ( ( g_gametype.integer != GT_SINGLE_PLAYER ) && ( take > 190 ) ) { // 190 is greater than 2x mauser headshot, so headshots don't gib
+		if ( ( take > 190 ) ) { // 190 is greater than 2x mauser headshot, so headshots don't gib
 			targ->health = GIB_HEALTH - 1;
 		}
 // jpw
@@ -1373,25 +1354,24 @@ qboolean G_RadiusDamage( vec3_t origin, gentity_t *attacker, float damage, float
 		}
 // JPW NERVE --  MP weapons should do 1/8 damage through walls over 1/8th distance
 		else {
-			if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-				VectorAdd( ent->r.absmin, ent->r.absmax, midpoint );
-				VectorScale( midpoint, 0.5, midpoint );
-				VectorCopy( midpoint, dest );
+			VectorAdd( ent->r.absmin, ent->r.absmax, midpoint );
+			VectorScale( midpoint, 0.5, midpoint );
+			VectorCopy( midpoint, dest );
 
-				trap_Trace( &tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID );
-				if ( tr.fraction < 1.0 ) {
-					VectorSubtract( dest,origin,dest );
-					dist = VectorLength( dest );
-					if ( dist < radius * 0.2f ) { // closer than 1/4 dist
-						if ( LogAccuracyHit( ent, attacker ) ) {
-							hitClient = qtrue;
-						}
-						VectorSubtract( ent->r.currentOrigin, origin, dir );
-						dir[2] += 24;
-						G_Damage( ent, NULL, attacker, dir, origin, (int)( points * 0.1f ), DAMAGE_RADIUS, mod );
+			trap_Trace( &tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID );
+			if ( tr.fraction < 1.0 ) {
+				VectorSubtract( dest,origin,dest );
+				dist = VectorLength( dest );
+				if ( dist < radius * 0.2f ) { // closer than 1/4 dist
+					if ( LogAccuracyHit( ent, attacker ) ) {
+						hitClient = qtrue;
 					}
+					VectorSubtract( ent->r.currentOrigin, origin, dir );
+					dir[2] += 24;
+					G_Damage( ent, NULL, attacker, dir, origin, (int)( points * 0.1f ), DAMAGE_RADIUS, mod );
 				}
 			}
+			
 		}
 // jpw
 	}

@@ -3115,7 +3115,6 @@ weapon_t BG_FindAmmoForWeapon( weapon_t weapon ) {
 
 	for ( it = bg_itemlist + 1 ; it->classname ; it++ ) {
 		if ( it->giType == IT_WEAPON && it->giTag == weapon ) {
-//			if(g_gametype.integer != GT_SINGLE_PLAYER)
 			if ( 0 ) {
 				if ( DEATHMATCH_SHARED_AMMO ) { // this would be a !single_player server cvar that lets Allied and Axis like-weapons share like-ammo for dm
 					switch ( it->giAmmoIndex )

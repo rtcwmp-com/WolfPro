@@ -847,18 +847,10 @@ static int CG_CalcFov( void ) {
 			fov_x = 90;
 		} else {
 			fov_x = cg_fov.value;
-			if ( cgs.gametype == GT_SINGLE_PLAYER ) {
-				if ( fov_x < 1 ) {
-					fov_x = 1;
-				} else if ( fov_x > 160 ) {
-					fov_x = 160;
-				}
-			} else {
-				if ( fov_x < 90 ) {
-					fov_x = 90;
-				} else if ( fov_x > 160 ) {
-					fov_x = 160;
-				}
+			if ( fov_x < 90 ) {
+				fov_x = 90;
+			} else if ( fov_x > 160 ) {
+				fov_x = 160;
 			}
 		}
 
@@ -1323,13 +1315,6 @@ void CG_DrawSkyBoxPortal( void ) {
 	if ( !( cstr = (char *)CG_ConfigString( CS_SKYBOXORG ) ) || !strlen( cstr ) ) {
 		// no skybox in this map
 		return;
-	}
-
-	// if they are waiting at the mission stats screen, show the stats
-	if ( cg_gameType.integer == GT_SINGLE_PLAYER ) {
-		if ( strlen( cg_missionStats.string ) > 1 ) {
-			return;
-		}
 	}
 
 	backuprefdef = cg.refdef;

@@ -2071,8 +2071,6 @@ void CG_HoldableUsedupChange( void ); //----(SA)	added
 void CG_AddDebris( vec3_t origin, vec3_t dir, int speed, int duration, int count );
 //----(SA) done
 
-void CG_ClientDamage( int entnum, int enemynum, int id );
-
 //
 // cg_marks.c
 //
@@ -2496,7 +2494,7 @@ qboolean    trap_GetEntityToken( char *buffer, int bufferSize );
 qboolean    trap_loadCamera( int camNum, const char *name );
 void        trap_startCamera( int camNum, int time );
 qboolean    trap_getCameraInfo( int camNum, int time, vec3_t *origin, vec3_t *angles, float *fov );
-void        CG_StartCamera( const char *name, qboolean startBlack );
+
 
 //----(SA)	added
 int         CG_LoadCamera( const char *name );

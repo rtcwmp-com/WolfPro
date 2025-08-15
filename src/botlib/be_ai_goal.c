@@ -767,11 +767,7 @@ int BotGetLevelItemGoal( int index, char *name, bot_goal_t *goal ) {
 			continue;
 		}
 		//
-		if ( g_gametype == GT_SINGLE_PLAYER ) {
-			if ( li->notsingle ) {
-				continue;
-			}
-		} else if ( g_gametype >= GT_TEAM )     {
+		if ( g_gametype >= GT_TEAM )     {
 			if ( li->notteam ) {
 				continue;
 			}
@@ -1144,11 +1140,7 @@ int BotChooseLTGItem( int goalstate, vec3_t origin, int *inventory, int travelfl
 	//go through the items in the level
 	for ( li = levelitems; li; li = li->next )
 	{
-		if ( g_gametype == GT_SINGLE_PLAYER ) {
-			if ( li->notsingle ) {
-				continue;
-			}
-		} else if ( g_gametype >= GT_TEAM )     {
+		if ( g_gametype >= GT_TEAM )     {
 			if ( li->notteam ) {
 				continue;
 			}
@@ -1307,11 +1299,7 @@ int BotChooseNBGItem( int goalstate, vec3_t origin, int *inventory, int travelfl
 	//go through the items in the level
 	for ( li = levelitems; li; li = li->next )
 	{
-		if ( g_gametype == GT_SINGLE_PLAYER ) {
-			if ( li->notsingle ) {
-				continue;
-			}
-		} else if ( g_gametype >= GT_TEAM )     {
+		if ( g_gametype >= GT_TEAM )     {
 			if ( li->notteam ) {
 				continue;
 			}
