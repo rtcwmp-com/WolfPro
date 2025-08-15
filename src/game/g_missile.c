@@ -223,7 +223,6 @@ void G_MissileImpact( gentity_t *ent, trace_t *trace, int impactDamage ) {
 	gentity_t       *other;
 	qboolean hitClient = qfalse;
 	vec3_t velocity;
-	int etype;
 
 	other = &g_entities[trace->entityNum];
 
@@ -311,7 +310,6 @@ void G_MissileImpact( gentity_t *ent, trace_t *trace, int impactDamage ) {
 	ent->freeAfterEvent = qtrue;
 
 	// change over to a normal entity right at the point of impact
-	etype = ent->s.eType;
 	ent->s.eType = ET_GENERAL;
 
 	SnapVectorTowards( trace->endpos, ent->s.pos.trBase );  // save net bandwidth
@@ -337,13 +335,6 @@ Concussive_think
 ==============
 */
 void Concussive_think( gentity_t *ent ) {
-	gentity_t *player;
-	vec3_t dir;
-	vec3_t kvel;
-	float grav = 24;
-	vec3_t vec;
-	float len;
-
 	if ( level.time > ent->delay ) {
 		ent->think = G_FreeEntity;
 	}

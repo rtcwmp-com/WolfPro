@@ -431,12 +431,10 @@ CG_PyroSmokeTrail
 void CG_PyroSmokeTrail( centity_t *ent, const weaponInfo_t *wi ) {
 	int step;
 	vec3_t origin, lastPos, dir;
-	int contents;
-	int lastContents, startTime;
+	int startTime;
 	entityState_t   *es;
 	int t;
 	float rnd;
-	localEntity_t   *le;
 
 	step = 30;
 	es = &ent->currentState;
@@ -444,10 +442,8 @@ void CG_PyroSmokeTrail( centity_t *ent, const weaponInfo_t *wi ) {
 	t = step * ( ( startTime + step ) / step );
 
 	BG_EvaluateTrajectory( &es->pos, cg.time, origin );
-	contents = CG_PointContents( origin, -1 );
 
 	BG_EvaluateTrajectory( &es->pos, ent->trailTime, lastPos );
-	lastContents = CG_PointContents( lastPos, -1 );
 
 	ent->trailTime = cg.time;
 
@@ -484,7 +480,7 @@ void CG_PyroSmokeTrail( centity_t *ent, const weaponInfo_t *wi ) {
 		VectorScale( dir,65,dir ); // was 75, before that 55
 
 		if ( !ent->currentState.otherEntityNum2 ) { // axis team, generate red smoke
-			le = CG_SmokePuff( origin, dir,
+			CG_SmokePuff( origin, dir,
 							   25 + rnd * 110, // width
 							   rnd * 0.5 + 0.5, rnd * 0.5 + 0.5, 1, 0.5,
 							   4800 + ( rand() % 2800 ), // duration was 2800+
@@ -493,7 +489,7 @@ void CG_PyroSmokeTrail( centity_t *ent, const weaponInfo_t *wi ) {
 							   0,
 							   cgs.media.smokePuffShader );
 		} else {
-			le = CG_SmokePuff( origin, dir,
+			CG_SmokePuff( origin, dir,
 							   25 + rnd * 110, // width
 							   1.0, rnd * 0.5 + 0.5, rnd * 0.5 + 0.5, 0.5,
 							   4800 + ( rand() % 2800 ), // duration was 2800+
@@ -1996,13 +1992,10 @@ CG_VenomSpinAngle
 
 static float CG_VenomSpinAngle( centity_t *cent ) {
 	int delta;
-	float ramp;
 	float angle;
 	float speed;
 
 	delta = cg.time - cent->pe.barrelTime;
-
-	ramp = delta % VENOM_DELTATIME;
 
 	delta = cg.time - cent->pe.barrelTime;
 	if ( cent->pe.barrelSpinning ) {
@@ -2706,18 +2699,11 @@ void CG_AddPlayerWeapon( refEntity_t *parent, playerState_t *ps, centity_t *cent
 void CG_AddPlayerFoot( refEntity_t *parent, playerState_t *ps, centity_t *cent ) {
 	refEntity_t wolfkick;
 	vec3_t kickangle;
-	weaponInfo_t    *weapon;
-	weapon_t weaponNum;
 	int frame;
-	static int oldtime = 0;
 
 	if ( !( cg.snap->ps.persistant[PERS_WOLFKICK] ) ) {
-		oldtime = 0;
 		return;
 	}
-
-	weaponNum = cent->currentState.weapon;
-	weapon = &cg_weapons[weaponNum];
 
 	memset( &wolfkick, 0, sizeof( wolfkick ) );
 
@@ -3814,7 +3800,6 @@ CG_LastWeaponUsed_f
 ==============
 */
 void CG_LastWeaponUsed_f( void ) {
-	int lastweap;
 
 	if ( cg.snap->ps.pm_type == PM_FREEZE ) {
 		return;
@@ -3837,7 +3822,6 @@ void CG_LastWeaponUsed_f( void ) {
 	}
 
 	if ( CG_WeaponSelectable( cg.switchbackWeapon ) ) {
-		lastweap = cg.weaponSelect;
 		CG_FinishWeaponChange( cg.weaponSelect, cg.switchbackWeapon );
 	} else {    // switchback no longer selectable, reset cycle
 		cg.switchbackWeapon = 0;
@@ -4881,7 +4865,6 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, in
 	vec3_t sprOrg;
 	vec3_t sprVel;
 	int i,j;
-	int markDuration;
 	trace_t trace;         // JPW NERVE
 	vec3_t tmpv,tmpv2;          // JPW NERVE
 	float sfx2range = 0;         // JPW NERVE -- kludge to get around lack of *VOLUME CONTROL* in sound mixer
@@ -4902,7 +4885,6 @@ void CG_MissileHitWall( int weapon, int clientNum, vec3_t origin, vec3_t dir, in
 	// set defaults
 	isSprite = qfalse;
 	duration = 600;
-	markDuration = -1;
 
 	if ( surfFlags & SURF_SKY ) {
 		return;
@@ -5145,7 +5127,6 @@ void CG_Shard(centity_t *cent, vec3_t origin, vec3_t dir)
 		sfx2 = cgs.media.sfx_rockexpDist;
 		sfx2range = 1200;
 		mark = cgs.media.burnMarkShader;
-		markDuration = 60000;
 		radius = 64;
 		light = 300;
 		isSprite = qtrue;
@@ -5204,7 +5185,6 @@ void CG_Shard(centity_t *cent, vec3_t origin, vec3_t dir)
 		sfx2 = cgs.media.sfx_dynamiteexpDist;
 		sfx2range = 400;
 		mark = cgs.media.burnMarkShader;
-		markDuration = 60000;
 		radius = 64;
 		light = 300;
 		isSprite = qtrue;
@@ -5286,7 +5266,6 @@ void CG_Shard(centity_t *cent, vec3_t origin, vec3_t dir)
 		sfx2 = cgs.media.sfx_rockexpDist;
 		sfx2range = 1400;
 		mark = cgs.media.burnMarkShader;
-		markDuration = 60000;
 		radius = 64;
 		light = 300;
 		isSprite = qtrue;
@@ -5346,7 +5325,6 @@ void CG_Shard(centity_t *cent, vec3_t origin, vec3_t dir)
 		sfx2 = cgs.media.sfx_rockexpDist;
 		sfx2range = 800;
 		mark = cgs.media.burnMarkShader;
-		markDuration = 60000;
 		radius = 64;
 		light = 600;
 		isSprite = qtrue;
@@ -5912,7 +5890,6 @@ CG_CalcMuzzlePoint
 static qboolean CG_CalcMuzzlePoint( int entityNum, vec3_t muzzle ) {
 	vec3_t forward, right, up;
 	centity_t   *cent;
-	int anim;
 
 	if ( entityNum == cg.snap->ps.clientNum ) {
 		VectorCopy( cg.snap->ps.origin, muzzle );
@@ -5932,7 +5909,6 @@ static qboolean CG_CalcMuzzlePoint( int entityNum, vec3_t muzzle ) {
 	VectorCopy( cent->currentState.pos.trBase, muzzle );
 
 	AngleVectors( cent->currentState.apos.trBase, forward, right, up );
-	anim = cent->currentState.legsAnim & ~ANIM_TOGGLEBIT;
 // RF, this is all broken by scripting system
 //	if ( anim == LEGS_WALKCR || anim == LEGS_IDLECR || anim  == LEGS_IDLE_ALT ) {
 //		muzzle[2] += CROUCH_VIEWHEIGHT;
@@ -6051,7 +6027,6 @@ void CG_Bullet( vec3_t end, int sourceEntityNum, vec3_t normal, qboolean flesh, 
 	// impact splash and mark
 	if ( flesh ) {
 		vec3_t origin;
-		localEntity_t *le; // JPW NERVE
 		float rnd, tmpf; // JPW NERVE
 		vec3_t smokedir, tmpv, tmpv2; // JPW NERVE
 		int i,headshot; // JPW NERVE
@@ -6086,7 +6061,7 @@ void CG_Bullet( vec3_t end, int sourceEntityNum, vec3_t normal, qboolean flesh, 
 				VectorScale( tmpv2,35,tmpv2 ); // was 75, before that 55
 				tmpv2[2] = 0;
 				VectorAdd( tmpv,tmpv2,tmpv );
-				le = CG_SmokePuff( origin, tmpv,
+				CG_SmokePuff( origin, tmpv,
 								   5 + rnd * 10, // width
 								   1, rnd * 0.8, rnd * 0.8, 0.5,
 								   500 + ( rand() % 800 ), // duration was 2800+
@@ -6107,7 +6082,7 @@ void CG_Bullet( vec3_t end, int sourceEntityNum, vec3_t normal, qboolean flesh, 
 				VectorScale( tmpv2,35,tmpv2 ); // was 75, before that 55
 				tmpv2[2] = 0;
 				VectorAdd( tmpv,tmpv2,tmpv );
-				le = CG_SmokePuff( origin, tmpv,
+				CG_SmokePuff( origin, tmpv,
 								   5 + rnd * 10, // width
 								   rnd * 0.3f + 0.5f, rnd * 0.3f + 0.5f, rnd * 0.3f + 0.5f, 0.125f,
 								   500 + ( rand() % 300 ), // duration was 2800+

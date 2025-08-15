@@ -224,8 +224,8 @@ typedef struct {
 static parser_t parser;
 static demo_t demo;
 static newDemoPlayer_t ndp;
-static const entityState_t nullEntityState = { 0 };
-static const playerState_t nullPlayerState = { 0 };
+static entityState_t nullEntityState = { 0 };
+static playerState_t nullPlayerState = { 0 };
 #if defined(_DEBUG) && VERBOSE_DEBUGGING
 static const char* cmdName;
 #endif
@@ -312,7 +312,7 @@ static void MB_Seek( memoryBuffer_t* mb, int position )
 }
 
 
-static void WriteNDPSnapshot( msg_t* outMsg, const ndpSnapshot_t* prevSnap, ndpSnapshot_t* currSnap, qbool isServerPaused )
+static void WriteNDPSnapshot( msg_t* outMsg, ndpSnapshot_t* prevSnap, ndpSnapshot_t* currSnap, qbool isServerPaused )
 {
 	const qbool isFullSnap = prevSnap == NULL;
 
@@ -322,8 +322,8 @@ static void WriteNDPSnapshot( msg_t* outMsg, const ndpSnapshot_t* prevSnap, ndpS
 	MSG_WriteBits(outMsg, !!isServerPaused, 1);
 
 	// player state
-	const playerState_t* const oldPS = !prevSnap ? &nullPlayerState : &prevSnap->ps;
-	playerState_t* const newPS = &currSnap->ps;
+	playerState_t* oldPS = !prevSnap ? &nullPlayerState : &prevSnap->ps;
+	playerState_t* newPS = &currSnap->ps;
 	MSG_WriteDeltaPlayerstate(outMsg, oldPS, newPS);
 
 	// area mask
@@ -354,12 +354,12 @@ static void WriteNDPSnapshot( msg_t* outMsg, const ndpSnapshot_t* prevSnap, ndpS
 
 	// entities
 	for (int i = 0; i < MAX_GENTITIES - 1; ++i) {
-		const entityState_t* oldEntity = NULL;
+		entityState_t* oldEntity = NULL;
 		if (prevSnap && prevSnap->entities[i].number < MAX_GENTITIES - 1) {
 			oldEntity = &prevSnap->entities[i];
 		}
 
-		const entityState_t* newEntity = &currSnap->entities[i];
+		entityState_t* newEntity = &currSnap->entities[i];
 		if (newEntity->number != i || newEntity->number >= MAX_GENTITIES - 1) {
 			newEntity = NULL;
 		}
@@ -913,15 +913,19 @@ static void ReadNextSnapshot(void)
 	}
 	qbool entSet[MAX_GENTITIES];
 	Com_Memset(entSet, 0, sizeof(entSet));
+#ifdef _DEBUG
 	int prevIndex = -1;
+#endif
 	for (;;) {
 		const int index = MSG_ReadBits(&inMsg, GENTITYNUM_BITS);
+#ifdef _DEBUG
 		Q_assert(index > prevIndex);
 		prevIndex = index;
+#endif
 		if (index == MAX_GENTITIES - 1) {
 			break;
 		}
-		const entityState_t* prevEnt = &nullEntityState;
+		entityState_t* prevEnt = &nullEntityState;
 		entityState_t* currEnt = &currSnap->entities[index];
 		if (prevSnap && prevSnap->entities[index].number == index) {
 			prevEnt = &prevSnap->entities[index];

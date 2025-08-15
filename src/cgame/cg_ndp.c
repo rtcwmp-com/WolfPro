@@ -12,7 +12,7 @@ int m_currServerTime;
 int m_firstServerTime;
 int m_lastServerTime;
 static char m_demoPath[4096];
-static char ndp_configStrings[MAX_GAMESTATE_CHARS];
+//static char ndp_configStrings[MAX_GAMESTATE_CHARS];
 int ndp_configStringOffsets[MAX_CONFIGSTRINGS];
 int ndp_numConfigStringBytes;
 
@@ -307,7 +307,6 @@ Uses the obitary event from the snapshot to save your kills for the timeline
 */
 
 qbool CG_NDP_AnalyzeObituary(entityState_t* ent, snapshot_t* snapshot) {
-	int mod;
 	int target, attacker;
 	//int killtype = 0;               // DHM - Nerve :: 0==Axis; 1==Allied; 2==your kill
 	//char* message;
@@ -321,7 +320,6 @@ qbool CG_NDP_AnalyzeObituary(entityState_t* ent, snapshot_t* snapshot) {
 
 	target = ent->otherEntityNum;
 	attacker = ent->otherEntityNum2;
-	mod = ent->eventParm;
 	if (attacker < 0 || attacker >= MAX_CLIENTS) {
 		attacker = ENTITYNUM_WORLD;
 		attackerInfo = NULL;

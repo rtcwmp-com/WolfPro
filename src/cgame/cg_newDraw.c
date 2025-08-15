@@ -97,10 +97,8 @@ void CG_SelectPrevPlayer() {
 static void CG_DrawPlayerArmorValue( rectDef_t *rect, float scale, vec4_t color, qhandle_t shader, int textStyle ) {
 	char num[16];
 	int value;
-	centity_t   *cent;
 	playerState_t   *ps;
 
-	cent = &cg_entities[cg.snap->ps.clientNum];
 	ps = &cg.snap->ps;
 
 	// NERVE - SMF - don't draw armor in wolfMP
@@ -122,15 +120,6 @@ static void CG_DrawPlayerArmorValue( rectDef_t *rect, float scale, vec4_t color,
 	}
 }
 
-/*
-// TTimo: unused
-static float healthColors[4][4] = {
-//		{ 0.2, 1.0, 0.2, 1.0 } , { 1.0, 0.2, 0.2, 1.0 }, {0.5, 0.5, 0.5, 1} };
-		{ 1, 0.69f, 0, 1.0f } ,		// normal
-		{ 1.0f, 0.2f, 0.2f, 1.0f },		// low health
-		{0.5f, 0.5f, 0.5f, 1},			// weapon firing
-		{ 1, 1, 1, 1 } };			// health > 100
-*/
 
 /*
 ==============
@@ -288,12 +277,10 @@ CG_DrawPlayerAmmoIcon
 */
 static void CG_DrawPlayerAmmoIcon( rectDef_t *rect, qboolean draw2D ) {
 	centity_t   *cent;
-	playerState_t   *ps;
 	vec3_t angles;
 	vec3_t origin;
 
 	cent = &cg_entities[cg.snap->ps.clientNum];
-	ps = &cg.snap->ps;
 
 	if ( draw2D || ( !cg_draw3dIcons.integer && cg_drawIcons.integer ) ) {
 		qhandle_t icon;
@@ -537,7 +524,7 @@ CG_DrawPlayerAmmoValue
 int CG_DrawFieldWidth( int x, int y, int width, int value, int charWidth, int charHeight );
 
 static void CG_DrawPlayerAmmoValue( rectDef_t *rect, float scale, vec4_t color, qhandle_t shader, int textStyle, int type ) {
-	int ammovalue, ammovalue2 = 0, clipvalue, clipvalue2 = 0;
+	int ammovalue, clipvalue;
 	centity_t   *cent;
 	playerState_t   *ps;
 	int weap, startx;
@@ -586,12 +573,10 @@ static void CG_DrawPlayerAmmoValue( rectDef_t *rect, float scale, vec4_t color, 
 
 	// ammo
 	ammovalue = cg.snap->ps.ammo[BG_FindAmmoForWeapon( weap )];
-	ammovalue2 = ps->ammoclip[BG_FindClipForWeapon( weap )];
-
+	
 	// clip
 	clipvalue = ps->ammoclip[BG_FindClipForWeapon( weap )];
 	if ( special ) {
-		clipvalue2 = clipvalue;
 		if ( weapAlts[weap] ) {
 			clipvalue = ps->ammoclip[weapAlts[weap]];
 		}
@@ -753,16 +738,6 @@ static void CG_DrawSelectedPlayerLocation( rectDef_t *rect, float scale, vec4_t 
 	}
 }
 
-static void CG_DrawPlayerLocation( rectDef_t *rect, float scale, vec4_t color, int textStyle  ) {
-	clientInfo_t *ci = &cgs.clientinfo[cg.snap->ps.clientNum];
-	if ( ci ) {
-		const char *p = CG_TranslateString( CG_ConfigString( CS_LOCATIONS + ci->location ) );
-		if ( !p || !*p ) {
-			p = "unknown";
-		}
-		CG_Text_Paint( rect->x, rect->y + rect->h, scale, color, p, 0, 0, textStyle );
-	}
-}
 
 
 
@@ -1566,10 +1541,9 @@ CG_DrawFatigue
 static void CG_DrawFatigue( rectDef_t *rect, vec4_t color, int align ) {
 	//	vec4_t	color = {0, 1, 0, 1}, color2 = {1, 0, 0, 1};
 	vec4_t colorBonus = {1, 1, 0, 0.45f};   // yellow (a little more solid for the 'bonus' stamina)
-	float barFrac;  //, omBarFrac;
+
 	int flags = 0;
 
-	barFrac = (float)cg.snap->ps.sprintTime / SPRINTTIME;
 //	omBarFrac = 1.0f-barFrac;
 
 	if ( align != HUD_HORIZONTAL ) {

@@ -449,12 +449,12 @@ rhiDescriptorSet RHI_CreateDescriptorSet(const char *name, rhiDescriptorSetLayou
 
 void RHI_UpdateDescriptorSet(rhiDescriptorSet descriptorHandle, uint32_t bindingIndex, RHI_DescriptorType type, uint32_t offset, uint32_t descriptorCount, const void *handles, uint32_t mipIndex){
     DescriptorSet *descSet = GET_DESCRIPTORSET(descriptorHandle);
+#ifdef _DEBUG
     DescriptorSetLayout *layout = GET_LAYOUT(descSet->layout);
-
     assert(bindingIndex < layout->desc.bindingCount);
     assert(layout->desc.bindings[bindingIndex].descriptorType == type);
     assert(layout->desc.bindings[bindingIndex].descriptorCount >= offset + descriptorCount);
-
+#endif
 
     VkWriteDescriptorSet write = {};
 	write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -1707,9 +1707,8 @@ void DrawGUI_RHI(void){
 	ToggleBooleanWithShortcut(&breakdownActive, ImGuiKey_R, ImGUI_ShortcutOptions_Global);
 	GUI_AddMainMenuItem(ImGUI_MainMenu_Info, "RHI Status", "Ctrl+Shift+R", &breakdownActive, qtrue);
 	if(breakdownActive){
-		if(igBegin("RHI", &breakdownActive, 0)){
+		if(igBegin("RHI", (bool*)&breakdownActive, 0)) {
 			igNewLine();
-			int32_t renderPassDuration = 0;
 			if(igBeginTable("Status",2,ImGuiTableFlags_RowBg,(ImVec2){0,0},0.0f)){
 				TableHeader(2, "Pool", "Size");
                 #define POOL_ITEM(pool, name) TableRowInt(name, Pool_Size(&pool));

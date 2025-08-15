@@ -484,10 +484,8 @@ void AAS_CreateAllRoutingCache( void );
 
 void AAS_RT_BuildRouteTable( void ) {
 	int i,j,k;
-	aas_area_t *srcarea;
 	aas_areasettings_t  *srcsettings;
 //	vec3_t	vec;
-	unsigned int totalcount;
 	unsigned int noroutecount;
 
 	aas_area_buildlocalinfo_t   **area_localinfos;
@@ -544,7 +542,6 @@ void AAS_RT_BuildRouteTable( void ) {
 
 	botimport.Print( PRT_MESSAGE, "\n-------------------------------------\nRoute-table memory usage figures..\n\n" );
 
-	totalcount = 0;
 	childcount = 0;
 	noroutecount = 0;
 	childcount = 0;
@@ -561,7 +558,6 @@ void AAS_RT_BuildRouteTable( void ) {
 	AAS_CreateAllRoutingCache();
 	for ( i = 0; i < ( *aasworld ).numareas; i++ )
 	{
-		srcarea = &( *aasworld ).areas[i];
 		srcsettings = &( *aasworld ).areasettings[i];
 
 #ifdef FILTERAREAS
@@ -592,7 +588,6 @@ void AAS_RT_BuildRouteTable( void ) {
 
 	for ( i = 0; i < childcount; i++ )
 	{
-		srcarea = &( *aasworld ).areas[filtered_areas[i]];
 		srcsettings = &( *aasworld ).areasettings[filtered_areas[i]];
 
 		// allocate memory for this area
@@ -623,7 +618,6 @@ void AAS_RT_BuildRouteTable( void ) {
 
 			// Add it to the list
 			localinfo->visible[localinfo->numvisible++] = j;
-			totalcount++;
 
 			if ( localinfo->numvisible >= MAX_VISIBLE_AREAS ) {
 				botimport.Print( PRT_MESSAGE, "MAX_VISIBLE_AREAS exceeded, lower MAX_VISIBLE_RANGE\n" );
@@ -838,15 +832,12 @@ void AAS_RT_BuildRouteTable( void ) {
 		aas_area_parent_t           *apar;
 		aas_parent_link_t           *oplink;
 
-		int localRoutesCount, parentRoutesCount, parentChildrenCount, visibleParentsCount, parentLinkCount, routeIndexesCount;
+		int parentChildrenCount, visibleParentsCount, parentLinkCount;
 
 		rt = ( *aasworld ).routetable;
-		localRoutesCount = 0;
-		parentRoutesCount = 0;
 		parentChildrenCount = 0;
 		visibleParentsCount = 0;
 		parentLinkCount = 0;
-		routeIndexesCount = 0;
 
 		// areaChildIndexes
 		rt->areaChildIndexes = (unsigned short int *) AAS_RT_GetClearedMemory( ( *aasworld ).numareas * sizeof( unsigned short int ) );

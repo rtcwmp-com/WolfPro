@@ -51,7 +51,7 @@ static void ToggleGuiInput_f()
 
 void CL_ImGUI_Init(void){
     cls.igContext = igCreateContext(NULL);
-	igGetAllocatorFunctions(&cls.igAlloc, &cls.igFree, cls.igUser);
+	igGetAllocatorFunctions(&cls.igAlloc, &cls.igFree, (void**)cls.igUser);
     ImGuiIO *ioptr = igGetIO();
     ioptr->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NoMouseCursorChange;
     ioptr->MouseDrawCursor = false;
@@ -224,7 +224,7 @@ void GUI_AddMainMenuItem(ImGUI_MainMenu_Id menu, const char* name, const char* s
 	item->menu = menu;
 	item->name = name;
 	item->shortcut = shortcut;
-	item->selected = selected;
+	item->selected = (bool*)selected;
 	item->enabled = enabled;
 
 	mm.itemCountPerMenu[menu]++;

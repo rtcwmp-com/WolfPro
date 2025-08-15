@@ -52,10 +52,11 @@ qbool Sys_IsDebugging(void);
 #endif
 
 #ifdef _DEBUG
-#define Q_assert(x) if(!(x)) \
-						if(Sys_IsDebugging()) \
-						 	 Sys_DebugBreak(); \
-						else assert(x);
+#define Q_assert(x) if(!(x)) { \
+						if(Sys_IsDebugging()){ \
+						 	 Sys_DebugBreak();\
+						}\
+						else { assert(x); } }
 #else
 #define Q_assert(x)
 #endif

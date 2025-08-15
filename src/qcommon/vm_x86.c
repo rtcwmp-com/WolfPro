@@ -734,7 +734,6 @@ This function is called directly by the generated code
 */
 int VM_CallCompiled( vm_t *vm, int *args ) {
 	int stack[1024];
-	int programCounter;
 	int programStack;
 	int stackOnEntry;
 	byte    *image;
@@ -756,8 +755,6 @@ int VM_CallCompiled( vm_t *vm, int *args ) {
 
 	// set up the stack frame
 	image = vm->dataBase;
-
-	programCounter = 0;
 
 	programStack -= 48;
 

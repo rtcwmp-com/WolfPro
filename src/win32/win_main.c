@@ -582,11 +582,9 @@ char* Sys_GetDLLName( const char *name ) {
 // fqpath buffersize must be at least MAX_QPATH+1 bytes long
 void * QDECL Sys_LoadDll( const char *name, char *fqpath, int( QDECL **entryPoint ) ( int, ... ),
 						  int ( QDECL *systemcalls )( int, ... ) ) {
-	static int lastWarning = 0;
 	HINSTANCE libHandle;
 	void ( QDECL * dllEntry )( int ( QDECL *syscallptr )( int, ... ) );
 	char    *basepath;
-	char    *cdpath;
 	char    *gamedir;
 	char    *fn;
 	char filename[MAX_QPATH];
@@ -596,7 +594,6 @@ void * QDECL Sys_LoadDll( const char *name, char *fqpath, int( QDECL **entryPoin
 	Q_strncpyz( filename, Sys_GetDLLName( name ), sizeof( filename ) );
 
 	basepath = Cvar_VariableString( "fs_basepath" );
-	cdpath = Cvar_VariableString( "fs_cdpath" );
 	gamedir = Cvar_VariableString( "fs_game" );
 
 	// try gamepath first
@@ -675,7 +672,6 @@ typedef struct {
 	streamsIO_t sIO[64];
 } streamState_t;
 
-static streamState_t stream;
 
 int FS_ReadDirect( void *buffer, int len, fileHandle_t f );
 
@@ -1135,7 +1131,6 @@ are initialized
 #define WIN98_BUILD_NUMBER 1998
 
 void Sys_Init( void ) {
-	int cpuid;
 
 	// make sure the timer is high precision, otherwise
 	// NT gets 18ms resolution

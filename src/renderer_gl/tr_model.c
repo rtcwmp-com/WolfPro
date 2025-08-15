@@ -1852,13 +1852,11 @@ R_PurgeModels
 ===============
 */
 void R_PurgeModels( int count ) {
-	static int lastPurged = 0;
 
 	if ( !numBackupModels ) {
 		return;
 	}
 
-	lastPurged = 0;
 	numBackupModels = 0;
 
 	// note: we can only do this since we only use the virtual memory for the model caching!

@@ -582,7 +582,7 @@ RTCWPro - reqSS
 ================
 */
 void R_GenerateSS_f(char* filename) {
-	char* filepath[MAX_OSPATH];
+	char filepath[MAX_OSPATH];
 
 	Com_sprintf(filepath, sizeof(filepath), "screenshots/%s.jpg", filename);
 	R_TakeScreenshotJPEG(filepath);
@@ -882,7 +882,6 @@ R_Init
 ===============
 */
 void R_Init( void ) {
-	int err;
 	int i;
 
 	ri.Printf( PRINT_ALL, "----- R_Init -----\n" );

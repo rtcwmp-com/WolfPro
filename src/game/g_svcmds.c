@@ -564,7 +564,6 @@ NERVE - SMF - this has three behaviors
 */
 void Svcmd_ResetMatch_f(qboolean fDoReset, qboolean fDoRestart) {
 	int i;
-	gclient_t *cl;
 	for (i = 0; i < level.numConnectedClients; i++) {
 		g_entities[level.sortedClients[i]].client->pers.ready = qfalse;
 		//g_entities[level.sortedClients[i]].client->ps.persistant[PERS_RESTRICTEDWEAPON] = WP_NONE; // reset weapon restrictions on restart

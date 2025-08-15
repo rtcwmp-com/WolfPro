@@ -485,7 +485,7 @@ void G_CheckForCursorHints( gentity_t *ent ) {
 	//gentity_t *traceEnt2 = 0; // JPW NERVE // TTimo unused
 	playerState_t *ps;
 	int hintType, hintDist, hintVal;
-	qboolean zooming, indirectHit;      // indirectHit means the checkent was not the ent hit by the trace (checkEnt!=traceEnt)
+	qboolean zooming;      // indirectHit means the checkent was not the ent hit by the trace (checkEnt!=traceEnt)
 	int trace_contents;                 // DHM - Nerve
 
 	// FIXME:	no need at all to do this trace/string comparison every frame.
@@ -504,7 +504,6 @@ void G_CheckForCursorHints( gentity_t *ent ) {
 		return;
 	}
 
-	indirectHit = qfalse;
 
 	zooming = (qboolean)( ps->eFlags & EF_ZOOMING );
 
@@ -625,7 +624,6 @@ void G_CheckForCursorHints( gentity_t *ent ) {
 			}
 
 			if ( !Q_stricmp( traceEnt->classname, "func_invisible_user" ) ) {
-				indirectHit = qtrue;
 
 				// DHM - Nerve :: Put this back in only in multiplayer
 				if ( g_gametype.integer >= GT_WOLF && traceEnt->s.dmgFlags ) { // hint icon specified in entity
@@ -2645,7 +2643,6 @@ Advances the non-player objects in the world
 void G_RunFrame( int levelTime ) {
 	int i;
 	gentity_t   *ent;
-	int msec;
 	int worldspawnflags, gt;
 
 	// if we are waiting for the level to restart, do nothing
@@ -2669,7 +2666,6 @@ void G_RunFrame( int levelTime ) {
 	level.framenum++;
 	level.previousTime = level.time;
 	level.time = levelTime;
-	msec = level.time - level.previousTime;
 
 	// check if current gametype is supported
 	worldspawnflags = g_entities[ENTITYNUM_WORLD].spawnflags;
@@ -2872,7 +2868,7 @@ void G_RunFrame( int levelTime ) {
 	// Ridah, check if we are reloading, and times have expired
 	CheckReloadStatus();
 
-	qboolean isServerRestarting = trap_Cvar_VariableIntegerValue("sv_serverRestarting");
+	qboolean isServerRestarting = (qboolean)trap_Cvar_VariableIntegerValue("sv_serverRestarting");
 	if (!isServerRestarting) {
 		// L0 - Count active players..
 		SortedActivePlayers();

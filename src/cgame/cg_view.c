@@ -192,7 +192,7 @@ Sets the coordinates of the rendered window
 
 static void CG_CalcVrect( void ) {
 	int xsize, ysize;
-	float lbheight, lbdiff;
+	float lbheight;
 
 	// NERVE - SMF
 	if ( cg.limboMenu ) {
@@ -234,23 +234,9 @@ static void CG_CalcVrect( void ) {
 // letterbox is yy:yy  (85% of 'normal' height)
 
 	lbheight = ysize * 0.85;
-	lbdiff = ysize - lbheight;
 
 	if ( cg_letterbox.integer ) {
 		ysize = lbheight;
-//		if(letterbox_frac != 0) {
-//			letterbox_frac -= 0.01f;	// (SA) TODO: make non fps dependant
-//			if(letterbox_frac < 0)
-//				letterbox_frac = 0;
-//			ysize += (lbdiff * letterbox_frac);
-//		}
-//	} else {
-//		if(letterbox_frac != 1) {
-//			letterbox_frac += 0.01f;	// (SA) TODO: make non fps dependant
-//			if(letterbox_frac > 1)
-//				letterbox_frac = 1;
-//			ysize = lbheight + (lbdiff * letterbox_frac);
-//		}
 	}
 //----(SA)	end
 
@@ -976,14 +962,12 @@ static void CG_DamageBlendBlob( void ) {
 	refEntity_t ent;
 	qboolean pointDamage;
 	viewDamage_t *vd;
-	float redFlash;
 
 	// ragePro systems can't fade blends, so don't obscure the screen
 	if ( cgs.glconfig.hardwareType == GLHW_RAGEPRO ) {
 		return;
 	}
 
-	redFlash = 0;
 
 	for ( i = 0; i < MAX_VIEWDAMAGE; i++ ) {
 
@@ -1004,7 +988,6 @@ static void CG_DamageBlendBlob( void ) {
 
 		// if not point Damage, only do flash blend
 		if ( !pointDamage ) {
-			redFlash += 10.0 * ( 1.0 - (float)t / maxTime );
 			continue;
 		}
 
@@ -1028,30 +1011,8 @@ static void CG_DamageBlendBlob( void ) {
 		ent.shaderRGBA[3] = 255 * (	(cg_bloodDamageBlend.value > 1.0f) ? 1.0f :
 									(cg_bloodDamageBlend.value < 0.0f) ? 0.0f : cg_bloodDamageBlend.value);
 		trap_R_AddRefEntityToScene( &ent );
-
-		redFlash += ent.radius;
 	}
 
-	/* moved over to cg_draw.c
-	if (cg.v_dmg_time > cg.time) {
-		redFlash = fabs(cg.v_dmg_pitch * ((cg.v_dmg_time - cg.time) / DAMAGE_TIME));
-
-		// blend the entire screen red
-		if (redFlash > 5)
-			redFlash = 5;
-
-		memset( &ent, 0, sizeof( ent ) );
-		ent.reType = RT_SPRITE;
-		ent.renderfx = RF_FIRST_PERSON;
-
-		VectorMA( cg.refdef.vieworg, 8, cg.refdef.viewaxis[0], ent.origin );
-		ent.radius = 80;	// occupy entire screen
-		ent.customShader = cgs.media.viewFlashBlood;
-		ent.shaderRGBA[3] = (int)(180.0 * redFlash/5.0);
-
-		trap_R_AddRefEntityToScene( &ent );
-	}
-	*/
 }
 
 /*

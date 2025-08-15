@@ -51,8 +51,6 @@ Keep track of where the client's been
 ============
 */
 void G_StoreHistory( gentity_t *ent ) {
-	int frametime = level.time - level.previousTime;
-
 	ent->client->unlag.historyHead++;
 	if ( ent->client->unlag.historyHead >= NUM_CLIENT_HISTORY ) {
 		ent->client->unlag.historyHead = 0;
@@ -102,7 +100,6 @@ Move a client back to where he was at the specified "time"
 */
 void G_TimeShiftClient( gentity_t *ent, int time, qboolean debug, gentity_t *debugger ) {
 	int		j, k;
-	char msg[2048];
 
 	//Clamp max backward reconcilation time 
 	if (level.time - time > g_maxLagCompensation.integer) {
@@ -185,7 +182,6 @@ void G_TimeShiftClient( gentity_t *ent, int time, qboolean debug, gentity_t *deb
 			// find the "best" mins & maxs (crouching/standing).
 			// it doesn't make sense to interpolate mins and maxs. the server either thinks the client
 			// is crouching or not, and updates the mins & maxs immediately. there's no inbetween.
-			int nearest_trail_node_index = frac < 0.5 ? j : k;
 			// use the trail node's animation info that's nearest "time" (for head hitbox).
 			// the current server animation code used for head hitboxes doesn't support interpolating
 			// between two different animation frames (i.e. crouch -> standing animation), so can't interpolate here either.
@@ -429,7 +425,6 @@ qboolean G_PredictPlayerSlideMove( gentity_t *ent, float frametime ) {
 	float		into;
 	vec3_t		endVelocity;
 	vec3_t		endClipVelocity;
-	vec3_t		worldUp = { 0.0f, 0.0f, 1.0f };
 	
 	numbumps = 4;
 

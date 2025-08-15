@@ -627,9 +627,9 @@ void SVC_RemoteCommand( netadr_t from, msg_t *msg ) {
 	static unsigned int lasttime = 0;
 	char *cmd_aux;
 
+	time = Com_Milliseconds();
 	//ignore flood from localhost
 	if(!Sys_IsLANAddress(from)){
-		time = Com_Milliseconds();
 		if ( time < ( lasttime + 500 ) ) {
 			return;
 		}

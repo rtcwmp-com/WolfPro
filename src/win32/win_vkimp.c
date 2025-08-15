@@ -67,40 +67,13 @@ static const char* VKW_GetCurrentDisplayDeviceName()
 	MONITORINFOEXA info;
 	ZeroMemory( &info, sizeof(info) );
 	info.cbSize = sizeof(info);
-	if ( GetMonitorInfoA(hMonitor, &info) == 0 )
+	if ( GetMonitorInfoA(hMonitor, (LPMONITORINFO)&info) == 0)
 		return NULL;
 
 	Q_strncpyz( deviceName, info.szDevice, sizeof(deviceName) );
 	
 	return deviceName;
 }
-
-
-static void VKW_UpdateMonitorRect( const char* deviceName )
-{
-	if ( deviceName == NULL )
-		return;
-
-	DEVMODEA dm;
-	ZeroMemory( &dm, sizeof(dm) );
-	dm.dmSize = sizeof(dm);
-	if ( EnumDisplaySettingsExA(deviceName, ENUM_CURRENT_SETTINGS, &dm, 0) == 0 )
-		return;
-
-	if ( dm.dmPelsWidth == 0 || dm.dmPelsHeight == 0 )
-		return;
-
-	// Normally, we should check dm.dmFields for the following flags:
-	// DM_POSITION DM_PELSWIDTH DM_PELSHEIGHT
-	// EnumDisplaySettingsExA doesn't always set up the flags properly.
-
-	RECT *rect = &g_wv.monitorRects[g_wv.monitor];
-	rect->left = dm.dmPosition.x;
-	rect->top = dm.dmPosition.y;
-	rect->right = dm.dmPosition.x + dm.dmPelsWidth;
-	rect->bottom = dm.dmPosition.y + dm.dmPelsHeight;
-}
-
 
 
 static qbool VKW_CreateWindow()

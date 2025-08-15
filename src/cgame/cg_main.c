@@ -2482,7 +2482,6 @@ void CG_Init( int serverMessageNum, int serverCommandSequence, int clientNum ) {
 
 static void SaveSession(void)
 {
-	float speed;
 	//What else needs to be saved? Pause states? 
 	trap_Cvar_Set("demo_SessionData", va("%d %f", m_currServerTime, cg_timescale.value ));
 }

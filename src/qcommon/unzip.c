@@ -1437,14 +1437,16 @@ extern unzFile unzOpen (const char* path)
 extern int unzClose (unzFile file)
 {
 	unz_s* s;
-	if (file==NULL)
-		return UNZ_PARAMERROR;
+    if (file == NULL) {
+        return UNZ_PARAMERROR;
+    }
 	s=(unz_s*)file;
 
-    if (s->pfile_in_zip_read!=NULL)
+    if (s->pfile_in_zip_read != NULL) {
         unzCloseCurrentFile(file);
+    }
 
-	fclose(s->file);
+    fclose(s->file);
 	TRYFREE(s);
 	return UNZ_OK;
 }
@@ -1763,15 +1765,18 @@ extern int unzLocateFile (unzFile file, const char *szFileName, int iCaseSensiti
 	uLong pos_in_central_dirSaved;
 
 
-	if (file==NULL)
-		return UNZ_PARAMERROR;
-
-    if (strlen(szFileName)>=UNZ_MAXFILENAMEINZIP)
+    if (file == NULL) {
         return UNZ_PARAMERROR;
+    }
+
+    if (strlen(szFileName) >= UNZ_MAXFILENAMEINZIP) {
+        return UNZ_PARAMERROR;
+    }
 
 	s=(unz_s*)file;
-	if (!s->current_file_ok)
-		return UNZ_END_OF_LIST_OF_FILE;
+    if (!s->current_file_ok) {
+        return UNZ_END_OF_LIST_OF_FILE;
+    }
 
 	num_fileSaved = s->num_file;
 	pos_in_central_dirSaved = s->pos_in_central_dir;
@@ -1784,9 +1789,9 @@ extern int unzLocateFile (unzFile file, const char *szFileName, int iCaseSensiti
 		unzGetCurrentFileInfo(file,NULL,
 								szCurrentFileName,sizeof(szCurrentFileName)-1,
 								NULL,0,NULL,0);
-		if (unzStringFileNameCompare(szCurrentFileName,
-										szFileName,iCaseSensitivity)==0)
-			return UNZ_OK;
+        if (unzStringFileNameCompare(szCurrentFileName, szFileName, iCaseSensitivity) == 0) {
+            return UNZ_OK;
+        }
 		err = unzGoToNextFile(file);
 	}
 
@@ -1803,50 +1808,51 @@ extern int unzLocateFile (unzFile file, const char *szFileName, int iCaseSensiti
   store in *piSizeVar the size of extra info in static header
         (filename and size of extra field data)
 */
-static int unzlocal_CheckCurrentFileCoherencyHeader (unz_s* s, uInt* piSizeVar,
-													uLong *poffset_local_extrafield,
-													uInt *psize_local_extrafield)
+static int unzlocal_CheckCurrentFileCoherencyHeader(unz_s* s, uInt* piSizeVar,
+    uLong* poffset_local_extrafield,
+    uInt* psize_local_extrafield)
 {
-	uLong uMagic,uData,uFlags;
-	uLong size_filename;
-	uLong size_extra_field;
-	int err=UNZ_OK;
+    uLong uMagic, uData, uFlags;
+    uLong size_filename;
+    uLong size_extra_field;
+    int err = UNZ_OK;
 
-	*piSizeVar = 0;
-	*poffset_local_extrafield = 0;
-	*psize_local_extrafield = 0;
+    *piSizeVar = 0;
+    *poffset_local_extrafield = 0;
+    *psize_local_extrafield = 0;
 
-	if (fseek(s->file,s->cur_file_info_internal.offset_curfile +
-								s->byte_before_the_zipfile,SEEK_SET)!=0)
-		return UNZ_ERRNO;
+    if (fseek(s->file, s->cur_file_info_internal.offset_curfile +
+        s->byte_before_the_zipfile, SEEK_SET) != 0)
+        return UNZ_ERRNO;
 
 
-	if (err==UNZ_OK) {
-		if (unzlocal_getLong(s->file,&uMagic) != UNZ_OK)
-			err=UNZ_ERRNO;
-		else if (uMagic!=0x04034b50)
-			err=UNZ_BADZIPFILE;
-	}
-	if (unzlocal_getShort(s->file,&uData) != UNZ_OK)
-		err=UNZ_ERRNO;
-/*
-	else if ((err==UNZ_OK) && (uData!=s->cur_file_info.wVersion))
-		err=UNZ_BADZIPFILE;
-*/
-	if (unzlocal_getShort(s->file,&uFlags) != UNZ_OK)
-		err=UNZ_ERRNO;
+    if (err == UNZ_OK) {
+        if (unzlocal_getLong(s->file, &uMagic) != UNZ_OK)
+            err = UNZ_ERRNO;
+        else if (uMagic != 0x04034b50)
+            err = UNZ_BADZIPFILE;
+    }
+    if (unzlocal_getShort(s->file, &uData) != UNZ_OK)
+        err = UNZ_ERRNO;
+    /*
+        else if ((err==UNZ_OK) && (uData!=s->cur_file_info.wVersion))
+            err=UNZ_BADZIPFILE;
+    */
+    if (unzlocal_getShort(s->file, &uFlags) != UNZ_OK)
+        err = UNZ_ERRNO;
 
-	if (unzlocal_getShort(s->file,&uData) != UNZ_OK)
-		err=UNZ_ERRNO;
-	else if ((err==UNZ_OK) && (uData!=s->cur_file_info.compression_method))
-		err=UNZ_BADZIPFILE;
+    if (unzlocal_getShort(s->file, &uData) != UNZ_OK)
+        err = UNZ_ERRNO;
+    else if ((err == UNZ_OK) && (uData != s->cur_file_info.compression_method))
+        err = UNZ_BADZIPFILE;
 
-    if ((err==UNZ_OK) && (s->cur_file_info.compression_method!=0) &&
-                         (s->cur_file_info.compression_method!=Z_DEFLATED))
-        err=UNZ_BADZIPFILE;
+    if ((err == UNZ_OK) && (s->cur_file_info.compression_method != 0) &&
+        (s->cur_file_info.compression_method != Z_DEFLATED))
+        err = UNZ_BADZIPFILE;
 
-	if (unzlocal_getLong(s->file,&uData) != UNZ_OK) /* date/time */
-		err=UNZ_ERRNO;
+    if (unzlocal_getLong(s->file, &uData) != UNZ_OK){ /* date/time */
+        err = UNZ_ERRNO;
+    }
 
 	if (unzlocal_getLong(s->file,&uData) != UNZ_OK) /* crc */
 		err=UNZ_ERRNO;
@@ -1899,14 +1905,17 @@ extern int unzOpenCurrentFile (unzFile file)
 	uLong offset_local_extrafield;  /* offset of the static extra field */
 	uInt  size_local_extrafield;    /* size of the static extra field */
 
-	if (file==NULL)
-		return UNZ_PARAMERROR;
+    if (file == NULL) {
+        return UNZ_PARAMERROR;
+    }
 	s=(unz_s*)file;
-	if (!s->current_file_ok)
-		return UNZ_PARAMERROR;
+    if (!s->current_file_ok) {
+        return UNZ_PARAMERROR;
+    }
 
-    if (s->pfile_in_zip_read != NULL)
+    if (s->pfile_in_zip_read != NULL) {
         unzCloseCurrentFile(file);
+    }
 
 	if (unzlocal_CheckCurrentFileCoherencyHeader(s,&iSizeVar,
 				&offset_local_extrafield,&size_local_extrafield)!=UNZ_OK)
@@ -2071,12 +2080,10 @@ extern int unzReadCurrentFile  (unzFile file, void *buf, unsigned len)
 		else
 		{
 			uLong uTotalOutBefore,uTotalOutAfter;
-			const Byte *bufBefore;
 			uLong uOutThis;
 			int flush=Z_SYNC_FLUSH;
 
 			uTotalOutBefore = pfile_in_zip_read_info->stream.total_out;
-			bufBefore = pfile_in_zip_read_info->stream.next_out;
 
 			/*
 			if ((pfile_in_zip_read_info->rest_read_uncompressed ==
@@ -2954,8 +2961,8 @@ int inflate_flush(inflate_blocks_statef *s, z_streamp z, int r)
  * For conditions of distribution and use, see copyright notice in zlib.h 
  */
 
-static const char inflate_copyright[] =
-   " inflate 1.1.3 Copyright 1995-1998 Mark Adler ";
+//static const char inflate_copyright[] =
+//   " inflate 1.1.3 Copyright 1995-1998 Mark Adler ";
 /*
   If you use the zlib library in a product, an acknowledgment is welcome
   in the documentation of your product. If for some reason you cannot

@@ -658,20 +658,6 @@ VkFormat GetVkFormat(rhiTextureFormatId format)
     }
 }
 
-static VkFormat GetVkFormatCnt(rhiDataTypeId type, uint32_t count)
-{
-	assert((unsigned int)type < rhiDataTypeIdCount);
-	assert(count >= 1 && count <= 4);
-
-	const VkFormat formats[rhiDataTypeIdCount][4] =
-	{
-		{ VK_FORMAT_R32_SFLOAT, VK_FORMAT_R32G32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32A32_SFLOAT },
-		{ VK_FORMAT_R8_UNORM, VK_FORMAT_R8G8_UNORM, VK_FORMAT_R8G8B8_UNORM, VK_FORMAT_R8G8B8A8_UNORM },
-		{ VK_FORMAT_R32_UINT, VK_FORMAT_R32G32_UINT, VK_FORMAT_R32G32B32_UINT, VK_FORMAT_R32G32B32A32_UINT }
-	};
-
-	return formats[type][count - 1];
-}
 
 VkImageAspectFlags GetVkImageAspectFlags(VkFormat format)
 {
@@ -1292,7 +1278,6 @@ void RHI_BeginFrame() {
     }
     vk.currentFrameIndex = (vk.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT;
     vk.durationQueryCount[vk.currentFrameIndex] = 0;
-    VkCommandBufferResetFlags flags;
     
     // VkSemaphoreWaitInfo waitInfo = {};
     // waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
@@ -1400,32 +1385,6 @@ void RHI_EndFrame() {
 // 	SetObjectName(VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)layout.pipelineLayout, "Pipeline Layout");
 // }
 
-static void BuildSpecializationDesc(const VkSpecializationInfo** outPtr, VkSpecializationInfo* out,
-									size_t maxEntries, VkSpecializationMapEntry* entries,
-									const rhiSpecialization* input)
-{
-	if(input->entryCount == 0)
-	{
-		*outPtr = VK_NULL_HANDLE;
-		return;
-	}
-
-	assert(input->entryCount <= maxEntries);
-
-	out->mapEntryCount = input->entryCount;
-	out->pMapEntries = entries;
-	out->dataSize = input->byteCount;
-	out->pData = input->data;
-
-	for(uint32_t c = 0; c < input->entryCount; ++c)
-	{
-		entries[c].constantID = input->entries[c].constandId;
-		entries[c].offset = input->entries[c].byteOffset;
-		entries[c].size = input->entries[c].byteCount;
-	}
-
-	*outPtr = out;
-}
 
 VkBlendFactor GetSourceColorBlendFactor(unsigned int bits)
 {

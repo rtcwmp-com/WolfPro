@@ -144,8 +144,10 @@ void RB_ImGUI_Draw(rhiTexture renderTarget){
     rhiBuffer currentIB = imGUIindexBuffers[backEnd.currentFrameIndex];
     ImDrawVert* vertices = (ImDrawVert*)RHI_MapBuffer(currentVB);
     ImDrawIdx* indices = (ImDrawIdx*)RHI_MapBuffer(currentIB);
+#ifdef _DEBUG
     ImDrawVert* verticesEnd = vertices + MAX_IMGUI_VERTS;
     ImDrawIdx* indicesEnd = indices + MAX_IMGUI_INDICES;
+#endif
 
     for(int i = 0; i < drawData->CmdListsCount; i++){
         ImDrawList *draw = drawData->CmdLists.Data[i];
