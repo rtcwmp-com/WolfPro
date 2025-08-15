@@ -75,8 +75,6 @@ HPSTR lpData, lpData2;
 
 static qboolean wav_init = qfalse;
 // starts at 0 for disabled
-static int snd_buffer_count = 0;
-static int sample16;
 static int snd_sent, snd_completed;
 
 

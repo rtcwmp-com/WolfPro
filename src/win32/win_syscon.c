@@ -91,7 +91,7 @@ static LONG WINAPI ConWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 	char *cmdString;
 	static qboolean s_timePolarity;
 	int cx, cy;
-	float sx, sy;
+	float sx;
 	float x, y, w, h;
 
 	switch ( uMsg )
@@ -107,7 +107,7 @@ static LONG WINAPI ConWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 //			cy = SYSCON_DEFAULT_HEIGHT;
 
 		sx = (float)cx / SYSCON_DEFAULT_WIDTH;
-		sy = (float)cy / SYSCON_DEFAULT_HEIGHT;
+
 
 		x = 5;
 		y = 40;
@@ -169,17 +169,6 @@ static LONG WINAPI ConWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 		if ( ( HWND ) lParam == s_wcd.hwndBuffer ) {
 			SetBkColor( ( HDC ) wParam, RGB( 86, 117, 100 ) );
 			SetTextColor( ( HDC ) wParam, RGB( 0xff, 0xff, 0xff ) );
-
-#if 0   // this draws a background in the edit box, but there are issues with this
-			if ( ( hdcScaled = CreateCompatibleDC( ( HDC ) wParam ) ) != 0 ) {
-				if ( SelectObject( ( HDC ) hdcScaled, s_wcd.hbmLogo ) ) {
-					StretchBlt( ( HDC ) wParam, 0, 0, 512, 384,
-								hdcScaled, 0, 0, 512, 384,
-								SRCCOPY );
-				}
-				DeleteDC( hdcScaled );
-			}
-#endif
 			return ( long ) s_wcd.hbrEditBackground;
 		} else if ( ( HWND ) lParam == s_wcd.hwndErrorBox )   {
 			if ( s_timePolarity & 1 ) {
@@ -220,49 +209,6 @@ static LONG WINAPI ConWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 		SetTimer( hWnd, 1, 1000, NULL );
 		break;
 	case WM_ERASEBKGND:
-#if 0
-		HDC hdcScaled;
-		HGDIOBJ oldObject;
-
-#if 1   // a single, large image
-		hdcScaled = CreateCompatibleDC( ( HDC ) wParam );
-		assert( hdcScaled != 0 );
-
-		if ( hdcScaled ) {
-			oldObject = SelectObject( ( HDC ) hdcScaled, s_wcd.hbmLogo );
-			assert( oldObject != 0 );
-			if ( oldObject ) {
-				StretchBlt( ( HDC ) wParam, 0, 0, s_wcd.windowWidth, s_wcd.windowHeight,
-							hdcScaled, 0, 0, 512, 384,
-							SRCCOPY );
-			}
-			DeleteDC( hdcScaled );
-			hdcScaled = 0;
-		}
-#else   // a repeating brush
-		{
-			HBRUSH hbrClearBrush;
-			RECT r;
-
-			GetWindowRect( hWnd, &r );
-
-			r.bottom = r.bottom - r.top + 1;
-			r.right = r.right - r.left + 1;
-			r.top = 0;
-			r.left = 0;
-
-			hbrClearBrush = CreatePatternBrush( s_wcd.hbmClearBitmap );
-
-			assert( hbrClearBrush != 0 );
-
-			if ( hbrClearBrush ) {
-				FillRect( ( HDC ) wParam, &r, hbrClearBrush );
-				DeleteObject( hbrClearBrush );
-			}
-		}
-#endif
-		return 1;
-#endif
 		return DefWindowProc( hWnd, uMsg, wParam, lParam );
 	case WM_TIMER:
 		if ( wParam == 1 ) {

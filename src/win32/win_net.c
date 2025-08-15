@@ -150,8 +150,6 @@ idnewt
 
 qboolean Sys_StringToSockaddr( const char *s, struct sockaddr *sadr ) {
 	struct hostent  *h;
-	int val;
-	char copy[MAX_STRING_CHARS];
 
 	memset( sadr, 0, sizeof( *sadr ) );
 
@@ -474,7 +472,6 @@ NET_OpenSocks
 */
 void NET_OpenSocks( int port ) {
 	struct sockaddr_in address;
-	int err;
 	struct hostent      *h;
 	int len;
 	qboolean rfc1929;
@@ -485,14 +482,12 @@ void NET_OpenSocks( int port ) {
 	Com_Printf( "Opening connection to SOCKS server.\n" );
 
 	if ( ( socks_socket = socket( AF_INET, SOCK_STREAM, IPPROTO_TCP ) ) == INVALID_SOCKET ) {
-		err = WSAGetLastError();
 		Com_Printf( "WARNING: NET_OpenSocks: socket: %s\n", NET_ErrorString() );
 		return;
 	}
 
 	h = gethostbyname( net_socksServer->string );
 	if ( h == NULL ) {
-		err = WSAGetLastError();
 		Com_Printf( "WARNING: NET_OpenSocks: gethostbyname: %s\n", NET_ErrorString() );
 		return;
 	}
@@ -505,7 +500,6 @@ void NET_OpenSocks( int port ) {
 	address.sin_port = htons( (short)net_socksPort->integer );
 
 	if ( connect( socks_socket, (struct sockaddr *)&address, sizeof( address ) ) == SOCKET_ERROR ) {
-		err = WSAGetLastError();
 		Com_Printf( "NET_OpenSocks: connect: %s\n", NET_ErrorString() );
 		return;
 	}
@@ -531,7 +525,6 @@ void NET_OpenSocks( int port ) {
 		buf[2] = 2;     // method #2 - method id #02: username/password
 	}
 	if ( send( socks_socket, buf, len, 0 ) == SOCKET_ERROR ) {
-		err = WSAGetLastError();
 		Com_Printf( "NET_OpenSocks: send: %s\n", NET_ErrorString() );
 		return;
 	}
@@ -539,7 +532,6 @@ void NET_OpenSocks( int port ) {
 	// get the response
 	len = recv( socks_socket, buf, 64, 0 );
 	if ( len == SOCKET_ERROR ) {
-		err = WSAGetLastError();
 		Com_Printf( "NET_OpenSocks: recv: %s\n", NET_ErrorString() );
 		return;
 	}
@@ -578,7 +570,6 @@ void NET_OpenSocks( int port ) {
 
 		// send it
 		if ( send( socks_socket, buf, 3 + ulen + plen, 0 ) == SOCKET_ERROR ) {
-			err = WSAGetLastError();
 			Com_Printf( "NET_OpenSocks: send: %s\n", NET_ErrorString() );
 			return;
 		}
@@ -586,7 +577,6 @@ void NET_OpenSocks( int port ) {
 		// get the response
 		len = recv( socks_socket, buf, 64, 0 );
 		if ( len == SOCKET_ERROR ) {
-			err = WSAGetLastError();
 			Com_Printf( "NET_OpenSocks: recv: %s\n", NET_ErrorString() );
 			return;
 		}
@@ -608,7 +598,6 @@ void NET_OpenSocks( int port ) {
 	*(int *)&buf[4] = INADDR_ANY;
 	*(short *)&buf[8] = htons( (short)port );       // port
 	if ( send( socks_socket, buf, 10, 0 ) == SOCKET_ERROR ) {
-		err = WSAGetLastError();
 		Com_Printf( "NET_OpenSocks: send: %s\n", NET_ErrorString() );
 		return;
 	}
@@ -616,7 +605,6 @@ void NET_OpenSocks( int port ) {
 	// get the response
 	len = recv( socks_socket, buf, 64, 0 );
 	if ( len == SOCKET_ERROR ) {
-		err = WSAGetLastError();
 		Com_Printf( "NET_OpenSocks: recv: %s\n", NET_ErrorString() );
 		return;
 	}
@@ -650,19 +638,18 @@ NET_GetLocalAddress
 void NET_GetLocalAddress( void ) {
 	char hostname[256];
 	struct hostent      *hostInfo;
-	int error;
 	char                *p;
 	int ip;
 	int n;
 
 	if ( gethostname( hostname, 256 ) == SOCKET_ERROR ) {
-		error = WSAGetLastError();
+		Com_Printf("NET_GetLocalAddress: gethostname: %s\n", NET_ErrorString());
 		return;
 	}
 
 	hostInfo = gethostbyname( hostname );
 	if ( !hostInfo ) {
-		error = WSAGetLastError();
+		Com_Printf("NET_GetLocalAddress: gethostbyname: %s\n", NET_ErrorString());
 		return;
 	}
 

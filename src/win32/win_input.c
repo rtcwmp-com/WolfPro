@@ -612,15 +612,6 @@ DIRECT INPUT MOUSE CONTROL
 #ifndef DOOMSOUND   ///// (SA) DOOMSOUND
 #undef DEFINE_GUID
 
-#define DEFINE_GUID( name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8 ) \
-	EXTERN_C const GUID name \
-	= { l, w1, w2, { b1, b2,  b3,  b4,  b5,  b6,  b7,  b8 } }
-
-DEFINE_GUID( GUID_SysMouse,   0x6F1D2B60,0xD5A0,0x11CF,0xBF,0xC7,0x44,0x45,0x53,0x54,0x00,0x00 );
-DEFINE_GUID( GUID_XAxis,   0xA36D02E0,0xC9F3,0x11CF,0xBF,0xC7,0x44,0x45,0x53,0x54,0x00,0x00 );
-DEFINE_GUID( GUID_YAxis,   0xA36D02E1,0xC9F3,0x11CF,0xBF,0xC7,0x44,0x45,0x53,0x54,0x00,0x00 );
-DEFINE_GUID( GUID_ZAxis,   0xA36D02E2,0xC9F3,0x11CF,0xBF,0xC7,0x44,0x45,0x53,0x54,0x00,0x00 );
-
 
 #define DINPUT_BUFFERSIZE           16
 #define iDirectInputCreate( a,b,c,d ) pDirectInputCreate( a,b,c,d )
@@ -629,8 +620,6 @@ HRESULT ( WINAPI * pDirectInputCreate )( HINSTANCE hinst, DWORD dwVersion,
 										 LPDIRECTINPUT * lplpDirectInput, LPUNKNOWN punkOuter );
 
 #endif ///// (SA) DOOMSOUND
-
-static HINSTANCE hInstDI;
 
 typedef struct MYDATA {
 	LONG lX;                    // X axis goes here
@@ -641,30 +630,6 @@ typedef struct MYDATA {
 	BYTE bButtonC;              // Another button goes here
 	BYTE bButtonD;              // Another button goes here
 } MYDATA;
-
-static DIOBJECTDATAFORMAT rgodf[] = {
-	{ &GUID_XAxis,    FIELD_OFFSET( MYDATA, lX ),       DIDFT_AXIS | DIDFT_ANYINSTANCE,   0,},
-	{ &GUID_YAxis,    FIELD_OFFSET( MYDATA, lY ),       DIDFT_AXIS | DIDFT_ANYINSTANCE,   0,},
-	{ &GUID_ZAxis,    FIELD_OFFSET( MYDATA, lZ ),       0x80000000 | DIDFT_AXIS | DIDFT_ANYINSTANCE,   0,},
-	{ 0,              FIELD_OFFSET( MYDATA, bButtonA ), DIDFT_BUTTON | DIDFT_ANYINSTANCE, 0,},
-	{ 0,              FIELD_OFFSET( MYDATA, bButtonB ), DIDFT_BUTTON | DIDFT_ANYINSTANCE, 0,},
-	{ 0,              FIELD_OFFSET( MYDATA, bButtonC ), 0x80000000 | DIDFT_BUTTON | DIDFT_ANYINSTANCE, 0,},
-	{ 0,              FIELD_OFFSET( MYDATA, bButtonD ), 0x80000000 | DIDFT_BUTTON | DIDFT_ANYINSTANCE, 0,},
-};
-
-#define NUM_OBJECTS ( sizeof( rgodf ) / sizeof( rgodf[0] ) )
-
-static DIDATAFORMAT df = {
-	sizeof( DIDATAFORMAT ),       // this structure
-	sizeof( DIOBJECTDATAFORMAT ), // size of object data format
-	DIDF_RELAXIS,               // absolute axis coordinates
-	sizeof( MYDATA ),             // device data size
-	NUM_OBJECTS,                // number of objects
-	rgodf,                      // and here they are
-};
-
-static LPDIRECTINPUT g_pdi;
-static LPDIRECTINPUTDEVICE g_pMouse;
 
 /*
 ============================================================
