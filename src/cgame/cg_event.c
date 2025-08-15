@@ -90,7 +90,6 @@ CG_Obituary
 static void CG_Obituary( entityState_t *ent ) {
 	int mod;
 	int target, attacker;
-	int killtype = 0;               // DHM - Nerve :: 0==Axis; 1==Allied; 2==your kill
 	char        *message;
 	char        *message2;
 	const char  *targetInfo;
@@ -125,14 +124,6 @@ static void CG_Obituary( entityState_t *ent ) {
 
 	message2 = "";
 
-	// DHM - Nerve :: Set killtype
-	if ( attacker == cg.snap->ps.clientNum ) {
-		killtype = 2;
-	} else if ( ci->team == TEAM_BLUE ) {
-		killtype = 1;
-	} else {
-		killtype = 0;
-	}
 
 	// check for single client messages
 
@@ -572,19 +563,6 @@ void CG_PainEvent( centity_t *cent, int health, qboolean crouching ) {
 	char    *snd;
 
 	#define STUNNED_ANIM    BOTH_PAIN8
-	painAnimForTag_t tagAnims[] = {
-		{"tag_head", PEFOFS( torsoRefEnt ),    BOTH_PAIN1},
-		{"tag_chest",    PEFOFS( torsoRefEnt ),    BOTH_PAIN2},
-		{"tag_groin",    PEFOFS( legsRefEnt ),     BOTH_PAIN3},
-		{"tag_armright",PEFOFS( torsoRefEnt ), BOTH_PAIN4},
-		{"tag_armleft",  PEFOFS( torsoRefEnt ),    BOTH_PAIN5},
-		{"tag_legright",PEFOFS( legsRefEnt ),      BOTH_PAIN6},
-		{"tag_legleft",  PEFOFS( legsRefEnt ),     BOTH_PAIN7},
-		{NULL,0,0},
-	};
-	vec3_t tagOrg;
-	int tagIndex, bestTag, oldPainAnim;
-	float bestDist, dist;
 
 	// don't do more than two pain sounds a second
 	if ( cg.time - cent->pe.painTime < 500 ) {
@@ -674,7 +652,7 @@ void CG_Explodef( vec3_t origin, vec3_t dir, int mass, int type, qhandle_t sound
 	int i;
 	localEntity_t   *le;
 	refEntity_t     *re;
-	int howmany, total;
+	int howmany;
 	int pieces[6];              // how many of each piece
 	qhandle_t modelshader = 0;
 	float materialmul = 1;              // multiplier for different types
@@ -709,8 +687,6 @@ void CG_Explodef( vec3_t origin, vec3_t dir, int mass, int type, qhandle_t sound
 			pieces[2] = 10;
 		}
 	}
-
-	total = pieces[5] + pieces[4] + pieces[3] + pieces[2] + pieces[1] + pieces[0];
 
 	if ( sound ) {
 		trap_S_StartSound( origin, ENTITYNUM_WORLD, CHAN_AUTO, cgs.gameSounds[sound] );
@@ -957,13 +933,8 @@ CG_Effect
 void CG_Effect( centity_t *cent, vec3_t origin, vec3_t dir ) {
 	localEntity_t   *le;
 	refEntity_t     *re;
-//	int				howmany;
-	int mass;
-//	int				large, small;
 
 	VectorSet( dir, 0, 0, 1 );    // straight up.
-
-	mass = cent->currentState.density;
 
 //		1 large per 100, 1 small per 24
 //	large	= (int)(mass / 100);
@@ -1217,9 +1188,6 @@ void CG_Shard( centity_t *cent, vec3_t origin, vec3_t dir ) {
 void CG_ShardJunk( centity_t *cent, vec3_t origin, vec3_t dir ) {
 	localEntity_t   *le;
 	refEntity_t     *re;
-	int type;
-
-	type = cent->currentState.density;
 
 	le = CG_AllocLocalEntity();
 	re = &le->refEntity;

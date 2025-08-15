@@ -227,7 +227,6 @@ void CG_AddLightstyle( centity_t *cent ) {
 	int r, g, b;
 	int stringlength;
 	float offset;
-	int offsetwhole;
 	int otime;
 	int lastch, nextch;
 
@@ -248,7 +247,6 @@ void CG_AddLightstyle( centity_t *cent ) {
 	cent->dl_time = cg.time;
 
 	offset = ( (float)otime ) / LS_FRAMETIME;
-	offsetwhole = (int)offset;
 
 	cent->dl_backlerp += offset;
 
@@ -815,7 +813,6 @@ static void CG_Item( centity_t *cent ) {
 	refEntity_t ent;
 	entityState_t       *es;
 	gitem_t             *item;
-	float scale;
 	qboolean hasStand, highlight;
 	float highlightFadeScale = 1.0f;
 
@@ -851,7 +848,6 @@ static void CG_Item( centity_t *cent ) {
 		return;
 	}
 
-	scale = 0.005 + cent->currentState.number * 0.00001;
 
 	memset( &ent, 0, sizeof( ent ) );
 

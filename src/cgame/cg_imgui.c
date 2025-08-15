@@ -44,7 +44,7 @@ void CG_ImGUI_Update(void) {
    
 	if(windowActive){
 		
-		if(igBegin("CGame info", &windowActive, 0)){
+		if(igBegin("CGame info", (bool*)&windowActive, 0)){
 			igText("hello from CGame");
 			prev_times[prev_time_index++] = cg.time % 50;
 			prev_time_index %= ARRAY_LEN(prev_times);
@@ -69,13 +69,13 @@ void CG_ImGUI_Update(void) {
    
 	if(demoTimelineActive){
 		
-		if(igBegin("Timeline", &demoTimelineActive, 0)){
+		if(igBegin("Timeline", (bool*)&demoTimelineActive, 0)) {
 			const char *event_types[] = {"Frags", "Obj Taken", "Obj Dropped"};
 			static qbool selected[] = { qtrue, qtrue, qfalse };
 			if(igTreeNode_Str("Events")){
 				igBeginChild_Str("##EventsAvailable", (ImVec2){0.0f, 0.0f,}, ImGuiChildFlags_AlwaysAutoResize | ImGuiChildFlags_AutoResizeY, 0);
 				for(int i = 0; i < ARRAY_LEN(event_types); i++){
-					igCheckbox(event_types[i], &selected[i]);
+					igCheckbox(event_types[i], (bool*)& selected[i]);
 				}
 				
 				igEndChild();
@@ -85,8 +85,6 @@ void CG_ImGUI_Update(void) {
 			
 			int demoDuration = (m_lastServerTime - m_firstServerTime);
 			int currentOffset = (m_currServerTime - m_firstServerTime);
-			float percent = ((float)currentOffset / (float)demoDuration);
-			float origPercent = percent;
 			igPushItemWidth(igGetWindowWidth() - 16.0f);
 			
 			//igSliderFloat("##timeline", &percent, 0.0f, 100.0f, "", ImGuiSliderFlags_None);
@@ -167,7 +165,6 @@ static ImVec2 minRect, maxRect;
 
 qbool BeginTimeline(const char* str_id)
 {
-	ImGuiWindow* win = igGetCurrentWindow();
 	minBgRect.y = FLT_MAX;
 	minBgRect.x = FLT_MAX;
 	maxBgRect.y = -FLT_MAX;
@@ -190,7 +187,6 @@ qbool TimelineEvent(const char* str_id, float* values, int numVals)
 	
 	const ImU32 inactive_color = igColorConvertFloat4ToU32(ctx->Style.Colors[ImGuiCol_Button]);
 	const ImU32 active_color = igColorConvertFloat4ToU32(ctx->Style.Colors[ImGuiCol_ButtonHovered]);
-	const ImU32 line_color = igColorConvertFloat4ToU32(ctx->Style.Colors[ImGuiCol_ButtonActive]);
 	const ImU32 background = 0xFF26382A;
 	qbool changed = qfalse;
 	ImVec2 localMin = win->DC.CursorPos;
@@ -246,11 +242,9 @@ qbool TimelineEvent(const char* str_id, float* values, int numVals)
 void EndTimeline(void)
 {
 	ImGuiWindow* win = igGetCurrentWindow();
-	ImVec2 start, end;
 	int demoDuration = (m_lastServerTime - m_firstServerTime);
 	int currentOffset = (m_currServerTime - m_firstServerTime);
 	float pc = (float)currentOffset / (float)demoDuration;
-	ImGuiContext *ctx = igGetCurrentContext();
 	const ImU32 color = 0xFF0000FF;
 	float barWidth = 2.0f;
 	ImVec2 localMin, localMax;

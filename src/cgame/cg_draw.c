@@ -213,7 +213,6 @@ void CG_Text_Paint( float x, float y, float scale, vec4_t color, const char *tex
 int CG_DrawFieldWidth( int x, int y, int width, int value, int charWidth, int charHeight ) {
 	char num[16], *ptr;
 	int l;
-	int frame;
 	int totalwidth = 0;
 
 	if ( width < 1 ) {
@@ -253,12 +252,6 @@ int CG_DrawFieldWidth( int x, int y, int width, int value, int charWidth, int ch
 	ptr = num;
 	while ( *ptr && l )
 	{
-		if ( *ptr == '-' ) {
-			frame = STAT_MINUS;
-		} else {
-			frame = *ptr - '0';
-		}
-
 		totalwidth += charWidth;
 		ptr++;
 		l--;
@@ -898,7 +891,7 @@ CG_DrawTeamInfo
 =================
 */
 static void CG_DrawTeamInfo( void ) {
-	int w, h;
+	int w;
 	int i, len;
 	vec4_t hcolor;
 	int chatHeight;
@@ -920,8 +913,6 @@ static void CG_DrawTeamInfo( void ) {
 		if ( cg.time - cgs.teamChatMsgTimes[cgs.teamLastChatPos % chatHeight] > cg_teamChatTime.integer ) {
 			cgs.teamLastChatPos++;
 		}
-
-		h = ( cgs.teamChatPos - cgs.teamLastChatPos ) * TINYCHAR_HEIGHT;
 
 		w = 0;
 
@@ -1037,7 +1028,7 @@ CG_DrawNotify
 #define NOTIFYLOC_X 0
 
 static void CG_DrawNotify( void ) {
-	int w, h;
+	int w;
 	int i, len;
 	vec4_t hcolor;
 	int chatHeight;
@@ -1058,8 +1049,6 @@ static void CG_DrawNotify( void ) {
 		if ( cg.time - cgs.notifyMsgTimes[cgs.notifyLastPos % chatHeight] > notifytime ) {
 			cgs.notifyLastPos++;
 		}
-
-		h = ( cgs.notifyPos - cgs.notifyLastPos ) * TINYCHAR_HEIGHT;
 
 		w = 0;
 
@@ -1621,18 +1610,16 @@ CG_DrawWeapReticle
 ==============
 */
 static void CG_DrawWeapReticle( void ) {
-	qboolean snooper, sniper, fg;
+	qboolean snooper, sniper;
 	vec4_t color = {0, 0, 0, 1};
 
 	// DHM - Nerve :: So that we will draw reticle
 	if ( cgs.gametype >= GT_WOLF && ( ( cg.snap->ps.pm_flags & PMF_FOLLOW ) || cg.demoPlayback ) ) {
 		sniper = (qboolean)( cg.snap->ps.weapon == WP_SNIPERRIFLE );
 		snooper = (qboolean)( cg.snap->ps.weapon == WP_SNOOPERSCOPE );
-		fg = (qboolean)( cg.snap->ps.weapon == WP_FG42SCOPE );
 	} else {
 		sniper = (qboolean)( cg.weaponSelect == WP_SNIPERRIFLE );
 		snooper = (qboolean)( cg.weaponSelect == WP_SNOOPERSCOPE );
-		fg = (qboolean)( cg.weaponSelect == WP_FG42SCOPE );
 	}
 
 	if ( sniper ) {
@@ -2999,7 +2986,7 @@ void CG_ObjectivePrint( const char *str, int charWidth ) {
 static void CG_DrawObjectiveInfo( void ) {
 	char    *start;
 	int l;
-	int x, y, w,h;
+	int x, y, w;
 	int x1, y1, x2, y2;
 	float   *color;
 	vec4_t backColor;
@@ -3069,8 +3056,6 @@ static void CG_DrawObjectiveInfo( void ) {
 
 	x2 = x2 + 4;
 	y2 = y - cg.oidPrintCharWidth * 1.5 + 4;
-
-	h = y2 - y1; // JPW NERVE
 
 	VectorCopy( color, backColor );
 	backColor[3] = 0.5 * color[3];
