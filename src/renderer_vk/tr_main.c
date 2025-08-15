@@ -1595,15 +1595,19 @@ void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs, int firstLitSurf 
 	
 
 	int firstLitSurfs[32] = { };
+#ifdef _DEBUG
 	int totalSurfs = numLitSurfs[0];
+#endif
 	firstLitSurfs[0] = firstLitSurf;
 	for(i = 1; i < 32; i++){
 		firstLitSurfs[i] = firstLitSurfs[i - 1] + numLitSurfs[i - 1];
+#ifdef _DEBUG
 		totalSurfs += numLitSurfs[i];
+#endif
 	}
-
+#ifdef _DEBUG
 	assert(totalSurfs <= ARRAY_LEN(backEndData->litSurfs));
-
+#endif
 
 	for ( i = 0 ; i < numDrawSurfs ; i++ ) {
 		

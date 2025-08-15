@@ -25,6 +25,7 @@
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wnullability-completeness"
+#pragma clang diagnostic ignored "-Wunused-variable"
 /** \mainpage Vulkan Memory Allocator
 
 <b>Version 3.3.0</b>

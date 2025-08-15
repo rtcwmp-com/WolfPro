@@ -913,11 +913,15 @@ static void ReadNextSnapshot(void)
 	}
 	qbool entSet[MAX_GENTITIES];
 	Com_Memset(entSet, 0, sizeof(entSet));
+#ifdef _DEBUG
 	int prevIndex = -1;
+#endif
 	for (;;) {
 		const int index = MSG_ReadBits(&inMsg, GENTITYNUM_BITS);
+#ifdef _DEBUG
 		Q_assert(index > prevIndex);
 		prevIndex = index;
+#endif
 		if (index == MAX_GENTITIES - 1) {
 			break;
 		}
