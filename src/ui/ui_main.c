@@ -102,30 +102,8 @@ static const char *teamArenaGameTypes[] = {
 static int const numTeamArenaGameTypes = sizeof( teamArenaGameTypes ) / sizeof( const char* );
 
 
-static const char *teamArenaGameNames[] = {
-	"Free For All",
-	"Tournament",
-	"Single Player",
-	"Team Deathmatch",
-	"Capture the Flag",
-	"Wolf Multiplayer",
-	"Wolf Stopwatch",
-	"Wolf Checkpoint"
-};
-
-static int const numTeamArenaGameNames = sizeof( teamArenaGameNames ) / sizeof( const char* );
-
-
 static const int numServerFilters = sizeof( serverFilters ) / sizeof( serverFilter_t );
 
-static const char *sortKeys[] = {
-	"Server Name",
-	"Map Name",
-	"Open Player Spots",
-	"Game Type",
-	"Ping Time"
-};
-static const int numSortKeys = sizeof( sortKeys ) / sizeof( const char* );
 
 static char* netnames[] = {
 	"???",
@@ -3578,7 +3556,7 @@ void WM_setVisibility( char *name, qboolean show ) {
 void WM_setWeaponPics() {
 	itemDef_t *knifeDef, *pistolDef, *weaponDef, *grenadeDef, *item1Def, *item2Def;
 	menuDef_t *menu = Menu_GetFocused();
-	int playerType, team, weapon, pistol, item1, i;
+	int playerType, team, weapon, i;
 	const char *gunShader, *grenadeShader;
 
 	knifeDef = Menu_FindItemByName( menu, "window_knife_pic" );
@@ -3595,8 +3573,6 @@ void WM_setWeaponPics() {
 	team = trap_Cvar_VariableValue( "mp_team" );
 	playerType = trap_Cvar_VariableValue( "mp_playerType" );
 	weapon = trap_Cvar_VariableValue( "mp_weapon" );
-	pistol = trap_Cvar_VariableValue( "mp_pistol" );
-	item1 = trap_Cvar_VariableValue( "mp_item1" );
 
 
 	knifeDef->window.background = DC->registerShaderNoMip( "ui_mp/assets/weapon_knife.tga" );
@@ -4302,7 +4278,6 @@ static void UI_RunMenuScript( char **args ) {
 	if ( String_Parse( args, &name ) ) {
 
 		if ( Q_stricmp( name, "StartServer" ) == 0 ) {
-			float skill;
 			int pb_sv, pb_cl;
 
 			// DHM - Nerve
@@ -4324,8 +4299,6 @@ static void UI_RunMenuScript( char **args ) {
 			trap_Cvar_SetValue( "g_gametype", Com_Clamp( 0, 8, uiInfo.gameTypes[ui_netGameType.integer].gtEnum ) );
 
 			trap_Cmd_ExecuteText( EXEC_APPEND, va( "wait ; wait ; map %s\n", uiInfo.mapList[ui_currentNetMap.integer].mapLoadName ) );
-
-			skill = trap_Cvar_VariableValue( "g_spSkill" );
 
 			// NERVE - SMF - set user cvars here
 			// set timelimit
@@ -5085,7 +5058,6 @@ static void UI_BuildServerDisplayList( qboolean force ) {
 	int i, count, clients, maxClients, ping, game, len, visible, friendlyFire, tourney, maxlives, punkbuster, antilag;
 	char info[MAX_STRING_CHARS];
 	//qboolean startRefresh = qtrue; // TTimo: unused
-	static int numinvisible;
 
 	game = 0;       // NERVE - SMF - shut up compiler warning
 
@@ -5110,7 +5082,6 @@ static void UI_BuildServerDisplayList( qboolean force ) {
 	}
 
 	if ( force ) {
-		numinvisible = 0;
 		// clear number of displayed servers
 		uiInfo.serverStatus.numDisplayServers = 0;
 		uiInfo.serverStatus.numPlayersOnServers = 0;
@@ -5240,7 +5211,6 @@ static void UI_BuildServerDisplayList( qboolean force ) {
 			// done with this server
 			if ( ping > 0 ) {
 				trap_LAN_MarkServerVisible( ui_netSource.integer, i, qfalse );
-				numinvisible++;
 			}
 		}
 	}
@@ -5475,7 +5445,7 @@ UI_BuildFindPlayerList
 ==================
 */
 static void UI_BuildFindPlayerList( qboolean force ) {
-	static int numFound, numTimeOuts;
+	static int numFound;
 	int i, j, resend;
 	serverStatusInfo_t info;
 	char name[MAX_NAME_LENGTH + 2];
@@ -5510,7 +5480,6 @@ static void UI_BuildFindPlayerList( qboolean force ) {
 					 sizeof( uiInfo.foundPlayerServerNames[uiInfo.numFoundPlayerServers - 1] ),
 					 "searching %d...", uiInfo.pendingServerStatus.num );
 		numFound = 0;
-		numTimeOuts++;
 	}
 	for ( i = 0; i < MAX_SERVERSTATUSREQUESTS; i++ ) {
 		// if this pending server is valid
@@ -5556,9 +5525,6 @@ static void UI_BuildFindPlayerList( qboolean force ) {
 		// if empty pending slot or timed out
 		if ( !uiInfo.pendingServerStatus.server[i].valid ||
 			 uiInfo.pendingServerStatus.server[i].startTime < uiInfo.uiDC.realTime - ui_serverStatusTimeOut.integer ) {
-			if ( uiInfo.pendingServerStatus.server[i].valid ) {
-				numTimeOuts++;
-			}
 			// reset server status request for this address
 			UI_GetServerStatusInfo( uiInfo.pendingServerStatus.server[i].adrstr, NULL );
 			// reuse pending slot
@@ -6598,7 +6564,6 @@ UI_Init
 =================
 */
 void _UI_Init( qboolean inGameLoad ) {
-	int start;
 
 	//uiInfo.inGameLoad = inGameLoad;
 
@@ -6688,7 +6653,6 @@ void _UI_Init( qboolean inGameLoad ) {
 
 	AssetCache();
 
-	start = trap_Milliseconds();
 
 	uiInfo.teamCount = 0;
 	uiInfo.characterCount = 0;
