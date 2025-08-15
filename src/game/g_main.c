@@ -529,11 +529,9 @@ void G_CheckForCursorHints( gentity_t *ent ) {
 	tr = &ps->serverCursorHintTrace;
 
 	// DHM - Nerve
-	if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
-		trace_contents = ( CONTENTS_TRIGGER | CONTENTS_SOLID | CONTENTS_PLAYERCLIP | CONTENTS_BODY );
-	} else {
-		trace_contents = ( CONTENTS_TRIGGER | CONTENTS_SOLID | CONTENTS_PLAYERCLIP | CONTENTS_BODY | CONTENTS_CORPSE );
-	}
+	
+	trace_contents = ( CONTENTS_TRIGGER | CONTENTS_SOLID | CONTENTS_PLAYERCLIP | CONTENTS_BODY | CONTENTS_CORPSE );
+	
 
 	trap_Trace( tr, offset, NULL, NULL, end, ps->clientNum, trace_contents );
 	// dhm - end
@@ -995,9 +993,8 @@ void G_FindTeams( void ) {
 		}
 	}
 
-	if ( trap_Cvar_VariableIntegerValue( "g_gametype" ) != GT_SINGLE_PLAYER ) {
-		G_Printf( "%i teams with %i entities\n", c, c2 );
-	}
+	G_Printf( "%i teams with %i entities\n", c, c2 );
+	
 }
 
 
@@ -1007,17 +1004,7 @@ G_RemapTeamShaders
 ==============
 */
 void G_RemapTeamShaders() {
-#ifdef MISSIONPACK
-	char string[1024];
-	float f = level.time * 0.001;
-	Com_sprintf( string, sizeof( string ), "team_icon/%s_red", g_redteam.string );
-	AddRemap( "textures/ctf2/redteam01", string, f );
-	AddRemap( "textures/ctf2/redteam02", string, f );
-	Com_sprintf( string, sizeof( string ), "team_icon/%s_blue", g_blueteam.string );
-	AddRemap( "textures/ctf2/blueteam01", string, f );
-	AddRemap( "textures/ctf2/blueteam02", string, f );
-	trap_SetConfigstring( CS_SHADERSTATE, BuildShaderStateConfig() );
-#endif
+
 }
 
 
@@ -1146,11 +1133,10 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 	int i;
 	char cs[MAX_INFO_STRING];
 
-	if ( trap_Cvar_VariableIntegerValue( "g_gametype" ) != GT_SINGLE_PLAYER ) {
-		G_Printf( "------- Game Initialization -------\n" );
-		G_Printf( "gamename: %s\n", GAMEVERSION );
-		G_Printf( "gamedate: %s\n", __DATE__ );
-	}
+	G_Printf( "------- Game Initialization -------\n" );
+	G_Printf( "gamename: %s\n", GAMEVERSION );
+	G_Printf( "gamedate: %s\n", __DATE__ );
+
 
 	srand( randomSeed );
 
@@ -1201,7 +1187,7 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 	level.animScriptData.soundIndex = G_SoundIndex;
 	level.animScriptData.playSound = G_AnimScriptSound;
 
-	if ( g_gametype.integer != GT_SINGLE_PLAYER && g_log.string[0] ) {
+	if ( g_log.string[0] ) {
 		if ( g_logSync.integer ) {
 			trap_FS_FOpenFile( g_log.string, &level.logFile, FS_APPEND_SYNC );
 		} else {
@@ -1218,9 +1204,7 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 			G_LogPrintf( "InitGame: %s\n", serverinfo );
 		}
 	} else {
-		if ( trap_Cvar_VariableIntegerValue( "g_gametype" ) != GT_SINGLE_PLAYER ) {
-			G_Printf( "Not logging to disk.\n" );
-		}
+		G_Printf( "Not logging to disk.\n" );
 	}
 
 	G_InitWorldSession();
@@ -1283,14 +1267,12 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 
 	SaveRegisteredItems();
 
-	if ( trap_Cvar_VariableIntegerValue( "g_gametype" ) != GT_SINGLE_PLAYER ) {
-		G_Printf( "-----------------------------------\n" );
-	}
+	G_Printf( "-----------------------------------\n" );
+	
 
 	if ( trap_Cvar_VariableIntegerValue( "bot_enable" ) ) {
 		BotAISetup( restart );
 		BotAILoadMap( restart );
-		G_InitBots( restart );
 	}
 
 	G_RemapTeamShaders();
@@ -1316,9 +1298,9 @@ G_ShutdownGame
 =================
 */
 void G_ShutdownGame( int restart ) {
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-		G_Printf( "==== ShutdownGame ====\n" );
-	}
+	
+	G_Printf( "==== ShutdownGame ====\n" );
+	
 
 	if ( level.logFile ) {
 		G_LogPrintf( "ShutdownGame:\n" );
@@ -1650,9 +1632,6 @@ void CalculateRanks( void ) {
 				level.clients[ level.sortedClients[i] ].ps.persistant[PERS_RANK] = rank | RANK_TIED_FLAG;
 			}
 			score = newScore;
-			if ( g_gametype.integer == GT_SINGLE_PLAYER && level.numPlayingClients == 1 ) {
-				level.clients[ level.sortedClients[i] ].ps.persistant[PERS_RANK] = rank | RANK_TIED_FLAG;
-			}
 		}
 	}
 
@@ -2047,10 +2026,6 @@ void CheckIntermissionExit( void ) {
 	int i;
 	gclient_t   *cl;
 	int readyMask;
-
-	if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
-		return;
-	}
 
 	// DHM - Nerve :: Flat 10 second timer until exit
 	if ( g_gametype.integer >= GT_WOLF ) {

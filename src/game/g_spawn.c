@@ -854,13 +854,7 @@ void G_SpawnGEntityFromSpawnVars( void ) {
 	}
 
 	// check for "notteam" / "notfree" flags
-	if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
-		G_SpawnInt( "notsingle", "0", &i );
-		if ( i ) {
-			G_FreeEntity( ent );
-			return;
-		}
-	}
+	
 	if ( g_gametype.integer >= GT_TEAM ) {
 		G_SpawnInt( "notteam", "0", &i );
 		if ( i ) {
@@ -1017,30 +1011,30 @@ void SP_worldspawn( void ) {
 
 // JPW NERVE change minigun overheat time for single player -- this array gets reloaded every time the server is reset,
 // so this is as good a place as any to do stuff like this
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-		int i;
-		ammoTable[WP_VENOM].maxHeat *= 0.25;
-		for ( i = 0; i < strlen( testid2 ); i++ )
-			testid2[i] -= ( i + 1 );
-		ammoTable[WP_DYNAMITE].uses = 0; // regens based on recharge time
-		// reset ammo for subs to be distinct for multiplayer (so running out of rifle ammo doesn't deplete sidearm)
-		// if player runs out of SMG ammunition, it shouldn't *also* deplete pistol ammunition.  If you change this, change
-		// g_spawn.c as well
-		item = BG_FindItem( "Thompson" );
-		item->giAmmoIndex = WP_THOMPSON;
-		item = BG_FindItem( "Sten" );
-		item->giAmmoIndex = WP_STEN;
-		for ( i = 0; i < strlen( testid1 ); i++ )
-			testid1[i] -= ( i + 1 );
-		item = BG_FindItem( "MP40" );
-		item->giAmmoIndex = WP_MP40;
-		ammoTable[WP_VENOM_FULL].nextShotTime = 500;
-		for ( i = 0; i < strlen( testid3 ); i++ )
-			testid3[i] -= ( i + 1 );
-		ammoTable[WP_PANZERFAUST].fireDelayTime = 750;
-		item = BG_FindItem( "Panzerfaust" ); // FIXME this don't work needs to go "sooner" different (shoulder-fired) panzerfaust model, 'cause the SP one is awful stubby and not proportionally right
-		item->world_model[4] = "models/multiplayer/panzerfaust/multi_pf.md3";
-	}
+	
+	int i;
+	ammoTable[WP_VENOM].maxHeat *= 0.25;
+	for ( i = 0; i < strlen( testid2 ); i++ )
+		testid2[i] -= ( i + 1 );
+	ammoTable[WP_DYNAMITE].uses = 0; // regens based on recharge time
+	// reset ammo for subs to be distinct for multiplayer (so running out of rifle ammo doesn't deplete sidearm)
+	// if player runs out of SMG ammunition, it shouldn't *also* deplete pistol ammunition.  If you change this, change
+	// g_spawn.c as well
+	item = BG_FindItem( "Thompson" );
+	item->giAmmoIndex = WP_THOMPSON;
+	item = BG_FindItem( "Sten" );
+	item->giAmmoIndex = WP_STEN;
+	for ( i = 0; i < strlen( testid1 ); i++ )
+		testid1[i] -= ( i + 1 );
+	item = BG_FindItem( "MP40" );
+	item->giAmmoIndex = WP_MP40;
+	ammoTable[WP_VENOM_FULL].nextShotTime = 500;
+	for ( i = 0; i < strlen( testid3 ); i++ )
+		testid3[i] -= ( i + 1 );
+	ammoTable[WP_PANZERFAUST].fireDelayTime = 750;
+	item = BG_FindItem( "Panzerfaust" ); // FIXME this don't work needs to go "sooner" different (shoulder-fired) panzerfaust model, 'cause the SP one is awful stubby and not proportionally right
+	item->world_model[4] = "models/multiplayer/panzerfaust/multi_pf.md3";
+
 // jpw
 
 }

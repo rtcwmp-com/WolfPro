@@ -99,11 +99,6 @@ static void CG_Obituary( entityState_t *ent ) {
 	char attackerName[32];
 	clientInfo_t    *ci, *ca; // JPW NERVE ca = attacker
 
-	// Ridah, no obituaries in single player
-	if ( cgs.gametype == GT_SINGLE_PLAYER ) {
-		return;
-	}
-
 	target = ent->otherEntityNum;
 	attacker = ent->otherEntityNum2;
 	mod = ent->eventParm;
@@ -590,77 +585,6 @@ void CG_PainEvent( centity_t *cent, int health, qboolean crouching ) {
 	vec3_t tagOrg;
 	int tagIndex, bestTag, oldPainAnim;
 	float bestDist, dist;
-
-	// Rafael
-	if ( cent->currentState.aiChar && cgs.gametype == GT_SINGLE_PLAYER ) {
-
-		if ( cent->pe.painTime > cg.time - 1000 ) {
-			oldPainAnim = cent->pe.painAnimTorso;
-		} else {
-			oldPainAnim = -1;
-		}
-
-		// Ridah, health is actually time to spend playing the animation
-		cent->pe.painTime = cg.time;
-		cent->pe.painDuration = health << 4;
-		cent->pe.painDirection ^= 1;
-		cent->pe.painAnimLegs = -1;
-		cent->pe.painAnimTorso = -1;
-
-		if ( VectorLength( cent->currentState.origin2 ) > 1 ) {
-			// find a correct animation to play, based on the body orientation at previous frame
-			for ( tagIndex = 0, bestDist = 0, bestTag = -1; tagAnims[tagIndex].tag; tagIndex++ ) {
-				if ( oldPainAnim >= 0 && tagAnims[tagIndex].anim == oldPainAnim ) {
-					continue;
-				}
-				// grab the tag with this name
-				if ( CG_GetOriginForTag( cent, ( refEntity_t * )( ( (byte *)&cent->pe ) + tagAnims[tagIndex].refEntOfs ), tagAnims[tagIndex].tag, 0, tagOrg, NULL ) >= 0 ) {
-					dist = VectorDistance( tagOrg, cent->currentState.origin2 );
-					if ( !bestDist || dist < bestDist ) {
-						bestTag = tagIndex;
-						bestDist = dist;
-					}
-				}
-			}
-
-			if ( bestTag >= 0 ) {
-				if ( !crouching ) {
-					cent->pe.painAnimLegs = tagAnims[bestTag].anim;
-				}
-				cent->pe.painAnimTorso = tagAnims[bestTag].anim;
-			}
-		}
-
-		if ( cent->pe.painAnimTorso < 0 && cent->pe.painDuration > 1000 ) {   // stunned
-			if ( !crouching ) {
-				cent->pe.painAnimLegs = STUNNED_ANIM;
-			}
-			cent->pe.painAnimTorso = STUNNED_ANIM;
-		}
-
-		if ( cent->pe.painAnimTorso < 0 ) {
-			// pick a random anim
-			for ( tagIndex = 0; tagAnims[tagIndex].tag; tagIndex++ ) {};
-			bestTag = rand() % tagIndex;
-			if ( !crouching ) {
-				cent->pe.painAnimLegs = tagAnims[bestTag].anim;
-			}
-			cent->pe.painAnimTorso = tagAnims[bestTag].anim;
-		}
-
-		// adjust the animation speed
-		{
-			animation_t *anim;
-			clientInfo_t *ci;
-
-			ci = &cgs.clientinfo[ cent->currentState.number ];
-			anim = &ci->modelInfo->animations[ cent->pe.painAnimTorso ];
-
-			cent->pe.animSpeed = ( anim->frameLerp * anim->numFrames ) / (float)cent->pe.painDuration;
-		}
-
-		return;
-	}
 
 	// don't do more than two pain sounds a second
 	if ( cg.time - cent->pe.painTime < 500 ) {
@@ -1396,10 +1320,6 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	}
 	ci = &cgs.clientinfo[ clientNum ];
 
-	if ( cgs.gametype == GT_SINGLE_PLAYER && !ci->modelInfo ) {   // not ready yet?
-		return;
-	}
-
 	if (cg.demoPlayback && cg.ndpDemoEnabled) {
 		if (isRtcwPro) {
 			if (event >= 70) {
@@ -1748,21 +1668,10 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 //----(SA)	the related issues of load/savegames, death underwater, etc. are not handled at all.
 //----(SA)	the actual problem, of course, is doing underwater stuff when the water is very turbulant and you can't simply
 //----(SA)	do things based on the players head being above/below the water brushes top surface. (since the waves can potentially be /way/ above/below that)
-
-		// DHM - Nerve :: causes problems in multiplayer...
-		if ( cgs.gametype == GT_SINGLE_PLAYER && clientNum == cg.predictedPlayerState.clientNum ) {
-//			trap_R_SetFog(FOG_WATER, 0, 400, .1, .1, .1, 111);
-			trap_R_SetFog( FOG_CMD_SWITCHFOG, FOG_WATER, 200, 0, 0, 0, 0 );
-		}
 		break;
 	case EV_WATER_CLEAR:
 		DEBUGNAME( "EV_WATER_CLEAR" );
 		trap_S_StartSound( NULL, es->number, CHAN_AUTO, CG_CustomSound( es->number, "*gasp.wav" ) );
-
-		// DHM - Nerve :: causes problems in multiplayer...
-		if ( cgs.gametype == GT_SINGLE_PLAYER && clientNum == cg.predictedPlayerState.clientNum ) {
-			trap_R_SetFog( FOG_CMD_SWITCHFOG, FOG_MAP, 400,0,0,0,0 );
-		}
 		break;
 
 	case EV_ITEM_PICKUP:
@@ -1860,9 +1769,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 // JPW NERVE
 	case EV_SPINUP:
 		DEBUGNAME( "EV_SPINUP" );
-		if ( cg_gameType.integer != GT_SINGLE_PLAYER ) {
-			trap_S_StartSound( NULL, es->number, CHAN_AUTO, cg_weapons[es->weapon].spinupSound );
-		}
+		trap_S_StartSound( NULL, es->number, CHAN_AUTO, cg_weapons[es->weapon].spinupSound );
 		break;
 // jpw
 	case EV_EMPTYCLIP:

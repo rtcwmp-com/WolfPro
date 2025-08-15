@@ -924,7 +924,6 @@ void CG_AddClientCritter( localEntity_t *le ) {
 
 		if ( alpha > 0.5 && ( le->lastSpiritDmgTime < time - 100 ) && enemyDist < 24 ) {
 			// inflict the damage!
-			CG_ClientDamage( cg_entities[le->ownerNum].currentState.otherEntityNum2, le->ownerNum, CLDMG_SPIRIT );
 			le->lastSpiritDmgTime = time;
 		}
 

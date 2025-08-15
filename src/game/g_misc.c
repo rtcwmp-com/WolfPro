@@ -1583,10 +1583,6 @@ void Fire_Lead( gentity_t *ent, gentity_t *activator, float spread, int damage )
 
 	trap_Trace(&tr, muzzle, NULL, NULL, end, ent->s.number, MASK_SHOT );
 
-	if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
-		AICast_ProcessBullet( activator, muzzle, tr.endpos );
-	}
-
 	if ( tr.surfaceFlags & SURF_NOIMPACT ) {
 //		mg42_muzzleflash (ent);
 //		G_AddEvent( ent, EV_FIRE_WEAPON_MG42, 0 );
@@ -2060,13 +2056,7 @@ void SP_mg42( gentity_t *self ) {
 	}
 
 	if ( !self->health ) {
-		if ( g_gametype.integer == GT_SINGLE_PLAYER ) { // JPW NERVE
-			self->health = 100;
-		}
-// JPW NERVE
-		else {
-			self->health = MG42_MULTIPLAYER_HEALTH;
-		}
+		self->health = MG42_MULTIPLAYER_HEALTH;
 	}
 // jpw
 
@@ -2087,11 +2077,11 @@ void SP_mg42( gentity_t *self ) {
 		self->accuracy = 1;
 	}
 // JPW NERVE
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-		if ( !self->damage ) {
-			self->damage = 25;
-		}
+	
+	if ( !self->damage ) {
+		self->damage = 25;
 	}
+	
 // jpw
 }
 

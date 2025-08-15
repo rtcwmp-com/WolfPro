@@ -61,37 +61,8 @@ SP_ai_marker
 */
 extern vec3_t playerMins, playerMaxs;
 void SP_ai_marker( gentity_t *ent ) {
-	vec3_t dest;
-	trace_t tr;
-	vec3_t checkMins, checkMaxs;
-
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-		G_FreeEntity( ent );
-		return;
-	}
-
-//----(SA)	move the bounding box for the check in 1 unit on each side so they can butt up against a wall and not startsolid
-	VectorCopy( playerMins, checkMins );
-	checkMins[0] += 1;
-	checkMins[1] += 1;
-	VectorCopy( playerMaxs, checkMaxs );
-	checkMaxs[0] -= 1;
-	checkMaxs[1] -= 1;
-//----(SA)	end
-
-	if ( !( ent->spawnflags & 1 ) ) {
-		// drop to floor
-		ent->r.currentOrigin[2] += 1.0; // fixes QErad -> engine bug?
-		VectorSet( dest, ent->r.currentOrigin[0], ent->r.currentOrigin[1], ent->r.currentOrigin[2] - 4096 );
-		trap_Trace( &tr, ent->r.currentOrigin, checkMins, checkMaxs, dest, ent->s.number, MASK_PLAYERSOLID );
-
-		if ( tr.startsolid ) {
-			G_Printf( "WARNING: ai_marker (%s) in solid at %s\n", ent->targetname, vtos( ent->r.currentOrigin ) );
-			return;
-		}
-
-		G_SetOrigin( ent, tr.endpos );
-	}
+	G_FreeEntity( ent );
+	return;
 }
 
 /*QUAKED ai_effect (0.3 0.8 0.2) (-4 -4 -4) (4 4 4)
@@ -128,13 +99,8 @@ void ai_effect_think( gentity_t *ent ) {
 }
 
 void SP_ai_effect( gentity_t *ent ) {
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-		G_FreeEntity( ent );
-		return;
-	}
-
-	ent->think = ai_effect_think;
-	ent->nextthink = level.time + 500;
+	G_FreeEntity( ent );
+	return;
 }
 
 //===========================================================
@@ -205,25 +171,6 @@ void ai_trigger_use( gentity_t *self, gentity_t *other, gentity_t *activator ) {
 }
 
 void SP_ai_trigger( gentity_t *ent ) {
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
 		G_FreeEntity( ent );
 		return;
-	}
-
-	G_SpawnFloat( "wait", "-1", &ent->wait );
-
-	if ( !ent->aiName ) {
-		G_Error( "ai_trigger without \"ainame\"\n" );
-	}
-	if ( !ent->target ) {
-		G_Error( "ai_trigger without \"target\"\n" );
-	}
-
-	if ( ent->spawnflags & 1 ) { // TriggerSpawn
-		ent->AIScript_AlertEntity = ai_trigger_activate;
-		ent->use = ai_trigger_use;
-		trap_UnlinkEntity( ent );
-	} else {
-		ai_trigger_activate( ent );
-	}
 }

@@ -1782,14 +1782,12 @@ static void CG_DrawCrosshair( void ) {
 		if ( !( cg.snap->ps.eFlags & EF_MG42_ACTIVE ) ) {
 
 			// JPW NERVE -- don't let players run with rifles -- speed 80 == crouch, 128 == walk, 256 == run
-			if ( cg_gameType.integer != GT_SINGLE_PLAYER ) {
-				if ( VectorLength( cg.snap->ps.velocity ) > 127.0f ) {
-					if ( cg.snap->ps.weapon == WP_SNIPERRIFLE ) {
-						CG_FinishWeaponChange( WP_SNIPERRIFLE, WP_MAUSER );
-					}
-					if ( cg.snap->ps.weapon == WP_SNOOPERSCOPE ) {
-						CG_FinishWeaponChange( WP_SNOOPERSCOPE, WP_GARAND );
-					}
+			if ( VectorLength( cg.snap->ps.velocity ) > 127.0f ) {
+				if ( cg.snap->ps.weapon == WP_SNIPERRIFLE ) {
+					CG_FinishWeaponChange( WP_SNIPERRIFLE, WP_MAUSER );
+				}
+				if ( cg.snap->ps.weapon == WP_SNOOPERSCOPE ) {
+					CG_FinishWeaponChange( WP_SNOOPERSCOPE, WP_GARAND );
 				}
 			}
 			// jpw
@@ -1885,11 +1883,6 @@ static void CG_ScanForCrosshairEntity( void ) {
 	vec3_t start, end;
 	int content;
 
-	// DHM - Nerve :: We want this in multiplayer
-	if ( cgs.gametype == GT_SINGLE_PLAYER ) {
-		return; //----(SA)	don't use any scanning at the moment.
-
-	}
 	VectorCopy( cg.refdef.vieworg, start );
 	VectorMA( start, 8192, cg.refdef.viewaxis[0], end );    //----(SA)	changed from 8192
 
@@ -2138,12 +2131,6 @@ static void CG_DrawCrosshairNames( void ) {
 		return;
 	}
 
-	// Ridah
-	if ( cg_gameType.integer == GT_SINGLE_PLAYER ) {
-		return;
-	}
-	// done.
-
 	// scan the known entities to see if the crosshair is sighted on one
 	CG_ScanForCrosshairEntity();
 
@@ -2332,11 +2319,6 @@ CG_DrawIntermission
 =================
 */
 static void CG_DrawIntermission( void ) {
-	if ( cgs.gametype == GT_SINGLE_PLAYER ) {
-		CG_DrawCenterString();
-		return;
-	}
-
 	cg.scoreFadeTime = cg.time;
 	CG_DrawScoreboard();
 }
@@ -2577,11 +2559,6 @@ static void CG_DrawWarmup( void ) {
 	const char  *s, *s1, *s2, *configString = NULL;
 	const char* t;
 
-	if ( cgs.gametype == GT_SINGLE_PLAYER ) {
-		return;     // (SA) don't bother with this stuff in sp
-	}
-
-	// L0 - Ready
 	if (cgs.gamestate == GS_WARMUP && cgs.readyState != CREADY_NONE) {
 
 		if (cgs.currentRound) {
@@ -2798,16 +2775,7 @@ static void CG_DrawFlashZoomTransition( void ) {
 		return;
 	}
 
-	if ( cgs.gametype != GT_SINGLE_PLAYER ) { // JPW NERVE
-		fadeTime = 400;
-	} else {
-		if ( cg.zoomedScope ) {
-			fadeTime = cg.zoomedScope;  //----(SA)
-		} else {
-			fadeTime = 300;
-		}
-	}
-	// jpw
+	fadeTime = 400;
 
 	frac = cg.time - cg.zoomTime;
 
@@ -3845,15 +3813,6 @@ void CG_DrawActive( stereoFrame_t stereoView ) {
 	if ( !cg.snap ) {
 		CG_DrawInformation();
 		return;
-	}
-
-	// if they are waiting at the mission stats screen, show the stats
-	if ( cg_gameType.integer == GT_SINGLE_PLAYER ) {
-		if ( strlen( cg_missionStats.string ) > 1 ) {
-			trap_Cvar_Set( "com_expectedhunkusage", "-2" );
-			CG_DrawInformation();
-			return;
-		}
 	}
 
 	// optionally draw the tournement scoreboard instead

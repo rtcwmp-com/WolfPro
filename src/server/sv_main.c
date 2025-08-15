@@ -380,11 +380,6 @@ void SVC_Status( netadr_t from ) {
 	int playerLength;
 	char infostring[MAX_INFO_STRING];
 
-	// ignore if we are in single player
-	if ( Cvar_VariableValue( "g_gametype" ) == GT_SINGLE_PLAYER ) {
-		return;
-	}
-
 	// DHM - Nerve
 #ifdef UPDATE_SERVER
 	return;
@@ -444,10 +439,6 @@ void SVC_GameCompleteStatus( netadr_t from ) {
 	int playerLength;
 	char infostring[MAX_INFO_STRING];
 
-	// ignore if we are in single player
-	if ( Cvar_VariableValue( "g_gametype" ) == GT_SINGLE_PLAYER ) {
-		return;
-	}
 
 	strcpy( infostring, Cvar_InfoString( CVAR_SERVERINFO ) );
 
@@ -504,10 +495,6 @@ void SVC_Info( netadr_t from ) {
 	return;
 #endif
 
-	// ignore if we are in single player
-	if ( Cvar_VariableValue( "g_gametype" ) == GT_SINGLE_PLAYER ) {
-		return;
-	}
 
 	// don't count privateclients
 	count = 0;

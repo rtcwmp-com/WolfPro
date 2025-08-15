@@ -935,65 +935,65 @@ void ClientThink_real( gentity_t *ent ) {
 
 	// JPW drop button drops secondary weapon so new one can be picked up
 	// TTimo explicit braces to avoid ambiguous 'else'
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-		if ( ucmd->wbuttons & WBUTTON_DROP ) {
-			if ( !client->dropWeaponTime ) {
-				client->dropWeaponTime = 1; // just latch it for now
-				if ( ( client->ps.stats[STAT_PLAYER_CLASS] == PC_SOLDIER ) || ( client->ps.stats[STAT_PLAYER_CLASS] == PC_LT ) ) {
-					for ( i = 0; i < MAX_WEAPS_IN_BANK_MP; i++ ) {
-						weapon = weapBanksMultiPlayer[3][i];
-						if ( COM_BitCheck( client->ps.weapons,weapon ) ) {
+	
+	if ( ucmd->wbuttons & WBUTTON_DROP ) {
+		if ( !client->dropWeaponTime ) {
+			client->dropWeaponTime = 1; // just latch it for now
+			if ( ( client->ps.stats[STAT_PLAYER_CLASS] == PC_SOLDIER ) || ( client->ps.stats[STAT_PLAYER_CLASS] == PC_LT ) ) {
+				for ( i = 0; i < MAX_WEAPS_IN_BANK_MP; i++ ) {
+					weapon = weapBanksMultiPlayer[3][i];
+					if ( COM_BitCheck( client->ps.weapons,weapon ) ) {
 
-							item = BG_FindItemForWeapon( weapon );
-							VectorCopy( client->ps.viewangles, angles );
+						item = BG_FindItemForWeapon( weapon );
+						VectorCopy( client->ps.viewangles, angles );
 
-							// clamp pitch
-							if ( angles[PITCH] < -30 ) {
-								angles[PITCH] = -30;
-							} else if ( angles[PITCH] > 30 ) {
-								angles[PITCH] = 30;
-							}
-
-							AngleVectors( angles, velocity, NULL, NULL );
-							VectorScale( velocity, 64, offset );
-							offset[2] += client->ps.viewheight / 2;
-							VectorScale( velocity, 75, velocity );
-							velocity[2] += 50 + random() * 35;
-
-							VectorAdd( client->ps.origin,offset,org );
-
-							VectorSet( mins, -ITEM_RADIUS, -ITEM_RADIUS, 0 );
-							VectorSet( maxs, ITEM_RADIUS, ITEM_RADIUS, 2 * ITEM_RADIUS );
-
-							trap_Trace( &tr, client->ps.origin, mins, maxs, org, ent->s.number, MASK_SOLID );
-							VectorCopy( tr.endpos, org );
-
-							ent2 = LaunchItem( item, org, velocity, client->ps.clientNum );
-							COM_BitClear( client->ps.weapons,weapon );
-
-							if ( weapon == WP_MAUSER ) {
-								COM_BitClear( client->ps.weapons,WP_SNIPERRIFLE );
-							}
-
-							// Clear out empty weapon, change to next best weapon
-							G_AddEvent( ent, EV_NOAMMO, 0 );
-
-							i = MAX_WEAPS_IN_BANK_MP;
-							// show_bug.cgi?id=568
-							if ( client->ps.weapon == weapon ) {
-								client->ps.weapon = 0;
-							}
-							ent2->count = client->ps.ammoclip[BG_FindClipForWeapon( weapon )];
-							ent2->item->quantity = client->ps.ammoclip[BG_FindClipForWeapon( weapon )];
-							client->ps.ammoclip[BG_FindClipForWeapon( weapon )] = 0;
+						// clamp pitch
+						if ( angles[PITCH] < -30 ) {
+							angles[PITCH] = -30;
+						} else if ( angles[PITCH] > 30 ) {
+							angles[PITCH] = 30;
 						}
+
+						AngleVectors( angles, velocity, NULL, NULL );
+						VectorScale( velocity, 64, offset );
+						offset[2] += client->ps.viewheight / 2;
+						VectorScale( velocity, 75, velocity );
+						velocity[2] += 50 + random() * 35;
+
+						VectorAdd( client->ps.origin,offset,org );
+
+						VectorSet( mins, -ITEM_RADIUS, -ITEM_RADIUS, 0 );
+						VectorSet( maxs, ITEM_RADIUS, ITEM_RADIUS, 2 * ITEM_RADIUS );
+
+						trap_Trace( &tr, client->ps.origin, mins, maxs, org, ent->s.number, MASK_SOLID );
+						VectorCopy( tr.endpos, org );
+
+						ent2 = LaunchItem( item, org, velocity, client->ps.clientNum );
+						COM_BitClear( client->ps.weapons,weapon );
+
+						if ( weapon == WP_MAUSER ) {
+							COM_BitClear( client->ps.weapons,WP_SNIPERRIFLE );
+						}
+
+						// Clear out empty weapon, change to next best weapon
+						G_AddEvent( ent, EV_NOAMMO, 0 );
+
+						i = MAX_WEAPS_IN_BANK_MP;
+						// show_bug.cgi?id=568
+						if ( client->ps.weapon == weapon ) {
+							client->ps.weapon = 0;
+						}
+						ent2->count = client->ps.ammoclip[BG_FindClipForWeapon( weapon )];
+						ent2->item->quantity = client->ps.ammoclip[BG_FindClipForWeapon( weapon )];
+						client->ps.ammoclip[BG_FindClipForWeapon( weapon )] = 0;
 					}
 				}
 			}
-		} else {
-			client->dropWeaponTime = 0;
 		}
+	} else {
+		client->dropWeaponTime = 0;
 	}
+	
 // jpw
 
 	// check for inactivity timer, but never drop the local client of a non-dedicated server
@@ -1239,8 +1239,7 @@ void ClientThink_real( gentity_t *ent ) {
 		// wait for the attack button to be pressed
 		if ( level.time > client->respawnTime ) {
 			// forcerespawn is to prevent users from waiting out powerups
-			if ( ( g_gametype.integer != GT_SINGLE_PLAYER ) &&
-				 ( g_forcerespawn.integer > 0 ) &&
+			if ( ( g_forcerespawn.integer > 0 ) &&
 				 ( ( level.time - client->respawnTime ) > g_forcerespawn.integer * 1000 )  &&
 				 ( !( ent->client->ps.pm_flags & PMF_LIMBO ) ) ) { // JPW NERVE
 				// JPW NERVE
@@ -1255,11 +1254,7 @@ void ClientThink_real( gentity_t *ent ) {
 
 			// DHM - Nerve :: Single player game respawns immediately as before,
 			//				  but in multiplayer, require button press before respawn
-			if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
-				respawn( ent );
-			}
-			// NERVE - SMF - we want to only respawn on jump button now
-			else if ( ( ucmd->upmove > 0 ) &&
+			if ( ( ucmd->upmove > 0 ) &&
 					  ( !( ent->client->ps.pm_flags & PMF_LIMBO ) ) ) { // JPW NERVE
 				// JPW NERVE
 				if ( g_gametype.integer >= GT_WOLF ) {

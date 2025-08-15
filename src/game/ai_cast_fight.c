@@ -2101,15 +2101,9 @@ qboolean AICast_HasFiredWeapon( int entNum, int weapon ) {
 
 qboolean AICast_AllowFlameDamage( int entNum ) {
 	// DHM - Nerve :: caststates are not initialized in multiplayer
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-		return qtrue;
-	}
-	// dhm
-
-	if ( caststates[entNum].aiFlags & AIFL_NO_FLAME_DAMAGE ) {
-		return qfalse;
-	}
+	
 	return qtrue;
+	
 }
 
 /*
@@ -2190,44 +2184,7 @@ AICast_AudibleEvent
 ================
 */
 void AICast_AudibleEvent( int srcnum, vec3_t pos, float range ) {
-	int i;
-	cast_state_t *cs, *scs;
-	gentity_t *ent, *sent;
 
 	// DHM - Nerve :: caststates are not initialized in multiplayer
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-		return;
-	}
-	// dhm
-
-	sent = &g_entities[srcnum];
-	scs = AICast_GetCastState( srcnum );
-
-	for ( ent = g_entities, cs = caststates, i = 0; i < level.maxclients; i++, cs++, ent++ ) {
-		if ( !cs->bs ) {
-			continue;
-		}
-		//if (cs->aiState >= AISTATE_COMBAT)
-		//	continue;
-		if ( ent == sent ) {
-			continue;
-		}
-		if ( cs->castScriptStatus.scriptNoSightTime > level.time ) {
-			continue;
-		}
-		if ( ent->health <= 0 ) {
-			continue;
-		}
-		// if within range, and this sound was made by an enemy
-		if ( scs->aiState < AISTATE_COMBAT && !AICast_QueryEnemy( cs, srcnum ) ) {
-			continue;
-		}
-		if ( Distance( pos, ent->s.pos.trBase ) > range ) {
-			continue;
-		}
-		// we heard it
-		cs->audibleEventTime = level.time + 200 + rand() % 300;   // random reaction delay
-		VectorCopy( pos, cs->audibleEventOrg );
-		cs->audibleEventEnt = ent->s.number;
-	}
+	return;
 }

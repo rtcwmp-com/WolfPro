@@ -737,11 +737,6 @@ static void CG_LoadClientInfo( clientInfo_t *ci ) {
 			if ( !CG_RegisterClientModelname( ci, DEFAULT_MODEL, ci->skinName ) ) {
 				CG_Error( "DEFAULT_MODEL / skin (%s/%s) failed to register", DEFAULT_MODEL, ci->skinName );
 			}
-		} else if ( cgs.gametype == GT_SINGLE_PLAYER && !headfail ) {
-			// try to keep the model but default the skin (so you can tell bad guys from good)
-			if ( !CG_RegisterClientModelname( ci, ci->modelName, "default" ) ) {
-				CG_Error( "DEFAULT_MODEL (%s/default) failed to register", ci->modelName );
-			}
 		} else {
 			// go totally default
 			if ( !CG_RegisterClientModelname( ci, DEFAULT_MODEL, "default" ) ) {
@@ -1048,7 +1043,7 @@ void CG_NewClientInfo( int clientNum ) {
 
 		forceDefer = trap_MemoryRemaining() < 4000000;
 
-		if ( cgs.gametype != GT_SINGLE_PLAYER && ( forceDefer || ( cg_deferPlayers.integer && !cg_buildScript.integer && !cg.loading ) ) ) {
+		if ( ( forceDefer || ( cg_deferPlayers.integer && !cg_buildScript.integer && !cg.loading ) ) ) {
 			// keep whatever they had if it won't violate team skins
 			if ( ci->infoValid &&
 				 ( cgs.gametype < GT_TEAM || !Q_stricmp( newInfo.skinName, ci->skinName ) ) ) {
@@ -1369,11 +1364,8 @@ void CG_RunLerpFrameRate( clientInfo_t *ci, lerpFrame_t *lf, int newAnimation, c
 					lf->oldFramePos[1] = cent->currentState.pos.trBase[1];
 				}
 
-				if ( cgs.gametype == GT_SINGLE_PLAYER ) {
-					moveSpeed = Distance( cent->currentState.pos.trBase, cent->nextState.pos.trBase ) / ( (float)( cg.nextSnap->serverTime - cg.snap->serverTime ) / 1000.0 );
-				} else {
-					moveSpeed = Distance( cent->lerpOrigin, lf->oldFramePos ) / ( (float)( cg.time - lf->oldFrameTime ) / 1000.0 );
-				}
+				moveSpeed = Distance( cent->lerpOrigin, lf->oldFramePos ) / ( (float)( cg.time - lf->oldFrameTime ) / 1000.0 );
+				
 			}
 			//
 			// convert it to a factor of this animation's movespeed
@@ -1718,27 +1710,14 @@ static void CG_AddPainTwitch( centity_t *cent, vec3_t torsoAngles ) {
 		return;
 	}
 
-	if ( cent->currentState.clientNum && cgs.gametype == GT_SINGLE_PLAYER ) {
-		#define FADEIN_RATIO    0.25
-		#define FADEOUT_RATIO   ( 1.0 - FADEIN_RATIO )
-		f = (float)t / duration;
-		if ( f < FADEIN_RATIO ) {
-			torsoAngles[ROLL] += ( 0.5 * direction * ( f * ( 1.0 / FADEIN_RATIO ) ) );
-			torsoAngles[PITCH] -= ( fabs( direction ) * ( f * ( 1.0 / FADEIN_RATIO ) ) );
-			torsoAngles[YAW] += ( direction * ( f * ( 1.0 / FADEIN_RATIO ) ) );
-		} else {
-			torsoAngles[ROLL] += ( 0.5 * direction * ( 1.0 - ( f - FADEIN_RATIO ) ) * ( 1.0 / FADEOUT_RATIO ) );
-			torsoAngles[PITCH] -= ( fabs( direction ) * ( 1.0 - ( f - FADEIN_RATIO ) ) * ( 1.0 / FADEOUT_RATIO ) );
-			torsoAngles[YAW] += ( direction * ( 1.0 - ( f - FADEIN_RATIO ) ) * ( 1.0 / FADEOUT_RATIO ) );
-		}
-	} else {    // fast, Q3 style
-		f = 1.0 - (float)t / duration;
-		if ( cent->pe.painDirection ) {
-			torsoAngles[ROLL] += 20 * f;
-		} else {
-			torsoAngles[ROLL] -= 20 * f;
-		}
+	// fast, Q3 style
+	f = 1.0 - (float)t / duration;
+	if ( cent->pe.painDirection ) {
+		torsoAngles[ROLL] += 20 * f;
+	} else {
+		torsoAngles[ROLL] -= 20 * f;
 	}
+	
 }
 
 /*

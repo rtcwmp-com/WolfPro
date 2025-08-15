@@ -269,62 +269,7 @@ void CG_FreeCamera( int camNum ) {
 	cameraInuse[camNum] = qfalse;
 }
 
-/*
-==============
-CG_StartCamera
-==============
-*/
-void CG_StartCamera( const char *name, qboolean startBlack ) {
-	char lname[MAX_QPATH];
 
-	if ( cgs.gametype != GT_SINGLE_PLAYER ) {
-		return;
-	}
-
-	COM_StripExtension( name, lname );    //----(SA)	added
-	strcat( lname, ".camera" );
-
-	if ( trap_loadCamera( CAM_PRIMARY, va( "cameras/%s", lname ) ) ) {
-		cg.cameraMode = qtrue;
-		if ( startBlack ) {
-			CG_Fade( 0, 0, 0, 255, 0 );           // go black
-		}
-		trap_Cvar_Set( "cg_letterbox", "1" ); // go letterbox
-		trap_SendClientCommand( "startCamera" );
-		trap_startCamera( CAM_PRIMARY, cg.time );
-	} else {
-
-		//----(SA)	temp until radiant stores cameras in own directory
-		//			check cameras dir then main dir
-		if ( trap_loadCamera( CAM_PRIMARY, name ) ) {
-			cg.cameraMode = qtrue;
-			trap_SendClientCommand( "startCamera" );
-			trap_startCamera( CAM_PRIMARY, cg.time );
-			return;
-		}
-		//----(SA)	end (remove when radiant stores cameras...)
-
-		trap_SendClientCommand( "stopCamera" );
-		CG_Fade( 0, 0, 0, 0, 0 );             // ensure fadeup
-		trap_Cvar_Set( "cg_letterbox", "0" );
-		cg.cameraMode = qfalse;
-		CG_Printf( "Unable to load camera %s\n",lname );
-	}
-}
-
-/*
-// TTimo: defined but not used
-static void CG_Camera_f( void ) {
-	char name[MAX_QPATH];
-
-	if ( cgs.gametype != GT_SINGLE_PLAYER )
-		return;
-
-	trap_Argv( 1, name, sizeof(name));
-
-	CG_StartCamera(name, qfalse );
-}
-*/
 
 static void CG_Fade_f( void ) {
 	int r, g, b, a;

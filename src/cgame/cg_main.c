@@ -888,38 +888,17 @@ static void CG_RegisterSounds( void ) {
 	CG_SoundInit();
 	// done.
 
-// JPW NERVE
-	if ( cg_gameType.integer != GT_SINGLE_PLAYER ) {
-		cgs.media.n_health = trap_S_RegisterSound( "sound/multiplayer/health_pickup.wav" );
-	} else {
-		cgs.media.n_health = trap_S_RegisterSound( "sound/items/n_health.wav" );
-	}
-// jpw
+	cgs.media.n_health = trap_S_RegisterSound( "sound/multiplayer/health_pickup.wav" );
+	
 	cgs.media.noFireUnderwater = trap_S_RegisterSound( "sound/weapons/underwaterfire.wav" ); //----(SA)	added
 
 	cgs.media.snipersound = trap_S_RegisterSound( "sound/weapons/mauser/mauserf1.wav" );
 	cgs.media.tracerSound = trap_S_RegisterSound( "sound/weapons/machinegun/buletby1.wav" );
 	cgs.media.selectSound = trap_S_RegisterSound( "sound/weapons/change.wav" );
-// JPW NERVE
-	if ( cg_gameType.integer != GT_SINGLE_PLAYER ) {
-		cgs.media.wearOffSound = trap_S_RegisterSound( "sound/multiplayer/respawn.wav" );
-		/*	cgs.media.twoMinuteSound_g = trap_S_RegisterSound("sound/multiplayer/axis/g-twominutes1.wav");
-		   cgs.media.twoMinuteSound_a = trap_S_RegisterSound("sound/multiplayer/allies/a-twominutes1.wav");
-		   cgs.media.thirtySecondSound_g = trap_S_RegisterSound("sound/multiplayer/axis/g-thirtyseconds1.wav");
-		   cgs.media.thirtySecondSound_a = trap_S_RegisterSound("sound/multiplayer/allies/a-thirtyseconds1.wav");*/
-/*		if( cg.twoMinuteSound_g[0] != '0' )
-			cgs.media.twoMinuteSound_g = trap_S_RegisterSound(cg.twoMinuteSound_g);
-		if( cg.twoMinuteSound_a[0] != '0' )
-			cgs.media.twoMinuteSound_a = trap_S_RegisterSound(cg.twoMinuteSound_a);
-		if( cg.thirtySecondSound_g[0] != '0' )
-			cgs.media.thirtySecondSound_g = trap_S_RegisterSound(cg.thirtySecondSound_g);
-		if( cg.thirtySecondSound_a[0] != '0' )
-			cgs.media.thirtySecondSound_a = trap_S_RegisterSound(cg.thirtySecondSound_a);*/
-		trap_S_RegisterSound( "sound/multiplayer/land_hurt.wav" );
-	} else {
-		cgs.media.wearOffSound = trap_S_RegisterSound( "sound/items/wearoff.wav" );
-	}
-// jpw
+
+	cgs.media.wearOffSound = trap_S_RegisterSound( "sound/multiplayer/respawn.wav" );
+	trap_S_RegisterSound( "sound/multiplayer/land_hurt.wav" );
+
 	cgs.media.useNothingSound = trap_S_RegisterSound( "sound/items/use_nothing.wav" );
 	cgs.media.gibSound = trap_S_RegisterSound( "sound/player/gibsplt1.wav" );
 	//cgs.media.gibBounce1Sound = trap_S_RegisterSound( "sound/player/gibimp1.wav" );
@@ -2099,9 +2078,6 @@ static clientInfo_t * CG_InfoFromScoreIndex( int index, int team, int *scoreInde
 }
 
 static const char *CG_FeederItemText( float feederID, int index, int column, qhandle_t *handle ) {
-#ifdef MISSIONPACK
-	gitem_t *item;
-#endif  // #ifdef MISSIONPACK
 	int scoreIndex = 0;
 	clientInfo_t *info = NULL;
 	int team = -1;
@@ -2121,49 +2097,6 @@ static const char *CG_FeederItemText( float feederID, int index, int column, qha
 	if ( info && info->infoValid ) {
 		switch ( column ) {
 		case 0:
-#ifdef MISSIONPACK
-			if ( info->powerups & ( 1 << PW_NEUTRALFLAG ) ) {
-				item = BG_FindItemForPowerup( PW_NEUTRALFLAG );
-				*handle = cg_items[ ITEM_INDEX( item ) ].icon;
-			} else if ( info->powerups & ( 1 << PW_REDFLAG ) ) {
-				item = BG_FindItemForPowerup( PW_REDFLAG );
-				*handle = cg_items[ ITEM_INDEX( item ) ].icon;
-			} else if ( info->powerups & ( 1 << PW_BLUEFLAG ) ) {
-				item = BG_FindItemForPowerup( PW_BLUEFLAG );
-				*handle = cg_items[ ITEM_INDEX( item ) ].icon;
-			} else {
-				if ( info->botSkill > 0 && info->botSkill <= 5 ) {
-					*handle = cgs.media.botSkillShaders[ info->botSkill - 1 ];
-				} else if ( info->handicap < 100 ) {
-					return va( "%i", info->handicap );
-				}
-			}
-			break;
-		case 1:
-			if ( team == -1 ) {
-				return "";
-			} else {
-				*handle = CG_StatusHandle( info->teamTask );
-			}
-			break;
-		case 2:
-			if ( cg.snap->ps.stats[ STAT_CLIENTS_READY ] & ( 1 << sp->client ) ) {
-				return "Ready";
-			}
-			if ( team == -1 ) {
-				if ( cgs.gametype == GT_TOURNAMENT ) {
-					return va( "%i/%i", info->wins, info->losses );
-				} else if ( info->infoValid && info->team == TEAM_SPECTATOR ) {
-					return "Spectator";
-				} else {
-					return "";
-				}
-			} else {
-				if ( info->teamLeader ) {
-					return "Leader";
-				}
-			}
-#endif  // #ifdef MISSIONPACK
 			break;
 		case 3:
 			return info->name;
@@ -2229,14 +2162,6 @@ static int CG_OwnerDrawWidth( int ownerDraw, float scale ) {
 	case CG_KILLER:
 		return CG_Text_Width( CG_GetKillerText(), scale, 0 );
 		break;
-#ifdef MISSIONPACK
-	case CG_RED_NAME:
-		return CG_Text_Width( cg_redTeamName.string, scale, 0 );
-		break;
-	case CG_BLUE_NAME:
-		return CG_Text_Width( cg_blueTeamName.string, scale, 0 );
-		break;
-#endif
 
 	}
 	return 0;

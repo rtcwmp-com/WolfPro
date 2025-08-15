@@ -179,34 +179,14 @@ static void SV_Map_f( void ) {
 	// done
 
 	cmd = Cmd_Argv( 0 );
-	if ( Q_stricmpn( cmd, "sp", 2 ) == 0 ) {
-		Cvar_SetValue( "g_gametype", GT_SINGLE_PLAYER );
-		Cvar_SetValue( "g_doWarmup", 0 );
-		// may not set sv_maxclients directly, always set latched
-#ifdef __MACOS__
-		Cvar_SetLatched( "sv_maxclients", "16" ); //DAJ HOG
-#else
-		Cvar_SetLatched( "sv_maxclients", "32" ); // Ridah, modified this
-#endif
-		cmd += 2;
+	if ( !Q_stricmp( cmd, "devmap" ) ) {
+		cheat = qtrue;
 		killBots = qtrue;
-		if ( !Q_stricmp( cmd, "devmap" ) ) {
-			cheat = qtrue;
-		} else {
-			cheat = qfalse;
-		}
 	} else {
-		if ( !Q_stricmp( cmd, "devmap" ) ) {
-			cheat = qtrue;
-			killBots = qtrue;
-		} else {
-			cheat = qfalse;
-			killBots = qfalse;
-		}
-		if ( sv_gametype->integer == GT_SINGLE_PLAYER ) {
-			Cvar_SetValue( "g_gametype", GT_FFA );
-		}
+		cheat = qfalse;
+		killBots = qfalse;
 	}
+	
 
 	// save the map name here cause on a map restart we reload the q3config.cfg
 	// and thus nuke the arguments of the map command

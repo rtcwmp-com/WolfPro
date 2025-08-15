@@ -56,11 +56,6 @@ void SV_GetChallenge( netadr_t from ) {
 	int oldestTime;
 	challenge_t *challenge;
 
-	// ignore if we are in single player
-	if ( Cvar_VariableValue( "g_gametype" ) == GT_SINGLE_PLAYER ) {
-		return;
-	}
-
 	oldest = 0;
 	oldestTime = 0x7fffffff;
 
@@ -1506,14 +1501,14 @@ static void SV_UserMove( client_t *cl, msg_t *msg, qboolean delta ) {
 		//if ( cmds[i].serverTime > svs.time + 3000 ) {
 		//	continue;
 		//}
-		if ( sv_gametype->integer != GT_SINGLE_PLAYER ) { // RF, we need to allow this in single player, where loadgame's can cause the player to freeze after reloading if we do this check
-			// don't execute if this is an old cmd which is already executed
-			// these old cmds are included when cl_packetdup > 0
-			if ( cmds[i].serverTime <= cl->lastUsercmd.serverTime ) {   // Q3_MISSIONPACK
+		// RF, we need to allow this in single player, where loadgame's can cause the player to freeze after reloading if we do this check
+		// don't execute if this is an old cmd which is already executed
+		// these old cmds are included when cl_packetdup > 0
+		if ( cmds[i].serverTime <= cl->lastUsercmd.serverTime ) {   // Q3_MISSIONPACK
 //			if ( cmds[i].serverTime > cmds[cmdCount-1].serverTime ) {
-				continue;   // from just before a map_restart
-			}
+			continue;   // from just before a map_restart
 		}
+		
 		SV_ClientThink( cl, &cmds[ i ] );
 	}
 }

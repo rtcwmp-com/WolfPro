@@ -1941,7 +1941,6 @@ qboolean CG_OwnerDrawVisible( int flags );
 void CG_RunMenuScript( char **args );
 void CG_ShowResponseHead();
 void CG_SetPrintString( int type, const char *p );
-void CG_InitTeamChat();
 void CG_GetTeamColor( vec4_t *color );
 const char *CG_GetGameStatusText();
 const char *CG_GetKillerText();
@@ -1949,9 +1948,7 @@ void CG_Draw3DModel( float x, float y, float w, float h, qhandle_t model, qhandl
 void CG_Text_PaintChar( float x, float y, float width, float height, float scale, float s, float t, float s2, float t2, qhandle_t hShader );
 void CG_CheckOrderPending();
 const char *CG_GameTypeString();
-qboolean CG_YourTeamHasFlag();
-qboolean CG_OtherTeamHasFlag();
-qhandle_t CG_StatusHandle( int task );
+
 void CG_Fade( int r, int g, int b, int a, float time );
 
 
@@ -2070,8 +2067,6 @@ void CG_HoldableUsedupChange( void ); //----(SA)	added
 //----(SA) added to header to access from outside cg_weapons.c
 void CG_AddDebris( vec3_t origin, vec3_t dir, int speed, int duration, int count );
 //----(SA) done
-
-void CG_ClientDamage( int entnum, int enemynum, int id );
 
 //
 // cg_marks.c
@@ -2496,7 +2491,7 @@ qboolean    trap_GetEntityToken( char *buffer, int bufferSize );
 qboolean    trap_loadCamera( int camNum, const char *name );
 void        trap_startCamera( int camNum, int time );
 qboolean    trap_getCameraInfo( int camNum, int time, vec3_t *origin, vec3_t *angles, float *fov );
-void        CG_StartCamera( const char *name, qboolean startBlack );
+
 
 //----(SA)	added
 int         CG_LoadCamera( const char *name );

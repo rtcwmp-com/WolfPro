@@ -1393,11 +1393,7 @@ static void CG_Efx( centity_t *cent ) {
 				CG_Trace( &trace, cent->currentState.origin, NULL, NULL, cent->boltLocs[i], -1, MASK_SOLID | CONTENTS_BODY );
 
 				if ( trace.fraction < 1 ) {
-					// take damage
-					if ( trace.entityNum != ENTITYNUM_WORLD ) {
-//						CG_ClientDamage(trace.entityNum, cent->currentState.number, CLDMG_TESLA);
-//						cg_entities[trace.entityNum].pe.teslaDamagedTime = cg.time;
-					}
+					
 
 					VectorCopy( trace.endpos, cent->boltLocs[i] );
 
@@ -1921,14 +1917,12 @@ static void CG_CalcEntityLerpPositions( centity_t *cent ) {
 	}
 
 	// NERVE - SMF - fix for jittery clients in multiplayer
-	if ( cgs.gametype != GT_SINGLE_PLAYER ) {
-		// first see if we can interpolate between two snaps for
-		// linear extrapolated clients
-		if ( cent->interpolate && cent->currentState.pos.trType == TR_LINEAR_STOP &&
-			 cent->currentState.number < MAX_CLIENTS ) {
-			CG_InterpolateEntityPosition( cent );
-			return;
-		}
+	// first see if we can interpolate between two snaps for
+	// linear extrapolated clients
+	if ( cent->interpolate && cent->currentState.pos.trType == TR_LINEAR_STOP &&
+			cent->currentState.number < MAX_CLIENTS ) {
+		CG_InterpolateEntityPosition( cent );
+		return;
 	}
 	// -NERVE - SMF
 

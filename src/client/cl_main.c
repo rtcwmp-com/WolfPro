@@ -2663,25 +2663,6 @@ void CL_ClientDamageCommand( void ) {
 	// do nothing
 }
 
-// NERVE - SMF
-void CL_startSingleplayer_f( void ) {
-#if defined( __linux__ )
-	Sys_StartProcess( "./wolfsp.x86", qtrue );
-#else
-	Sys_StartProcess( "WolfSP.exe", qtrue );
-#endif
-}
-
-// NERVE - SMF
-void CL_buyNow_f( void ) {
-	Sys_OpenURL( "http://www.activision.com/games/wolfenstein/purchase.html", qtrue );
-}
-
-// NERVE - SMF
-void CL_singlePlayLink_f( void ) {
-	Sys_OpenURL( "http://www.activision.com/games/wolfenstein/home.html", qtrue );
-}
-
 #if !defined( __MACOS__ )
 void CL_SaveTranslations_f( void ) {
 	CL_SaveTransTable( "scripts/translation.cfg", qfalse );
@@ -2912,10 +2893,6 @@ void CL_Init( void ) {
 	// NERVE - SMF - don't do this in multiplayer
 	// RF, add this command so clients can't bind a key to send client damage commands to the server
 //	Cmd_AddCommand ("cld", CL_ClientDamageCommand );
-
-	Cmd_AddCommand( "startSingleplayer", CL_startSingleplayer_f );      // NERVE - SMF
-	Cmd_AddCommand( "buyNow", CL_buyNow_f );                            // NERVE - SMF
-	Cmd_AddCommand( "singlePlayLink", CL_singlePlayLink_f );            // NERVE - SMF
 
 	Cmd_AddCommand( "setRecommended", CL_SetRecommended_f );
 

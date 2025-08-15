@@ -1136,7 +1136,6 @@ void G_WriteSessionData( void );
 //
 // g_bot.c
 //
-void G_InitBots( qboolean restart );
 char *G_GetBotInfoByNumber( int num );
 char *G_GetBotInfoByName( const char *name );
 void G_CheckBotSpawn( void );
