@@ -100,15 +100,12 @@ void R_RenderShadowEdges( void ) {
 	int c, c2;
 	int j, k;
 	int i2;
-	int c_edges, c_rejected;
 	int hit[2];
 
 	// an edge is NOT a silhouette edge if its face doesn't face the light,
 	// or if it has a reverse paired edge that also faces the light.
 	// A well behaved polyhedron would have exactly two faces for each edge,
 	// but lots of models have dangling edges or overfanned edges
-	c_edges = 0;
-	c_rejected = 0;
 
 	for ( i = 0 ; i < tess.numVertexes ; i++ ) {
 		c = numEdgeDefs[ i ];
@@ -137,9 +134,6 @@ void R_RenderShadowEdges( void ) {
 				qglVertex3fv( tess.xyz[ i2 ] );
 				qglVertex3fv( tess.xyz[ i2 + tess.numVertexes ] );
 				qglEnd();
-				c_edges++;
-			} else {
-				c_rejected++;
 			}
 		}
 	}

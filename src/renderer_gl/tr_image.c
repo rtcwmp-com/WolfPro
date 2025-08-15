@@ -2044,13 +2044,11 @@ R_CreateFogImage
 static void R_CreateFogImage( void ) {
 	int x,y;
 	byte    *data;
-	float g;
 	float d;
 	float borderColor[4];
 
 	data = ri.Hunk_AllocateTempMemory( FOG_S * FOG_T * 4 );
 
-	g = 2.0;
 
 	// S is distance, T is depth
 	for ( x = 0 ; x < FOG_S ; x++ ) {
@@ -3286,7 +3284,6 @@ R_TouchImage
 qboolean R_TouchImage( image_t *inImage ) {
 	image_t *bImage, *bImagePrev;
 	int hash;
-	char *name;
 
 	if ( inImage == tr.dlightImage ||
 		 inImage == tr.whiteImage ||
@@ -3296,7 +3293,6 @@ qboolean R_TouchImage( image_t *inImage ) {
 	}
 
 	hash = inImage->hash;
-	name = inImage->imgName;
 
 	bImage = backupHashTable[hash];
 	bImagePrev = NULL;
@@ -3444,7 +3440,7 @@ R_FindCachedImage
 =============
 */
 image_t *R_FindCachedImage( const char *name, int hash ) {
-	image_t *bImage, *bImagePrev;
+	image_t *bImage;
 
 	if ( !r_cacheShaders->integer ) {
 		return NULL;
@@ -3455,7 +3451,6 @@ image_t *R_FindCachedImage( const char *name, int hash ) {
 	}
 
 	bImage = backupHashTable[hash];
-	bImagePrev = NULL;
 	while ( bImage ) {
 
 		if ( !Q_stricmp( name, bImage->imgName ) ) {
@@ -3468,7 +3463,6 @@ image_t *R_FindCachedImage( const char *name, int hash ) {
 			return bImage;
 		}
 
-		bImagePrev = bImage;
 		bImage = bImage->next;
 	}
 

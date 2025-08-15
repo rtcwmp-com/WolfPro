@@ -144,7 +144,6 @@ static void R_LoadLightmaps( lump_t *l ) {
 	MAC_STATIC byte image[LIGHTMAP_SIZE * LIGHTMAP_SIZE * 4];
 	int i, j;
 	float maxIntensity = 0;
-	double sumIntensity = 0;
 
 	len = l->filelen;
 	if ( !len ) {
@@ -200,7 +199,6 @@ static void R_LoadLightmaps( lump_t *l ) {
 				image[j * 4 + 2] = out[2] * 255;
 				image[j * 4 + 3] = 255;
 
-				sumIntensity += intensity;
 			}
 		} else {
 			for ( j = 0 ; j < LIGHTMAP_SIZE * LIGHTMAP_SIZE; j++ ) {
