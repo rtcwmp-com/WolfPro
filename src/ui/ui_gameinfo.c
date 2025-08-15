@@ -233,17 +233,7 @@ void UI_LoadArenas( void ) {
 				uiInfo.mapList[uiInfo.mapCount].typeBits |= ( 1 << GT_WOLF_CP );
 			}
 			// -NERVE - SMF
-#ifdef MISSIONPACK
-			if ( strstr( type, "oneflag" ) ) {
-				uiInfo.mapList[uiInfo.mapCount].typeBits |= ( 1 << GT_1FCTF );
-			}
-			if ( strstr( type, "overload" ) ) {
-				uiInfo.mapList[uiInfo.mapCount].typeBits |= ( 1 << GT_OBELISK );
-			}
-			if ( strstr( type, "harvester" ) ) {
-				uiInfo.mapList[uiInfo.mapCount].typeBits |= ( 1 << GT_HARVESTER );
-			}
-#endif  // #ifdef MISSIONPACK
+
 		} else {
 			uiInfo.mapList[uiInfo.mapCount].typeBits |= ( 1 << GT_FFA );
 		}

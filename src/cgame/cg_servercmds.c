@@ -85,9 +85,7 @@ static void CG_ParseScores( void ) {
 
 		cg.scores[i].team = cgs.clientinfo[cg.scores[i].client].team;
 	}
-#ifdef MISSIONPACK
-	CG_SetScoreSelection( NULL );
-#endif
+
 
 }
 
@@ -306,16 +304,6 @@ void CG_SetConfigValues( void ) {
 	cgs.scores1 = atoi( CG_ConfigString( CS_SCORES1 ) );
 	cgs.scores2 = atoi( CG_ConfigString( CS_SCORES2 ) );
 	cgs.levelStartTime = atoi( CG_ConfigString( CS_LEVEL_START_TIME ) );
-#ifdef MISSIONPACK
-	if ( cgs.gametype == GT_CTF ) {
-		s = CG_ConfigString( CS_FLAGSTATUS );
-		cgs.redflag = s[0] - '0';
-		cgs.blueflag = s[1] - '0';
-	} else if ( cgs.gametype == GT_1FCTF )    {
-		s = CG_ConfigString( CS_FLAGSTATUS );
-		cgs.flagStatus = s[0] - '0';
-	}
-#endif
 	cg.warmup = atoi( CG_ConfigString( CS_WARMUP ) );
 	CG_ParseReady(CG_ConfigString(CS_READY) );
 }
@@ -1176,19 +1164,7 @@ void CG_PlayVoiceChat( bufferedVoiceChat_t *vchat ) {
 		}
 		// dhm - end
 
-#ifdef MISSIONPACK
-		if ( vchat->clientNum != cg.snap->ps.clientNum ) {
-			int orderTask = CG_ValidOrder( vchat->cmd );
-			if ( orderTask > 0 ) {
-				cgs.acceptOrderTime = cg.time + 5000;
-				Q_strncpyz( cgs.acceptVoice, vchat->cmd, sizeof( cgs.acceptVoice ) );
-				cgs.acceptTask = orderTask;
-				cgs.acceptLeader = vchat->clientNum;
-			}
-			// see if this was an order
-			CG_ShowResponseHead();
-		}
-#endif
+
 	}
 	if ( !vchat->voiceOnly && !cg_noVoiceText.integer ) {
 		CG_AddToTeamChat( vchat->message );
@@ -1509,15 +1485,6 @@ static void CG_ServerCommand( void ) {
 
 	if ( !strcmp( cmd, "print" ) ) {
 		CG_Printf( "[cgnotify]%s", CG_LocalizeServerCommand( CG_Argv( 1 ) ) );
-#ifdef MISSIONPACK
-		cmd = CG_Argv( 1 );           // yes, this is obviously a hack, but so is the way we hear about
-									  // votes passing or failing
-		if ( !Q_stricmpn( cmd, "vote failed", 11 ) || !Q_stricmpn( cmd, "team vote failed", 16 ) ) {
-			trap_S_StartLocalSound( cgs.media.voteFailed, CHAN_ANNOUNCER );
-		} else if ( !Q_stricmpn( cmd, "vote passed", 11 ) || !Q_stricmpn( cmd, "team vote passed", 16 ) ) {
-			trap_S_StartLocalSound( cgs.media.votePassed, CHAN_ANNOUNCER );
-		}
-#endif
 		return;
 	}
 

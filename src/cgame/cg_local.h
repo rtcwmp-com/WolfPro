@@ -1941,7 +1941,6 @@ qboolean CG_OwnerDrawVisible( int flags );
 void CG_RunMenuScript( char **args );
 void CG_ShowResponseHead();
 void CG_SetPrintString( int type, const char *p );
-void CG_InitTeamChat();
 void CG_GetTeamColor( vec4_t *color );
 const char *CG_GetGameStatusText();
 const char *CG_GetKillerText();
@@ -1949,9 +1948,7 @@ void CG_Draw3DModel( float x, float y, float w, float h, qhandle_t model, qhandl
 void CG_Text_PaintChar( float x, float y, float width, float height, float scale, float s, float t, float s2, float t2, qhandle_t hShader );
 void CG_CheckOrderPending();
 const char *CG_GameTypeString();
-qboolean CG_YourTeamHasFlag();
-qboolean CG_OtherTeamHasFlag();
-qhandle_t CG_StatusHandle( int task );
+
 void CG_Fade( int r, int g, int b, int a, float time );
 
 
