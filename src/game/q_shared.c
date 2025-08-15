@@ -435,11 +435,10 @@ static char *SkipWhitespace( char *data, qboolean *hasNewLines ) {
 
 int COM_Compress( char *data_p ) {
 	char *datai, *datao;
-	int c, pc, size;
+	int c, size;
 	qboolean ws = qfalse;
 
 	size = 0;
-	pc = 0;
 	datai = datao = data_p;
 	if ( datai ) {
 		while ( ( c = *datai ) != 0 ) {
@@ -447,7 +446,6 @@ int COM_Compress( char *data_p ) {
 				*datao = c;
 				datao++;
 				ws = qfalse;
-				pc = c;
 				datai++;
 				size++;
 				// skip double slash comments
@@ -475,7 +473,6 @@ int COM_Compress( char *data_p ) {
 				datao++;
 				datai++;
 				ws = qfalse;
-				pc = c;
 				size++;
 			}
 		}
@@ -995,7 +992,7 @@ Ridah, modified this into a circular list, to further prevent stepping on
 previous strings
 ============
 */
-char    * QDECL va( char *format, ... ) {
+char    * QDECL va( const char *format, ... ) {
 	va_list argptr;
 	#define MAX_VA_STRING   32000
 	static char temp_buffer[MAX_VA_STRING];
@@ -1405,12 +1402,15 @@ qboolean Q_IsNumeric(const char* s) {
 
 	while (*s) {
 		if (*s == '.'|| *s == '-') {
-			*s++;
+			s++;
 
 			continue;
 		}
-		else if ((isdigit(*s++) == 0))
+		else if ((isdigit(*s) == 0))
 			return qfalse;
+		else{
+			s++;
+		}
 	}
 	return qtrue;
 }

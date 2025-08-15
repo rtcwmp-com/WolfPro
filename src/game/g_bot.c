@@ -125,29 +125,6 @@ const char *G_GetArenaInfoByMap( const char *map ) {
 }
 
 
-/*
-=================
-PlayerIntroSound
-=================
-*/
-static void PlayerIntroSound( const char *modelAndSkin ) {
-	char model[MAX_QPATH];
-	char    *skin;
-
-	Q_strncpyz( model, modelAndSkin, sizeof( model ) );
-	skin = Q_strrchr( model, '/' );
-	if ( skin ) {
-		*skin++ = '\0';
-	} else {
-		skin = model;
-	}
-
-	if ( Q_stricmp( skin, "default" ) == 0 ) {
-		skin = model;
-	}
-
-	trap_SendConsoleCommand( EXEC_APPEND, va( "play sound/player/announce/%s.wav\n", skin ) );
-}
 
 /*
 ===============
@@ -391,7 +368,6 @@ G_CheckBotSpawn
 */
 void G_CheckBotSpawn( void ) {
 	int n;
-	char userinfo[MAX_INFO_STRING];
 
 	G_CheckMinimumPlayers();
 
