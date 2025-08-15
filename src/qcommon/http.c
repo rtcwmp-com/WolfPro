@@ -173,7 +173,6 @@ void* HTTP_Get(void* args) {
 		struct HTTP_Reply_t s;
 		HTTP_InitString(&s);
 		struct curl_slist* headers = NULL;
-		char* token_header = "Signature:";
 
 		headers = curl_slist_append(headers, va("Mod: %s", GAMEVERSION));
 
@@ -192,21 +191,12 @@ void* HTTP_Get(void* args) {
 		res = curl_easy_perform(handle);
 		if (res != CURLE_OK) {
 			Com_DPrintf("HTTP_Get[res] failed: %s\n", curl_easy_strerror(res));
-			if (inquiry->userinfo != NULL) {
-				inquiry->callback(NULL, inquiry->userinfo);
-			}
-			else {
-				inquiry->callback(NULL);
-			}
+			inquiry->callback(NULL, inquiry->userinfo);
 		}
 		else {
-			Com_Printf("Respone: %s\n", s.ptr);
-			if (inquiry->userinfo != NULL) {
-				inquiry->callback(s.ptr, inquiry->userinfo);
-			}
-			else {
-				inquiry->callback(s.ptr);
-			}
+			Com_Printf("Response: %s\n", s.ptr);
+			inquiry->callback(s.ptr, inquiry->userinfo);
+			
 		}
 		free(s.ptr);
 		curl_slist_free_all(headers);
