@@ -299,7 +299,6 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *fra
 	int l;
 	int clientarea, clientcluster;
 	int leafnum;
-	int c_fullsend;
 	byte    *clientpvs;
 	byte    *bitvector;
 
@@ -319,7 +318,6 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *fra
 
 	clientpvs = CM_ClusterPVS( clientcluster );
 
-	c_fullsend = 0;
 
 	playerEnt = SV_GentityNum( frame->ps.clientNum );
 
@@ -383,7 +381,7 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *fra
 			// doors can legally straddle two areas, so
 			// we may need to check another one
 			if ( !CM_AreasConnected( clientarea, svEnt->areanum2 ) ) {
-				goto notVisible;    // blocked by a door
+				continue;
 			}
 		}
 
@@ -391,7 +389,7 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *fra
 
 		// check individual leafs
 		if ( !svEnt->numClusters ) {
-			goto notVisible;
+			continue;
 		}
 		l = 0;
 		for ( i = 0 ; i < svEnt->numClusters ; i++ ) {
@@ -411,10 +409,10 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *fra
 					}
 				}
 				if ( l == svEnt->lastCluster ) {
-					goto notVisible;    // not visible
+					continue;    // not visible
 				}
 			} else {
-				goto notVisible;
+				continue;
 			}
 		}
 
@@ -430,13 +428,13 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *fra
 				master = SV_SvEntityForGentity( ment );
 
 				if ( master->snapshotCounter == sv.snapshotCounter || !ment->r.linked ) {
-					goto notVisible;
+					continue;
 					//continue;
 				}
 
 				SV_AddEntToSnapshot( master, ment, eNums );
 			}
-			goto notVisible;
+			continue;
 			//continue;	// master needs to be added, but not this dummy ent
 		}
 		//----(SA) end
@@ -481,7 +479,7 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *fra
 						SV_AddEntToSnapshot( master, ment, eNums );
 					}
 				}
-				goto notVisible;
+				continue;
 			}
 		}
 
@@ -494,9 +492,6 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *fra
 			SV_AddEntitiesVisibleFromPoint( ent->s.origin2, frame, eNums, qtrue, localClient );
 		}
 
-		continue;
-
-notVisible:
 
 		// Ridah, if this entity has changed events, then send it regardless of whether we can see it or not
 		// DHM - Nerve :: not in multiplayer please
