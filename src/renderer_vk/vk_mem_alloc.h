@@ -23,6 +23,8 @@
 #ifndef AMD_VULKAN_MEMORY_ALLOCATOR_H
 #define AMD_VULKAN_MEMORY_ALLOCATOR_H
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnullability-completeness"
 /** \mainpage Vulkan Memory Allocator
 
 <b>Version 3.3.0</b>
@@ -6825,6 +6827,9 @@ VmaBlockMetadata::VmaBlockMetadata(const VkAllocationCallbacks* pAllocationCallb
     m_BufferImageGranularity(bufferImageGranularity),
     m_IsVirtual(isVirtual) {}
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-variable"
+
 void VmaBlockMetadata::DebugLogAllocation(VkDeviceSize offset, VkDeviceSize size, void* userData) const
 {
     if (IsVirtual())
@@ -6852,6 +6857,7 @@ void VmaBlockMetadata::DebugLogAllocation(VkDeviceSize offset, VkDeviceSize size
     }
 
 }
+#pragma clang diagnostic pop
 
 #if VMA_STATS_STRING_ENABLED
 void VmaBlockMetadata::PrintDetailedMap_Begin(class VmaJsonWriter& json,
@@ -16842,6 +16848,9 @@ VMA_CALL_PRE VkResult VMA_CALL_POST vmaGetMemoryWin32Handle(VmaAllocator VMA_NOT
 #endif // VMA_EXTERNAL_MEMORY_WIN32 
 #endif // VMA_STATS_STRING_ENABLED
 #endif // _VMA_PUBLIC_INTERFACE
+
+#pragma clang diagnostic pop
+
 #endif // VMA_IMPLEMENTATION
 
 /**

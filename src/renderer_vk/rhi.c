@@ -1707,9 +1707,8 @@ void DrawGUI_RHI(void){
 	ToggleBooleanWithShortcut(&breakdownActive, ImGuiKey_R, ImGUI_ShortcutOptions_Global);
 	GUI_AddMainMenuItem(ImGUI_MainMenu_Info, "RHI Status", "Ctrl+Shift+R", &breakdownActive, qtrue);
 	if(breakdownActive){
-		if(igBegin("RHI", &breakdownActive, 0)){
+		if(igBegin("RHI", (bool*)&breakdownActive, 0)) {
 			igNewLine();
-			int32_t renderPassDuration = 0;
 			if(igBeginTable("Status",2,ImGuiTableFlags_RowBg,(ImVec2){0,0},0.0f)){
 				TableHeader(2, "Pool", "Size");
                 #define POOL_ITEM(pool, name) TableRowInt(name, Pool_Size(&pool));
