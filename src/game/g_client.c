@@ -1318,7 +1318,7 @@ void ClientUserinfoChanged( int clientNum ) {
 	}
 
 		s = Info_ValueForKey(userinfo, "cg_uinfo");
-	sscanf(s, "%i", &client->pers.antilag);
+	sscanf(s, "%i %i %i %i", &client->pers.antilag, &client->pers.hitSoundType, &client->pers.hitSoundBodyStyle, &client->pers.hitSoundHeadStyle);
 
 
 	// check the item prediction

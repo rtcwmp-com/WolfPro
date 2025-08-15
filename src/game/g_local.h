@@ -516,6 +516,9 @@ typedef struct {
 	qboolean ready;
 
 	int antilag;
+	unsigned int hitSoundType;
+	unsigned int hitSoundBodyStyle;
+	unsigned int hitSoundHeadStyle;
 } clientPersistant_t;
 
 typedef struct {
@@ -1333,6 +1336,8 @@ extern vmCvar_t match_timeoutlength;
 
 extern vmCvar_t g_allowForceTapout;
 
+extern vmCvar_t	g_hitsounds;
+
 void    trap_Printf( const char *fmt );
 void    trap_Error( const char *fmt );
 int     trap_Milliseconds( void );
@@ -1606,6 +1611,8 @@ void DecolorString( char *in, char *out);
 //g_unlagged.c
 void G_TimeShiftAllClients(int time, gentity_t* skip);
 void G_UnTimeShiftAllClients(gentity_t* skip);
+
+void G_Hitsounds( gentity_t *target, gentity_t *attacker, int mod, qboolean headshot );
 
 // Macros
 //

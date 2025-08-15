@@ -331,6 +331,10 @@ vmCvar_t cg_priorityTextY;
 
 vmCvar_t cg_uinfo;
 
+vmCvar_t cg_hitsounds;
+vmCvar_t cg_hitsoundBodyStyle;
+vmCvar_t cg_hitsoundHeadStyle;
+
 typedef struct {
 	vmCvar_t    *vmCvar;
 	char        *cvarName;
@@ -553,7 +557,11 @@ cvarTable_t cvarTable[] = {
 	{ &cg_priorityTextX, "cg_priorityTextX", "0", CVAR_ARCHIVE },
 	{ &cg_priorityTextY, "cg_priorityTextY", "350", CVAR_ARCHIVE },
 
-	{ &cg_uinfo, "cg_uinfo", "0", CVAR_ROM | CVAR_USERINFO }
+	{ &cg_uinfo, "cg_uinfo", "0", CVAR_ROM | CVAR_USERINFO },
+
+	{ &cg_hitsounds, "cg_hitsounds", "0", CVAR_ARCHIVE},
+	{ &cg_hitsoundBodyStyle, "cg_hitsoundBodyStyle", "1", CVAR_ARCHIVE },
+	{ &cg_hitsoundHeadStyle, "cg_hitsoundHeadStyle", "1", CVAR_ARCHIVE }
 };
 int cvarTableSize = sizeof( cvarTable ) / sizeof( cvarTable[0] );
 
@@ -612,7 +620,7 @@ void CG_setClientFlags(void) {
 	}
 
 	cg.pmext.bAutoReload = (cg_autoReload.integer > 0);
-	trap_Cvar_Set("cg_uinfo", va("%d",
+	trap_Cvar_Set("cg_uinfo", va("%d %d %d %d",
 		// // Client Flags
 		// (
 		// 	((cg_autoReload.integer > 0) ? CGF_AUTORELOAD : 0) |
@@ -626,14 +634,15 @@ void CG_setClientFlags(void) {
 		// int_cl_timenudge.integer,
 		// // MaxPackets
 		// int_cl_maxpackets.integer,
-		// // hitsounds
-		// cg_hitsounds.integer,
-		// cg_hitsoundBodyStyle.integer,
-		// cg_hitsoundHeadStyle.integer,
+		
 		// // GUID
 		// str_cl_guid.string,
 		// Antilag
-		cg_antilag.integer
+		cg_antilag.integer,
+		// hitsounds
+		cg_hitsounds.integer,
+		cg_hitsoundBodyStyle.integer,
+		cg_hitsoundHeadStyle.integer
 	));
 }
 

@@ -1723,4 +1723,8 @@ int BG_GetAnimScriptEvent( playerState_t *ps, scriptAnimEventTypes_t event );
 extern animStringItem_t animStateStr[];
 extern animStringItem_t animBodyPartsStr[];
 
+#define HITSOUND_HEAD 1
+#define HITSOUND_BODY 2
+#define HITSOUND_TEAM 4
+
 #endif

@@ -1062,7 +1062,8 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 	asave = CheckArmor( targ, take, dflags );
 	take -= asave;
 
-	if ( IsHeadShot( targ, qfalse, dir, point, mod ) ) {
+	qboolean isHeadshot = IsHeadShot( targ, qfalse, dir, point, mod );
+	if ( isHeadshot ) {
 
 		if ( take * 2 < 50 ) { // head shots, all weapons, do minimum 50 points damage
 			take = 50;
@@ -1111,6 +1112,13 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 		// set the last client who damaged the target
 		targ->client->lasthurt_client = attacker->s.number;
 		targ->client->lasthurt_mod = mod;
+	}
+
+	// RTCWPro - hitsounds
+	if (g_hitsounds.integer) {
+		if ((attacker->client) && (targ->client)) {
+			G_Hitsounds(targ, attacker, mod, isHeadshot);
+		}
 	}
 
 	// do the damage
@@ -1374,4 +1382,132 @@ qboolean G_RadiusDamage( vec3_t origin, gentity_t *attacker, float damage, float
 // jpw
 	}
 	return hitClient;
+}
+
+
+/*
+==============
+RTCWPro
+G_GetHitsoundStyle
+==============
+*/
+char* G_GetHitsoundStyle(int type, int style) {
+
+	switch (type)
+	{
+	case HITSOUND_BODY:
+		if (!style)
+		{
+			return va("sound/hitsounds/hitbody1.wav");
+		}
+		return va("sound/hitsounds/hitbody%i.wav", style);
+	case HITSOUND_HEAD:
+		if (!style)
+		{
+			return va("sound/hitsounds/hithead.wav");
+		}
+		return va("sound/hitsounds/hithead%i.wav", style);
+	default:
+		return va("sound/hitsounds/hitbody1.wav");
+	}
+}
+
+
+/*
+==============
+RTCWPro
+G_Hitsounds
+==============
+*/
+void G_Hitsounds( gentity_t *target, gentity_t *attacker, int mod, qboolean headshot ) {
+	gentity_t* te;
+
+	if (!target || !attacker || !target->client || !attacker->client) 
+	{
+		return;
+	}
+
+	qboolean onSameTeam = OnSameTeam(target, attacker);
+
+	// if player is hurting him self don't give any sounds
+	if (target->client == attacker->client) 
+	{
+		return;  // this happens at flaming your self... just return silence...			
+	}
+
+	if (//mod == MOD_ARTILLERY ||
+		mod == MOD_GRENADE_SPLASH ||
+		mod == MOD_DYNAMITE_SPLASH ||
+		mod == MOD_DYNAMITE ||
+		mod == MOD_ROCKET ||
+		mod == MOD_ROCKET_SPLASH ||
+		mod == MOD_KNIFE ||
+		mod == MOD_KNIFE2 ||
+		mod == MOD_GRENADE ||
+		mod == MOD_AIRSTRIKE ||
+		mod == MOD_ARTY ||
+		mod == MOD_EXPLOSIVE ||
+		mod == MOD_MORTAR ||
+		mod == MOD_MORTAR_SPLASH ||
+		mod == MOD_SYRINGE || 
+		mod == MOD_UNKNOWN)
+	{
+		return;
+	}
+
+	if (!attacker->client->pers.hitSoundType) 
+	{
+		return;
+	}
+
+	// if team mate
+	if (target->client && attacker->client && onSameTeam) 
+	{
+		//attacker->client->ps.persistant[PERS_HITBODY]--;
+		//hitEventType = HIT_TEAMSHOT;
+
+		if (attacker->client->pers.hitSoundType & HITSOUND_TEAM) 
+		{
+			te = G_TempEntity(attacker->s.pos.trBase, EV_GLOBAL_CLIENT_SOUND);
+			te->s.eventParm = G_SoundIndex("sound/hitsounds/hitteam1.wav");
+			te->s.teamNum = attacker->s.clientNum;
+		}
+	}
+	// If enemy
+	else if (target &&
+		target->client &&
+		attacker &&
+		attacker->client &&
+		attacker->s.number != ENTITYNUM_NONE &&
+		attacker->s.number != ENTITYNUM_WORLD &&
+		attacker != target &&
+		!onSameTeam)
+	{
+		te = G_TempEntity(attacker->s.pos.trBase, EV_GLOBAL_CLIENT_SOUND);
+
+		if (headshot) 
+		{
+			if (attacker->client->pers.hitSoundType & HITSOUND_HEAD) 
+			{
+				//attacker->client->ps.persistant[PERS_HITHEAD]++;
+				//hitEventType = HIT_HEADSHOT;
+
+				int headStyle = attacker->client->pers.hitSoundHeadStyle;
+				te->s.eventParm = G_SoundIndex(G_GetHitsoundStyle(HITSOUND_HEAD, headStyle));
+			}
+		}
+		else 
+		{
+			if (attacker->client->pers.hitSoundType & HITSOUND_BODY) 
+			{
+				//attacker->client->ps.persistant[PERS_HITBODY]++;
+				//hitEventType = HIT_BODYSHOT;
+
+				int bodyStyle = attacker->client->pers.hitSoundBodyStyle;
+				te->s.eventParm = G_SoundIndex(G_GetHitsoundStyle(HITSOUND_BODY, bodyStyle));
+			}
+		}
+
+		te->s.teamNum = attacker->s.clientNum;
+	}
 }

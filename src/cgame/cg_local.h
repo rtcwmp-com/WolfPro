@@ -1810,6 +1810,10 @@ extern vmCvar_t cg_antilag;
 
 extern vmCvar_t cg_uinfo;
 
+extern vmCvar_t cg_hitsounds;
+extern vmCvar_t cg_hitsoundBodyStyle;
+extern vmCvar_t cg_hitsoundHeadStyle;
+
 //
 // cg_main.c
 //
