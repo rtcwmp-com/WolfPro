@@ -831,6 +831,8 @@ void SV_Init( void ) {
 
 	sv_showAverageBPS = Cvar_Get( "sv_showAverageBPS", "0", 0 );           // NERVE - SMF - net debugging
 
+	sv_minUserCmdInterval = Cvar_Get( "sv_minUserCmdInterval", "8", CVAR_ARCHIVE );
+
 	// NERVE - SMF - create user set cvars
 	Cvar_Get( "g_userTimeLimit", "0", 0 );
 	Cvar_Get( "g_userAlliedRespawnTime", "0", 0 );

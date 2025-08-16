@@ -62,6 +62,15 @@ typedef enum {
 	SS_GAME             // actively running
 } serverState_t;
 
+
+#define MERGE_CMDS 16
+typedef struct mergedUserCmd_s {
+	usercmd_t userCmds[MERGE_CMDS];
+	usercmd_t merged;
+	int lastClientThinkTime;
+	int count;
+} mergedUserCmd_t;
+
 typedef struct {
 	serverState_t state;
 	qboolean restarting;                // if true, send configstring changes during SS_LOADING
@@ -103,6 +112,8 @@ typedef struct {
 	float ucompAve;
 	int ucompNum;
 	// -NERVE - SMF
+	mergedUserCmd_t mergedUserCmd[MAX_CLIENTS];
+	int mergeInterval;
 } server_t;
 
 
@@ -292,6 +303,8 @@ extern cvar_t  *sv_floodProtect;
 extern cvar_t  *sv_allowAnonymous;
 extern cvar_t  *sv_lanForceRate;
 extern cvar_t  *sv_onlyVisibleClients;
+
+extern cvar_t  *sv_minUserCmdInterval;
 
 extern cvar_t  *sv_showAverageBPS;          // NERVE - SMF - net debugging
 
