@@ -4093,3 +4093,112 @@ void DecolorString(char* in, char* out)
 	}
 	*out = 0;
 }
+
+const unsigned int BG_ReinfSeeds[MAX_REINFSEEDS] = { 11, 3, 13, 7, 2, 5, 1, 17 };
+
+/*
+===============
+RTCWPro
+
+BG_ParseColorCvar
+Reads RBG(A) cvars and sets parsed color var components
+===============
+*/
+void BG_ParseColorCvar(char* cvarString, float* color, float alpha) {
+	char* s = cvarString;
+	unsigned int i = 0;
+
+	if (alpha > 1.0f)
+	{
+		alpha = 1.0f;
+	}
+	else if (alpha < 0.f)
+	{
+		alpha = 0.f;
+	}
+
+	// white in case we have no good format
+	Vector4Copy(colorWhite, color);
+	color[3] = alpha; // rtcwpro - split this up
+
+	// hex format
+	if (*s == '0' && (*(s + 1) == 'x' || *(s + 1) == 'X')) {
+		s += 2;
+		if (Q_IsHexColorString(s)) {
+			color[0] = ((float)(gethex(*(s)) * 16 + gethex(*(s + 1)))) / 255.00;
+			color[1] = ((float)(gethex(*(s + 2)) * 16 + gethex(*(s + 3)))) / 255.00;
+			color[2] = ((float)(gethex(*(s + 4)) * 16 + gethex(*(s + 5)))) / 255.00;
+			return;
+		}
+	}
+
+	// colortable
+	while (OSP_Colortable[i].colorname != NULL) {
+		if (!Q_stricmp(s, OSP_Colortable[i].colorname)) {
+			color[0] = (*OSP_Colortable[i].color)[0];
+			color[1] = (*OSP_Colortable[i].color)[1];
+			color[2] = (*OSP_Colortable[i].color)[2];
+			return;
+		}
+		i++;
+	}
+
+	// get space count
+	int spaces = 0;
+	for (i = 0; i < strlen(s); ++i) {
+		if (s[i] == ' ') {
+			spaces++;
+		}
+	}
+
+	// "R G B( A)" format
+	if (spaces >= 2) {
+		char temp[4][8];
+		int j = 0, k = 0;
+		for (i = 0; i < strlen(s) + 1; ++i) {
+			if (s[i] == ' ' || i == strlen(s)) {
+				color[j] = atof(temp[j]);
+				k = i + 1;
+				j++;
+				if (j == 4) {
+					if (color[0] > 1 || color[1] > 1 || color[2] > 1 || color[3] > 1) { // true RGB(A)
+						color[0] /= 255.0f;
+						color[1] /= 255.0f;
+						color[2] /= 255.0f;
+						color[3] /= 255.0f;
+					}
+					return;
+				}
+				continue;
+			}
+
+			if (i - k < 10) {
+				temp[j][i - k] = s[i];
+			}
+		}
+	}
+}
+
+const colorTable_t OSP_Colortable[] =
+{
+	{ "white", &colorWhite, {'7'} },
+	{ "red", &colorRed, {'1'} },
+	{ "green", &colorGreen, {'2'} },
+	{ "blue", &colorBlue, {'4'} },
+	{ "yellow", &colorYellow, {'3'} },
+	{ "magenta", &colorMagenta, {'6'} },
+	{ "cyan", &colorCyan, {'5'} },
+	{ "orange", &colorOrange, {'8'} },
+	{ "mdred", &colorMdRed, {'?'} },
+	{ "mdgreen", &colorMdGreen, {'<'} },
+	{ "dkgreen", &colorDkGreen, {'h'} },
+	{ "mdcyan", &colorMdCyan, {'b'} },
+	{ "mdyellow", &colorMdYellow, {'='} },
+	{ "mdorange", &colorMdOrange, {'x'} },
+	{ "mdblue", &colorMdBlue, {'>'} },
+	{ "ltgrey", &colorLtGrey, {':'} },
+	{ "mdgrey", &colorMdGrey, {'9'} },
+	{ "dkgrey", &colorDkGrey, {'y'} },
+	{ "black", &colorBlack, {'0'} },
+	{ NULL, NULL }
+};

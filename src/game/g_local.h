@@ -831,8 +831,8 @@ typedef struct {
 	int			cnPush;
 	int			cnNum;
 
-	int dwBlueReinfOffset;	// Reinforcements offset
-	int dwRedReinfOffset;	// Reinforcements offset
+	int blueReinfOffset;	// Reinforcements offset
+	int redReinfOffset;	// Reinforcements offset
 
 	int frameStartTime;
 } level_locals_t;
@@ -1200,6 +1200,7 @@ int G_SwitchBodyPartEntity( gentity_t* ent );
 void CountDown(void);
 void G_spawnPrintf(int print_type, int print_time, gentity_t *owner);
 void G_handlePause(qboolean dPause, int time);
+void G_loadMatchGame(void);
 
 typedef enum
 {
@@ -1337,6 +1338,9 @@ extern vmCvar_t match_timeoutlength;
 extern vmCvar_t g_allowForceTapout;
 
 extern vmCvar_t	g_hitsounds;
+
+extern vmCvar_t g_allowEnemySpawnTimer;
+extern vmCvar_t g_spawnOffset; // random spawn offset for both teams, between 1 and cvar integer - 1
 
 void    trap_Printf( const char *fmt );
 void    trap_Error( const char *fmt );

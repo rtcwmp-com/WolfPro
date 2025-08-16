@@ -1622,6 +1622,8 @@ typedef struct {
 	int match_resumes;
 	int pause_elapsed;
 	int match_stepTimer;
+
+	int reinfOffset[TEAM_NUM_TEAMS];   // Reinforcements offset
 } cgs_t;
 
 //==============================================================================
@@ -1813,6 +1815,23 @@ extern vmCvar_t cg_uinfo;
 extern vmCvar_t cg_hitsounds;
 extern vmCvar_t cg_hitsoundBodyStyle;
 extern vmCvar_t cg_hitsoundHeadStyle;
+
+// RT and ERT
+extern vmCvar_t cg_drawReinforcementTime;
+extern vmCvar_t cg_drawEnemyTimer;
+extern vmCvar_t cg_enemyTimerColor;
+extern vmCvar_t cg_enemyTimerX;
+extern vmCvar_t cg_enemyTimerY;
+extern vmCvar_t cg_enemyTimerProX;
+extern vmCvar_t cg_enemyTimerProY;
+extern vmCvar_t cg_reinforcementTimeColor;
+extern vmCvar_t cg_reinforcementTimeX;
+extern vmCvar_t cg_reinforcementTimeY;
+extern vmCvar_t cg_reinforcementTimeProX;
+extern vmCvar_t cg_reinforcementTimeProY;
+
+extern vmCvar_t cg_spawnTimer_period;
+extern vmCvar_t cg_spawnTimer_set;
 
 //
 // cg_main.c
@@ -2253,6 +2272,9 @@ void CG_SendMoveSpeed( animation_t *animList, int numAnims, char *modelName );
 void CG_LoadVoiceChats();               // NERVE - SMF
 void CG_PlayBufferedVoiceChats();       // NERVE - SMF
 void CG_AddToNotify( const char *str );
+void CG_ParseReinforcementTimes(const char *pszReinfSeedString);
+void CG_ParseReady(const char* pState);
+void CG_ParsePause( const char *pTime );
 
 //
 // cg_playerstate.c
@@ -2508,13 +2530,10 @@ void        CG_FreeCamera( int camNum );
 #define CREADY_PENDING	0x02	// Awaiting but can start once treshold (minclients) is reached..
 
 // Ready
-void CG_ParseReady(const char* pState);
 const char* CG_LocalizeServerCommand( const char *buf ); // L0 - So it's more accessible
 int is_ready( int clientNum );
 const char* WM_TimeToString(float msec);
 
-//Pause
-void CG_ParsePause( const char *pTime );
 
 // OSP's macro's
 #define Pri( x ) CG_Printf( "[cgnotify]%s", CG_LocalizeServerCommand( x ) )

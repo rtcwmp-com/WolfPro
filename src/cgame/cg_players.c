@@ -2109,8 +2109,7 @@ static void CG_PlayerSprites( centity_t *cent ) {
 		return;
 	}
 
-	if ( cent->currentState.powerups & ( 1 << PW_INVULNERABLE )
-		 && ( ( cent->currentState.effect3Time + 3000 ) > cg.time ) ) {
+	if ( cent->currentState.powerups & ( 1 << PW_INVULNERABLE ) ){
 		CG_PlayerFloatSprite( cent, cgs.media.spawnInvincibleShader, 56 );
 		return;
 	}

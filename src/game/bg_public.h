@@ -177,6 +177,7 @@ typedef enum {
 #define CS_WOLFINFO             36      // NERVE - SMF
 
 //Competition config strings
+#define CS_REINFSEEDS			39
 #define CS_PAUSED				40
 #define CS_READY				41
 
@@ -1726,5 +1727,20 @@ extern animStringItem_t animBodyPartsStr[];
 #define HITSOUND_HEAD 1
 #define HITSOUND_BODY 2
 #define HITSOUND_TEAM 4
+
+#define MAX_REINFSEEDS  8
+#define REINF_BLUEDELT  3       // Allies shift offset
+#define REINF_REDDELT   2       // Axis shift offset
+extern const unsigned int BG_ReinfSeeds[MAX_REINFSEEDS];
+
+typedef struct {
+	char* colorname;
+	vec4_t* color;
+	char colorCode[1];
+} colorTable_t;
+
+extern const colorTable_t OSP_Colortable[];
+
+void BG_ParseColorCvar(char* cvarString, float* color, float alpha);
 
 #endif

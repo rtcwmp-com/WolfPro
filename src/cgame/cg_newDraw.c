@@ -912,7 +912,7 @@ static void CG_DrawPlayerHealth( rectDef_t *rect, float scale, vec4_t color, qha
 			CG_DrawField( rect->x + 144, rect->y, 3, ps->persistant[PERS_RESPAWNS_LEFT], 20 * scale, 32 * scale, qtrue, qtrue );
 		}
 
-		if ( cgs.clientinfo[cg.snap->ps.clientNum].powerups & ( 1 << PW_INVULNERABLE ) ) {
+		if ( cgs.clientinfo[cg.snap->ps.clientNum].powerups & ( 1 << PW_INVULNERABLE ) || cg.predictedPlayerState.powerups[PW_INVULNERABLE]) {
 			CG_DrawPic( rect->x + 6, rect->y - 44, 36, 36, cgs.media.spawnInvincibleShader );
 		}
 		// dhm

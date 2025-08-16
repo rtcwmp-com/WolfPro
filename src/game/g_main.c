@@ -185,6 +185,9 @@ vmCvar_t g_allowForceTapout;
 
 vmCvar_t g_hitsounds;			// Hitsounds - Requires soundpack
 
+vmCvar_t g_allowEnemySpawnTimer;
+vmCvar_t g_spawnOffset;
+
 cvarTable_t gameCvarTable[] = {
 	// don't override the cheat state set by the system
 	{ &g_cheats, "sv_cheats", "", 0, qfalse },
@@ -338,7 +341,9 @@ cvarTable_t gameCvarTable[] = {
 	{ &g_maxLagCompensation, "g_maxLagCompensation", "500", CVAR_ARCHIVE | CVAR_SERVERINFO, 0, qtrue },
 	{ &g_delagMissiles, "g_delagMissiles", "0", CVAR_ARCHIVE | CVAR_SERVERINFO, 0, qtrue }, 
 	
-	{ &g_hitsounds, "g_hitsounds", "0", CVAR_ARCHIVE, 0, qfalse }
+	{ &g_hitsounds, "g_hitsounds", "0", CVAR_ARCHIVE, 0, qfalse },
+	{ &g_allowEnemySpawnTimer, "g_allowEnemySpawnTimer", "1", CVAR_ARCHIVE | CVAR_SERVERINFO, qtrue },
+	{ &g_spawnOffset, "g_spawnOffset", "9", CVAR_ARCHIVE, 0, qfalse, qfalse }
 };
 
 // bk001129 - made static to avoid aliasing
@@ -1081,6 +1086,15 @@ void G_UpdateCvars( void ) {
 				if ( cv->teamShader ) {
 					remapped = qtrue;
 				}
+
+				if (cv->vmCvar == &g_spawnOffset) 
+				{
+					if (g_spawnOffset.integer < 1)
+					{
+						G_Printf("g_spawnOffset %i is out of range, defaulting to 9\n", g_spawnOffset.integer);
+						trap_Cvar_Set("g_spawnOffset", "9");
+					}
+				}
 			}
 		}
 	}
@@ -1271,6 +1285,9 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 
 	G_Printf( "-----------------------------------\n" );
 	
+
+	G_loadMatchGame();
+
 
 	if ( trap_Cvar_VariableIntegerValue( "bot_enable" ) ) {
 		BotAISetup( restart );

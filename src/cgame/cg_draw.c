@@ -847,6 +847,256 @@ static float CG_DrawTeamOverlay( float y ) {
 }
 
 
+
+int CG_CalculateReinfTime(void)
+{
+	team_t team;
+	int    deployTime;
+	team = cgs.clientinfo[cg.snap->ps.clientNum].team;
+
+	deployTime = (team == TEAM_RED) ? cg_redlimbotime.integer : cg_bluelimbotime.integer;
+	return (1 + (deployTime - ((cgs.reinfOffset[team] + cg.time - cgs.levelStartTime) % deployTime)) / 1000);
+}
+
+/*
+========================
+OSPx
+Respawn Timer
+========================
+*/
+static float CG_DrawRespawnTimer(float y) {
+	char		*str = { 0 };
+	int			w;
+	float		x;
+	vec4_t color;
+
+	if (cgs.gametype < GT_WOLF) {
+		return y;
+	}
+
+	// Don't draw timer if client is checking scoreboard
+	if (CG_DrawScoreboard()) {
+		return y;
+	}
+
+	if (cg.showScores) {
+		return y;
+	}
+
+	if (cgs.gamestate != GS_PLAYING)
+		str = "";
+	else if (cgs.clientinfo[cg.snap->ps.clientNum].team == TEAM_SPECTATOR)
+		str = "";
+	else if (cgs.clientinfo[cg.snap->ps.clientNum].team == TEAM_RED)
+		str = va("RT: %-2d", CG_CalculateReinfTime());
+	else if (cgs.clientinfo[cg.snap->ps.clientNum].team == TEAM_BLUE)
+		str = va("RT: %-2d", CG_CalculateReinfTime());
+	else return y;
+
+	w = CG_DrawStrlen(str) * TINYCHAR_WIDTH;
+
+
+	x = cg_reinforcementTimeX.integer;
+	y = cg_reinforcementTimeY.integer;
+
+	BG_ParseColorCvar(cg_reinforcementTimeColor.string, color, cg_hudAlpha.value);
+
+	if (cgs.gamestate != GS_PLAYING) {
+		CG_DrawStringExt((x + 4) - w, y, str, colorYellow, qtrue, qfalse, TINYCHAR_WIDTH, TINYCHAR_HEIGHT, 0);
+	}
+	else if (cgs.clientinfo[cg.snap->ps.clientNum].team != TEAM_SPECTATOR){
+		CG_DrawStringExt(x - w, y, str, color, qtrue, qfalse, TINYCHAR_WIDTH, TINYCHAR_HEIGHT, 0);
+	}
+	return y += TINYCHAR_HEIGHT;
+}
+
+/*
+========================
+RTCWPro
+Enemy Timer
+========================
+*/
+static float CG_DrawEnemyTimer(float y) {
+	char		*str = { 0 };
+	int    w;
+	int    tens;
+	int    x;
+	int    secondsThen;
+	int    msec    = (cgs.timelimit * 60.f * 1000.f ) - (cg.time - cgs.levelStartTime);
+	int    seconds = msec / 1000;
+	int    mins    = seconds / 60;
+	vec4_t color;
+
+	seconds -= mins * 60;
+	tens     = seconds / 10;
+	seconds -= tens * 10;
+
+	if (cgs.gametype < GT_WOLF) { 
+		return y;
+	}
+
+	// Don't draw timer if client is checking scoreboard
+	if (CG_DrawScoreboard()) {
+		return y;
+	}
+
+	if (cg.showScores) {
+		return y;
+	}
+
+    if (cg_spawnTimer_set.integer == -1)
+        return y;
+
+    if (cgs.gamestate == GS_WARMUP || cgs.gamestate == GS_WAITING_FOR_PLAYERS) {
+        return y;
+    }
+
+	if (cg_spawnTimer_set.integer != -1 && cgs.gamestate == GS_PLAYING) { 
+		if (cgs.clientinfo[cg.clientNum].team != TEAM_SPECTATOR || (cg.snap->ps.pm_flags & PMF_FOLLOW)) { 
+			//int period = cg_spawnTimer_period.integer > 0 ? cg_spawnTimer_period.integer : 
+			int period = (cgs.clientinfo[cg.snap->ps.clientNum].team == TEAM_RED ? cg_bluelimbotime.integer / 1000 : cg_redlimbotime.integer / 1000);
+
+			if (period > 0) { // prevent division by 0 for weird cases like limbtotime < 1000
+				seconds = msec / 1000;
+				secondsThen = ((cgs.timelimit * 60000.f) - cg_spawnTimer_set.integer) / 1000;
+
+				str = va("ERT: %-2i", period + (seconds - secondsThen) % period);
+				w = CG_DrawStrlen(str) * TINYCHAR_WIDTH;
+
+				x = cg_enemyTimerX.integer;
+				y = cg_enemyTimerY.integer;
+				BG_ParseColorCvar(cg_enemyTimerColor.string, color, cg_hudAlpha.value);
+				CG_DrawStringExt((x + 5) - w, y, str, color, qtrue, qfalse, TINYCHAR_WIDTH, TINYCHAR_HEIGHT, 0);
+			}
+		}
+	}
+	else if (cg_spawnTimer_set.integer != -1 && cg_spawnTimer_period.integer > 0 && cgs.gamestate != GS_PLAYING) { 
+		// We are not playing and the timer is set so reset/disable it
+		// this happens for example when custom period is set by timerSet and map is restarted or changed
+		trap_Cvar_Set("cg_spawnTimer_set", "-1");
+	}
+	else { 
+        return y;
+	}
+
+	return y += TINYCHAR_HEIGHT;
+}
+
+/*
+========================
+Respawn Timer
+========================
+*/
+static float CG_DrawProRespawnTimer(float y) {
+	int x;
+	int	val = 0;
+	float scale = 0.8f;
+	vec4_t color;
+
+	// Don't draw timer if client is checking scoreboard
+	if (CG_DrawScoreboard()) {
+		return y;
+	}
+
+	if (cg.showScores) {
+		return y;
+	}
+
+	if (cgs.gamestate != GS_PLAYING) {
+		return y;
+	}
+
+	if (cgs.clientinfo[cg.snap->ps.clientNum].team == TEAM_RED) {
+		val = CG_CalculateReinfTime();
+	}
+	else if (cgs.clientinfo[cg.snap->ps.clientNum].team == TEAM_BLUE) {
+		val = CG_CalculateReinfTime();
+	}
+
+	BG_ParseColorCvar(cg_reinforcementTimeColor.string, color, cg_hudAlpha.value);
+	trap_R_SetColor(color);
+
+	x = cg_reinforcementTimeProX.integer;
+	y = cg_reinforcementTimeProY.integer;
+
+	CG_DrawField(x, y, 3, val, 20 * scale, 32 * scale, qtrue, qfalse);
+
+	return y;
+}
+
+/*
+========================
+RTCWPro
+Enemy Timer
+========================
+*/
+static float CG_DrawProEnemyTimer(float y) {
+	int    tens;
+	int    x = 290;
+	int    secondsThen;
+	int    msec = (cgs.timelimit * 60.f * 1000.f) - (cg.time - cgs.levelStartTime);
+	int    seconds = msec / 1000;
+	int    mins = seconds / 60;
+	int val = 0;
+	float scale = 0.8f;
+	vec4_t color;
+
+	seconds -= mins * 60;
+	tens = seconds / 10;
+	seconds -= tens * 10;
+
+	if (cgs.gametype < GT_WOLF) {
+		return y;
+	}
+
+	// Don't draw timer if client is checking scoreboard
+	if (CG_DrawScoreboard()) {
+		return y;
+	}
+
+	if (cg.showScores) {
+		return y;
+	}
+
+	if (cg_spawnTimer_set.integer == -1)
+		return y;
+
+	if (cgs.gamestate == GS_WARMUP || cgs.gamestate == GS_WAITING_FOR_PLAYERS) {
+		return y;
+	}
+
+	if (cg_spawnTimer_set.integer != -1 && cgs.gamestate == GS_PLAYING) {
+		if (cgs.clientinfo[cg.clientNum].team != TEAM_SPECTATOR || (cg.snap->ps.pm_flags & PMF_FOLLOW)) {
+			//int period = cg_spawnTimer_period.integer > 0 ? cg_spawnTimer_period.integer :
+			int period = (cgs.clientinfo[cg.snap->ps.clientNum].team == TEAM_RED ? cg_bluelimbotime.integer / 1000 : cg_redlimbotime.integer / 1000);
+
+			if (period > 0) { // prevent division by 0 for weird cases like limbtotime < 1000
+				seconds = msec / 1000;
+				secondsThen = ((cgs.timelimit * 60000.f) - cg_spawnTimer_set.integer) / 1000;
+				val = (period + (seconds - secondsThen) % period);
+
+				BG_ParseColorCvar(cg_enemyTimerColor.string, color, cg_hudAlpha.value);
+				trap_R_SetColor(color);
+
+				x = cg_enemyTimerProX.integer;
+				y = cg_enemyTimerProY.integer;
+
+				CG_DrawField(x, y, 3, val, 20 * scale, 32 * scale, qtrue, qfalse);
+			}
+		}
+	}
+	else if (cg_spawnTimer_set.integer != -1 && cg_spawnTimer_period.integer > 0 && cgs.gamestate != GS_PLAYING) {
+		// We are not playing and the timer is set so reset/disable it
+		// this happens for example when custom period is set by timerSet and map is restarted or changed
+		trap_Cvar_Set("cg_spawnTimer_set", "-1");
+	}
+	else {
+		return y;
+	}
+
+	return y += TINYCHAR_HEIGHT;
+}
+
 /*
 =====================
 CG_DrawUpperRight
@@ -870,11 +1120,40 @@ static void CG_DrawUpperRight( void ) {
 	if ( cg_drawTimer.integer ) {
 		y = CG_DrawTimer( y );
 	}
-// (SA) disabling drawattacker for the time being
-//	if ( cg_drawAttacker.integer ) {
-//		y = CG_DrawAttacker( y );
-//	}
-//----(SA)	end
+
+	if (cg_drawReinforcementTime.integer == 1) {
+		y = CG_DrawRespawnTimer(y);
+	}
+
+	// RTCWPro - different style RT
+	if (cg_drawReinforcementTime.integer == 2) {
+		y = CG_DrawProRespawnTimer(y);
+	}
+
+	if (cg_drawReinforcementTime.integer > 2) {
+		y = CG_DrawRespawnTimer(y);
+		y = CG_DrawProRespawnTimer(y);
+	}
+
+	// enemy respawn timer
+	const char* info = CG_ConfigString(CS_SERVERINFO);
+	char* allowErt = Info_ValueForKey(info, "g_allowEnemySpawnTimer");
+
+	if (allowErt != NULL && !Q_stricmp(allowErt, "1"))
+	{
+		if ((cg_spawnTimer_set.integer != -1) && (cg_spawnTimer_period.integer > 0)) {
+			if (cg_drawEnemyTimer.integer == 1) {
+				y = CG_DrawEnemyTimer(y);
+			}
+			if (cg_drawEnemyTimer.integer == 2) {
+				y = CG_DrawProEnemyTimer(y);
+			}
+			if (cg_drawEnemyTimer.integer > 2) {
+				y = CG_DrawEnemyTimer(y);
+				y = CG_DrawProEnemyTimer(y);
+			}
+		}
+	}
 }
 
 /*
@@ -2506,20 +2785,17 @@ static qboolean CG_DrawFollow( void ) {
 		color[2] = 0.0;
 		if ( cg.snap->ps.persistant[PERS_RESPAWNS_LEFT] == 0 ) {
 			sprintf( deploytime, "%s", CG_TranslateString( "No more deployments this round" ) );
-		} else if ( cgs.clientinfo[cg.snap->ps.clientNum].team == TEAM_RED ) {
-			sprintf( deploytime, CG_TranslateString( "Deploying in %d seconds" ),
-					 (int)( 1 + (float)( cg_redlimbotime.integer - ( cg.time % cg_redlimbotime.integer ) ) * 0.001f ) );
 		} else {
-			sprintf( deploytime, CG_TranslateString( "Deploying in %d seconds" ),
-					 (int)( 1 + (float)( cg_bluelimbotime.integer - ( cg.time % cg_bluelimbotime.integer ) ) * 0.001f ) );
+			int reinfTime = CG_CalculateReinfTime();
+			sprintf(deploytime, CG_TranslateString("Reinforcements deploy in ^3%d ^7second%s"), reinfTime, reinfTime > 1 ? "s":"");
 		}
 
-		CG_DrawStringExt( INFOTEXT_STARTX, 68, deploytime, color, qtrue, qfalse, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, 80 );
+		CG_DrawStringExt( INFOTEXT_STARTX, 83, deploytime, color, qtrue, qfalse, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, 80 );
 
 		// DHM - Nerve :: Don't display if you're following yourself
 		if ( cg.snap->ps.clientNum != cg.clientNum ) {
 			sprintf( deploytime,"(%s %s)", CG_TranslateString( "Following" ), cgs.clientinfo[ cg.snap->ps.clientNum ].name );
-			CG_DrawStringExt( INFOTEXT_STARTX, 86, deploytime, color, qtrue, qfalse, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, 80 );
+			CG_DrawStringExt( INFOTEXT_STARTX, 101, deploytime, color, qtrue, qfalse, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, 80 );
 		}
 	} else {
 		// jpw

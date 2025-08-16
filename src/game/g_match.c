@@ -3,6 +3,34 @@
 char *aTeams[TEAM_NUM_TEAMS] = { "FFA", "^1Axis^7", "^4Allies^7", "Spectators" };
 team_info teamInfo[TEAM_NUM_TEAMS];
 
+void G_loadMatchGame(void) {
+	int  randomValues[MAX_REINFSEEDS];
+	char reinfSeeds[MAX_STRING_CHARS];
+
+	// Set up the random reinforcement seeds for both teams and send to clients
+	int blueOffset = rand() % MAX_REINFSEEDS;
+	int redOffset  = rand() % MAX_REINFSEEDS;
+	Q_strncpyz(reinfSeeds, va("%d %d", (blueOffset << REINF_BLUEDELT) + (rand() % (1 << REINF_BLUEDELT)),
+	                             (redOffset << REINF_REDDELT)  + (rand() % (1 << REINF_REDDELT))),
+	           MAX_STRING_CHARS);
+
+	for (int i = 0; i < MAX_REINFSEEDS; i++){
+		randomValues[i] = (rand() % g_spawnOffset.integer) * BG_ReinfSeeds[i];
+		Q_strcat(reinfSeeds, MAX_STRING_CHARS, va(" %d", randomValues[i]));
+	}
+
+	level.blueReinfOffset = 1000 * randomValues[blueOffset] / BG_ReinfSeeds[blueOffset];
+	level.redReinfOffset  = 1000 * randomValues[redOffset] / BG_ReinfSeeds[redOffset];
+
+	trap_SetConfigstring(CS_REINFSEEDS, reinfSeeds);
+    // write first respawn time
+    // if (g_gameStatslog.integer && g_gamestate.integer == GS_PLAYING) {
+    //     gentity_t *dummy = g_entities;
+
+    //     G_writeGeneralEvent(dummy,dummy,"",teamFirstSpawn);
+    // }
+}
+
 /*
 =================
 Match Info

@@ -1295,13 +1295,13 @@ void SpectatorClientEndFrame( gentity_t *ent ) {
 		{
 			do_respawn = 1;
 		} else if ( ent->client->sess.sessionTeam == TEAM_RED ) {
-			testtime = (level.dwRedReinfOffset + level.timeCurrent - level.startTime) % g_redlimbotime.integer;
+			testtime = (level.redReinfOffset + level.timeCurrent - level.startTime) % g_redlimbotime.integer;
 			if ( testtime < ent->client->pers.lastReinforceTime ) {
 				do_respawn = 1;
 			}
 			ent->client->pers.lastReinforceTime = testtime;
 		} else if ( ent->client->sess.sessionTeam == TEAM_BLUE )     {
-			testtime = (level.dwBlueReinfOffset + level.timeCurrent - level.startTime) % g_bluelimbotime.integer;
+			testtime = (level.blueReinfOffset + level.timeCurrent - level.startTime) % g_bluelimbotime.integer;
 			if ( testtime < ent->client->pers.lastReinforceTime ) {
 				do_respawn = 1;
 			}

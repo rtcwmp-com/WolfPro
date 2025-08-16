@@ -305,6 +305,8 @@ void CG_SetConfigValues( void ) {
 	cgs.scores2 = atoi( CG_ConfigString( CS_SCORES2 ) );
 	cgs.levelStartTime = atoi( CG_ConfigString( CS_LEVEL_START_TIME ) );
 	cg.warmup = atoi( CG_ConfigString( CS_WARMUP ) );
+	
+	CG_ParseReinforcementTimes( CG_ConfigString( CS_REINFSEEDS ) );
 	CG_ParseReady(CG_ConfigString(CS_READY) );
 }
 
@@ -445,7 +447,9 @@ static void CG_ConfigStringModified( void ) {
 		CG_ParseReady( str );
 	} else if ( num == CS_PAUSED ) {
 		CG_ParsePause( str );
-	} 
+	} else if ( num == CS_REINFSEEDS ) {
+		CG_ParseReinforcementTimes( str );
+	}
 }
 
 
@@ -1629,8 +1633,41 @@ void CG_ExecuteNewServerCommands( int latestSequence ) {
 
 /*
 ================
-L0 - Ready
+Parse reinforcements offset
+================
+*/
 
+void CG_ParseReinforcementTimes( const char *pszReinfSeedString ) {
+	int blueOffset, redOffset;
+	int randomValues[MAX_REINFSEEDS];
+	
+	int scanned = sscanf(pszReinfSeedString, "%d %d %d %d %d %d %d %d %d %d",
+		&blueOffset,
+		&redOffset,
+		&randomValues[0], &randomValues[1], &randomValues[2], &randomValues[3],
+		&randomValues[4], &randomValues[5], &randomValues[6], &randomValues[7]
+	);
+
+	if (scanned != 10) {
+		return;
+	}
+
+	blueOffset >>= REINF_BLUEDELT;
+	redOffset >>= REINF_REDDELT;
+
+	for (int i = 0; i < MAX_REINFSEEDS; i++) {
+		if (blueOffset == i) {
+			cgs.reinfOffset[TEAM_BLUE] = (randomValues[i] / BG_ReinfSeeds[i]) * 1000;
+		}
+		if (redOffset == i) {
+			cgs.reinfOffset[TEAM_RED] = (randomValues[i] / BG_ReinfSeeds[i]) * 1000;
+		}
+	}
+
+}
+
+/*
+================
 Parse Ready state
 ================
 */

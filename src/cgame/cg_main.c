@@ -335,6 +335,23 @@ vmCvar_t cg_hitsounds;
 vmCvar_t cg_hitsoundBodyStyle;
 vmCvar_t cg_hitsoundHeadStyle;
 
+// RT and ERT
+vmCvar_t cg_drawReinforcementTime;
+vmCvar_t cg_drawEnemyTimer;
+vmCvar_t cg_enemyTimerColor;
+vmCvar_t cg_enemyTimerX;
+vmCvar_t cg_enemyTimerY;
+vmCvar_t cg_enemyTimerProX;
+vmCvar_t cg_enemyTimerProY;
+vmCvar_t cg_reinforcementTimeColor;
+vmCvar_t cg_reinforcementTimeX;
+vmCvar_t cg_reinforcementTimeY;
+vmCvar_t cg_reinforcementTimeProX;
+vmCvar_t cg_reinforcementTimeProY;
+
+vmCvar_t cg_spawnTimer_set;         // spawntimer
+vmCvar_t cg_spawnTimer_period;      // spawntimer
+
 typedef struct {
 	vmCvar_t    *vmCvar;
 	char        *cvarName;
@@ -561,7 +578,23 @@ cvarTable_t cvarTable[] = {
 
 	{ &cg_hitsounds, "cg_hitsounds", "0", CVAR_ARCHIVE},
 	{ &cg_hitsoundBodyStyle, "cg_hitsoundBodyStyle", "1", CVAR_ARCHIVE },
-	{ &cg_hitsoundHeadStyle, "cg_hitsoundHeadStyle", "1", CVAR_ARCHIVE }
+	{ &cg_hitsoundHeadStyle, "cg_hitsoundHeadStyle", "1", CVAR_ARCHIVE }, 
+
+	// RT and ERT
+	{ &cg_drawReinforcementTime, "cg_drawReinforcementTime", "1", CVAR_ARCHIVE },
+	{ &cg_drawEnemyTimer, "cg_drawEnemyTimer", "1", CVAR_ARCHIVE },
+	{ &cg_enemyTimerColor, "cg_enemyTimerColor", "green", CVAR_ARCHIVE },
+	{ &cg_enemyTimerX, "cg_enemyTimerX", "98", CVAR_ARCHIVE },
+	{ &cg_enemyTimerY, "cg_enemyTimerY", "60", CVAR_ARCHIVE },
+	{ &cg_enemyTimerProX, "cg_enemyTimerProX", "185", CVAR_ARCHIVE },
+	{ &cg_enemyTimerProY, "cg_enemyTimerProY", "445", CVAR_ARCHIVE },
+	{ &cg_reinforcementTimeColor, "cg_reinforcementTimeColor", "red", CVAR_ARCHIVE },
+	{ &cg_reinforcementTimeX, "cg_reinforcementTimeX", "86", CVAR_ARCHIVE },
+	{ &cg_reinforcementTimeY, "cg_reinforcementTimeY", "70", CVAR_ARCHIVE },
+	{ &cg_reinforcementTimeProX, "cg_reinforcementTimeProX", "145", CVAR_ARCHIVE },
+	{ &cg_reinforcementTimeProY, "cg_reinforcementTimeProY", "445", CVAR_ARCHIVE },
+	{ &cg_spawnTimer_set, "cg_spawnTimer_set", "-1", CVAR_TEMP },
+	{ &cg_spawnTimer_period, "cg_spawnTimer_period", "0", CVAR_TEMP }
 };
 int cvarTableSize = sizeof( cvarTable ) / sizeof( cvarTable[0] );
 
@@ -2419,6 +2452,8 @@ void CG_Init( int serverMessageNum, int serverCommandSequence, int clientNum ) {
 
 	s = CG_ConfigString( CS_LEVEL_START_TIME );
 	cgs.levelStartTime = atoi( s );
+
+	CG_ParseReinforcementTimes( CG_ConfigString( CS_REINFSEEDS ) );
 
 // JPW NERVE -- pick a direction for smoke drift on the client -- cheap trick because it can be different on different clients, but who cares?
 	cgs.smokeWindDir = crandom();

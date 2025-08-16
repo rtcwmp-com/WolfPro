@@ -469,6 +469,53 @@ static void CG_DumpLocation_f( void ) {
 			   (int) cg.snap->ps.origin[0], (int) cg.snap->ps.origin[1], (int) cg.snap->ps.origin[2] );
 }
 
+// Force tapout
+static void CG_ForceTapOut_f(void) {
+	trap_SendClientCommand("forcetapout");
+}
+
+/**
+ * @brief ETPro style enemy spawntimer
+ */
+static void CG_TimerSet_f(void) {
+
+	if (!cg_drawEnemyTimer.integer)
+	{
+		return;
+	}
+
+	if (cgs.gamestate != GS_PLAYING)
+	{
+		CG_Printf("You may only use this command during the match.\n");
+		return;
+	}
+
+	if (cg.snap->ps.pm_type == PM_INTERMISSION) {
+		return;
+	}
+
+	trap_Cvar_Set("cg_spawnTimer_period", "30"); // just set a default value - cg_draw will use cg_red/bluelimbotime
+	trap_Cvar_Set("cg_spawnTimer_set", va("%i", (cg.time - cgs.levelStartTime)));
+}
+
+/**
+ * @brief ETPro style timer resetting
+ */
+static void CG_TimerReset_f(void)
+{
+	if (cgs.gamestate != GS_PLAYING)
+	{
+		CG_Printf("You may only use this command during the match.\n");
+		return;
+	}
+
+	if (cg.snap->ps.pm_type == PM_INTERMISSION) {
+		return;
+	}
+
+	trap_Cvar_Set("cg_spawnTimer_set", va("%d", cg.time - cgs.levelStartTime));
+}
+
 typedef struct {
 	char    *cmd;
 	void ( *function )( void );
@@ -524,6 +571,10 @@ static consoleCommand_t commands[] = {
 
 	// Arnout
 	{ "dumploc", CG_DumpLocation_f },
+	{ "timerSet", CG_TimerSet_f },
+	{ "timerReset", CG_TimerReset_f },
+	{ "resetTimer", CG_TimerReset_f }, // keep ETPro compatibility
+	{ "forcetapout", CG_ForceTapOut_f }
 };
 
 
