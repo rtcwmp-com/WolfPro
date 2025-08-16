@@ -67,7 +67,7 @@ typedef enum {
 typedef struct mergedUserCmd_s {
 	usercmd_t userCmds[MERGE_CMDS];
 	usercmd_t merged;
-	int lastClientThinkTime;
+	int nextClientThinkTime;
 	int count;
 } mergedUserCmd_t;
 

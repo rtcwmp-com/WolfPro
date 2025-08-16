@@ -1433,6 +1433,7 @@ SV_ClientThink
 Also called by bot code
 ==================
 */
+
 void SV_ClientThink( client_t *cl, usercmd_t *cmd ) {
 	cl->lastUsercmd = *cmd;
 
@@ -1449,17 +1450,19 @@ void SV_ClientThink( client_t *cl, usercmd_t *cmd ) {
 	}else{
 		mergedUserCmd_t *merge = &sv.mergedUserCmd[cl - svs.clients];
 		PushUserCmd(cl, cmd);
-		if(cmd->serverTime - merge->lastClientThinkTime >= sv_minUserCmdInterval->integer){
+		if(cmd->serverTime >= merge->nextClientThinkTime + sv_minUserCmdInterval->integer){
+			merge->nextClientThinkTime = cmd->serverTime + sv_minUserCmdInterval->integer - (cmd->serverTime % sv_minUserCmdInterval->integer);
+		} else if(cmd->serverTime >=  merge->nextClientThinkTime){
+			merge->nextClientThinkTime += sv_minUserCmdInterval->integer;
 			if(merge->count == 1){
 				VM_Call( gvm, GAME_CLIENT_THINK, cl - svs.clients );
 				merge->count = 0;
-				merge->lastClientThinkTime = cmd->serverTime;
 			}else if(merge->count > 1){
 				MergeUserCmds(cl);
+				merge->merged.serverTime = merge->nextClientThinkTime - sv_minUserCmdInterval->integer;
 				cl->lastUsercmd = merge->merged;
 				VM_Call( gvm, GAME_CLIENT_THINK, cl - svs.clients );
 				merge->count = 0;
-				merge->lastClientThinkTime = cmd->serverTime;
 			}
 		}
 
