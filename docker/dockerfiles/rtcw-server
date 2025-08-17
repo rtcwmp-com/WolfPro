@@ -9,7 +9,7 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN dpkg --add-architecture i386 && \
     apt-get update && \
     apt-get -y upgrade && \
-    apt-get install -y wget libc6:i386 unzip bbe git curl libcurl4:i386
+    apt-get install -y wget libc6:i386 unzip bbe git curl:i386 libcurl4:i386
 
 RUN useradd -ms /bin/bash game
 
