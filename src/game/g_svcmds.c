@@ -711,6 +711,11 @@ qboolean    ConsoleCommand( void ) {
 	}
 	// -NERVE - SMF
 
+	if (Q_stricmp(cmd, "rename") == 0) {
+		G_Rename_f();
+		return qtrue;
+	}
+
 	if ( g_dedicated.integer ) {
 		if ( Q_stricmp( cmd, "say" ) == 0 ) {
 			trap_SendServerCommand( -1, va( "print \"server:[lof] %s\"", ConcatArgs( 1 ) ) );
@@ -718,11 +723,6 @@ qboolean    ConsoleCommand( void ) {
 		}
 		// everything else will also be printed as a say command
 		trap_SendServerCommand( -1, va( "print \"server:[lof] %s\"", ConcatArgs( 0 ) ) );
-		return qtrue;
-	}
-
-	if ( Q_stricmp( cmd, "rename" ) == 0 ) {
-		G_Rename_f();
 		return qtrue;
 	}
 
