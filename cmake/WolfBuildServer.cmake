@@ -4,18 +4,25 @@
 
 if(WIN32 AND NOT CMAKE_CROSSCOMPILE)
 	add_executable(wolfded WIN32 ${COMMON_SRC} ${SERVER_SRC})
+	target_link_libraries(wolfded
+		server_libraries
+		engine_libraries
+		os_libraries
+		${CURL_LIBRARIES}
+	)
 else()
 	add_executable(wolfded ${COMMON_SRC} ${SERVER_SRC})
 	target_link_options(wolfded PRIVATE "LINKER:-melf_i386")
+	target_link_libraries(wolfded
+		server_libraries
+		engine_libraries
+		os_libraries
+		${CURL_LIBRARIES}
+	)
+	target_include_directories(wolfded PRIVATE ${CURL_INCLUDE_DIR})
 endif()
-target_link_libraries(wolfded
-	server_libraries
-	engine_libraries
-	os_libraries
-	${CURL_LIBRARIES}
-)
 
-target_include_directories(wolfded PRIVATE ${CURL_INCLUDE_DIR})
+
 
 if(UNIX)
 	set_target_properties(wolfded
