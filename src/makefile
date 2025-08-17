@@ -8,7 +8,7 @@ dependencies:
 
 binaries-linux:
 	mkdir -p ../build
-	cd ../build && CC=clang CFLAGS=-m32 CXXFLAGS=-m32 LDFLAGS=-m32 cmake -G Ninja -DCMAKE_LIBRARY_PATH=/usr/lib/i386-linux-gnu -DCMAKE_PREFIX_PATH=/usr/lib/i386-linux-gnu/cmake/ .. && ninja
+	cd ../build && CC=clang CFLAGS=-m32 CXXFLAGS=-m32 LDFLAGS=-m32 cmake -G Ninja -DCMAKE_LIBRARY_PATH=/usr/lib/i386-linux-gnu -DCMAKE_PREFIX_PATH=/usr/lib/i386-linux-gnu/cmake/ -DBUILD_CLIENT=OFF .. && ninja
 	cd ../build/rtcwmod && zip -ur rtcwmod_bin.pk3 *.so 
 	cd ../build && rm -rf CMakeCache.txt  CMakeFiles build.ninja cmake_install.cmake  librenderer.a
 	
