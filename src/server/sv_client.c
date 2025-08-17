@@ -1468,7 +1468,7 @@ void SV_ClientThink( client_t *cl, usercmd_t *cmd ) {
 
 	}
 
-
+	cl->lastUsercmd.serverTime = cmd->serverTime;
 
 	
 }
