@@ -69,7 +69,7 @@ if(UNIX)
 	endif()
 
 	
-	target_link_libraries(os_libraries INTERFACE  m ${CMAKE_DL_LIBS} rt pthread)
+	target_link_libraries(os_libraries INTERFACE  m ${CMAKE_DL_LIBS} rt pthread curl)
 	set(LIB_SUFFIX ".mp.")
 	
 
