@@ -69,6 +69,8 @@ cvar_t  *sv_friendlyFire;       // NERVE - SMF
 cvar_t  *sv_maxlives;           // NERVE - SMF
 cvar_t  *sv_tourney;            // NERVE - SMF
 
+cvar_t  *sv_minUserCmdInterval;
+
 cvar_t *sv_dl_maxRate;
 
 // Rafael gameskill
