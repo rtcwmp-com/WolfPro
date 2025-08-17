@@ -318,13 +318,13 @@ cvarTable_t gameCvarTable[] = {
 	// configured by the server admin, points to the web pages for the server
 	{&url, "URL", "", CVAR_SERVERINFO | CVAR_ARCHIVE, 0, qfalse},
 
-	{&g_antilag, "g_antilag", "0", CVAR_SERVERINFO | CVAR_ARCHIVE, 0, qfalse},
+	{&g_antilag, "g_antilag", "2", CVAR_SERVERINFO | CVAR_ARCHIVE, 0, qfalse},
 
 	{&g_dbgRevive, "g_dbgRevive", "0", 0, 0, qfalse},
 
 	//Match
-	{ &g_tournament, "g_tournament", "0", CVAR_ARCHIVE | CVAR_LATCH | CVAR_SERVERINFO, 0, qtrue },
-	{ &team_nocontrols, "team_nocontrols", "1", CVAR_ARCHIVE, 0, qfalse },
+	{ &g_tournament, "g_tournament", "1", CVAR_ARCHIVE | CVAR_LATCH | CVAR_SERVERINFO, 0, qtrue },
+	{ &team_nocontrols, "team_nocontrols", "0", CVAR_ARCHIVE, 0, qfalse },
 	{ &match_minplayers, "match_minplayers", "2", 0, 0, qfalse, qfalse },
 	{ &match_timeoutcount, "match_timeoutcount", "3", 0, 0, qfalse, qtrue },
 	{ &match_readypercent, "match_readypercent", "100", 0, 0, qfalse, qtrue },
@@ -341,7 +341,7 @@ cvarTable_t gameCvarTable[] = {
 	{ &g_maxLagCompensation, "g_maxLagCompensation", "500", CVAR_ARCHIVE | CVAR_SERVERINFO, 0, qtrue },
 	{ &g_delagMissiles, "g_delagMissiles", "0", CVAR_ARCHIVE | CVAR_SERVERINFO, 0, qtrue }, 
 	
-	{ &g_hitsounds, "g_hitsounds", "0", CVAR_ARCHIVE, 0, qfalse },
+	{ &g_hitsounds, "g_hitsounds", "1", CVAR_ARCHIVE, 0, qfalse },
 	{ &g_allowEnemySpawnTimer, "g_allowEnemySpawnTimer", "1", CVAR_ARCHIVE | CVAR_SERVERINFO, qtrue },
 	{ &g_spawnOffset, "g_spawnOffset", "9", CVAR_ARCHIVE, 0, qfalse, qfalse }
 };

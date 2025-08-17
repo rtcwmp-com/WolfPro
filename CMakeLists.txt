@@ -70,6 +70,9 @@ set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER ${CMAKE_TARGETS_FOLDER})
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_C_STANDARD 99)
 
+# Source globs
+include(cmake/WolfSources.cmake)
+
 # Setup some basic helper variables
 include(cmake/WolfCommon.cmake)
 
@@ -79,8 +82,7 @@ include(cmake/WolfTargets.cmake)
 # Platform specific compiler settings
 include(cmake/WolfPlatform.cmake)
 
-# Source globs
-include(cmake/WolfSources.cmake)
+
 
 # Set up includes and libraries based on feature options
 include(cmake/WolfSetupFeatures.cmake)
