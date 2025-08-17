@@ -39,6 +39,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include <unistd.h>   // AH - for size_t
 #include <string.h>
+#include "linux_local.h"
 
 void Com_Memcpy( void* dest, const void* src, const size_t count ) {
 	memcpy( dest, src, count );
