@@ -16,7 +16,7 @@ binaries-linux:
 binaries-windows:
 	mkdir -p ../build
 	cd ../build && \
-	cmake .. -G Ninja -DCMAKE_TOOLCHAIN_FILE="../cmake/clang-cl-msvc.cmake" -DHOST_ARCH=x86 -DLLVM_NATIVE_TOOLCHAIN=/usr/ -DMSVC_BASE=../deps/xwin/crt -DWINSDK_BASE=../deps/xwin/sdk -DBUILD_CLIENT=OFF  && ninja
+	cmake .. -G Ninja -DCMAKE_TOOLCHAIN_FILE="../cmake/clang-cl-msvc.cmake" -DHOST_ARCH=x86 -DLLVM_NATIVE_TOOLCHAIN=/usr/ -DMSVC_BASE=../deps/xwin/crt -DWINSDK_BASE=../deps/xwin/sdk -DBUILD_CLIENT=OFF -DCMAKE_BUILD_TYPE=Release  && ninja
 	cd ../build/rtcwmod && zip -ur rtcwmod_bin.pk3 *.dll
 	cd ../build && rm -rf CMakeCache.txt CMakeFiles cmake_install.cmake *.lib build.ninja *.user
 
