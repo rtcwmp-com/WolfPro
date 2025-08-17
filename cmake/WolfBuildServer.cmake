@@ -2,7 +2,7 @@
 # Build Server
 #-----------------------------------------------------------------
 
-if(WIN32)
+if(WIN32 AND NOT CMAKE_CROSSCOMPILE)
 	add_executable(wolfded WIN32 ${COMMON_SRC} ${SERVER_SRC})
 else()
 	add_executable(wolfded ${COMMON_SRC} ${SERVER_SRC})
