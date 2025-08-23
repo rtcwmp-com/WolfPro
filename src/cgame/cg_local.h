@@ -1833,6 +1833,8 @@ extern vmCvar_t cg_reinforcementTimeProY;
 extern vmCvar_t cg_spawnTimer_period;
 extern vmCvar_t cg_spawnTimer_set;
 
+extern vmCvar_t cg_autoAction;
+
 //
 // cg_main.c
 //
@@ -2582,3 +2584,8 @@ void trap_IgImage(qhandle_t shader, float x, float y);
 void trap_IgImageEx(qhandle_t shader, float x, float y, float s1, float t1, float s2, float t2);
 
 void CG_PopinPrint(const char *str, int charWidth, qboolean blink);
+
+// OSP's Autoaction values
+#define AA_DEMORECORD   0x01
+#define AA_SCREENSHOT   0x02
+#define AA_STATSDUMP    0x04

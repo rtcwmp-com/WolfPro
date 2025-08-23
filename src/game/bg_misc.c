@@ -4202,3 +4202,26 @@ const colorTable_t OSP_Colortable[] =
 	{ "black", &colorBlack, {'0'} },
 	{ NULL, NULL }
 };
+
+// Weapon full names + headshot capability
+const weap_ws_t aWeaponInfo[WS_MAX] = {
+	{ qfalse,   "KNIF",  "Knife"      },  // 0
+	{ qtrue,    "LUGR",  "Luger"      },  // 1
+	{ qtrue,    "COLT",  "Colt"       },  // 2
+	{ qtrue,    "MP40",  "MP-40"      },  // 3
+	{ qtrue,    "TMPS",  "Thompson"   },  // 4
+	{ qtrue,    "STEN",  "Sten"       },  // 5
+	{ qtrue,    "FG42",  "FG-42"      },  // 6
+	{ qtrue,    "PNZR",  "Panzer" },      // 7
+	{ qtrue,    "FLAM",  "F.Thrower"  },  // 8
+	{ qfalse,   "GRND",  "Grenade"    },  // 9
+	{ qfalse,   "MRTR",  "Mortar" },	  // 10
+	{ qfalse,   "DYNA",  "Dynamite"   },  // 11
+	{ qfalse,   "ARST",  "Airstrike"  },  // 12
+	{ qfalse,   "ARTY",  "Artillery"  },  // 13
+	{ qfalse,   "SRNG",  "Syringe"    },  // 14
+	{ qfalse,   "SMOK", "SmokeScrn"   },  // 15
+	{ qtrue,    "MG42",  "MG-42 Gun"  },  // 16
+	{ qtrue,    "RIFL",  "Mauser" },	  // 17
+	{ qtrue,    "VENM",  "Venom" },		  // 18
+};
