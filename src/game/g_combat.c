@@ -287,6 +287,8 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 		return;
 	}
 
+	G_addStats( self, attacker, damage, meansOfDeath );
+
 	self->client->ps.pm_type = PM_DEAD;
 
 	G_AddEvent( self, EV_STOPSTREAMINGSOUND, 0 );
@@ -1076,6 +1078,11 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 		}
 
 		targ->client->ps.eFlags |= EF_HEADSHOT;
+
+		if ( client && attacker && attacker->client
+			 && attacker->client->sess.sessionTeam != targ->client->sess.sessionTeam ) {
+			G_addStatsHeadShot( attacker, mod );
+		}
 	}
 
 	if ( g_debugDamage.integer ) {
@@ -1143,6 +1150,14 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 				targ->flags |= FL_NO_KNOCKBACK;
 // JPW NERVE -- repeated shooting sends to limbo
 				if ( g_gametype.integer >= GT_WOLF ) {
+
+					// do gib counting before sending them to limbo
+					if ((targ->health <= FORCE_LIMBO_HEALTH) && (!(targ->client->ps.pm_flags & PMF_LIMBO)
+						&& attacker->client && attacker != targ && !OnSameTeam(attacker, targ) && (g_gamestate.integer != GS_WARMUP))) //do not add gibs to stats during warmup.
+					{
+						attacker->client->sess.stats.gibs++;
+					}
+
 					if ( ( targ->health < FORCE_LIMBO_HEALTH ) && ( targ->health > GIB_HEALTH ) && ( !( targ->client->ps.pm_flags & PMF_LIMBO ) ) ) {
 						limbo( targ, qtrue );
 					}
@@ -1184,6 +1199,8 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 			if ( targ->s.number >= MAX_CLIENTS ) {
 				G_Script_ScriptEvent( targ, "pain", va( "%d %d", targ->health, targ->health + take ) );
 			}
+		} else {
+			G_addStats( targ, attacker, take, mod );
 		}
 
 		//G_ArmorDamage(targ);	//----(SA)	moved out to separate routine

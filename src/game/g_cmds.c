@@ -454,7 +454,9 @@ Cmd_Kill_f
 =================
 */
 void Cmd_Kill_f( gentity_t *ent ) {
-	if ( ent->client->sess.sessionTeam == TEAM_SPECTATOR ) {
+	if ( ent->client->sess.sessionTeam == TEAM_SPECTATOR ||
+		 ( ent->client->ps.pm_flags & PMF_LIMBO ) ||
+		 ent->health <= 0 || level.paused != PAUSE_NONE ) {
 		return;
 	}
 	if ( g_gametype.integer >= GT_WOLF && ent->client->ps.pm_flags & PMF_LIMBO ) {
@@ -464,7 +466,8 @@ void Cmd_Kill_f( gentity_t *ent ) {
 	ent->flags &= ~FL_GODMODE;
 	ent->client->ps.stats[STAT_HEALTH] = ent->health = 0;
 	ent->client->ps.persistant[PERS_HWEAPON_USE] = 0; // TTimo - if using /kill while at MG42
-	player_die( ent, ent, ent, 100000, MOD_SUICIDE );
+	player_die( ent, ent, ent, ent->health, MOD_SUICIDE );
+	if (g_gamestate.integer == GS_PLAYING) ent->client->sess.stats.suicides++;
 }
 
 
@@ -624,6 +627,11 @@ void SetTeam( gentity_t *ent, char *s ) {
 	ClientUserinfoChanged( clientNum );
 
 	ClientBegin( clientNum );
+
+	// Reset stats when changing teams
+	if (team != oldTeam) {
+		G_deleteStats(clientNum);
+	}
 }
 
 // DHM - Nerve

@@ -360,6 +360,15 @@ void Weapon_Syringe( gentity_t *ent ) {
 				// DHM - Nerve :: Mark that the medicine was indeed dispensed
 				usedSyringe = qtrue;
 
+				if ( g_gamestate.integer == GS_PLAYING ) {
+					ent->client->sess.stats.aWeaponStats[WS_SYRINGE].hits++;
+					ent->client->sess.stats.revives++;
+					if (g_gameStatslog.integer) {
+                        //G_writeGeneralEvent(traceEnt,ent," ",eventRevive);
+                       // G_writeReviveEvent (traceEnt->client->pers.netname, ent->client->pers.netname);
+					}
+				}
+
 				// sound
 				te = G_TempEntity( traceEnt->r.currentOrigin, EV_GENERAL_SOUND );
 				te->s.eventParm = G_SoundIndex( "sound/multiplayer/vo_revive.wav" );
@@ -788,6 +797,9 @@ void weapon_callAirStrike( gentity_t *ent ) {
 
 		// move pos for next bomb
 		VectorAdd( pos,bombaxis,pos );
+
+		if (g_gamestate.integer == GS_PLAYING)
+			ent->parent->client->sess.stats.aWeaponStats[WS_AIRSTRIKE].atts++;
 	}
 }
 
@@ -1011,6 +1023,8 @@ void Weapon_Artillery( gentity_t *ent ) {
 		}
 		ent->client->ps.classWeaponTime = level.time;
 	}
+	if ( g_gamestate.integer == GS_PLAYING )
+		ent->client->sess.stats.aWeaponStats[WS_ARTILLERY].atts++;
 
 }
 
@@ -1519,6 +1533,31 @@ void Bullet_Fire( gentity_t *ent, float spread, int damage ) {
 	}
 }
 
+qboolean LogAccuracyShot(gentity_t* target, gentity_t* attacker) {
+	if (attacker && attacker->client)
+	{
+		if (target && target->client)
+		{
+			if (target->client->ps.stats[STAT_HEALTH] > 0 || (OnSameTeam(attacker, target)))
+			{
+				if ((target->client->ps.powerups[PW_INVULNERABLE] <= level.time))
+				{
+					return qtrue;
+				}
+			}
+		}
+		else
+		{
+			if (!target || !target->takedamage)
+			{
+				return qtrue;
+			}
+		}
+	}
+
+	return qfalse;
+}
+
 
 /*
 ==============
@@ -1578,6 +1617,11 @@ void Bullet_Fire_Extended( gentity_t *source, gentity_t *attacker, vec3_t start,
 
 	EmitterCheck( traceEnt, attacker, &tr );
 
+	if (LogAccuracyShot(traceEnt, source) && g_gamestate.integer == GS_PLAYING)
+	{
+		source->client->sess.stats.acc_shots++;
+	}
+
 	// snap the endpos to integers, but nudged towards the line
 	SnapVectorTowards( tr.endpos, start );
 
@@ -1592,8 +1636,9 @@ void Bullet_Fire_Extended( gentity_t *source, gentity_t *attacker, vec3_t start,
 	if ( traceEnt->takedamage && traceEnt->client && !( traceEnt->flags & FL_DEFENSE_GUARD ) ) {
 		tent = G_TempEntity( tr.endpos, EV_BULLET_HIT_FLESH );
 		tent->s.eventParm = traceEnt->s.number;
-		if ( LogAccuracyHit( traceEnt, attacker ) ) {
+		if ( LogAccuracyHit( traceEnt, attacker ) && g_gamestate.integer == GS_PLAYING) {
 			attacker->client->ps.persistant[PERS_ACCURACY_HITS]++;
+			attacker->client->sess.stats.acc_hits++;
 		}
 
 //----(SA)	added
@@ -1982,6 +2027,10 @@ void Weapon_RocketLauncher_Fire( gentity_t *ent ) {
 	m->damage *= s_quadFactor;
 	m->splashDamage *= s_quadFactor;
 
+	if (g_gamestate.integer == GS_PLAYING) {  // add panzer attempts to accuracy
+		ent->client->sess.stats.acc_shots++;
+	}
+
 //	VectorAdd( m->s.pos.trDelta, ent->client->ps.velocity, m->s.pos.trDelta );	// "real" physics
 }
 
@@ -2100,6 +2149,11 @@ LogAccuracyHit
 ===============
 */
 qboolean LogAccuracyHit( gentity_t *target, gentity_t *attacker ) {
+	
+	if (!LogAccuracyShot(target, attacker)) {
+		return qfalse;
+	}
+
 	if ( !target->takedamage ) {
 		return qfalse;
 	}
@@ -2386,6 +2440,8 @@ void FireWeapon( gentity_t *ent ) {
 	default:
 		break;
 	}
+	if ( g_gamestate.integer == GS_PLAYING )
+		ent->client->sess.stats.aWeaponStats[BG_WeapStatForWeapon( ent->s.weapon )].atts++;
 }
 
 

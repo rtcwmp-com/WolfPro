@@ -68,7 +68,7 @@ void doSound(gentity_t *ent, int type, char *path, char *sound) {
 /***********************************************************************************/
 int iWeap = WS_MAX;
 
-static const weap_ws_convert_t aWeapMOD[MOD_NUM_MODS] = {
+static const mod_ws_convert_t aWeapMOD[MOD_NUM_MODS] = {
 	{ MOD_UNKNOWN,              WS_MAX },
 	{ MOD_MACHINEGUN,           WS_MG42 },
 	{ MOD_GRENADE,              WS_GRENADE },
@@ -421,8 +421,7 @@ void G_deleteStats( int nClient ) {
 	trap_Cvar_Set( va( "wstats%i", nClient ), va( "%d", nClient ) );
 }
 
-int GetNextInt(char *str){
-	char *end;
+int GetNextInt(char *str, char *end){
 	long int value = strtol(str, &end, 10);
 	if( value == 0L && end == str ){
 		return -1;
@@ -435,7 +434,8 @@ int GetNextInt(char *str){
 //	---> The given string must be space delimited and contain only integers
 void G_parseStats( char *statsInfo ) {
 	char *tmp = statsInfo;
-	unsigned int clientNum = GetNextInt(tmp);
+	char* endptr;
+	unsigned int clientNum = GetNextInt(tmp, endptr);
 
 	if ( clientNum < 0 || clientNum > MAX_CLIENTS ) {
 		return;
@@ -443,16 +443,16 @@ void G_parseStats( char *statsInfo ) {
 
 	gclient_t *cl = &level.clients[clientNum];
 
-	cl->sess.stats.rounds = GetNextInt(tmp);
-	int weaponMask = GetNextInt(tmp);
+	cl->sess.stats.rounds = GetNextInt(tmp, endptr);
+	int weaponMask = GetNextInt(tmp, endptr);
 	if(weaponMask > 0){
 		for (int i = WS_KNIFE; i < WS_MAX; i++ ) {
 			if ( weaponMask & ( 1 << i ) ) {
-				cl->sess.stats.aWeaponStats[i].hits = GetNextInt(tmp);
-				cl->sess.stats.aWeaponStats[i].atts = GetNextInt(tmp);
-				cl->sess.stats.aWeaponStats[i].kills = GetNextInt(tmp);
-				cl->sess.stats.aWeaponStats[i].deaths = GetNextInt(tmp);
-				cl->sess.stats.aWeaponStats[i].headshots = GetNextInt(tmp);
+				cl->sess.stats.aWeaponStats[i].hits = GetNextInt(tmp, endptr);
+				cl->sess.stats.aWeaponStats[i].atts = GetNextInt(tmp, endptr);
+				cl->sess.stats.aWeaponStats[i].kills = GetNextInt(tmp, endptr);
+				cl->sess.stats.aWeaponStats[i].deaths = GetNextInt(tmp, endptr);
+				cl->sess.stats.aWeaponStats[i].headshots = GetNextInt(tmp, endptr);
 			}
 		}
 	}
@@ -847,13 +847,10 @@ void G_matchInfoDump( unsigned int dwDumpType ) {
 	// to at least temporarily fix whatevr is causing the cut off
 	char cs[MAX_STRING_CHARS];
 	char* buf;
-	char* endofroundinfo;
 	int winner;
 	trap_GetConfigstring(CS_MULTI_MAPWINNER, cs, sizeof(cs));
 	buf = Info_ValueForKey(cs, "winner");
 	winner = atoi(buf);
-
-    endofroundinfo=va( "  .."); // plan to remove this soon.....just safety measure
 
 	for ( i = 0; i < level.numConnectedClients; i++ )
 	{
@@ -940,16 +937,7 @@ void G_matchInfoDump( unsigned int dwDumpType ) {
 }
 // temp fix for cg_autoaction issue
 void G_matchClockDump(gentity_t *ent ) {
-
-	gclient_t* cl;
-	char cs[MAX_STRING_CHARS];
-	char* buf;
-	int winner;
-	trap_GetConfigstring(CS_MULTI_MAPWINNER, cs, sizeof(cs));
-	buf = Info_ValueForKey(cs, "winner");
-	winner = atoi(buf);
 	char* endofroundinfo;
-	cl = ent->client;
 
     if ( !level.intermissiontime ) {
 		return;

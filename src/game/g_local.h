@@ -912,6 +912,7 @@ typedef struct {
 	int frameStartTime;
 
 	int sortedStats[MAX_CLIENTS];
+	qboolean resetStats;
 } level_locals_t;
 
 extern qboolean reloading;                  // loading up a savegame

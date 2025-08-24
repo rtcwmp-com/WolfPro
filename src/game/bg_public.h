@@ -1783,6 +1783,11 @@ typedef struct {
 
 extern const weap_ws_t aWeaponInfo[WS_MAX];
 
+typedef struct mod_ws_convert_s {
+	meansOfDeath_t iWeapon;
+	extWeaponStats_t iWS;
+} mod_ws_convert_t;
+
 typedef struct weap_ws_convert_s {
 	weapon_t iWeapon;
 	extWeaponStats_t iWS;
@@ -1793,5 +1798,8 @@ typedef struct weap_ws_convert_s {
 #define CGF_STATSDUMP       0x02
 #define CGF_AUTOACTIVATE    0x04
 #define CGF_PREDICTITEMS    0x08
+
+int BG_cleanName( const char *pszIn, char *pszOut, unsigned int dwMaxLength, qboolean fCRLF );
+extWeaponStats_t BG_WeapStatForWeapon( weapon_t iWeaponID );
 
 #endif

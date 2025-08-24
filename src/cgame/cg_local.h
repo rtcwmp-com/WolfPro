@@ -1497,6 +1497,9 @@ typedef struct {
 	qhandle_t skullIcon;
 	qhandle_t exclamationIcon;
 
+	sfxHandle_t alliesWin;
+	sfxHandle_t axisWin;
+
 } cgMedia_t;
 
 typedef enum {
@@ -1504,6 +1507,45 @@ typedef enum {
 	PAUSE_ON,
 	PAUSE_RESUMING
 } cPauseSts_t;
+
+typedef struct {
+	qboolean fHasStats;
+	int nClientID;
+	int nRounds;
+	int fadeTime;
+	int show;
+	int requestTime;
+	int kills;
+	int deaths;
+	int suicides;
+	int damage_giv;
+	int damage_rec;
+	int gibs;
+	int revives;
+	int health_given;
+	int ammo_given;
+} gameStats_t;
+
+typedef struct {
+	char strStats[MAX_STRING_TOKENS];
+	int cWeapons;
+	int cSkills;
+	qboolean fHasStats;
+	int nClientID;
+	int nRounds;
+	int fadeTime;
+	int show;
+	int requestTime;
+} clientGameStats_t;
+
+
+typedef struct {
+	char strWS[WS_MAX * 2][MAX_STRING_TOKENS];
+	int cWeapons;
+	int fadeTime;
+	int show;
+	int requestTime;
+} topshotStats_t;
 
 // The client game static (cgs) structure hold everything
 // loaded or calculated from the gamestate.  It will NOT
@@ -1624,6 +1666,14 @@ typedef struct {
 	int match_stepTimer;
 
 	int reinfOffset[TEAM_NUM_TEAMS];   // Reinforcements offset
+
+	// OSP's stats
+	gameStats_t gamestats;
+	clientGameStats_t clientGameStats; // L0 - 1.0 alike
+	topshotStats_t topshots;
+	fileHandle_t dumpStatsFile;
+	char* dumpStatsFileName;  // Name of file to dump stats
+	int dumpStatsTime;
 } cgs_t;
 
 //==============================================================================
@@ -1861,6 +1911,7 @@ qboolean CG_GetTag( int clientNum, char *tagname, orientation_t * or );
 qboolean CG_GetWeaponTag( int clientNum, char *tagname, orientation_t * or );
 
 qboolean CG_CheckCenterView();
+void CG_printConsoleString( char *str );
 
 //
 // cg_view.c
@@ -2510,6 +2561,7 @@ e_status trap_CIN_RunCinematic( int handle );
 void trap_CIN_DrawCinematic( int handle );
 void trap_CIN_SetExtents( int handle, int x, int y, int w, int h );
 
+int trap_RealTime(qtime_t *qtime);
 void trap_SnapVector( float *v );
 
 qboolean    trap_GetEntityToken( char *buffer, int bufferSize );

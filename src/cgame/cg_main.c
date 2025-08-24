@@ -1159,6 +1159,9 @@ static void CG_RegisterSounds( void ) {
 	trap_S_RegisterSound( "sound/Loogie/spit.wav" );
 	trap_S_RegisterSound( "sound/Loogie/sizzle.wav" );
 */
+
+	cgs.media.alliesWin = trap_S_RegisterSound("sound/match/winallies_pro.wav");
+	cgs.media.axisWin = trap_S_RegisterSound("sound/match/winaxis_pro.wav");
 }
 
 
@@ -2558,3 +2561,7 @@ void CG_Shutdown( void ) {
 	}
 }
 
+
+void CG_printConsoleString( char *str ) {
+    CG_Printf( "%s", str ); // remove skipnotify  for CP
+}
