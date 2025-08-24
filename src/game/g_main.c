@@ -188,6 +188,10 @@ vmCvar_t g_hitsounds;			// Hitsounds - Requires soundpack
 vmCvar_t g_allowEnemySpawnTimer;
 vmCvar_t g_spawnOffset;
 
+vmCvar_t g_gameStatslog; // temp cvar for event logging
+vmCvar_t g_preciseTimeSet;
+vmCvar_t sv_hostname;	// So it's more accesible
+
 cvarTable_t gameCvarTable[] = {
 	// don't override the cheat state set by the system
 	{ &g_cheats, "sv_cheats", "", 0, qfalse },
@@ -318,13 +322,13 @@ cvarTable_t gameCvarTable[] = {
 	// configured by the server admin, points to the web pages for the server
 	{&url, "URL", "", CVAR_SERVERINFO | CVAR_ARCHIVE, 0, qfalse},
 
-	{&g_antilag, "g_antilag", "0", CVAR_SERVERINFO | CVAR_ARCHIVE, 0, qfalse},
+	{&g_antilag, "g_antilag", "2", CVAR_SERVERINFO | CVAR_ARCHIVE, 0, qfalse},
 
 	{&g_dbgRevive, "g_dbgRevive", "0", 0, 0, qfalse},
 
 	//Match
-	{ &g_tournament, "g_tournament", "0", CVAR_ARCHIVE | CVAR_LATCH | CVAR_SERVERINFO, 0, qtrue },
-	{ &team_nocontrols, "team_nocontrols", "1", CVAR_ARCHIVE, 0, qfalse },
+	{ &g_tournament, "g_tournament", "1", CVAR_ARCHIVE | CVAR_LATCH | CVAR_SERVERINFO, 0, qtrue },
+	{ &team_nocontrols, "team_nocontrols", "0", CVAR_ARCHIVE, 0, qfalse },
 	{ &match_minplayers, "match_minplayers", "2", 0, 0, qfalse, qfalse },
 	{ &match_timeoutcount, "match_timeoutcount", "3", 0, 0, qfalse, qtrue },
 	{ &match_readypercent, "match_readypercent", "100", 0, 0, qfalse, qtrue },
@@ -341,9 +345,13 @@ cvarTable_t gameCvarTable[] = {
 	{ &g_maxLagCompensation, "g_maxLagCompensation", "500", CVAR_ARCHIVE | CVAR_SERVERINFO, 0, qtrue },
 	{ &g_delagMissiles, "g_delagMissiles", "0", CVAR_ARCHIVE | CVAR_SERVERINFO, 0, qtrue }, 
 	
-	{ &g_hitsounds, "g_hitsounds", "0", CVAR_ARCHIVE, 0, qfalse },
+	{ &g_hitsounds, "g_hitsounds", "1", CVAR_ARCHIVE, 0, qfalse },
 	{ &g_allowEnemySpawnTimer, "g_allowEnemySpawnTimer", "1", CVAR_ARCHIVE | CVAR_SERVERINFO, qtrue },
-	{ &g_spawnOffset, "g_spawnOffset", "9", CVAR_ARCHIVE, 0, qfalse, qfalse }
+	{ &g_spawnOffset, "g_spawnOffset", "9", CVAR_ARCHIVE, 0, qfalse, qfalse }, 
+
+	{ &g_gameStatslog, "g_gameStatslog", "16", CVAR_ARCHIVE, 0, qfalse  }, // default to 16 so the server saves JSON stats
+	{ &g_preciseTimeSet, "g_preciseTimeSet", "0", CVAR_WOLFINFO, 0, qfalse  },
+	{ &sv_hostname, "sv_hostname", "", CVAR_SERVERINFO, 0, qfalse }
 };
 
 // bk001129 - made static to avoid aliasing
@@ -1846,6 +1854,8 @@ void BeginIntermission( void ) {
 
 	// send the current scoring to all clients
 	SendScoreboardMessageToAllClients();
+
+	G_matchInfoDump(EOM_MATCHINFO);
 
 }
 

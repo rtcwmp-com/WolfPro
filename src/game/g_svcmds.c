@@ -566,12 +566,34 @@ void Svcmd_ResetMatch_f(qboolean fDoReset, qboolean fDoRestart) {
 	int i;
 	for (i = 0; i < level.numConnectedClients; i++) {
 		g_entities[level.sortedClients[i]].client->pers.ready = qfalse;
-		//g_entities[level.sortedClients[i]].client->ps.persistant[PERS_RESTRICTEDWEAPON] = WP_NONE; // reset weapon restrictions on restart
 	}
 
-	if (fDoReset && g_gametype.integer == GT_WOLF_STOPWATCH ) {
-		trap_Cvar_Set( "g_currentRound", "0" );
-		trap_Cvar_Set( "g_nextTimeLimit", "0" );
+	// fix stats for when map restarts occur
+	if (!fDoReset && fDoRestart  && g_gametype.integer == GT_WOLF_STOPWATCH) {
+		if (g_currentRound.integer == 1) {
+			/*
+			trap_GetConfigstring(CS_ROUNDINFO, cs, sizeof(cs));  // retrieve round/match info saved
+			buf = Info_ValueForKey(cs, "matchid");
+			*/
+			trap_Cvar_Set("g_swapteams", "1");  // horrible fix for the swapping of teams on mid-round 2 maprestarts
+
+			for ( i = 0; i < level.numPlayingClients; i++ ) {
+				gclient_t *cl = level.clients + level.sortedClients[i];
+				if ( cl->pers.connected != CON_CONNECTED) {
+					continue;
+				}
+				cl->sess.stats.rounds--; // don't count the half played game as a round...
+
+			}
+		}
+		else {
+			level.resetStats = qtrue;
+		}
+	}
+
+	if (fDoReset && g_gametype.integer == GT_WOLF_STOPWATCH) {
+		trap_Cvar_Set("g_currentRound", "0");
+		trap_Cvar_Set("g_nextTimeLimit", "0");
 	}
 
 	if ((fDoRestart && !g_noTeamSwitching.integer) || ( g_minGameClients.integer > 1 && level.numPlayingClients >= g_minGameClients.integer ) ) {
@@ -711,6 +733,11 @@ qboolean    ConsoleCommand( void ) {
 	}
 	// -NERVE - SMF
 
+	if (Q_stricmp(cmd, "rename") == 0) {
+		G_Rename_f();
+		return qtrue;
+	}
+
 	if ( g_dedicated.integer ) {
 		if ( Q_stricmp( cmd, "say" ) == 0 ) {
 			trap_SendServerCommand( -1, va( "print \"server:[lof] %s\"", ConcatArgs( 1 ) ) );
@@ -718,11 +745,6 @@ qboolean    ConsoleCommand( void ) {
 		}
 		// everything else will also be printed as a say command
 		trap_SendServerCommand( -1, va( "print \"server:[lof] %s\"", ConcatArgs( 0 ) ) );
-		return qtrue;
-	}
-
-	if ( Q_stricmp( cmd, "rename" ) == 0 ) {
-		G_Rename_f();
 		return qtrue;
 	}
 

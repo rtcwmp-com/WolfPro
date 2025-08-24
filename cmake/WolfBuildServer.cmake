@@ -2,20 +2,28 @@
 # Build Server
 #-----------------------------------------------------------------
 
-if(WIN32)
+if(WIN32 AND NOT CMAKE_CROSSCOMPILE)
 	add_executable(wolfded WIN32 ${COMMON_SRC} ${SERVER_SRC})
-else()
+	target_link_libraries(wolfded
+		server_libraries
+		engine_libraries
+		os_libraries
+		${CURL_LIBRARIES}
+	)
+	target_include_directories(wolfded PRIVATE ${CURL_INCLUDE_DIR})
+elseif(UNIX)
 	add_executable(wolfded ${COMMON_SRC} ${SERVER_SRC})
 	target_link_options(wolfded PRIVATE "LINKER:-melf_i386")
+	target_link_libraries(wolfded
+		server_libraries
+		engine_libraries
+		os_libraries
+		${CURL_LIBRARIES}
+	)
+	target_include_directories(wolfded PRIVATE ${CURL_INCLUDE_DIR})
 endif()
-target_link_libraries(wolfded
-	server_libraries
-	engine_libraries
-	os_libraries
-	${CURL_LIBRARIES}
-)
 
-target_include_directories(wolfded PRIVATE ${CURL_INCLUDE_DIR})
+
 
 if(UNIX)
 	set_target_properties(wolfded
@@ -24,7 +32,7 @@ if(UNIX)
 		RUNTIME_OUTPUT_DIRECTORY_DEBUG ""
 		RUNTIME_OUTPUT_DIRECTORY_RELEASE ""
 	)
-else()
+elseif(WIN32 AND NOT CMAKE_CROSSCOMPILE)
 	set_target_properties(wolfded
 		PROPERTIES COMPILE_DEFINITIONS "DEDICATED;BOTLIB"
 		RUNTIME_OUTPUT_DIRECTORY ""
@@ -41,9 +49,11 @@ if(MSVC AND NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/wolfded.vcxproj.user)
 	configure_file(${PROJECT_SOURCE_DIR}/cmake/vs2013.vcxproj.user.in ${CMAKE_CURRENT_BINARY_DIR}/wolfded.vcxproj.user @ONLY)
 endif()
 
-install(TARGETS wolfded
-	BUNDLE  DESTINATION "${INSTALL_DEFAULT_BASEDIR}"
-	RUNTIME DESTINATION "${INSTALL_DEFAULT_BASEDIR}"
-)
-install(FILES $<TARGET_PDB_FILE:wolfded> DESTINATION ${INSTALL_DEFAULT_BASEDIR} OPTIONAL)
-install(FILES wolfded DESTINATION ${INSTALL_DEFAULT_BASEDIR} OPTIONAL)
+if(WIN32 AND NOT CMAKE_CROSSCOMPILE)
+	install(TARGETS wolfded
+		BUNDLE  DESTINATION "${INSTALL_DEFAULT_BASEDIR}"
+		RUNTIME DESTINATION "${INSTALL_DEFAULT_BASEDIR}"
+	)
+	install(FILES $<TARGET_PDB_FILE:wolfded> DESTINATION ${INSTALL_DEFAULT_BASEDIR} OPTIONAL)
+	install(FILES wolfded DESTINATION ${INSTALL_DEFAULT_BASEDIR} OPTIONAL)
+endif()

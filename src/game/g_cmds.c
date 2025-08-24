@@ -182,51 +182,6 @@ void SanitizeString( char *in, char *out ) {
 	*out = 0;
 }
 
-/*
-==================
-ClientNumberFromString
-
-Returns a player number for either a number or name string
-Returns -1 if invalid
-==================
-*/
-int ClientNumberFromString( gentity_t *to, char *s ) {
-	gclient_t   *cl;
-	int idnum;
-	char s2[MAX_STRING_CHARS];
-	char n2[MAX_STRING_CHARS];
-
-	// numeric values are just slot numbers
-	if ( s[0] >= '0' && s[0] <= '9' ) {
-		idnum = atoi( s );
-		if ( idnum < 0 || idnum >= level.maxclients ) {
-			trap_SendServerCommand( to - g_entities, va( "print \"Bad client slot: [lof]%i\n\"", idnum ) );
-			return -1;
-		}
-
-		cl = &level.clients[idnum];
-		if ( cl->pers.connected != CON_CONNECTED ) {
-			trap_SendServerCommand( to - g_entities, va( "print \"Client[lof] %i [lon]is not active\n\"", idnum ) );
-			return -1;
-		}
-		return idnum;
-	}
-
-	// check for a name match
-	SanitizeString( s, s2 );
-	for ( idnum = 0,cl = level.clients ; idnum < level.maxclients ; idnum++,cl++ ) {
-		if ( cl->pers.connected != CON_CONNECTED ) {
-			continue;
-		}
-		SanitizeString( cl->pers.netname, n2 );
-		if ( !strcmp( n2, s2 ) ) {
-			return idnum;
-		}
-	}
-
-	trap_SendServerCommand( to - g_entities, va( "print \"User [lof]%s [lon]is not on the server\n\"", s ) );
-	return -1;
-}
 
 /*
 ==================
@@ -499,7 +454,9 @@ Cmd_Kill_f
 =================
 */
 void Cmd_Kill_f( gentity_t *ent ) {
-	if ( ent->client->sess.sessionTeam == TEAM_SPECTATOR ) {
+	if ( ent->client->sess.sessionTeam == TEAM_SPECTATOR ||
+		 ( ent->client->ps.pm_flags & PMF_LIMBO ) ||
+		 ent->health <= 0 || level.paused != PAUSE_NONE ) {
 		return;
 	}
 	if ( g_gametype.integer >= GT_WOLF && ent->client->ps.pm_flags & PMF_LIMBO ) {
@@ -509,7 +466,8 @@ void Cmd_Kill_f( gentity_t *ent ) {
 	ent->flags &= ~FL_GODMODE;
 	ent->client->ps.stats[STAT_HEALTH] = ent->health = 0;
 	ent->client->ps.persistant[PERS_HWEAPON_USE] = 0; // TTimo - if using /kill while at MG42
-	player_die( ent, ent, ent, 100000, MOD_SUICIDE );
+	player_die( ent, ent, ent, ent->health, MOD_SUICIDE );
+	if (g_gamestate.integer == GS_PLAYING) ent->client->sess.stats.suicides++;
 }
 
 
@@ -669,6 +627,11 @@ void SetTeam( gentity_t *ent, char *s ) {
 	ClientUserinfoChanged( clientNum );
 
 	ClientBegin( clientNum );
+
+	// Reset stats when changing teams
+	if (team != oldTeam) {
+		G_deleteStats(clientNum);
+	}
 }
 
 // DHM - Nerve
@@ -2377,4 +2340,89 @@ void ClientCommand( int clientNum ) {
 	} else {
 		trap_SendServerCommand( clientNum, va( "print \"unknown cmd[lof] %s\n\"", cmd ) );
 	}
+}
+
+
+/*
+==================
+SanitizeString with tolower option
+
+Remove case and control characters
+==================
+*/
+void SanitizeStringToLower(char* in, char* out, qboolean fToLower) {
+	while (*in) {
+		if (*in == 27 || *in == '^') {
+			in++;       // skip color code
+			if (*in) {
+				in++;
+			}
+			continue;
+		}
+
+		if (*in < 32) {
+			in++;
+			continue;
+		}
+
+		*out++ = (fToLower) ? tolower(*in++) : *in++;
+	}
+
+	*out = 0;
+}
+
+/*
+==================
+ClientNumberFromString
+
+Returns a player number for either a number or name string
+Returns -1 if invalid
+==================
+*/
+int ClientNumberFromString( gentity_t *to, char *s ) {
+	gclient_t   *cl;
+	int idnum;
+	char s2[MAX_STRING_CHARS];
+	char n2[MAX_STRING_CHARS];
+	qboolean fIsNumber = qtrue;
+
+	// See if its a number or string
+	for ( idnum = 0; idnum < strlen( s ) && s[idnum] != 0; idnum++ ) {
+		if ( s[idnum] < '0' || s[idnum] > '9' ) {
+			fIsNumber = qfalse;
+			break;
+		}
+	}
+
+	// check for a name match
+	SanitizeStringToLower( s, s2, qtrue );
+	for ( idnum = 0, cl = level.clients; idnum < level.maxclients; idnum++, cl++ ) {
+		if ( cl->pers.connected != CON_CONNECTED ) {
+			continue;
+		}
+
+		SanitizeStringToLower( cl->pers.netname, n2, qtrue );
+		if ( !strcmp( n2, s2 ) ) {
+			return( idnum );
+		}
+	}
+
+	// numeric values are just slot numbers
+	if ( fIsNumber ) {
+		idnum = atoi( s );
+		if ( idnum < 0 || idnum >= level.maxclients ) {
+			CPx( to - g_entities, va( "print \"Bad client slot: [lof]%i\n\"", idnum ) );
+			return -1;
+		}
+
+		cl = &level.clients[idnum];
+		if ( cl->pers.connected != CON_CONNECTED ) {
+			CPx( to - g_entities, va( "print \"Client[lof] %i [lon]is not active\n\"", idnum ) );
+			return -1;
+		}
+		return( idnum );
+	}
+
+	CPx( to - g_entities, va( "print \"User [lof]%s [lon]is not on the server\n\"", s ) );
+	return( -1 );
 }

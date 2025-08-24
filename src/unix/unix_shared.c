@@ -401,3 +401,35 @@ char* Sys_GetScreenshotPath(char* filename){
 
 	return va("%s/%s/screenshots/%s.jpg", homepath, gamepath, filename);
 }
+
+
+static void LIN_MicroSleep( int us )
+{
+	struct timespec req, rem;
+	req.tv_sec = us / 1000000;
+	req.tv_nsec = (us % 1000000) * 1000;
+	while (clock_nanosleep(CLOCK_REALTIME, 0, &req, &rem) == EINTR) {
+		req = rem;
+	}
+}
+
+
+void Sys_Sleep( int ms )
+{
+	LIN_MicroSleep(ms * 1000);
+}
+
+
+void Sys_MicroSleep( int us )
+{
+	LIN_MicroSleep(us);
+}
+
+
+int64_t Sys_Microseconds(void)
+{
+	struct timespec ts;
+	clock_gettime(CLOCK_REALTIME, &ts);
+
+	return (int64_t)ts.tv_sec * 1000000 + (int64_t)ts.tv_nsec / 1000;
+}

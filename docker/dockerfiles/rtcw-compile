@@ -11,7 +11,7 @@ RUN dpkg --add-architecture i386 && \
     apt-get update && \
     apt-get -y upgrade && \
     apt-get install -y wget libc6:i386 zip \
-    unzip git gdb-multiarch gcc cmake perl curl gcc-multilib g++-multilib \
+    unzip git gdb-multiarch gcc cmake perl libcurl4-openssl-dev:i386 gcc-multilib g++-multilib \
     autoconf libtool nasm mingw-w64 mingw-w64-tools g++ \
     libgl-dev libsdl2-dev:i386 clang-tools-15 lld-15 ninja-build
 
