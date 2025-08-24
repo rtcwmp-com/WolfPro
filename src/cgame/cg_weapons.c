@@ -2637,6 +2637,13 @@ void CG_AddPlayerWeapon( refEntity_t *parent, playerState_t *ps, centity_t *cent
 		flash.hModel = 0;
 	}
 
+	// RtcwPro cg_muzzleflash
+	// cg_muzzleFlash 2 will allow muzzle flash for movie making
+	if (cg_muzzleFlash.integer < 2 && (isPlayer || !cg_muzzleFlash.integer)) {
+
+		flash.hModel = 0;
+	}
+
 	// weaps with barrel smoke
 	if ( ps || cg.renderingThirdPerson || !isPlayer ) {
 		if ( weaponNum == WP_STEN || weaponNum == WP_VENOM ) {
@@ -4499,7 +4506,15 @@ void CG_FireWeapon( centity_t *cent ) {
 			CG_MachineGunEjectBrass( cent );
 		}
 
-		cent->muzzleFlashTime = cg.time;
+		//cg_muzzleflash
+		if (cg_muzzleFlash.integer == 2 || (cg_muzzleFlash.integer == 1 && cent->currentState.clientNum != cg.clientNum))
+		{
+			cent->muzzleFlashTime = cg.time;
+		}
+		else
+		{
+			cent->muzzleFlashTime = 0;
+		}
 
 		return;
 	}
@@ -4515,9 +4530,15 @@ void CG_FireWeapon( centity_t *cent ) {
 
 	cg.lastFiredWeapon = ent->weapon;   //----(SA)	added
 
-	// mark the entity as muzzle flashing, so when it is added it will
-	// append the flash to the weapon model
-	cent->muzzleFlashTime = cg.time;
+	//cg_muzzleflash
+	if (cg_muzzleFlash.integer == 2 || (cg_muzzleFlash.integer == 1 && cent->currentState.clientNum != cg.clientNum))
+	{
+		cent->muzzleFlashTime = cg.time;
+	}
+	else
+	{
+		cent->muzzleFlashTime = 0;
+	}
 
 	// RF, kick angles
 	if ( ent->number == cg.snap->ps.clientNum ) {
@@ -6008,17 +6029,37 @@ void CG_Bullet( vec3_t end, int sourceEntityNum, vec3_t normal, qboolean flesh, 
 				}
 			}
 
-			// if not flesh, then do a moving tracer
-			if ( flesh ) {
-				// draw a tracer
-				if ( !wolfkick && random() < cg_tracerChance.value ) {
-					CG_Tracer( start, end, 0 );
-				}
-			} else {    // (not flesh)
-				if ( otherEntNum2 >= 0 && otherEntNum2 != ENTITYNUM_NONE ) {
-					CG_SpawnTracer( otherEntNum2, start, end );
-				} else {
-					CG_SpawnTracer( sourceEntityNum, start, end );
+			if (cg_tracers.integer)
+			{
+				// if not flesh, then do a moving tracer
+				if ( flesh ) {
+					// draw a tracer
+					if ( !wolfkick && random() < cg_tracerChance.value ) {
+						CG_Tracer( start, end, 0 );
+					}
+				} else { // (not flesh)
+					if (sourceEntityNum >= 0 && sourceEntityNum != ENTITYNUM_NONE && cg_tracers.integer <= 3) {
+						switch(cg_tracers.integer){
+							case 0:
+								break;
+							case 1:
+								CG_SpawnTracer(sourceEntityNum, start, end);
+								break;
+							case 2:
+								if(sourceEntityNum == cg.clientNum){
+									CG_SpawnTracer(sourceEntityNum, start, end);
+								}
+								break;
+							case 3:
+								if(sourceEntityNum != cg.clientNum){
+									CG_SpawnTracer(sourceEntityNum, start, end);
+								} 
+								break;
+							default:
+								CG_SpawnTracer(sourceEntityNum, start, end);
+						}
+						
+					}
 				}
 			}
 		}
