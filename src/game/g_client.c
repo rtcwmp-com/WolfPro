@@ -1318,7 +1318,7 @@ void ClientUserinfoChanged( int clientNum ) {
 	}
 
 		s = Info_ValueForKey(userinfo, "cg_uinfo");
-	sscanf(s, "%i %i %i %i", &client->pers.antilag, &client->pers.hitSoundType, &client->pers.hitSoundBodyStyle, &client->pers.hitSoundHeadStyle);
+	sscanf(s, "%i %i %i %i %i", &client->pers.antilag, &client->pers.hitSoundType, &client->pers.hitSoundBodyStyle, &client->pers.hitSoundHeadStyle, &client->pers.clientFlags);
 
 
 	// check the item prediction
@@ -1695,13 +1695,13 @@ void ClientBegin( int clientNum ) {
 		//tent = G_TempEntity( ent->client->ps.origin, EV_PLAYER_TELEPORT_IN );
 		//tent->s.clientNum = ent->s.clientNum;
 
-		if ( g_gametype.integer != GT_TOURNAMENT ) {
-			// Ridah
-			if ( !(ent->r.svFlags & SVF_CASTAI) ) {
-				// done.
-				trap_SendServerCommand( -1, va( "print \"[lof]%s" S_COLOR_WHITE " [lon]entered the game\n\"", client->pers.netname ) );
-			}
-		}
+		// if ( g_gametype.integer != GT_TOURNAMENT ) {
+		// 	// Ridah
+		// 	if ( !(ent->r.svFlags & SVF_CASTAI) ) {
+		// 		// done.
+		// 		trap_SendServerCommand( -1, va( "print \"[lof]%s" S_COLOR_WHITE " [lon]entered the game\n\"", client->pers.netname ) );
+		// 	}
+		// }
 	}
 	G_LogPrintf( "ClientBegin: %i\n", clientNum );
 

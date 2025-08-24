@@ -352,6 +352,8 @@ vmCvar_t cg_reinforcementTimeProY;
 vmCvar_t cg_spawnTimer_set;         // spawntimer
 vmCvar_t cg_spawnTimer_period;      // spawntimer
 
+vmCvar_t cg_autoAction;
+
 typedef struct {
 	vmCvar_t    *vmCvar;
 	char        *cvarName;
@@ -594,7 +596,10 @@ cvarTable_t cvarTable[] = {
 	{ &cg_reinforcementTimeProX, "cg_reinforcementTimeProX", "145", CVAR_ARCHIVE },
 	{ &cg_reinforcementTimeProY, "cg_reinforcementTimeProY", "445", CVAR_ARCHIVE },
 	{ &cg_spawnTimer_set, "cg_spawnTimer_set", "-1", CVAR_TEMP },
-	{ &cg_spawnTimer_period, "cg_spawnTimer_period", "0", CVAR_TEMP }
+	{ &cg_spawnTimer_period, "cg_spawnTimer_period", "0", CVAR_TEMP },
+
+	// Autoaction
+	{ &cg_autoAction, "cg_autoAction", "0", CVAR_ARCHIVE }
 };
 int cvarTableSize = sizeof( cvarTable ) / sizeof( cvarTable[0] );
 
@@ -654,14 +659,7 @@ void CG_setClientFlags(void) {
 
 	cg.pmext.bAutoReload = (cg_autoReload.integer > 0);
 	trap_Cvar_Set("cg_uinfo", va("%d %d %d %d",
-		// // Client Flags
-		// (
-		// 	((cg_autoReload.integer > 0) ? CGF_AUTORELOAD : 0) |
-		// 	((cg_autoAction.integer & AA_STATSDUMP) ? CGF_STATSDUMP : 0) |
-		// 	((cg_autoactivate.integer > 0) ? CGF_AUTOACTIVATE : 0) |
-		// 	((cg_predictItems.integer > 0) ? CGF_PREDICTITEMS : 0)
-		// 	// Add more in here, as needed
-		// ),
+		
 
 		// // Timenudge
 		// int_cl_timenudge.integer,
@@ -675,7 +673,15 @@ void CG_setClientFlags(void) {
 		// hitsounds
 		cg_hitsounds.integer,
 		cg_hitsoundBodyStyle.integer,
-		cg_hitsoundHeadStyle.integer
+		cg_hitsoundHeadStyle.integer, 
+		// Client Flags
+		(
+			((cg_autoReload.integer > 0) ? CGF_AUTORELOAD : 0) |
+			((cg_autoAction.integer & AA_STATSDUMP) ? CGF_STATSDUMP : 0) |
+			((cg_autoactivate.integer > 0) ? CGF_AUTOACTIVATE : 0) |
+			((cg_predictItems.integer > 0) ? CGF_PREDICTITEMS : 0)
+			// Add more in here, as needed
+		)
 	));
 }
 
@@ -1153,6 +1159,9 @@ static void CG_RegisterSounds( void ) {
 	trap_S_RegisterSound( "sound/Loogie/spit.wav" );
 	trap_S_RegisterSound( "sound/Loogie/sizzle.wav" );
 */
+
+	cgs.media.alliesWin = trap_S_RegisterSound("sound/match/winallies_pro.wav");
+	cgs.media.axisWin = trap_S_RegisterSound("sound/match/winaxis_pro.wav");
 }
 
 
@@ -2552,3 +2561,7 @@ void CG_Shutdown( void ) {
 	}
 }
 
+
+void CG_printConsoleString( char *str ) {
+    CG_Printf( "%s", str ); // remove skipnotify  for CP
+}
