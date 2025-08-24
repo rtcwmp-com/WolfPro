@@ -483,11 +483,11 @@ enum eventList {
 #define JSON_KILLDATA 16  // include additional data on "kill event"
 
 typedef struct weapon_stat_s {
-	unsigned int kills;
-	unsigned int deaths;
-	unsigned int atts;
-	unsigned int hits;
-	unsigned int headshots;
+	int kills;
+	int deaths;
+	int atts;
+	int hits;
+	int headshots;
 } weapon_stat_t;
 
 typedef struct playerStats_s {

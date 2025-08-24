@@ -421,21 +421,25 @@ void G_deleteStats( int nClient ) {
 	trap_Cvar_Set( va( "wstats%i", nClient ), va( "%d", nClient ) );
 }
 
-int GetNextInt(char *str, char *end){
-	long int value = strtol(str, &end, 10);
-	if( value == 0L && end == str ){
-		return -1;
+qboolean GetNextInt(int *dst, char **str, char *end){
+	*dst = strtol(*str, &end, 10);
+	if( *dst == 0L && end == *str ){
+		return qfalse;
 	}
-	str = end;
-	return (int)value;
+	*str = end;
+	return qtrue;
 }
+
 
 // Parses weapon stat info for given ent
 //	---> The given string must be space delimited and contain only integers
 void G_parseStats( char *statsInfo ) {
 	char *tmp = statsInfo;
-	char* endptr;
-	unsigned int clientNum = GetNextInt(tmp, endptr);
+	char* endptr = NULL;
+	int clientNum = 0;
+	if (!GetNextInt(&clientNum, &tmp, endptr)) {
+		return;
+	}
 
 	if ( clientNum < 0 || clientNum > MAX_CLIENTS ) {
 		return;
@@ -443,19 +447,25 @@ void G_parseStats( char *statsInfo ) {
 
 	gclient_t *cl = &level.clients[clientNum];
 
-	cl->sess.stats.rounds = GetNextInt(tmp, endptr);
-	int weaponMask = GetNextInt(tmp, endptr);
-	if(weaponMask > 0){
-		for (int i = WS_KNIFE; i < WS_MAX; i++ ) {
-			if ( weaponMask & ( 1 << i ) ) {
-				cl->sess.stats.aWeaponStats[i].hits = GetNextInt(tmp, endptr);
-				cl->sess.stats.aWeaponStats[i].atts = GetNextInt(tmp, endptr);
-				cl->sess.stats.aWeaponStats[i].kills = GetNextInt(tmp, endptr);
-				cl->sess.stats.aWeaponStats[i].deaths = GetNextInt(tmp, endptr);
-				cl->sess.stats.aWeaponStats[i].headshots = GetNextInt(tmp, endptr);
+	if (!GetNextInt(&cl->sess.stats.rounds, &tmp, endptr)) {
+		return;
+	}
+
+	int weaponMask = 0;
+	if (GetNextInt(&weaponMask, &tmp, endptr)) {
+		if (weaponMask > 0) {
+			for (int i = WS_KNIFE; i < WS_MAX; i++) {
+				if (weaponMask & (1 << i)) {
+					GetNextInt(&cl->sess.stats.aWeaponStats[i].hits, &tmp, endptr);
+					GetNextInt(&cl->sess.stats.aWeaponStats[i].atts, &tmp, endptr);
+					GetNextInt(&cl->sess.stats.aWeaponStats[i].kills, &tmp, endptr);
+					GetNextInt(&cl->sess.stats.aWeaponStats[i].deaths, &tmp, endptr);
+					GetNextInt(&cl->sess.stats.aWeaponStats[i].headshots, &tmp, endptr);
+				}
 			}
 		}
 	}
+	
 	
 
 }
@@ -845,12 +855,7 @@ void G_matchInfoDump( unsigned int dwDumpType ) {
 
 	// RTCWPro - move the announcer sound from WM_DrawObjectives in cg, here,
 	// to at least temporarily fix whatevr is causing the cut off
-	char cs[MAX_STRING_CHARS];
-	char* buf;
-	int winner;
-	trap_GetConfigstring(CS_MULTI_MAPWINNER, cs, sizeof(cs));
-	buf = Info_ValueForKey(cs, "winner");
-	winner = atoi(buf);
+	
 
 	for ( i = 0; i < level.numConnectedClients; i++ )
 	{
@@ -918,8 +923,14 @@ void G_matchInfoDump( unsigned int dwDumpType ) {
 
    // this will all be redone in a much more efficient way but since time is limited and with no real direction...it is done the lazy way
     if (g_gameStatslog.integer) {
-        qboolean wstats;
-        wstats = ((g_gameStatslog.integer & JSON_WSTAT) ? qtrue : qfalse);
+		//char cs[MAX_STRING_CHARS];
+		//char* buf;
+		//int winner;
+		//trap_GetConfigstring(CS_MULTI_MAPWINNER, cs, sizeof(cs));
+		//buf = Info_ValueForKey(cs, "winner");
+		//winner = atoi(buf);
+  //      qboolean wstats;
+  //      wstats = ((g_gameStatslog.integer & JSON_WSTAT) ? qtrue : qfalse);
         //G_writeGameLogEnd();  // write last event and close the gamelog array...will provide better solution later
         //G_writeGameInfo(winner);  // write out the game info relating to the match & round
 
