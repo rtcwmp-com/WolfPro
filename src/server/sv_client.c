@@ -1402,7 +1402,7 @@ void MergeUserCmds(client_t *cl){
 	int32_t right = 0;
 	int32_t up = 0;
 	int32_t kick = 0;
-	
+
 	for(int i = 0; i < merge->count; i++){
 		usercmd_t *cur = &merge->userCmds[i];
 		dest->buttons |= cur->buttons;
@@ -1412,9 +1412,13 @@ void MergeUserCmds(client_t *cl){
 		up += cur->upmove;
 		kick += cur->wolfkick;
 
+		// never overwrite a merged ucmd's weapon if panzer was used
+		if(cur->weapon != 0 && dest->weapon != WP_PANZERFAUST){
+			dest->weapon = cur->weapon;
+		}
+
 	}
 	VectorCopy(last->angles, dest->angles);
-	dest->weapon = last->weapon;
 	dest->serverTime = last->serverTime;
 	dest->identClient = last->identClient;
 	dest->mpSetup = last->mpSetup;
