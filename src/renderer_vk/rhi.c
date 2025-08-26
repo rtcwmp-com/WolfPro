@@ -688,7 +688,7 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
 	rasterizer.polygonMode = graphicsDesc->wireframe ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
 	rasterizer.cullMode = GetVkCullModeFlags(graphicsDesc->cullType);
 	rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
-	rasterizer.depthClampEnable = vk.deviceFeatures.depthClamp;
+	//rasterizer.depthClampEnable = vk.deviceFeatures.depthClamp;
 	rasterizer.rasterizerDiscardEnable = VK_FALSE;
 	rasterizer.lineWidth = 1.0f;
 
@@ -696,7 +696,8 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
     if(graphicsDesc->polygonOffset){
         rasterizer.depthBiasEnable = VK_TRUE;
         rasterizer.depthBiasConstantFactor = -1.0f;
-        rasterizer.depthBiasSlopeFactor = -1.0f;
+        rasterizer.depthBiasSlopeFactor = -2.0f;
+        rasterizer.depthClampEnable = VK_FALSE;
     }
 
 	// VkPipelineMultisampleStateCreateInfo multiSampling {};

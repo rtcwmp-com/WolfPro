@@ -488,7 +488,7 @@ void PickPhysicalDevice(void)
     ri.Printf(PRINT_ALL, "Physical device selected: %s\n", vk.deviceProperties.deviceName);
 }
 
-static void CreateQueryPool(){
+static void CreateQueryPool(void){
     for(int i = 0; i < RHI_FRAMES_IN_FLIGHT; i++){
         VkQueryPoolCreateInfo query_pool_info = {};
         query_pool_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
@@ -499,7 +499,7 @@ static void CreateQueryPool(){
     
 }
 
-static void CreateDevice()
+static void CreateDevice(void)
 {
     uint32_t queueCount = 0;
     float queuePriority = 1.0f;
@@ -567,7 +567,7 @@ static void CreateDevice()
     vkGetDeviceQueue(vk.device, vk.queues.presentFamily, 0, &vk.queues.present);
 }
 
-static void CreateAllocator()
+static void CreateAllocator(void)
 {
     VmaAllocatorCreateInfo allocatorInfo = {};
     allocatorInfo.vulkanApiVersion = MINIMUM_VULKAN_API_VERSION;
@@ -672,7 +672,7 @@ VkImageAspectFlags GetVkImageAspectFlags(VkFormat format)
 }
 
 
-static void CreateSwapChain()
+static void CreateSwapChain(void)
 {
     VkSurfaceCapabilitiesKHR caps;
     VK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk.physicalDevice, vk.surface, &caps));
@@ -939,7 +939,7 @@ void RecreateSwapchain(void){
 //     vk.tempCommandBuffer = buffer;
 // }
 
-static void CreateCommandPool()
+static void CreateCommandPool(void)
 {
     VkCommandPoolCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -1268,7 +1268,7 @@ static void CreateCommandPool()
 
 
 
-void RHI_BeginFrame() {
+void RHI_BeginFrame(void) {
     if(r_swapInterval->modified){
         qbool currentVsync = r_swapInterval->integer != 0;
         if(currentVsync != vk.vsync){
@@ -1304,7 +1304,7 @@ void RHI_BeginFrame() {
     // BuildCommandBuffer();
 }
 
-void RHI_EndFrame() {
+void RHI_EndFrame(void) {
     int64_t currentTime = Sys_Microseconds();
     static int64_t previousTime = INT64_MIN;
     const int64_t us = currentTime - previousTime;
