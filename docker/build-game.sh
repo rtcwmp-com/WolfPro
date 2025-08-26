@@ -24,6 +24,6 @@ docker run -it \
 ${argv[0]}:${argv[1]} \
 make all
 
-mv $RTCW_SRC/build/rtcwmod/rtcwmod_bin.pk3 $RTCW_SRC/build/rtcwmod/rtcwmod_bin-$(date +%Y%m%d).pk3
+mv $RTCW_SRC/build/wolfpro/wolfpro_bin.pk3 $RTCW_SRC/build/wolfpro/wolfpro_bin-$(date +%Y%m%d).pk3
 
 bash build-server.sh ${argv[0]} ${argv[1]}
