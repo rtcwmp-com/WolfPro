@@ -79,9 +79,9 @@ run_mutations() {
     fi
 
     if [ "${map_mutated}" == "1" ]; then
-        mkdir -p "${GAME_BASE}/wolfpro/maps"
+        mkdir -p "${GAME_BASE}/rtcwmod/maps"
         mv "${GAME_BASE}/tmp/maps/${map}.bsp" \
-            "${GAME_BASE}/wolfpro/maps/${map}.bsp"
+            "${GAME_BASE}/rtcwmod/maps/${map}.bsp"
     else
         echo "No mutations were made to ${map}"
     fi
@@ -111,7 +111,7 @@ for map in $MAPS; do
     fi
 
     # This is the place we run mutations on the BSPs contained within maps.
-    rm -rf "${GAME_BASE}/wolfpro/maps/${map}.bsp"
+    rm -rf "${GAME_BASE}/rtcwmod/maps/${map}.bsp"
     mkdir -p "${GAME_BASE}/tmp/"
     unzip "${GAME_BASE}/main/${map}.pk3" -d "${GAME_BASE}/tmp/"
 
@@ -122,7 +122,7 @@ done
 
 # We need to still run mutations on default maps if they exist.
 for map in "${!default_maps[@]}"; do
-    rm -rf "${GAME_BASE}/wolfpro/maps/${map}.bsp"
+    rm -rf "${GAME_BASE}/rtcwmod/maps/${map}.bsp"
 
     echo "Running mutations on default map ${map}"
     mkdir -p "${GAME_BASE}/tmp/maps/"
@@ -138,21 +138,21 @@ done
 
 # We need to cleanup mapscripts on every invokation as we don't know what is
 # going to exist in the settings directory.
-for mapscript in "${GAME_BASE}/wolfpro/maps/"*.script; do
+for mapscript in "${GAME_BASE}/rtcwmod/maps/"*.script; do
     [ -f "${mapscript}" ] || break
     rm -rf "${mapscript}"
 done
 
 for mapscript in "${SETTINGS_BASE}/mapscripts/"*.script; do
     [ -f "${mapscript}" ] || break
-    cp "${mapscript}" "${GAME_BASE}/wolfpro/maps/"
+    cp "${mapscript}" "${GAME_BASE}/rtcwmod/maps/"
 done
 
 # Only configs live within the config directory so we don't need to be careful
 # about just recreating this directory.
-rm -rf "${GAME_BASE}/wolfpro/configs/"
-mkdir -p "${GAME_BASE}/wolfpro/configs/"
-cp "${SETTINGS_BASE}/configs/"*.config "${GAME_BASE}/wolfpro/configs/"
+rm -rf "${GAME_BASE}/rtcwmod/configs/"
+mkdir -p "${GAME_BASE}/rtcwmod/configs/"
+cp "${SETTINGS_BASE}/configs/"*.config "${GAME_BASE}/rtcwmod/configs/"
 
 # We need to set g_needpass if a password is set
 if [ "${CONF_PASSWORD}" != "" ]; then
@@ -183,7 +183,7 @@ binary="${GAME_BASE}/wolfded.i386"
 # Exec into the game
 exec "${binary}" \
     +set dedicated 2 \
-    +set fs_game "wolfpro" \
+    +set fs_game "rtcwmod" \
     +set com_hunkmegs 512 \
     +set vm_game 0 \
     +set ttycon 0 \

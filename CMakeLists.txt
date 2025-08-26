@@ -29,7 +29,7 @@ include(CMakeDependentOption)
 # General
 #-----------------------------------------------------------------
 
-set(MODNAME "wolfpro" CACHE STRING "Default mod name")
+set(MODNAME "rtcwmod" CACHE STRING "Default mod name")
 
 #-----------------------------------------------------------------
 # Options

@@ -133,7 +133,7 @@ void SV_GetChallenge( netadr_t from ) {
 		char game[1024];
 
 		game[0] = 0;
-		fs = Cvar_Get( "fs_game", "wolfpro", CVAR_INIT | CVAR_SYSTEMINFO );
+		fs = Cvar_Get( "fs_game", "rtcwmod", CVAR_INIT | CVAR_SYSTEMINFO );
 		if ( fs && fs->string[0] != 0 ) {
 			strcpy( game, fs->string );
 		}
