@@ -50,7 +50,6 @@ if(BUILD_CLIENT)
 	add_library(vk_renderer_libs INTERFACE)
 
 	find_package(Vulkan REQUIRED)
-	target_link_libraries(vk_renderer_libs INTERFACE ${Vulkan_LIBRARIES})
 	target_include_directories(vk_renderer_libs INTERFACE ${Vulkan_INCLUDE_DIR})
 
 	target_link_libraries(renderer_vk_libraries INTERFACE vk_renderer_libs)
