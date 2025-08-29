@@ -45,6 +45,8 @@ int autoReloadModificationCount = -1;
 void CG_Init( int serverMessageNum, int serverCommandSequence, int clientNum );
 void CG_Shutdown( void );
 
+static byte interopIn[4096];
+static byte interopOut[4096];
 
 /*
 ================
@@ -92,6 +94,27 @@ int vmMain( int command, int arg0, int arg1, int arg2, int arg3, int arg4, int a
 		return CG_GetTag( arg0, (char *)arg1, (orientation_t *)arg2 );
 	case CG_CHECKCENTERVIEW:
 		return CG_CheckCenterView();
+	case CG_NDP_ANALYZE_COMMAND:
+		CG_NDP_AnalyzeCommand(arg0);
+		return 0;
+	case CG_NDP_GENERATE_COMMANDS:
+		//item timer commands
+		//special strings to synchronize 
+		return 0;
+	case CG_NDP_IS_CS_NEEDED:
+		return 0;
+	case CG_NDP_ANALYZE_SNAPSHOT:
+		CG_NDP_AnalyzeSnapshot(arg0);
+		return 0;
+	case CG_NDP_END_ANALYSIS:
+		CG_NDP_EndAnalysis((char*)arg0, arg1, arg2, (qboolean)arg3);
+		return 0;
+	case CG_IMGUI_UPDATE:
+		CG_ImGUI_Update();
+		return 0;
+	case CG_IMGUI_SHARE:
+		CG_ImGUI_Share((void*)arg0, (void*)arg1, (void*)arg2, (void**)arg3);
+		return 0;
 	default:
 		CG_Error( "vmMain: unknown command %i", command );
 		break;
@@ -301,6 +324,39 @@ vmCvar_t cg_customCrosshairYGap;
 vmCvar_t cg_customCrosshairColor;
 vmCvar_t cg_customCrosshairColorAlt;
 vmCvar_t cg_customCrosshairVMirror;
+
+vmCvar_t cg_showPriorityText;
+vmCvar_t cg_priorityTextX;
+vmCvar_t cg_priorityTextY;
+
+vmCvar_t cg_uinfo;
+
+vmCvar_t cg_hitsounds;
+vmCvar_t cg_hitsoundBodyStyle;
+vmCvar_t cg_hitsoundHeadStyle;
+
+// RT and ERT
+vmCvar_t cg_drawReinforcementTime;
+vmCvar_t cg_drawEnemyTimer;
+vmCvar_t cg_enemyTimerColor;
+vmCvar_t cg_enemyTimerX;
+vmCvar_t cg_enemyTimerY;
+vmCvar_t cg_enemyTimerProX;
+vmCvar_t cg_enemyTimerProY;
+vmCvar_t cg_reinforcementTimeColor;
+vmCvar_t cg_reinforcementTimeX;
+vmCvar_t cg_reinforcementTimeY;
+vmCvar_t cg_reinforcementTimeProX;
+vmCvar_t cg_reinforcementTimeProY;
+
+vmCvar_t cg_spawnTimer_set;         // spawntimer
+vmCvar_t cg_spawnTimer_period;      // spawntimer
+
+vmCvar_t cg_autoAction;
+
+vmCvar_t cg_muzzleFlash;
+vmCvar_t cg_crosshairPulse;
+vmCvar_t cg_tracers;
 
 typedef struct {
 	vmCvar_t    *vmCvar;
@@ -518,7 +574,40 @@ cvarTable_t cvarTable[] = {
 	{ &cg_customCrosshairYOffset, "cg_customCrosshairYOffset", "0", CVAR_ARCHIVE },
 	{ &cg_customCrosshairXGap, "cg_customCrosshairXGap", "0", CVAR_ARCHIVE },
 	{ &cg_customCrosshairYGap, "cg_customCrosshairYGap", "0", CVAR_ARCHIVE },
-	{ &cg_customCrosshairVMirror, "cg_customCrosshairVMirror", "1", CVAR_ARCHIVE }
+	{ &cg_customCrosshairVMirror, "cg_customCrosshairVMirror", "1", CVAR_ARCHIVE }, 
+
+	{ &cg_showPriorityText, "cg_showPriorityText", "1", CVAR_ARCHIVE },
+	{ &cg_priorityTextX, "cg_priorityTextX", "0", CVAR_ARCHIVE },
+	{ &cg_priorityTextY, "cg_priorityTextY", "350", CVAR_ARCHIVE },
+
+	{ &cg_uinfo, "cg_uinfo", "0", CVAR_ROM | CVAR_USERINFO },
+
+	{ &cg_hitsounds, "cg_hitsounds", "0", CVAR_ARCHIVE},
+	{ &cg_hitsoundBodyStyle, "cg_hitsoundBodyStyle", "1", CVAR_ARCHIVE },
+	{ &cg_hitsoundHeadStyle, "cg_hitsoundHeadStyle", "1", CVAR_ARCHIVE }, 
+
+	// RT and ERT
+	{ &cg_drawReinforcementTime, "cg_drawReinforcementTime", "1", CVAR_ARCHIVE },
+	{ &cg_drawEnemyTimer, "cg_drawEnemyTimer", "1", CVAR_ARCHIVE },
+	{ &cg_enemyTimerColor, "cg_enemyTimerColor", "green", CVAR_ARCHIVE },
+	{ &cg_enemyTimerX, "cg_enemyTimerX", "98", CVAR_ARCHIVE },
+	{ &cg_enemyTimerY, "cg_enemyTimerY", "60", CVAR_ARCHIVE },
+	{ &cg_enemyTimerProX, "cg_enemyTimerProX", "185", CVAR_ARCHIVE },
+	{ &cg_enemyTimerProY, "cg_enemyTimerProY", "445", CVAR_ARCHIVE },
+	{ &cg_reinforcementTimeColor, "cg_reinforcementTimeColor", "red", CVAR_ARCHIVE },
+	{ &cg_reinforcementTimeX, "cg_reinforcementTimeX", "86", CVAR_ARCHIVE },
+	{ &cg_reinforcementTimeY, "cg_reinforcementTimeY", "70", CVAR_ARCHIVE },
+	{ &cg_reinforcementTimeProX, "cg_reinforcementTimeProX", "145", CVAR_ARCHIVE },
+	{ &cg_reinforcementTimeProY, "cg_reinforcementTimeProY", "445", CVAR_ARCHIVE },
+	{ &cg_spawnTimer_set, "cg_spawnTimer_set", "-1", CVAR_TEMP },
+	{ &cg_spawnTimer_period, "cg_spawnTimer_period", "0", CVAR_TEMP },
+
+	// Autoaction
+	{ &cg_autoAction, "cg_autoAction", "0", CVAR_ARCHIVE },
+
+	{ &cg_muzzleFlash, "cg_muzzleFlash", "1", CVAR_ARCHIVE },
+	{ &cg_tracers, "cg_tracers", "1", CVAR_ARCHIVE },
+	{ &cg_crosshairPulse, "cg_crosshairPulse", "1", CVAR_ARCHIVE }
 };
 int cvarTableSize = sizeof( cvarTable ) / sizeof( cvarTable[0] );
 
@@ -570,6 +659,40 @@ static void CG_ForceModelChange( void ) {
 	}
 }
 
+void CG_setClientFlags(void) {
+
+	if (cg.demoPlayback) {
+		return;
+	}
+
+	cg.pmext.bAutoReload = (cg_autoReload.integer > 0);
+	trap_Cvar_Set("cg_uinfo", va("%d %d %d %d",
+		
+
+		// // Timenudge
+		// int_cl_timenudge.integer,
+		// // MaxPackets
+		// int_cl_maxpackets.integer,
+		
+		// // GUID
+		// str_cl_guid.string,
+		// Antilag
+		cg_antilag.integer,
+		// hitsounds
+		cg_hitsounds.integer,
+		cg_hitsoundBodyStyle.integer,
+		cg_hitsoundHeadStyle.integer, 
+		// Client Flags
+		(
+			((cg_autoReload.integer > 0) ? CGF_AUTORELOAD : 0) |
+			((cg_autoAction.integer & AA_STATSDUMP) ? CGF_STATSDUMP : 0) |
+			((cg_autoactivate.integer > 0) ? CGF_AUTOACTIVATE : 0) |
+			((cg_predictItems.integer > 0) ? CGF_PREDICTITEMS : 0)
+			// Add more in here, as needed
+		)
+	));
+}
+
 /*
 =================
 CG_UpdateCvars
@@ -597,6 +720,8 @@ void CG_UpdateCvars( void ) {
 		}
 		autoReloadModificationCount = cg_autoReload.modificationCount;
 	}
+
+	CG_setClientFlags();
 }
 
 
@@ -819,38 +944,17 @@ static void CG_RegisterSounds( void ) {
 	CG_SoundInit();
 	// done.
 
-// JPW NERVE
-	if ( cg_gameType.integer != GT_SINGLE_PLAYER ) {
-		cgs.media.n_health = trap_S_RegisterSound( "sound/multiplayer/health_pickup.wav" );
-	} else {
-		cgs.media.n_health = trap_S_RegisterSound( "sound/items/n_health.wav" );
-	}
-// jpw
+	cgs.media.n_health = trap_S_RegisterSound( "sound/multiplayer/health_pickup.wav" );
+	
 	cgs.media.noFireUnderwater = trap_S_RegisterSound( "sound/weapons/underwaterfire.wav" ); //----(SA)	added
 
 	cgs.media.snipersound = trap_S_RegisterSound( "sound/weapons/mauser/mauserf1.wav" );
 	cgs.media.tracerSound = trap_S_RegisterSound( "sound/weapons/machinegun/buletby1.wav" );
 	cgs.media.selectSound = trap_S_RegisterSound( "sound/weapons/change.wav" );
-// JPW NERVE
-	if ( cg_gameType.integer != GT_SINGLE_PLAYER ) {
-		cgs.media.wearOffSound = trap_S_RegisterSound( "sound/multiplayer/respawn.wav" );
-		/*	cgs.media.twoMinuteSound_g = trap_S_RegisterSound("sound/multiplayer/axis/g-twominutes1.wav");
-		   cgs.media.twoMinuteSound_a = trap_S_RegisterSound("sound/multiplayer/allies/a-twominutes1.wav");
-		   cgs.media.thirtySecondSound_g = trap_S_RegisterSound("sound/multiplayer/axis/g-thirtyseconds1.wav");
-		   cgs.media.thirtySecondSound_a = trap_S_RegisterSound("sound/multiplayer/allies/a-thirtyseconds1.wav");*/
-/*		if( cg.twoMinuteSound_g[0] != '0' )
-			cgs.media.twoMinuteSound_g = trap_S_RegisterSound(cg.twoMinuteSound_g);
-		if( cg.twoMinuteSound_a[0] != '0' )
-			cgs.media.twoMinuteSound_a = trap_S_RegisterSound(cg.twoMinuteSound_a);
-		if( cg.thirtySecondSound_g[0] != '0' )
-			cgs.media.thirtySecondSound_g = trap_S_RegisterSound(cg.thirtySecondSound_g);
-		if( cg.thirtySecondSound_a[0] != '0' )
-			cgs.media.thirtySecondSound_a = trap_S_RegisterSound(cg.thirtySecondSound_a);*/
-		trap_S_RegisterSound( "sound/multiplayer/land_hurt.wav" );
-	} else {
-		cgs.media.wearOffSound = trap_S_RegisterSound( "sound/items/wearoff.wav" );
-	}
-// jpw
+
+	cgs.media.wearOffSound = trap_S_RegisterSound( "sound/multiplayer/respawn.wav" );
+	trap_S_RegisterSound( "sound/multiplayer/land_hurt.wav" );
+
 	cgs.media.useNothingSound = trap_S_RegisterSound( "sound/items/use_nothing.wav" );
 	cgs.media.gibSound = trap_S_RegisterSound( "sound/player/gibsplt1.wav" );
 	//cgs.media.gibBounce1Sound = trap_S_RegisterSound( "sound/player/gibimp1.wav" );
@@ -1063,6 +1167,9 @@ static void CG_RegisterSounds( void ) {
 	trap_S_RegisterSound( "sound/Loogie/spit.wav" );
 	trap_S_RegisterSound( "sound/Loogie/sizzle.wav" );
 */
+
+	cgs.media.alliesWin = trap_S_RegisterSound("sound/match/winallies_pro.wav");
+	cgs.media.axisWin = trap_S_RegisterSound("sound/match/winaxis_pro.wav");
 }
 
 
@@ -1465,6 +1572,9 @@ static void CG_RegisterGraphics( void ) {
 		Com_sprintf( name, sizeof( name ), "models/mapobjects/debris/personal%i.md3", i + 1 );
 		cgs.media.shardJunk[i] = trap_R_RegisterModel( name );
 	}
+
+	cgs.media.exclamationIcon = trap_R_RegisterShaderNoMip("gfx/2d/treasure");
+	cgs.media.skullIcon = trap_R_RegisterShaderNoMip("gfx/2d/multi_dead");
 
 	memset( cg_items, 0, sizeof( cg_items ) );
 	memset( cg_weapons, 0, sizeof( cg_weapons ) );
@@ -2027,9 +2137,6 @@ static clientInfo_t * CG_InfoFromScoreIndex( int index, int team, int *scoreInde
 }
 
 static const char *CG_FeederItemText( float feederID, int index, int column, qhandle_t *handle ) {
-#ifdef MISSIONPACK
-	gitem_t *item;
-#endif  // #ifdef MISSIONPACK
 	int scoreIndex = 0;
 	clientInfo_t *info = NULL;
 	int team = -1;
@@ -2049,49 +2156,6 @@ static const char *CG_FeederItemText( float feederID, int index, int column, qha
 	if ( info && info->infoValid ) {
 		switch ( column ) {
 		case 0:
-#ifdef MISSIONPACK
-			if ( info->powerups & ( 1 << PW_NEUTRALFLAG ) ) {
-				item = BG_FindItemForPowerup( PW_NEUTRALFLAG );
-				*handle = cg_items[ ITEM_INDEX( item ) ].icon;
-			} else if ( info->powerups & ( 1 << PW_REDFLAG ) ) {
-				item = BG_FindItemForPowerup( PW_REDFLAG );
-				*handle = cg_items[ ITEM_INDEX( item ) ].icon;
-			} else if ( info->powerups & ( 1 << PW_BLUEFLAG ) ) {
-				item = BG_FindItemForPowerup( PW_BLUEFLAG );
-				*handle = cg_items[ ITEM_INDEX( item ) ].icon;
-			} else {
-				if ( info->botSkill > 0 && info->botSkill <= 5 ) {
-					*handle = cgs.media.botSkillShaders[ info->botSkill - 1 ];
-				} else if ( info->handicap < 100 ) {
-					return va( "%i", info->handicap );
-				}
-			}
-			break;
-		case 1:
-			if ( team == -1 ) {
-				return "";
-			} else {
-				*handle = CG_StatusHandle( info->teamTask );
-			}
-			break;
-		case 2:
-			if ( cg.snap->ps.stats[ STAT_CLIENTS_READY ] & ( 1 << sp->client ) ) {
-				return "Ready";
-			}
-			if ( team == -1 ) {
-				if ( cgs.gametype == GT_TOURNAMENT ) {
-					return va( "%i/%i", info->wins, info->losses );
-				} else if ( info->infoValid && info->team == TEAM_SPECTATOR ) {
-					return "Spectator";
-				} else {
-					return "";
-				}
-			} else {
-				if ( info->teamLeader ) {
-					return "Leader";
-				}
-			}
-#endif  // #ifdef MISSIONPACK
 			break;
 		case 3:
 			return info->name;
@@ -2157,14 +2221,6 @@ static int CG_OwnerDrawWidth( int ownerDraw, float scale ) {
 	case CG_KILLER:
 		return CG_Text_Width( CG_GetKillerText(), scale, 0 );
 		break;
-#ifdef MISSIONPACK
-	case CG_RED_NAME:
-		return CG_Text_Width( cg_redTeamName.string, scale, 0 );
-		break;
-	case CG_BLUE_NAME:
-		return CG_Text_Width( cg_blueTeamName.string, scale, 0 );
-		break;
-#endif
 
 	}
 	return 0;
@@ -2297,6 +2353,60 @@ void CG_ClearTrails( void );
 extern qboolean initparticles;
 void CG_ClearParticles( void );
 
+#define GET_TRAP(Name) \
+	do { \
+		rtcwPro_ext.Name = 0; \
+		if (trap_GetValue(extValue, sizeof(extValue), #Name) && \
+			sscanf(extValue, "%d", &syscallId) == 1 && \
+			syscallId != 0) { \
+			rtcwPro_ext.Name = syscallId; \
+		} \
+	} while (0)
+
+
+void CG_LoadExtensions(void) {
+
+	cgExt_t rtcwPro_ext;
+
+	int hasTrap_GetValue = trap_Cvar_VariableIntegerValue("//trap_GetValue");
+
+	if (hasTrap_GetValue == 0) {
+		// Engine extensions are not supported on the client
+		return;
+	}
+	else {
+		// Begin loading supported extensions...
+		char extValue[11];
+		int syscallId;
+
+		GET_TRAP(trap_LocateInteropData);
+		if (rtcwPro_ext.trap_LocateInteropData){
+			memset(interopIn, 0, sizeof(interopIn));
+			memset(interopOut, 0, sizeof(interopOut));
+			trap_LocateInteropData(interopIn, sizeof(interopIn), interopOut, sizeof(interopOut));
+		}
+
+		GET_TRAP(trap_CNQ3_NDP_Enable);
+		GET_TRAP(trap_CNQ3_NDP_Seek);
+		GET_TRAP(trap_CNQ3_NDP_ReadUntil);
+		GET_TRAP(trap_CNQ3_NDP_StartVideo);
+		GET_TRAP(trap_CNQ3_NDP_StopVideo);
+
+		if (rtcwPro_ext.trap_CNQ3_NDP_Enable &&
+			rtcwPro_ext.trap_CNQ3_NDP_Seek &&
+			rtcwPro_ext.trap_CNQ3_NDP_ReadUntil &&
+			rtcwPro_ext.trap_CNQ3_NDP_StartVideo &&
+			rtcwPro_ext.trap_CNQ3_NDP_StopVideo) {
+			cg.ndpDemoEnabled = trap_CNQ3_NDP_Enable();
+		}
+		else {
+			cg.ndpDemoEnabled = qfalse;
+		}
+
+		GET_TRAP(trap_CL_AddGuiMenu);
+	}
+}
+
 /*
 =================
 CG_Init
@@ -2359,6 +2469,8 @@ void CG_Init( int serverMessageNum, int serverCommandSequence, int clientNum ) {
 
 	s = CG_ConfigString( CS_LEVEL_START_TIME );
 	cgs.levelStartTime = atoi( s );
+
+	CG_ParseReinforcementTimes( CG_ConfigString( CS_REINFSEEDS ) );
 
 // JPW NERVE -- pick a direction for smoke drift on the client -- cheap trick because it can be different on different clients, but who cares?
 	cgs.smokeWindDir = crandom();
@@ -2425,6 +2537,14 @@ void CG_Init( int serverMessageNum, int serverCommandSequence, int clientNum ) {
 	}
 	// jpw
 	// -NERVE - SMF
+
+	CG_LoadExtensions();
+}
+
+static void SaveSession(void)
+{
+	//What else needs to be saved? Pause states? 
+	trap_Cvar_Set("demo_SessionData", va("%d %f", m_currServerTime, cg_timescale.value ));
 }
 
 /*
@@ -2437,5 +2557,19 @@ Called before every level change or subsystem restart
 void CG_Shutdown( void ) {
 	// some mods may need to do cleanup work here,
 	// like closing files or archiving session data
+	if (cg.demoPlayback && cg.ndpDemoEnabled) {
+		ndp_myKillsSize = 0;
+		ndp_alliesWinsSize = 0;
+		ndp_axisWinsSize = 0;
+		ndp_round1EndSize = 0;
+		ndp_round2EndSize = 0;
+		ndp_docDropSize = 0;
+		ndp_docPickupSize = 0;
+		SaveSession();
+	}
 }
 
+
+void CG_printConsoleString( char *str ) {
+    CG_Printf( "%s", str ); // remove skipnotify  for CP
+}

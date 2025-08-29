@@ -16,7 +16,10 @@ Prints the list of all the restricted/controlled cvars on a server.
 */
 void Cvar_RestrictedList_f(void) {
 	cvar_rest_t* var;
-	int i, j = 0, k = 0, v = 0;
+	int i, j = 0;
+#ifndef DEDICATED
+	int v = 0;
+#endif
 
 //#ifndef _DEBUG
 //	if (!com_dedicated->integer && !clientIsConnected) {
@@ -72,16 +75,18 @@ void Cvar_RestrictedList_f(void) {
 #endif
 #endif
 		j++;
+#ifndef DEDICATED
 		if (var->flagged) {
 			v++;
 		}
+#endif
 	}
 
 #ifdef DEDICATED
 	if (i != j) {
 		Com_Printf("\nIgnored cvars due wrong values:\n^7-----------------------------------------\n");
 
-		for (var = cvar_rest_vars; var; var = var->next, k++) {
+		for (var = cvar_rest_vars; var; var = var->next) {
 
 			if (var->type != SVC_NONE) {
 				continue;
@@ -119,7 +124,7 @@ void Cvar_Rest_Reset_Single(cvar_rest_t* var) {
 		Z_Free(var->sVal2);
 	}
 
-	memset(var, 0, sizeof(var));
+	memset(var, 0, sizeof(cvar_rest_t));
 }
 
 /*
@@ -304,7 +309,7 @@ static qboolean Cvar_Rest_ValidateString(const char* s) {
 	if (!s) {
 		return qfalse;
 	}
-	if (strchr(s, '//')) {
+	if (strchr(s, '/') && strchr(s + 1, '/')) {
 		return qfalse;
 	}
 	return Cvar_ValidateString(s);

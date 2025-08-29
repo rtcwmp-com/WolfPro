@@ -2813,7 +2813,7 @@ we are not interested in a download string format, we want something human-reada
 */
 qboolean FS_ComparePaks( char *neededpaks, int len, qboolean dlstring ) {
 	searchpath_t    *sp;
-	qboolean havepak, badchecksum;
+	qboolean havepak;
 	int i;
 
 	if ( !fs_numServerReferencedPaks ) {
@@ -2824,7 +2824,6 @@ qboolean FS_ComparePaks( char *neededpaks, int len, qboolean dlstring ) {
 
 	for ( i = 0 ; i < fs_numServerReferencedPaks ; i++ ) {
 		// Ok, see if we have this pak file
-		badchecksum = qfalse;
 		havepak = qfalse;
 
 		// never autodownload any of the id paks
@@ -2991,7 +2990,7 @@ static void FS_Startup( const char *gameName ) {
 		homePath = fs_basepath->string;
 	}
 	fs_homepath = Cvar_Get( "fs_homepath", homePath, CVAR_INIT );
-	fs_gamedirvar = Cvar_Get( "fs_game", "rtcwmod", CVAR_INIT | CVAR_SYSTEMINFO );
+	fs_gamedirvar = Cvar_Get( "fs_game", "wolfpro", CVAR_INIT | CVAR_SYSTEMINFO );
 	fs_restrict = Cvar_Get( "fs_restrict", "", CVAR_INIT );
 
 	// add search path elements in reverse priority order
@@ -3034,7 +3033,7 @@ static void FS_Startup( const char *gameName ) {
 	}
 
 	Com_ReadCDKey( BASEGAME );
-	fs = Cvar_Get( "fs_game", "rtcwmod", CVAR_INIT | CVAR_SYSTEMINFO );
+	fs = Cvar_Get( "fs_game", "wolfpro", CVAR_INIT | CVAR_SYSTEMINFO );
 	if ( fs && fs->string[0] != 0 ) {
 		Com_AppendCDKey( fs->string );
 	}
@@ -4001,4 +4000,13 @@ qboolean FS_VerifyPak( const char *pak ) {
 		}
 	}
 	return qfalse;
+}
+
+qbool FS_IsZipFile(fileHandle_t f)
+{
+	if (f < 0 || f >= MAX_FILE_HANDLES) {
+		Com_Error(ERR_DROP, "FS_IsZipFile: out of range");
+	}
+
+	return fsh[f].zipFile;
 }

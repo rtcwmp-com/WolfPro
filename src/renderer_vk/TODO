@@ -26,6 +26,8 @@ remove r_measureoverdraw
 remove r_ignoreglerrors r_drawBuffer and stereo
 remove R_GammaCorrect s_gammatable
 
+shader lookup referencing
+
 vid_restart variations:
     vid_restart -> full
     full-screen toggle -> full

@@ -171,6 +171,27 @@ vmCvar_t match_readypercent;
 vmCvar_t match_latejoin;
 vmCvar_t match_warmupDamage;
 
+ // unlagged
+vmCvar_t g_floatPlayerPosition;
+vmCvar_t g_delagHitscan;
+vmCvar_t g_maxExtrapolatedFrames;
+vmCvar_t g_maxLagCompensation;
+vmCvar_t g_delagMissiles;
+
+vmCvar_t match_timeoutlength;
+vmCvar_t match_timeoutcount;
+
+vmCvar_t g_allowForceTapout;
+
+vmCvar_t g_hitsounds;			// Hitsounds - Requires soundpack
+
+vmCvar_t g_allowEnemySpawnTimer;
+vmCvar_t g_spawnOffset;
+
+vmCvar_t g_gameStatslog; // temp cvar for event logging
+vmCvar_t g_preciseTimeSet;
+vmCvar_t sv_hostname;	// So it's more accesible
+
 cvarTable_t gameCvarTable[] = {
 	// don't override the cheat state set by the system
 	{ &g_cheats, "sv_cheats", "", 0, qfalse },
@@ -301,18 +322,36 @@ cvarTable_t gameCvarTable[] = {
 	// configured by the server admin, points to the web pages for the server
 	{&url, "URL", "", CVAR_SERVERINFO | CVAR_ARCHIVE, 0, qfalse},
 
-	{&g_antilag, "g_antilag", "0", CVAR_SERVERINFO | CVAR_ARCHIVE, 0, qfalse},
+	{&g_antilag, "g_antilag", "2", CVAR_SERVERINFO | CVAR_ARCHIVE, 0, qfalse},
 
 	{&g_dbgRevive, "g_dbgRevive", "0", 0, 0, qfalse},
 
 	//Match
-	{ &g_tournament, "g_tournament", "0", CVAR_ARCHIVE | CVAR_LATCH | CVAR_SERVERINFO, 0, qtrue },
-	{ &team_nocontrols, "team_nocontrols", "1", CVAR_ARCHIVE, 0, qfalse },
+	{ &g_tournament, "g_tournament", "1", CVAR_ARCHIVE | CVAR_LATCH | CVAR_SERVERINFO, 0, qtrue },
+	{ &team_nocontrols, "team_nocontrols", "0", CVAR_ARCHIVE, 0, qfalse },
 	{ &match_minplayers, "match_minplayers", "2", 0, 0, qfalse, qfalse },
 	{ &match_timeoutcount, "match_timeoutcount", "3", 0, 0, qfalse, qtrue },
 	{ &match_readypercent, "match_readypercent", "100", 0, 0, qfalse, qtrue },
 	{ &match_latejoin, "match_latejoin", "1", 0, 0, qfalse, qfalse },
-	{ &match_warmupDamage, "match_warmupDamage", "1", 0, 0, qfalse }
+	{ &match_warmupDamage, "match_warmupDamage", "1", 0, 0, qfalse }, 
+	{ &match_timeoutlength, "match_timeoutlength", "180", 0, 0, qfalse, qtrue },
+	{ &match_timeoutcount, "match_timeoutcount", "3", 0, 0, qfalse, qtrue },
+
+	{ &g_allowForceTapout, "g_allowForceTapout", "1", CVAR_ARCHIVE, qtrue },
+
+	// unlagged
+	{ &g_delagHitscan, "g_delagHitscan", "1", CVAR_ARCHIVE | CVAR_SERVERINFO, 0, qtrue },
+	{ &g_maxExtrapolatedFrames, "g_maxExtrapolatedFrames", "2", 0 , 0, qfalse },
+	{ &g_maxLagCompensation, "g_maxLagCompensation", "500", CVAR_ARCHIVE | CVAR_SERVERINFO, 0, qtrue },
+	{ &g_delagMissiles, "g_delagMissiles", "0", CVAR_ARCHIVE | CVAR_SERVERINFO, 0, qtrue }, 
+	
+	{ &g_hitsounds, "g_hitsounds", "1", CVAR_ARCHIVE, 0, qfalse },
+	{ &g_allowEnemySpawnTimer, "g_allowEnemySpawnTimer", "1", CVAR_ARCHIVE | CVAR_SERVERINFO, qtrue },
+	{ &g_spawnOffset, "g_spawnOffset", "9", CVAR_ARCHIVE, 0, qfalse, qfalse }, 
+
+	{ &g_gameStatslog, "g_gameStatslog", "16", CVAR_ARCHIVE, 0, qfalse  }, // default to 16 so the server saves JSON stats
+	{ &g_preciseTimeSet, "g_preciseTimeSet", "0", CVAR_WOLFINFO, 0, qfalse  },
+	{ &sv_hostname, "sv_hostname", "", CVAR_SERVERINFO, 0, qfalse }
 };
 
 // bk001129 - made static to avoid aliasing
@@ -463,7 +502,7 @@ void G_CheckForCursorHints( gentity_t *ent ) {
 	//gentity_t *traceEnt2 = 0; // JPW NERVE // TTimo unused
 	playerState_t *ps;
 	int hintType, hintDist, hintVal;
-	qboolean zooming, indirectHit;      // indirectHit means the checkent was not the ent hit by the trace (checkEnt!=traceEnt)
+	qboolean zooming;      // indirectHit means the checkent was not the ent hit by the trace (checkEnt!=traceEnt)
 	int trace_contents;                 // DHM - Nerve
 
 	// FIXME:	no need at all to do this trace/string comparison every frame.
@@ -482,7 +521,6 @@ void G_CheckForCursorHints( gentity_t *ent ) {
 		return;
 	}
 
-	indirectHit = qfalse;
 
 	zooming = (qboolean)( ps->eFlags & EF_ZOOMING );
 
@@ -507,11 +545,9 @@ void G_CheckForCursorHints( gentity_t *ent ) {
 	tr = &ps->serverCursorHintTrace;
 
 	// DHM - Nerve
-	if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
-		trace_contents = ( CONTENTS_TRIGGER | CONTENTS_SOLID | CONTENTS_PLAYERCLIP | CONTENTS_BODY );
-	} else {
-		trace_contents = ( CONTENTS_TRIGGER | CONTENTS_SOLID | CONTENTS_PLAYERCLIP | CONTENTS_BODY | CONTENTS_CORPSE );
-	}
+	
+	trace_contents = ( CONTENTS_TRIGGER | CONTENTS_SOLID | CONTENTS_PLAYERCLIP | CONTENTS_BODY | CONTENTS_CORPSE );
+	
 
 	trap_Trace( tr, offset, NULL, NULL, end, ps->clientNum, trace_contents );
 	// dhm - end
@@ -605,7 +641,6 @@ void G_CheckForCursorHints( gentity_t *ent ) {
 			}
 
 			if ( !Q_stricmp( traceEnt->classname, "func_invisible_user" ) ) {
-				indirectHit = qtrue;
 
 				// DHM - Nerve :: Put this back in only in multiplayer
 				if ( g_gametype.integer >= GT_WOLF && traceEnt->s.dmgFlags ) { // hint icon specified in entity
@@ -973,9 +1008,8 @@ void G_FindTeams( void ) {
 		}
 	}
 
-	if ( trap_Cvar_VariableIntegerValue( "g_gametype" ) != GT_SINGLE_PLAYER ) {
-		G_Printf( "%i teams with %i entities\n", c, c2 );
-	}
+	G_Printf( "%i teams with %i entities\n", c, c2 );
+	
 }
 
 
@@ -985,17 +1019,7 @@ G_RemapTeamShaders
 ==============
 */
 void G_RemapTeamShaders() {
-#ifdef MISSIONPACK
-	char string[1024];
-	float f = level.time * 0.001;
-	Com_sprintf( string, sizeof( string ), "team_icon/%s_red", g_redteam.string );
-	AddRemap( "textures/ctf2/redteam01", string, f );
-	AddRemap( "textures/ctf2/redteam02", string, f );
-	Com_sprintf( string, sizeof( string ), "team_icon/%s_blue", g_blueteam.string );
-	AddRemap( "textures/ctf2/blueteam01", string, f );
-	AddRemap( "textures/ctf2/blueteam02", string, f );
-	trap_SetConfigstring( CS_SHADERSTATE, BuildShaderStateConfig() );
-#endif
+
 }
 
 
@@ -1070,6 +1094,15 @@ void G_UpdateCvars( void ) {
 				if ( cv->teamShader ) {
 					remapped = qtrue;
 				}
+
+				if (cv->vmCvar == &g_spawnOffset) 
+				{
+					if (g_spawnOffset.integer < 1)
+					{
+						G_Printf("g_spawnOffset %i is out of range, defaulting to 9\n", g_spawnOffset.integer);
+						trap_Cvar_Set("g_spawnOffset", "9");
+					}
+				}
 			}
 		}
 	}
@@ -1124,11 +1157,10 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 	int i;
 	char cs[MAX_INFO_STRING];
 
-	if ( trap_Cvar_VariableIntegerValue( "g_gametype" ) != GT_SINGLE_PLAYER ) {
-		G_Printf( "------- Game Initialization -------\n" );
-		G_Printf( "gamename: %s\n", GAMEVERSION );
-		G_Printf( "gamedate: %s\n", __DATE__ );
-	}
+	G_Printf( "------- Game Initialization -------\n" );
+	G_Printf( "gamename: %s\n", GAMEVERSION );
+	G_Printf( "gamedate: %s\n", __DATE__ );
+
 
 	srand( randomSeed );
 
@@ -1179,7 +1211,7 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 	level.animScriptData.soundIndex = G_SoundIndex;
 	level.animScriptData.playSound = G_AnimScriptSound;
 
-	if ( g_gametype.integer != GT_SINGLE_PLAYER && g_log.string[0] ) {
+	if ( g_log.string[0] ) {
 		if ( g_logSync.integer ) {
 			trap_FS_FOpenFile( g_log.string, &level.logFile, FS_APPEND_SYNC );
 		} else {
@@ -1196,9 +1228,7 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 			G_LogPrintf( "InitGame: %s\n", serverinfo );
 		}
 	} else {
-		if ( trap_Cvar_VariableIntegerValue( "g_gametype" ) != GT_SINGLE_PLAYER ) {
-			G_Printf( "Not logging to disk.\n" );
-		}
+		G_Printf( "Not logging to disk.\n" );
 	}
 
 	G_InitWorldSession();
@@ -1261,17 +1291,21 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 
 	SaveRegisteredItems();
 
-	if ( trap_Cvar_VariableIntegerValue( "g_gametype" ) != GT_SINGLE_PLAYER ) {
-		G_Printf( "-----------------------------------\n" );
-	}
+	G_Printf( "-----------------------------------\n" );
+	
+
+	G_loadMatchGame();
+
 
 	if ( trap_Cvar_VariableIntegerValue( "bot_enable" ) ) {
 		BotAISetup( restart );
 		BotAILoadMap( restart );
-		G_InitBots( restart );
 	}
 
 	G_RemapTeamShaders();
+
+	// Disconnect while paused is handled in client side.
+	trap_SetConfigstring( CS_PAUSED,  va( "%i", PAUSE_NONE ));
 
 	if (g_tournament.integer && g_gamestate.integer == GS_PLAYING)
 	{
@@ -1291,9 +1325,9 @@ G_ShutdownGame
 =================
 */
 void G_ShutdownGame( int restart ) {
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-		G_Printf( "==== ShutdownGame ====\n" );
-	}
+	
+	G_Printf( "==== ShutdownGame ====\n" );
+	
 
 	if ( level.logFile ) {
 		G_LogPrintf( "ShutdownGame:\n" );
@@ -1625,9 +1659,6 @@ void CalculateRanks( void ) {
 				level.clients[ level.sortedClients[i] ].ps.persistant[PERS_RANK] = rank | RANK_TIED_FLAG;
 			}
 			score = newScore;
-			if ( g_gametype.integer == GT_SINGLE_PLAYER && level.numPlayingClients == 1 ) {
-				level.clients[ level.sortedClients[i] ].ps.persistant[PERS_RANK] = rank | RANK_TIED_FLAG;
-			}
 		}
 	}
 
@@ -1823,6 +1854,8 @@ void BeginIntermission( void ) {
 
 	// send the current scoring to all clients
 	SendScoreboardMessageToAllClients();
+
+	G_matchInfoDump(EOM_MATCHINFO);
 
 }
 
@@ -2023,10 +2056,6 @@ void CheckIntermissionExit( void ) {
 	gclient_t   *cl;
 	int readyMask;
 
-	if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
-		return;
-	}
-
 	// DHM - Nerve :: Flat 10 second timer until exit
 	if ( g_gametype.integer >= GT_WOLF ) {
 		if ( level.time < level.intermissiontime + 10000 ) {
@@ -2171,7 +2200,7 @@ void CheckExitRules( void ) {
 		return;
 	}
 
-	if ( g_timelimit.value && !level.warmupTime ) {
+	if ( g_timelimit.value && !level.warmupTime && level.paused == PAUSE_NONE) {
 		if ( level.time - level.startTime >= g_timelimit.value * 60000 ) {
 
 			// check for sudden death
@@ -2474,12 +2503,9 @@ void CheckWolfMP() {
 		return;
 	}
 
-	// if the warmup time has counted down, restart
-	if ( level.time > level.warmupTime ) {
-		level.warmupTime += 10000;
-		trap_Cvar_Set( "g_restarted", "1" );
-		trap_SendConsoleCommand( EXEC_APPEND, "map_restart 0\n" );
-		level.restarted = qtrue;
+	if (level.time > level.warmupTime - 7100 && !level.cnStarted) {
+		level.cnStarted = qtrue;
+		CountDown();
 		return;
 	}
 }
@@ -2605,6 +2631,11 @@ Runs thinking code for this frame if necessary
 void G_RunThink( gentity_t *ent ) {
 	float thinktime;
 
+	if ( level.paused != PAUSE_NONE && ( ent - g_entities ) >= g_maxclients.integer &&
+		 ent->nextthink > level.time && strstr( ent->classname, "DPRINTF_" ) == NULL ) {
+		ent->nextthink += level.time - level.previousTime;
+	}
+
 	// RF, run scripting
 	if ( ent->s.number >= MAX_CLIENTS ) {
 //----(SA)	this causes trouble in various maps
@@ -2643,7 +2674,6 @@ Advances the non-player objects in the world
 void G_RunFrame( int levelTime ) {
 	int i;
 	gentity_t   *ent;
-	int msec;
 	int worldspawnflags, gt;
 
 	// if we are waiting for the level to restart, do nothing
@@ -2667,7 +2697,6 @@ void G_RunFrame( int levelTime ) {
 	level.framenum++;
 	level.previousTime = level.time;
 	level.time = levelTime;
-	msec = level.time - level.previousTime;
 
 	// check if current gametype is supported
 	worldspawnflags = g_entities[ENTITYNUM_WORLD].spawnflags;
@@ -2767,7 +2796,17 @@ void G_RunFrame( int levelTime ) {
 			 || ent->s.eType == ET_FIRE_COLUMN_SMOKE
 			 || ent->s.eType == ET_EXPLO_PART
 			 || ent->s.eType == ET_RAMJET ) {
-			G_RunMissile( ent );
+			if ( level.paused != PAUSE_NONE ) {
+				// During a pause, gotta keep track of stuff in the air
+				ent->s.pos.trTime += level.time - level.previousTime;
+				// Keep pulsing right for dynmamite
+				if ( ent->methodOfDeath == MOD_DYNAMITE ) {
+					ent->s.effect1Time += level.time - level.previousTime;
+				}
+				G_RunThink( ent );
+				continue;
+			}
+			G_RunMissile(ent);
 			continue;
 		}
 
@@ -2841,6 +2880,10 @@ void G_RunFrame( int levelTime ) {
 	// for tracking changes
 	CheckCvars();
 
+	if ((level.time > level.cnPush) && (g_gamestate.integer == GS_WARMUP_COUNTDOWN)) {
+		CountDown();
+	}
+
 	if ( g_listEntity.integer ) {
 		for ( i = 0; i < MAX_GENTITIES; i++ ) {
 			G_Printf( "%4i: %s\n", i, g_entities[i].classname );
@@ -2855,6 +2898,16 @@ void G_RunFrame( int levelTime ) {
 
 	// Ridah, check if we are reloading, and times have expired
 	CheckReloadStatus();
+
+	qboolean isServerRestarting = (qboolean)trap_Cvar_VariableIntegerValue("sv_serverRestarting");
+	if (!isServerRestarting) {
+		// L0 - Count active players..
+		SortedActivePlayers();
+		// L0 - Check Team Lock status..
+		HandleEmptyTeams();
+	}
+
+	level.frameStartTime = trap_Milliseconds();
 }
 
 
@@ -2884,5 +2937,20 @@ void HandleEmptyTeams(void) {
 			if (level.paused == PAUSE_NONE && g_gamestate.integer == GS_PLAYING)
 				Svcmd_ResetMatch_f(qtrue, qtrue);
 		}
+	}
+}
+
+void SortedActivePlayers(void) {
+	int i;
+	level.axisPlayers = 0;
+	level.alliedPlayers = 0;
+
+	for(i = 0; i < level.maxclients; i++){
+		if (level.clients[i].pers.connected != CON_CONNECTED)
+			continue;
+		if (level.clients[i].sess.sessionTeam == TEAM_RED)
+			level.axisPlayers++;
+		if (level.clients[i].sess.sessionTeam == TEAM_BLUE)
+			level.alliedPlayers++;
 	}
 }

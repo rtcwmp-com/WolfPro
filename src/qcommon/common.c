@@ -881,7 +881,6 @@ Z_FreeTags
 ================
 */
 void Z_FreeTags( int tag ) {
-	int count;
 	memzone_t   *zone;
 
 	if ( tag == TAG_SMALL ) {
@@ -889,13 +888,11 @@ void Z_FreeTags( int tag ) {
 	} else {
 		zone = mainzone;
 	}
-	count = 0;
 	// use the rover as our pointer, because
 	// Z_Free automatically adjusts it
 	zone->rover = zone->blocklist.next;
 	do {
 		if ( zone->rover->tag == tag ) {
-			count++;
 			Z_Free( ( void * )( zone->rover + 1 ) );
 			continue;
 		}
@@ -916,8 +913,11 @@ void *Z_TagMallocDebug( int size, int tag, char *label, char *file, int line ) {
 #else
 void *Z_TagMalloc( int size, int tag ) {
 #endif
-	int extra, allocSize;
-	memblock_t  *start, *rover, *new, *base;
+	int extra;
+#ifdef ZONE_DEBUG
+	int allocSize;
+#endif
+	memblock_t  *start, *rover, *newBlk, *base;
 	memzone_t *zone;
 
 	if ( !tag ) {
@@ -929,8 +929,9 @@ void *Z_TagMalloc( int size, int tag ) {
 	} else {
 		zone = mainzone;
 	}
-
+#ifdef ZONE_DEBUG
 	allocSize = size;
+#endif
 	//
 	// scan through the block list looking for the first free block
 	// of sufficient size
@@ -965,14 +966,14 @@ void *Z_TagMalloc( int size, int tag ) {
 	extra = base->size - size;
 	if ( extra > MINFRAGMENT ) {
 		// there will be a free fragment after the allocated block
-		new = ( memblock_t * )( (byte *)base + size );
-		new->size = extra;
-		new->tag = 0;           // free block
-		new->prev = base;
-		new->id = ZONEID;
-		new->next = base->next;
-		new->next->prev = new;
-		base->next = new;
+		newBlk = ( memblock_t * )( (byte *)base + size );
+		newBlk->size = extra;
+		newBlk->tag = 0;           // free block
+		newBlk->prev = base;
+		newBlk->id = ZONEID;
+		newBlk->next = base->next;
+		newBlk->next->prev = newBlk;
+		base->next = newBlk;
 		base->size = size;
 	}
 
@@ -1241,7 +1242,7 @@ Com_Meminfo_f
 void Com_Meminfo_f( void ) {
 	memblock_t  *block;
 	int zoneBytes, zoneBlocks;
-	int smallZoneBytes, smallZoneBlocks;
+	int smallZoneBytes;
 	int botlibBytes, rendererBytes;
 	int unused;
 
@@ -1279,11 +1280,9 @@ void Com_Meminfo_f( void ) {
 	}
 
 	smallZoneBytes = 0;
-	smallZoneBlocks = 0;
 	for ( block = smallzone->blocklist.next ; ; block = block->next ) {
 		if ( block->tag ) {
 			smallZoneBytes += block->size;
-			smallZoneBlocks++;
 		}
 
 		if ( block->next == &smallzone->blocklist ) {
@@ -1369,7 +1368,7 @@ void Com_TouchMemory( void ) {
 
 	end = Sys_Milliseconds();
 
-	Com_Printf( "Com_TouchMemory: %i msec\n", end - start );
+	Com_Printf( "Com_TouchMemory: %i msec. Pages: %d\n", end - start, sum % INT_MAX );
 }
 
 
@@ -1479,7 +1478,12 @@ Hunk_SmallLog
 void Hunk_SmallLog( void ) {
 	hunkblock_t *block, *block2;
 	char buf[4096];
-	int size, locsize, numBlocks;
+	int size;
+	int numBlocks;
+#ifdef HUNK_DEBUG
+	int locsize;
+#endif
+	
 
 	if ( !logfile || !FS_Initialized() ) {
 		return;
@@ -1495,7 +1499,9 @@ void Hunk_SmallLog( void ) {
 		if ( block->printed ) {
 			continue;
 		}
+#ifdef HUNK_DEBUG
 		locsize = block->size;
+#endif
 		for ( block2 = block->next; block2; block2 = block2->next ) {
 			if ( block->line != block2->line ) {
 				continue;
@@ -1504,7 +1510,9 @@ void Hunk_SmallLog( void ) {
 				continue;
 			}
 			size += block2->size;
+#ifdef HUNK_DEBUG
 			locsize += block2->size;
+#endif
 			block2->printed = qtrue;
 		}
 #ifdef HUNK_DEBUG
@@ -2655,7 +2663,7 @@ void Com_WriteConfiguration( void ) {
 
 	// bk001119 - tentative "not needed for dedicated"
 #ifndef DEDICATED
-	fs = Cvar_Get( "fs_game", "rtcwmod", CVAR_INIT | CVAR_SYSTEMINFO );
+	fs = Cvar_Get( "fs_game", "wolfpro", CVAR_INIT | CVAR_SYSTEMINFO );
 	if ( UI_usesUniqueCDKey() && fs && fs->string[0] != 0 ) {
 		Com_WriteCDKey( fs->string, &cl_cdkey[16] );
 	} else {
@@ -2805,7 +2813,7 @@ Com_Frame
 
 void Com_Frame( void ) {
 
-	int msec, minMsec;
+	int msec;
 	
 
 	int timeBeforeFirstEvents;
@@ -3532,4 +3540,19 @@ const char* Q_itohex(uint64_t number, qbool uppercase, qbool prefix)
 	}
 
 	return buffer + startOffset;
+}
+
+const char* Com_FormatBytes(uint64_t numBytes)
+{
+	const char* units[] = { "bytes", "KB", "MB", "GB" };
+	const float dividers[] = { 1.0f, (float)(1 << 10), (float)(1 << 20), (float)(1 << 30) };
+
+	int unit = 0;
+	for (uint64_t vi = numBytes; vi >= 1024; vi >>= 10) {
+		unit++;
+	}
+
+	const float vf = (float)numBytes / dividers[unit];
+
+	return va("%.3f %s", vf, units[unit]);
 }

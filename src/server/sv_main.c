@@ -69,6 +69,8 @@ cvar_t  *sv_friendlyFire;       // NERVE - SMF
 cvar_t  *sv_maxlives;           // NERVE - SMF
 cvar_t  *sv_tourney;            // NERVE - SMF
 
+cvar_t  *sv_minUserCmdInterval;
+
 cvar_t *sv_dl_maxRate;
 
 // Rafael gameskill
@@ -380,11 +382,6 @@ void SVC_Status( netadr_t from ) {
 	int playerLength;
 	char infostring[MAX_INFO_STRING];
 
-	// ignore if we are in single player
-	if ( Cvar_VariableValue( "g_gametype" ) == GT_SINGLE_PLAYER ) {
-		return;
-	}
-
 	// DHM - Nerve
 #ifdef UPDATE_SERVER
 	return;
@@ -444,10 +441,6 @@ void SVC_GameCompleteStatus( netadr_t from ) {
 	int playerLength;
 	char infostring[MAX_INFO_STRING];
 
-	// ignore if we are in single player
-	if ( Cvar_VariableValue( "g_gametype" ) == GT_SINGLE_PLAYER ) {
-		return;
-	}
 
 	strcpy( infostring, Cvar_InfoString( CVAR_SERVERINFO ) );
 
@@ -504,10 +497,6 @@ void SVC_Info( netadr_t from ) {
 	return;
 #endif
 
-	// ignore if we are in single player
-	if ( Cvar_VariableValue( "g_gametype" ) == GT_SINGLE_PLAYER ) {
-		return;
-	}
 
 	// don't count privateclients
 	count = 0;
@@ -640,9 +629,9 @@ void SVC_RemoteCommand( netadr_t from, msg_t *msg ) {
 	static unsigned int lasttime = 0;
 	char *cmd_aux;
 
+	time = Com_Milliseconds();
 	//ignore flood from localhost
 	if(!Sys_IsLANAddress(from)){
-		time = Com_Milliseconds();
 		if ( time < ( lasttime + 500 ) ) {
 			return;
 		}

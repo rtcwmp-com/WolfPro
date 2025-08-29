@@ -376,25 +376,25 @@ void CopyToBodyQue( gentity_t *ent ) {
 	body->s.eventSequence = 0;
 
 	// DHM - Nerve
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-		// change the animation to the last-frame only, so the sequence
-		// doesn't repeat anew for the body
-		switch ( body->s.legsAnim & ~ANIM_TOGGLEBIT ) {
-		case BOTH_DEATH1:
-		case BOTH_DEAD1:
-			body->s.torsoAnim = body->s.legsAnim = BOTH_DEAD1;
-			break;
-		case BOTH_DEATH2:
-		case BOTH_DEAD2:
-			body->s.torsoAnim = body->s.legsAnim = BOTH_DEAD2;
-			break;
-		case BOTH_DEATH3:
-		case BOTH_DEAD3:
-		default:
-			body->s.torsoAnim = body->s.legsAnim = BOTH_DEAD3;
-			break;
-		}
+	
+	// change the animation to the last-frame only, so the sequence
+	// doesn't repeat anew for the body
+	switch ( body->s.legsAnim & ~ANIM_TOGGLEBIT ) {
+	case BOTH_DEATH1:
+	case BOTH_DEAD1:
+		body->s.torsoAnim = body->s.legsAnim = BOTH_DEAD1;
+		break;
+	case BOTH_DEATH2:
+	case BOTH_DEAD2:
+		body->s.torsoAnim = body->s.legsAnim = BOTH_DEAD2;
+		break;
+	case BOTH_DEATH3:
+	case BOTH_DEAD3:
+	default:
+		body->s.torsoAnim = body->s.legsAnim = BOTH_DEAD3;
+		break;
 	}
+	
 	// dhm
 
 	body->r.svFlags = ent->r.svFlags;
@@ -458,10 +458,6 @@ void limbo( gentity_t *ent, qboolean makeCorpse ) {
 	//int startclient = ent->client->sess.spectatorClient;
 	int startclient = ent->client->ps.clientNum;
 
-	if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
-		G_Printf( "FIXME: limbo called from single player game.  Shouldn't see this\n" );
-		return;
-	}
 	if ( !( ent->client->ps.pm_flags & PMF_LIMBO ) ) {
 
 		// DHM - Nerve :: First save off persistant info we'll need for respawn
@@ -525,30 +521,15 @@ reinforce
 // -- called when time expires for a team deployment cycle and there is at least one guy ready to go
 */
 void reinforce( gentity_t *ent ) {
-	int p, team; // numDeployable=0, finished=0; // TTimo unused
-	char *classname;
+	int p; // numDeployable=0, finished=0; // TTimo unused
 	gclient_t *rclient;
 
-	if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
-		G_Printf( "FIXME: reinforce called from single player game.  Shouldn't see this\n" );
-		return;
-	}
 	if ( !( ent->client->ps.pm_flags & PMF_LIMBO ) ) {
 		G_Printf( "player already deployed, skipping\n" );
 		return;
 	}
 	// get team to deploy from passed entity
 
-	team = ent->client->sess.sessionTeam;
-
-	// find number active team spawnpoints
-	if ( team == TEAM_RED ) {
-		classname = "team_CTF_redspawn";
-	} else if ( team == TEAM_BLUE ) {
-		classname = "team_CTF_bluespawn";
-	} else {
-		assert( 0 );
-	}
 
 	// DHM - Nerve :: restore persistant data now that we're out of Limbo
 	rclient = ent->client;
@@ -567,28 +548,6 @@ respawn
 ================
 */
 void respawn( gentity_t *ent ) {
-	//gentity_t	*tent;
-
-	// Ridah, if single player, reload the last saved game for this player
-	if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
-
-		if ( reloading || saveGamePending ) {
-			return;
-		}
-
-		if ( !( ent->r.svFlags & SVF_CASTAI ) ) {
-			// Fast method, just do a map_restart, and then load in the savegame
-			// once everything is settled.
-			trap_SetConfigstring( CS_SCREENFADE, va( "1 %i 500", level.time + 250 ) );
-			reloading = qtrue;
-			level.reloadDelayTime = level.time + 1500;
-
-			return;
-		}
-	}
-
-	// done.
-
 	ent->client->ps.pm_flags &= ~PMF_LIMBO; // JPW NERVE turns off limbo
 
 	// DHM - Nerve :: Decrease the number of respawns left
@@ -604,11 +563,6 @@ void respawn( gentity_t *ent ) {
 	}
 
 	ClientSpawn( ent, qfalse );
-
-	// DHM - Nerve :: Add back if we decide to have a spawn effect
-	// add a teleportation effect
-	//tent = G_TempEntity( ent->client->ps.origin, EV_PLAYER_TELEPORT_IN );
-	//tent->s.clientNum = ent->s.clientNum;
 }
 
 // NERVE - SMF - merge from team arena
@@ -1316,11 +1270,6 @@ qboolean G_ParseAnimationFiles( char *modelname, gclient_t *cl ) {
 	// parse the text
 	BG_AnimParseAnimScript( cl->modelInfo, &level.animScriptData, cl->ps.clientNum, filename, text );
 
-	// ask the client to send us the movespeeds if available
-	if ( g_gametype.integer == GT_SINGLE_PLAYER && g_entities[0].client && g_entities[0].client->pers.connected == CON_CONNECTED ) {
-		trap_SendServerCommand( 0, va( "mvspd %s", modelname ) );
-	}
-
 	return qtrue;
 }
 
@@ -1367,6 +1316,10 @@ void ClientUserinfoChanged( int clientNum ) {
 	if ( s && !strcmp( s, "localhost" ) ) {
 		client->pers.localClient = qtrue;
 	}
+
+		s = Info_ValueForKey(userinfo, "cg_uinfo");
+	sscanf(s, "%i %i %i %i %i", &client->pers.antilag, &client->pers.hitSoundType, &client->pers.hitSoundBodyStyle, &client->pers.hitSoundHeadStyle, &client->pers.clientFlags);
+
 
 	// check the item prediction
 	s = Info_ValueForKey( userinfo, "cg_predictItems" );
@@ -1735,10 +1688,6 @@ void ClientBegin( int clientNum ) {
 	}
 
 	// Ridah, trigger a spawn event
-	// DHM - Nerve :: Only in single player
-	if ( g_gametype.integer == GT_SINGLE_PLAYER && !( ent->r.svFlags & SVF_CASTAI ) ) {
-		AICast_ScriptEvent( AICast_GetCastState( clientNum ), "spawn", "" );
-	}
 
 	if ( client->sess.sessionTeam != TEAM_SPECTATOR ) {
 		// send event
@@ -1746,13 +1695,13 @@ void ClientBegin( int clientNum ) {
 		//tent = G_TempEntity( ent->client->ps.origin, EV_PLAYER_TELEPORT_IN );
 		//tent->s.clientNum = ent->s.clientNum;
 
-		if ( g_gametype.integer != GT_TOURNAMENT ) {
-			// Ridah
-			if ( !(ent->r.svFlags & SVF_CASTAI) ) {
-				// done.
-				trap_SendServerCommand( -1, va( "print \"[lof]%s" S_COLOR_WHITE " [lon]entered the game\n\"", client->pers.netname ) );
-			}
-		}
+		// if ( g_gametype.integer != GT_TOURNAMENT ) {
+		// 	// Ridah
+		// 	if ( !(ent->r.svFlags & SVF_CASTAI) ) {
+		// 		// done.
+		// 		trap_SendServerCommand( -1, va( "print \"[lof]%s" S_COLOR_WHITE " [lon]entered the game\n\"", client->pers.netname ) );
+		// 	}
+		// }
 	}
 	G_LogPrintf( "ClientBegin: %i\n", clientNum );
 
@@ -2045,9 +1994,6 @@ void ClientSpawn( gentity_t *ent, qboolean revived ) {
 
 	// clear entity state values
 	BG_PlayerStateToEntityState( &client->ps, &ent->s, qtrue );
-
-	// show_bug.cgi?id=569
-	G_ResetMarkers( ent );
 }
 
 
@@ -2172,6 +2118,8 @@ void ClientDisconnect( int clientNum ) {
 	trap_SetConfigstring( CS_PLAYERS + clientNum, "" );
 
 	CalculateRanks();
+
+	HandleEmptyTeams();
 
 	if ( ent->r.svFlags & SVF_BOT ) {
 		BotAIShutdownClient( clientNum );

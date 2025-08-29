@@ -245,16 +245,13 @@ void CG_Respawn( void ) {
 	cg.predictedPlayerState.weapAnim = WEAP_IDLE1;  // reset weapon animations
 	cg.predictedPlayerState.weapAnimTimer = 0;      // allow other animations to happen right away
 	cg.predictedPlayerState.weaponstate = WEAPON_RAISING;   // hmm, set this?  what to?
+	cg.predictedPlayerState.powerups[PW_INVULNERABLE] = 1;
 
 	// display weapons available
 	cg.weaponSelectTime = cg.time;
 
 	cg.holdableSelectTime = 0;  //----(SA) reset holdable timer
 
-	if ( cgs.gametype == GT_SINGLE_PLAYER ) {
-		cg.centerPrintTime = 0;     //----(SA)	reset centerprint counter so previous messages don't re-appear
-
-	}
 	cg.cursorHintIcon = 0;
 	cg.cursorHintTime = 0;
 

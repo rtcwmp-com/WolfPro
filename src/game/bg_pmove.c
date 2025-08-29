@@ -41,11 +41,7 @@ int bg_pmove_gameskill_integer;
 
 // JPW NERVE -- stuck this here so it can be seen client & server side
 float Com_GetFlamethrowerRange( void ) {
-	if ( pm->gametype != GT_SINGLE_PLAYER ) {
-		return 2500; // multiplayer range is longer for balance
-	} else {
-		return 850; // single player range remains unchanged
-	}
+	return 2500; // multiplayer range is longer for balance
 }
 // jpw
 
@@ -409,14 +405,14 @@ static float PM_CmdScale( usercmd_t *cmd ) {
 //
 // added #ifdef for game/cgame to project so we can get correct g_gametype variable and only do this in
 // multiplayer if necessary
-	if ( pm->gametype != GT_SINGLE_PLAYER ) {
-		if ( ( pm->ps->weapon == WP_VENOM ) || ( pm->ps->weapon == WP_VENOM_FULL ) || ( pm->ps->weapon == WP_PANZERFAUST ) ) {
-			scale *= 0.5;
-		}
-		if ( pm->ps->weapon == WP_FLAMETHROWER ) { // trying some different balance for the FT
-			scale *= 0.7;
-		}
+	
+	if ( ( pm->ps->weapon == WP_VENOM ) || ( pm->ps->weapon == WP_VENOM_FULL ) || ( pm->ps->weapon == WP_PANZERFAUST ) ) {
+		scale *= 0.5;
 	}
+	if ( pm->ps->weapon == WP_FLAMETHROWER ) { // trying some different balance for the FT
+		scale *= 0.7;
+	}
+	
 // jpw
 
 	return scale;
@@ -509,16 +505,12 @@ PM_CheckJump
 */
 static qboolean PM_CheckJump( void ) {
 	// JPW NERVE -- jumping in multiplayer uses and requires sprint juice (to prevent turbo skating, sprint + jumps)
-	if ( pm->gametype != GT_SINGLE_PLAYER ) {
-		// don't allow jump accel
-		if ( pm->cmd.serverTime - pm->ps->jumpTime < 850 ) {
-			return qfalse;
-		}
-
-		// don't allow if player tired
-//		if (pm->ps->sprintTime < 2500) // JPW pulled this per id request; made airborne jumpers wildly inaccurate with gunfire to compensate
-//			return qfalse;
+	
+	// don't allow jump accel
+	if ( pm->cmd.serverTime - pm->ps->jumpTime < 850 ) {
+		return qfalse;
 	}
+	
 	// jpw
 
 	if ( pm->ps->pm_flags & PMF_RESPAWNED ) {
@@ -871,13 +863,13 @@ static void PM_WalkMove( void ) {
 		}
 
 		// JPW NERVE
-		if ( pm->gametype != GT_SINGLE_PLAYER ) {
-			pm->ps->jumpTime = pm->cmd.serverTime;
-			pm->ps->sprintTime -= 2500;
-			if ( pm->ps->sprintTime < 0 ) {
-				pm->ps->sprintTime = 0;
-			}
+		
+		pm->ps->jumpTime = pm->cmd.serverTime;
+		pm->ps->sprintTime -= 2500;
+		if ( pm->ps->sprintTime < 0 ) {
+			pm->ps->sprintTime = 0;
 		}
+		
 		// jpw
 
 		return;
@@ -2522,10 +2514,8 @@ static void PM_Weapon( void ) {
 				pm->ps->grenadeTimeLeft += pml.msec;
 
 				// JPW NERVE -- in multiplayer, dynamite becomes strategic, so start timer @ 30 seconds
-				if ( pm->gametype != GT_SINGLE_PLAYER ) {
-					if ( pm->ps->grenadeTimeLeft < 5000 ) {
-						pm->ps->grenadeTimeLeft = 5000;
-					}
+				if ( pm->ps->grenadeTimeLeft < 5000 ) {
+					pm->ps->grenadeTimeLeft = 5000;
 				}
 				// jpw
 
@@ -2588,25 +2578,25 @@ static void PM_Weapon( void ) {
 		}
 
 		// JPW NERVE -- added back for multiplayer pistol balancing
-		if ( pm->gametype != GT_SINGLE_PLAYER ) {
-			if ( pm->ps->weapon == WP_LUGER ) {
-				if ( pm->ps->releasedFire ) {
-					if ( ( pm->cmd.buttons & BUTTON_ATTACK ) && pm->ps->weaponTime <= 150 ) {
-						pm->ps->weaponTime = 0;
-					}
-				} else if ( !( pm->cmd.buttons & BUTTON_ATTACK ) ) {
-					pm->ps->releasedFire = qtrue;
+		
+		if ( pm->ps->weapon == WP_LUGER ) {
+			if ( pm->ps->releasedFire ) {
+				if ( ( pm->cmd.buttons & BUTTON_ATTACK ) && pm->ps->weaponTime <= 150 ) {
+					pm->ps->weaponTime = 0;
 				}
-			} else if ( pm->ps->weapon == WP_COLT ) {
-				if ( pm->ps->releasedFire ) {
-					if ( ( pm->cmd.buttons & BUTTON_ATTACK ) && pm->ps->weaponTime <= 150 ) {
-						pm->ps->weaponTime = 0;
-					}
-				} else if ( !( pm->cmd.buttons & BUTTON_ATTACK ) ) {
-					pm->ps->releasedFire = qtrue;
+			} else if ( !( pm->cmd.buttons & BUTTON_ATTACK ) ) {
+				pm->ps->releasedFire = qtrue;
+			}
+		} else if ( pm->ps->weapon == WP_COLT ) {
+			if ( pm->ps->releasedFire ) {
+				if ( ( pm->cmd.buttons & BUTTON_ATTACK ) && pm->ps->weaponTime <= 150 ) {
+					pm->ps->weaponTime = 0;
 				}
+			} else if ( !( pm->cmd.buttons & BUTTON_ATTACK ) ) {
+				pm->ps->releasedFire = qtrue;
 			}
 		}
+		
 // jpw
 
 	}
@@ -2712,10 +2702,8 @@ static void PM_Weapon( void ) {
 	// JPW NERVE in MP, LT needs to zoom to call artillery
 	if ( pm->ps->eFlags & EF_ZOOMING ) {
 #ifdef GAMEDLL
-		if ( pm->gametype != GT_SINGLE_PLAYER ) {
-			pm->ps->weaponTime += 500;
-			PM_AddEvent( EV_FIRE_WEAPON );
-		}
+		pm->ps->weaponTime += 500;
+		PM_AddEvent( EV_FIRE_WEAPON );
 #endif
 		return;
 	}
@@ -2783,11 +2771,9 @@ static void PM_Weapon( void ) {
 	case WP_VENOM_FULL:
 		if ( !weaponstateFiring ) {
 			// JPW NERVE -- pfaust has spinup time in MP
-			if ( pm->gametype != GT_SINGLE_PLAYER ) {
-				if ( pm->ps->weapon == WP_PANZERFAUST ) {
+			if ( pm->ps->weapon == WP_PANZERFAUST ) {
 					PM_AddEvent( EV_SPINUP );
 				}
-			}
 			// jpw
 
 			pm->ps->weaponDelay = ammoTable[pm->ps->weapon].fireDelayTime;
@@ -2973,11 +2959,11 @@ static void PM_Weapon( void ) {
 	}
 
 	// JPW NERVE -- in multiplayer, pfaust fires once then switches to pistol since it's useless for a while
-	if ( pm->gametype != GT_SINGLE_PLAYER ) {
-		if ( ( pm->ps->weapon == WP_PANZERFAUST ) || ( pm->ps->weapon == WP_SMOKE_GRENADE ) || ( pm->ps->weapon == WP_DYNAMITE ) ) {
-			PM_AddEvent( EV_NOAMMO );
-		}
+	
+	if ( ( pm->ps->weapon == WP_PANZERFAUST ) || ( pm->ps->weapon == WP_SMOKE_GRENADE ) || ( pm->ps->weapon == WP_DYNAMITE ) ) {
+		PM_AddEvent( EV_NOAMMO );
 	}
+	
 	// jpw
 
 	if ( PM_WeaponClipEmpty( pm->ps->weapon ) ) {
@@ -3038,13 +3024,10 @@ static void PM_Weapon( void ) {
 
 		// JPW NERVE crippling the rifle a bit in multiplayer; it's way too
 		// strong so make it go completely out every time you fire
-		if ( pm->gametype != GT_SINGLE_PLAYER ) {
-			// avoid exploiting centerview to go around the spread
-			pm->pmext->blockCenterViewTime = pm->cmd.serverTime + 1000;
-			aimSpreadScaleAdd = 100;
-		} else {
-			aimSpreadScaleAdd = 20;
-		}
+		// avoid exploiting centerview to go around the spread
+		pm->pmext->blockCenterViewTime = pm->cmd.serverTime + 1000;
+		aimSpreadScaleAdd = 100;
+		
 		// jpw
 
 		break;
@@ -3054,12 +3037,10 @@ static void PM_Weapon( void ) {
 		// kills, so give it a little less bounce
 		addTime = ammoTable[pm->ps->weapon].nextShotTime;
 
-		if ( pm->gametype != GT_SINGLE_PLAYER ) {
-			aimSpreadScaleAdd = 50;
+		
+		aimSpreadScaleAdd = 50;
 //			addTime *= 2;
-		} else {
-			aimSpreadScaleAdd = 10;
-		}
+		
 		// jpw
 
 		break;
@@ -3260,6 +3241,10 @@ void PM_UpdateLean( playerState_t *ps, usercmd_t *cmd, pmove_t *tpm ) {
 	trace_t trace;
 
 	if ( ps->aiChar ) {
+		return;
+	}
+
+	if (ps->pm_type == PM_FREEZE) {
 		return;
 	}
 
@@ -3718,13 +3703,10 @@ void PM_Sprint( void ) {
 			}
 		}
 		// JPW NERVE -- sprint time tuned for multiplayer
-		else if ( pm->gametype != GT_SINGLE_PLAYER ) {
-			// JPW NERVE adjusted for framerate independence
-			pm->ps->sprintTime -= 5000 * pml.frametime;
-		} else {
-			// *not* adjusted, dunno what they want for tuning values
-			pm->ps->sprintTime -= 50;
-		}
+		
+		// JPW NERVE adjusted for framerate independence
+		pm->ps->sprintTime -= 5000 * pml.frametime;
+	
 		// jpw
 
 		if ( pm->ps->sprintTime < 0 ) {
@@ -3743,14 +3725,11 @@ void PM_Sprint( void ) {
 		if ( pm->ps->powerups[PW_NOFATIGUE] ) { // (SA) recharge at 2x with stamina powerup
 			pm->ps->sprintTime += 10;
 		} else {
-			if ( pm->gametype != GT_SINGLE_PLAYER ) {
-				pm->ps->sprintTime += 500 * pml.frametime;        // JPW NERVE adjusted for framerate independence
-				if ( pm->ps->sprintTime > 5000 ) {
-					pm->ps->sprintTime += 500 * pml.frametime;    // JPW NERVE adjusted for framerate independence
-				}
-			} else {
-				pm->ps->sprintTime += 5;
+			pm->ps->sprintTime += 500 * pml.frametime;        // JPW NERVE adjusted for framerate independence
+			if ( pm->ps->sprintTime > 5000 ) {
+				pm->ps->sprintTime += 500 * pml.frametime;    // JPW NERVE adjusted for framerate independence
 			}
+			
 			// jpw
 		}
 #endif // GAMEDLL

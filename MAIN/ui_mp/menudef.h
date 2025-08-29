@@ -113,7 +113,7 @@ If you have questions concerning this license or the applicable additional terms
 #define CG_SHOW_CTF                         0x00000020
 #define CG_SHOW_OBELISK                     0x00000040
 #define CG_SHOW_HEALTHCRITICAL              0x00000080
-#define CG_SHOW_SINGLEPLAYER                0x00000100
+#define CG_SHOW_UNUSED                      0x00000100
 #define CG_SHOW_TOURNAMENT                  0x00000200
 #define CG_SHOW_DURINGINCOMINGVOICE         0x00000400
 #define CG_SHOW_IF_PLAYER_HAS_FLAG          0x00000800

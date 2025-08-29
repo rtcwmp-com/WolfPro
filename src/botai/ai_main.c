@@ -854,9 +854,8 @@ int BotAIStartFrame( int time ) {
 	static int botlib_residual;
 	static int lastbotthink_time;
 
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-		G_CheckBotSpawn();
-	}
+	G_CheckBotSpawn();
+	
 
 	trap_Cvar_Update( &bot_rocketjump );
 	trap_Cvar_Update( &bot_grapple );
@@ -903,11 +902,6 @@ int BotAIStartFrame( int time ) {
 
 		//update entities in the botlib
 		for ( i = 0; i < MAX_GENTITIES; i++ ) {
-
-			// Ridah, in single player, we only need client entity information
-			if ( g_gametype.integer == GT_SINGLE_PLAYER && i > level.maxclients ) {
-				break;
-			}
 
 			ent = &g_entities[i];
 			if ( !ent->inuse ) {
@@ -974,11 +968,6 @@ int BotAIStartFrame( int time ) {
 
 		BotAIRegularUpdate();
 
-	}
-
-	// Ridah, in single player, don't need bot's thinking
-	if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
-		return BLERR_NOERROR;
 	}
 
 	// execute scheduled bot AI

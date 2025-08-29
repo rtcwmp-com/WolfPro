@@ -338,42 +338,10 @@ void sparks_angles_think( gentity_t *ent ) {
 
 void SP_props_sparks( gentity_t *ent ) {
 	// (SA) don't use in multiplayer right now since it makes decyphering net messages almost impossible
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-		ent->think = G_FreeEntity;
-		return;
-	}
-
-	G_SetOrigin( ent, ent->s.origin );
-	ent->r.svFlags = SVF_USE_CURRENT_ORIGIN;
-	ent->s.eType = ET_GENERAL;
-
-	ent->think = sparks_angles_think;
-	ent->nextthink = level.time + FRAMETIME;
-
-	if ( !ent->health ) {
-		ent->health = 8;
-	}
-
-	if ( !ent->wait ) {
-		ent->wait = 1200;
-	} else {
-		ent->wait *= 1000;
-	}
-
-	if ( !ent->start_size ) {
-		ent->start_size = 8;
-	}
-
-	if ( !ent->end_size ) {
-		ent->end_size = 8;
-	}
-
-	if ( !ent->speed ) {
-		ent->speed = 2;
-	}
-
-	trap_LinkEntity( ent );
-
+	
+	ent->think = G_FreeEntity;
+	return;
+	
 }
 
 /*QUAKED props_gunsparks (.8 .46 .16) (-8 -8 -8) (8 8 8)
@@ -889,7 +857,6 @@ void Props_Chair_Die( gentity_t *ent, gentity_t *inflictor, gentity_t *attacker,
 void Just_Got_Thrown( gentity_t *self ) {
 	float len;
 	vec3_t vec;
-	qboolean prop_hits = qfalse;
 
 	len = 0;
 
@@ -902,7 +869,6 @@ void Just_Got_Thrown( gentity_t *self ) {
 			player = AICast_FindEntityForName( "player" );
 
 			if ( player && player != self->enemy ) {
-				prop_hits = qtrue;
 				G_Damage( self->enemy, self, self, NULL, NULL, 5, 0, MOD_CRUSH );
 
 				self->die = Props_Chair_Die;
@@ -1442,22 +1408,6 @@ void Props_Chair_Die( gentity_t *ent, gentity_t *inflictor, gentity_t *attacker,
 	int quantity;
 	int type;
 
-	if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
-		gentity_t *player;
-
-		player = AICast_FindEntityForName( "player" );
-
-		if ( player && player->melee == ent ) {
-			player->melee = NULL;
-			player->active = qfalse;
-			player->client->ps.eFlags &= ~EF_MELEE_ACTIVE;
-
-		} else if ( player && player->s.number == ent->r.ownerNum )     {
-			player->active = qfalse;
-			player->melee = NULL;
-			player->client->ps.eFlags &= ~EF_MELEE_ACTIVE;
-		}
-	}
 
 	ent->think = Props_Chair_Animate;
 	ent->nextthink = level.time + FRAMETIME;

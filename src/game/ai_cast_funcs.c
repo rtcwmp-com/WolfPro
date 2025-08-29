@@ -838,9 +838,6 @@ AIFunc_InspectBulletImpact()
 char *AIFunc_InspectBulletImpact( cast_state_t *cs ) {
 	gentity_t *ent;
 	vec3_t v1;
-	gclient_t *client;
-	//
-	client = &level.clients[cs->entityNum];
 	//
 	ent = &g_entities[cs->entityNum];
 	//
@@ -1604,7 +1601,6 @@ AIFunc_DoorMarker()
 */
 char *AIFunc_DoorMarker( cast_state_t *cs ) {
 	gentity_t   *followent, *door;
-	bot_state_t *bs;
 	vec3_t destorg;
 	float dist;
 	//
@@ -1656,9 +1652,6 @@ char *AIFunc_DoorMarker( cast_state_t *cs ) {
 		return NULL;
 	}
 
-	// go to it
-	//
-	bs = cs->bs;
 	//
 	moveresult = AICast_MoveToPos( cs, followent->r.currentOrigin, followent->s.number );
 	// if we cant get there, forget it
@@ -1889,7 +1882,7 @@ AIFunc_BattleHunt()
 */
 char *AIFunc_BattleHunt( cast_state_t *cs ) {
 	const float chaseDist = 32;
-	gentity_t   *followent, *ent;
+	gentity_t   *followent;
 	bot_state_t *bs;
 	vec3_t destorg;
 	qboolean moved = qfalse;
@@ -1898,10 +1891,7 @@ char *AIFunc_BattleHunt( cast_state_t *cs ) {
 	char *rval;
 	// TTimo might be used uninitialized
 	float dist = 0;
-	cast_state_t *ocs;
-	int     *ammo, i;
-
-	ent = &g_entities[cs->entityNum];
+	int i;
 
 	//
 	// do we need to avoid a danger?
@@ -1926,7 +1916,6 @@ char *AIFunc_BattleHunt( cast_state_t *cs ) {
 		return AIFunc_IdleStart( cs );
 	}
 	//
-	ocs = AICast_GetCastState( cs->bs->enemy );
 	//
 	if ( cs->aiFlags & AIFL_ATTACK_CROUCH ) {
 		cs->bs->attackcrouch_time = trap_AAS_Time() + 1;
@@ -1962,12 +1951,9 @@ char *AIFunc_BattleHunt( cast_state_t *cs ) {
 		AICast_ChooseWeapon( cs, qfalse );
 	} else
 	{
-		int numEnemies, shouldAttack;
+		int numEnemies;
 
 		AICast_ChooseWeapon( cs, qfalse );
-
-		ammo = cs->bs->cur_ps.ammo;
-		shouldAttack = qfalse;
 		numEnemies = AICast_ScanForEnemies( cs, enemies );
 		if ( numEnemies == -1 ) { // query mode
 			return NULL;
@@ -1995,7 +1981,6 @@ char *AIFunc_BattleHunt( cast_state_t *cs ) {
 				for ( i = 0; i < numEnemies; i++ ) {
 					if ( AICast_CheckAttack( cs, enemies[i], qfalse ) || AICast_CheckAttack( AICast_GetCastState( enemies[i] ), cs->entityNum, qfalse ) ) {
 						cs->bs->enemy = enemies[i];
-						shouldAttack = qtrue;
 						break;
 					} else if ( cs->bs->enemy < 0 ) {
 						cs->lastEnemy = enemies[i];
@@ -2107,11 +2092,10 @@ AIFunc_BattleAmbush()
 char *AIFunc_BattleAmbush( cast_state_t *cs ) {
 	bot_state_t *bs;
 	vec3_t destorg, vec;
-	float dist, moveDist;
+	float dist;
 	int enemies[MAX_CLIENTS], numEnemies, i;
 	qboolean shouldAttack, idleYaw;
 	aicast_predictmove_t move;
-	int     *ammo;
 	vec3_t dir;
 	// TTimo unused
 	//gclient_t	*client = &level.clients[cs->entityNum];
@@ -2163,7 +2147,6 @@ char *AIFunc_BattleAmbush( cast_state_t *cs ) {
 	//
 	// look for things we should attack
 	// if we are out of ammo, we shouldn't bother trying to attack (and we should keep hiding)
-	ammo = cs->bs->cur_ps.ammo;
 	shouldAttack = qfalse;
 	numEnemies = AICast_ScanForEnemies( cs, enemies );
 	if ( numEnemies == -1 ) { // query mode
@@ -2237,7 +2220,6 @@ char *AIFunc_BattleAmbush( cast_state_t *cs ) {
 		AICast_PredictMovement( cs, 1, simTime, &move, &cs->bs->lastucmd, -1 );
 		enemyDist = Distance( cs->bs->origin, g_entities[cs->bs->enemy].s.pos.trBase );
 		VectorSubtract( move.endpos, cs->bs->origin, vec );
-		moveDist = VectorNormalize( vec );
 		//
 		if (    ( move.numtouch && move.touchents[0] < aicast_maxclients )    // hit something
 				// or moved closer to the enemy
@@ -3057,7 +3039,6 @@ char *AIFunc_BattleTakeCover( cast_state_t *cs ) {
 	int enemies[MAX_CLIENTS], numEnemies, i;
 	qboolean shouldAttack;
 	aicast_predictmove_t move;
-	int     *ammo;
 	gclient_t   *client = &level.clients[cs->entityNum];
 	//
 	// do we need to avoid a danger?
@@ -3091,7 +3072,6 @@ char *AIFunc_BattleTakeCover( cast_state_t *cs ) {
 	//
 	// look for things we should attack
 	// if we are out of ammo, we shouldn't bother trying to attack (and we should keep hiding)
-	ammo = cs->bs->cur_ps.ammo;
 	shouldAttack = qfalse;
 	numEnemies = AICast_ScanForEnemies( cs, enemies );
 	if ( numEnemies == -1 ) { // query mode
@@ -3389,7 +3369,6 @@ char *AIFunc_GrenadeFlush( cast_state_t *cs ) {
 	qboolean attacked = qfalse;
 	float dist, oldyaw;
 	int grenadeType;
-	int     *ammo;
 
 	bs = cs->bs;
 	ent = &g_entities[cs->entityNum];
@@ -3593,7 +3572,6 @@ char *AIFunc_GrenadeFlush( cast_state_t *cs ) {
 	// ...........................................................
 	// if we throw a grenade from here, will it get their last visible position?
 	//
-	ammo = cs->bs->cur_ps.ammo;
 	if ( AICast_GotEnoughAmmoForWeapon( cs, WP_GRENADE_LAUNCHER ) ) {
 		grenadeType = WP_GRENADE_LAUNCHER;
 	} else if ( AICast_GotEnoughAmmoForWeapon( cs, WP_GRENADE_PINEAPPLE ) ) {
@@ -3693,11 +3671,10 @@ AIFunc_BattleMG42()
 */
 char *AIFunc_BattleMG42( cast_state_t *cs ) {
 	bot_state_t *bs;
-	gentity_t *mg42, *ent;
+	gentity_t *mg42;
 	vec3_t angles, vec, bestangles;
 
 	mg42 = &g_entities[cs->mountedEntity];
-	ent = &g_entities[cs->entityNum];
 	bs = cs->bs;
 
 	// have we dismounted the MG42?
@@ -3991,7 +3968,6 @@ char *AIFunc_GrenadeKick( cast_state_t *cs ) {
 	float dist, speed;
 	int enemies[MAX_CLIENTS], numEnemies, i;
 	qboolean shouldAttack;
-	int     *ammo;
 	gentity_t *danger;
 	gentity_t *ent;
 	vec3_t end;
@@ -4132,40 +4108,6 @@ char *AIFunc_GrenadeKick( cast_state_t *cs ) {
 			danger->s.pos.trType = TR_GRAVITY;
 			SnapVector( danger->s.pos.trDelta );                // save net bandwidth
 		}
-/*
-		} else { // throw
-
-			if (cs->grenadeGrabFlag == qtrue) {
-				AICast_AimAtEnemy( cs );
-				// play the pickup anim
-				BG_AnimScriptEvent( &ent->client->ps, ANIM_ET_PICKUPGRENADE, qfalse, qtrue );
-				cs->grenadeGrabFlag = qfalse;
-				// stop the grenade from moving away
-				danger->s.pos.trDelta[0] = 0;
-				danger->s.pos.trDelta[1] = 0;
-				if (danger->s.pos.trDelta[2] > 0) {
-					danger->s.pos.trDelta[2] = 0;
-				}
-			} else if (ent->client->ps.legsTimer < 400) {
-				// send the grenade on its way
-				cs->grenadeFlushFiring = qtrue;
-				AngleVectors( cs->bs->viewangles, dir, NULL, NULL );
-				dir[2] = 0.4;
-				VectorNormalize( dir );
-				speed = 500;
-				if (cs->bs->enemy >= 0) {
-					speed = 2*VectorDistance(danger->r.currentOrigin, g_entities[cs->bs->enemy].r.currentOrigin);
-					if (speed > 650)
-						speed = 650;
-				}
-				VectorScale( dir, speed, danger->s.pos.trDelta );
-				trap_LinkEntity( danger );
-			} else if (ent->client->ps.legsTimer < 800) {
-				// stop showing the grenade
-				trap_UnlinkEntity( danger );
-			}
-		}
-*/
 		//
 		return NULL;
 	}
@@ -4201,7 +4143,6 @@ char *AIFunc_GrenadeKick( cast_state_t *cs ) {
 	//
 	// look for things we should attack
 	// if we are out of ammo, we shouldn't bother trying to attack
-	ammo = cs->bs->cur_ps.ammo;
 	shouldAttack = qfalse;
 	numEnemies = 0;
 	if ( AICast_GotEnoughAmmoForWeapon( cs, cs->bs->weaponnum ) ) {
@@ -4299,13 +4240,10 @@ AIFunc_GrenadeKickStart()
 */
 char *AIFunc_GrenadeKickStart( cast_state_t *cs ) {
 	gentity_t *danger;
-	gentity_t *ent;
 	//gentity_t *trav;
 	//int numFriends, i;
 
 	//G_Printf( "Excuse me, you dropped something\n" );
-
-	ent = &g_entities[cs->entityNum];
 	danger = &g_entities[cs->dangerEntity];
 	// should we dive onto the grenade?
 	/*
@@ -4350,7 +4288,6 @@ AIFunc_Battle()
 */
 char *AIFunc_Battle( cast_state_t *cs ) {
 	bot_moveresult_t moveresult;
-	int tfl;
 	bot_state_t *bs;
 	gentity_t *ent, *enemy;
 
@@ -4490,15 +4427,6 @@ char *AIFunc_Battle( cast_state_t *cs ) {
 	}
 	//
 	// setup for the fight
-	//
-	tfl = cs->travelflags;
-	//if in lava or slime the bot should be able to get out
-	if ( BotInLava( bs ) ) {
-		tfl |= TFL_LAVA;
-	}
-	if ( BotInSlime( bs ) ) {
-		tfl |= TFL_SLIME;
-	}
 	//
 	/*
 	moveresult = AICast_CombatMove(cs, tfl);

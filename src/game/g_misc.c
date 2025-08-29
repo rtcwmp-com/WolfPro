@@ -1581,11 +1581,7 @@ void Fire_Lead( gentity_t *ent, gentity_t *activator, float spread, int damage )
 	VectorMA( end, r, right, end );
 	VectorMA( end, u, up, end );
 
-	G_HistoricalTrace( ent, &tr, muzzle, NULL, NULL, end, ent->s.number, MASK_SHOT );
-
-	if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
-		AICast_ProcessBullet( activator, muzzle, tr.endpos );
-	}
+	trap_Trace(&tr, muzzle, NULL, NULL, end, ent->s.number, MASK_SHOT );
 
 	if ( tr.surfaceFlags & SURF_NOIMPACT ) {
 //		mg42_muzzleflash (ent);
@@ -1650,29 +1646,23 @@ float AngleDifference( float ang1, float ang2 );
 #define MG42_IDLEYAWSPEED   80.0    // degrees per second (while returning to base)
 
 void clamp_hweapontofirearc( gentity_t *self, vec3_t dang ) {
-	float diff, yawspeed;
-	qboolean clamped;
+	float diff;
 
-	clamped = qfalse;
 
 	// go back to start position
 	VectorCopy( self->s.angles, dang );
-	yawspeed = MG42_IDLEYAWSPEED;
 
 	if ( dang[0] < 0 && dang[0] < -( self->varc ) ) {
-		clamped = qtrue;
 		dang[0] = -( self->varc );
 	}
 
 	if ( dang[0] > 0 && dang[0] > ( self->varc / 2 ) ) {
-		clamped = qtrue;
 		dang[0] = self->varc / 2;
 	}
 
 	// sanity check the angles again to make sure we don't go passed the harc
 	diff = AngleDifference( self->s.angles[YAW], dang[YAW] );
 	if ( fabs( diff ) > self->harc ) {
-		clamped = qtrue;
 
 		if ( diff > 0 ) {
 			dang[YAW] = AngleMod( self->s.angles[YAW] - self->harc );
@@ -1681,8 +1671,6 @@ void clamp_hweapontofirearc( gentity_t *self, vec3_t dang ) {
 		}
 	}
 
-//	if (g_mg42arc.integer)
-//		G_Printf ("varc = %5.2f\n", dang[0]);
 }
 
 // NOTE: this only effects the external view of the user, when using the mg42, the
@@ -2060,13 +2048,7 @@ void SP_mg42( gentity_t *self ) {
 	}
 
 	if ( !self->health ) {
-		if ( g_gametype.integer == GT_SINGLE_PLAYER ) { // JPW NERVE
-			self->health = 100;
-		}
-// JPW NERVE
-		else {
-			self->health = MG42_MULTIPLAYER_HEALTH;
-		}
+		self->health = MG42_MULTIPLAYER_HEALTH;
 	}
 // jpw
 
@@ -2087,11 +2069,11 @@ void SP_mg42( gentity_t *self ) {
 		self->accuracy = 1;
 	}
 // JPW NERVE
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-		if ( !self->damage ) {
-			self->damage = 25;
-		}
+	
+	if ( !self->damage ) {
+		self->damage = 25;
 	}
+	
 // jpw
 }
 
@@ -2332,7 +2314,6 @@ void miscGunnerThink( gentity_t *ent ) {
 	qboolean fire = qfalse;
 	float yawspeed, diff;
 	vec3_t dang;
-	qboolean clamped = qfalse;
 	int i;
 
 	// find the entities
@@ -2402,7 +2383,6 @@ void miscGunnerThink( gentity_t *ent ) {
 
 		// restrict vertical range
 		if ( dang[0] < 0 && fabs( dang[0] ) > ( gun->varc / 2 ) ) {
-			clamped = qtrue;
 			if ( dang[0] < 0 ) {
 				dang[0] = -( gun->varc / 2 );
 			} else {
@@ -2416,7 +2396,6 @@ void miscGunnerThink( gentity_t *ent ) {
 			BG_EvaluateTrajectory( &gun->s.apos, level.time, gun->r.currentAngles );
 			diff = AngleDifference( dang[i], gun->r.currentAngles[i] );
 			if ( fabs( diff ) > ( yawspeed * ( (float)FRAMETIME / 1000.0 ) ) ) {
-				clamped = qtrue;
 				if ( diff > 0 ) {
 					dang[i] = AngleMod( gun->r.currentAngles[i] + ( yawspeed * ( (float)FRAMETIME / 1000.0 ) ) );
 				} else {

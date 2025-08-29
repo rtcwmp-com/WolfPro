@@ -154,7 +154,7 @@ int AICast_ScanForEnemies( cast_state_t *cs, int *enemies ) {
 	static float distances[MAX_CLIENTS];
 	static int sortedEnemies[MAX_CLIENTS];
 	float lastDist;
-	int best, oldEnemy, oldPauseTime;
+	int best, oldEnemy;
 	cast_state_t *ocs;
 
 	if ( cs->castScriptStatus.scriptAttackEnt >= 0 ) {
@@ -287,7 +287,6 @@ int AICast_ScanForEnemies( cast_state_t *cs, int *enemies ) {
 	}
 	if ( friendlyAlertCount ) {
 		// call a script event
-		oldPauseTime = cs->scriptPauseTime;
 		if ( g_entities[enemies[0]].health <= 0 ) {
 			AICast_ForceScriptEvent( cs, "inspectbodystart", g_entities[enemies[0]].aiName );
 			if ( cs->aiFlags & AIFL_DENYACTION ) {
@@ -882,7 +881,7 @@ AICast_WeaponUsable
 ==============
 */
 qboolean AICast_WeaponUsable( cast_state_t *cs, int weaponNum ) {
-	int delay, oldweap, hitclient;
+	int delay, hitclient;
 	float dist = -1;
 	gentity_t *ent, *grenade;
 
@@ -890,7 +889,6 @@ qboolean AICast_WeaponUsable( cast_state_t *cs, int weaponNum ) {
 		dist = Distance( cs->bs->origin, g_entities[cs->bs->enemy].s.pos.trBase );
 	}
 
-	oldweap = cs->bs->weaponnum;
 	ent = &g_entities[cs->entityNum];
 	delay = -1;
 
@@ -1054,11 +1052,9 @@ AICast_ChooseWeapon
 */
 void AICast_ChooseWeapon( cast_state_t *cs, qboolean battleFunc ) {
 	int i;
-	int *ammo;
 	float wantScale, bestWantScale;
 
 	BotAI_GetClientState( cs->entityNum, &( cs->bs->cur_ps ) );
-	ammo = cs->bs->cur_ps.ammo;
 	bestWantScale = 0.0;
 	// read back in the weapon that we are really using
 	//cs->bs->weaponnum = cs->bs->cur_ps.weapon;
@@ -1125,12 +1121,10 @@ float AICast_Aggression( cast_state_t *cs ) {
 	bot_state_t *bs;
 	float scale, dist;
 	int painTime;
-	int     *ammo;
 
 	bs = cs->bs;
 
 	// if we are out of ammo, we should never chase
-	ammo = cs->bs->cur_ps.ammo;
 	if ( g_entities[cs->entityNum].aiTeam != AITEAM_MONSTER ) {
 		if ( !AICast_GotEnoughAmmoForWeapon( cs, cs->bs->weaponnum ) ) {
 			return 0;
@@ -1195,8 +1189,6 @@ AICast_WantsToChase
 ==================
 */
 int AICast_WantsToChase( cast_state_t *cs ) {
-	int     *ammo;
-	ammo = cs->bs->cur_ps.ammo;
 	if ( g_entities[cs->entityNum].aiTeam != AITEAM_MONSTER ) {
 		if ( !AICast_GotEnoughAmmoForWeapon( cs, cs->bs->weaponnum ) ) {
 			return qfalse;
@@ -1218,9 +1210,6 @@ AICast_WantsToTakeCover
 */
 int AICast_WantsToTakeCover( cast_state_t *cs, qboolean attacking ) {
 	float aggrScale;
-	int     *ammo;
-
-	ammo = cs->bs->cur_ps.ammo;
 	if ( g_entities[cs->entityNum].aiTeam != AITEAM_MONSTER ) {
 		if ( !cs->bs->weaponnum ) {
 			return qtrue;
@@ -1274,7 +1263,7 @@ AICast_CombatMove
 */
 bot_moveresult_t AICast_CombatMove( cast_state_t *cs, int tfl ) {
 	bot_state_t *bs;
-	float attack_skill, croucher, dist;
+	float dist;
 	vec3_t forward, backward; //, up = {0, 0, 1};
 	bot_moveresult_t moveresult;
 	bot_goal_t goal;
@@ -1284,8 +1273,6 @@ bot_moveresult_t AICast_CombatMove( cast_state_t *cs, int tfl ) {
 	//get the enemy entity info
 	memset( &moveresult, 0, sizeof( bot_moveresult_t ) );
 	//
-	attack_skill = cs->attributes[ATTACK_SKILL];
-	croucher = ( cs->attributes[ATTACK_CROUCH] > 0.1 );
 
 	//initialize the movement state
 	BotSetupForMovement( bs );
@@ -1841,18 +1828,6 @@ AICast_StopAndAttack
 ===============
 */
 qboolean AICast_StopAndAttack( cast_state_t *cs ) {
-	float dist = -1;
-
-	if ( cs->bs->enemy >= 0 ) {
-		dist = Distance( cs->bs->origin, g_entities[cs->bs->enemy].r.currentOrigin );
-	}
-/*
-	switch (cs->bs->weaponnum) {
-
-		// removed
-
-	}
-*/
 	return qtrue;
 }
 
@@ -1896,9 +1871,6 @@ AICast_WantToRetreat
 ==============
 */
 qboolean AICast_WantToRetreat( cast_state_t *cs ) {
-	int     *ammo;
-
-	ammo = cs->bs->cur_ps.ammo;
 	if ( g_entities[cs->entityNum].aiTeam != AITEAM_MONSTER ) {
 		if ( !cs->bs->weaponnum ) {
 			return qtrue;
@@ -1991,7 +1963,7 @@ AICast_CheckDangerousEntity
 */
 void AICast_CheckDangerousEntity( gentity_t *ent, int dangerFlags, float dangerDist, float tacticalLevel, float aggressionLevel, qboolean hurtFriendly ) {
 	vec3_t org, fwd, vec;
-	cast_state_t *cs, *dcs;
+	cast_state_t *cs;
 	gentity_t *trav;
 	int i, endTime;
 	float dist;
@@ -2011,11 +1983,6 @@ void AICast_CheckDangerousEntity( gentity_t *ent, int dangerFlags, float dangerD
 		AngleVectors( ent->client->ps.viewangles, fwd, NULL, NULL );
 	}
 	//
-	if ( ent->client ) {
-		dcs = AICast_GetCastState( ent->s.number );
-	} else {
-		dcs = NULL;
-	}
 	//
 	// see if this will hurt anyone
 	for ( trav = g_entities, cs = AICast_GetCastState( 0 ), i = 0; i < level.numPlayingClients; cs++, trav++ ) {
@@ -2101,15 +2068,9 @@ qboolean AICast_HasFiredWeapon( int entNum, int weapon ) {
 
 qboolean AICast_AllowFlameDamage( int entNum ) {
 	// DHM - Nerve :: caststates are not initialized in multiplayer
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-		return qtrue;
-	}
-	// dhm
-
-	if ( caststates[entNum].aiFlags & AIFL_NO_FLAME_DAMAGE ) {
-		return qfalse;
-	}
+	
 	return qtrue;
+	
 }
 
 /*
@@ -2190,44 +2151,7 @@ AICast_AudibleEvent
 ================
 */
 void AICast_AudibleEvent( int srcnum, vec3_t pos, float range ) {
-	int i;
-	cast_state_t *cs, *scs;
-	gentity_t *ent, *sent;
 
 	// DHM - Nerve :: caststates are not initialized in multiplayer
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-		return;
-	}
-	// dhm
-
-	sent = &g_entities[srcnum];
-	scs = AICast_GetCastState( srcnum );
-
-	for ( ent = g_entities, cs = caststates, i = 0; i < level.maxclients; i++, cs++, ent++ ) {
-		if ( !cs->bs ) {
-			continue;
-		}
-		//if (cs->aiState >= AISTATE_COMBAT)
-		//	continue;
-		if ( ent == sent ) {
-			continue;
-		}
-		if ( cs->castScriptStatus.scriptNoSightTime > level.time ) {
-			continue;
-		}
-		if ( ent->health <= 0 ) {
-			continue;
-		}
-		// if within range, and this sound was made by an enemy
-		if ( scs->aiState < AISTATE_COMBAT && !AICast_QueryEnemy( cs, srcnum ) ) {
-			continue;
-		}
-		if ( Distance( pos, ent->s.pos.trBase ) > range ) {
-			continue;
-		}
-		// we heard it
-		cs->audibleEventTime = level.time + 200 + rand() % 300;   // random reaction delay
-		VectorCopy( pos, cs->audibleEventOrg );
-		cs->audibleEventEnt = ent->s.number;
-	}
+	return;
 }

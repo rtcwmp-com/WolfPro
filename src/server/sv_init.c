@@ -78,11 +78,6 @@ void SV_SetConfigstring( int index, const char *val ) {
 				continue;
 			}
 
-			// RF, don't send to bot/AI
-			if ( sv_gametype->integer == GT_SINGLE_PLAYER && client->gentity && ( client->gentity->r.svFlags & SVF_CASTAI ) ) {
-				continue;
-			}
-
 //			SV_SendServerCommand( client, "cs %i \"%s\"\n", index, val );
 
 			len = strlen( val );
@@ -509,7 +504,7 @@ void SV_SpawnServer( char *server, qboolean killBots ) {
 
 	// Ridah
 	// DHM - Nerve :: We want to use the completion bar in multiplayer as well
-	if ( sv_gametype->integer == GT_SINGLE_PLAYER || sv_gametype->integer >= GT_WOLF ) {
+	if ( sv_gametype->integer >= GT_WOLF ) {
 		SV_SetExpectedHunkUsage( va( "maps/%s.bsp", server ) );
 	} else {
 		// just set it to a negative number,so the cgame knows not to draw the percent bar
@@ -582,10 +577,6 @@ void SV_SpawnServer( char *server, qboolean killBots ) {
 			char    *denied;
 
 			if ( svs.clients[i].netchan.remoteAddress.type == NA_BOT ) {
-				if ( killBots || Cvar_VariableValue( "g_gametype" ) == GT_SINGLE_PLAYER ) {
-					SV_DropClient( &svs.clients[i], "" );
-					continue;
-				}
 				isBot = qtrue;
 			} else {
 				isBot = qfalse;
@@ -839,6 +830,8 @@ void SV_Init( void ) {
 	sv_onlyVisibleClients = Cvar_Get( "sv_onlyVisibleClients", "0", 0 );       // DHM - Nerve
 
 	sv_showAverageBPS = Cvar_Get( "sv_showAverageBPS", "0", 0 );           // NERVE - SMF - net debugging
+
+	sv_minUserCmdInterval = Cvar_Get( "sv_minUserCmdInterval", "8", CVAR_ARCHIVE );
 
 	// NERVE - SMF - create user set cvars
 	Cvar_Get( "g_userTimeLimit", "0", 0 );

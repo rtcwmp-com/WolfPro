@@ -33,6 +33,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "q_shared.h"
 #include "bg_public.h"
 #include "g_public.h"
+#include "g_unlagged.h"
 
 //==================================================================
 
@@ -449,6 +450,76 @@ typedef struct {
 #define FOLLOW_ACTIVE1  -1
 #define FOLLOW_ACTIVE2  -2
 
+enum eventList {
+    eventSuicide=0,
+    eventKill,
+    eventTeamkill,
+    eventRevive,
+    eventPause,
+    eventUnpause,
+    eventClassChange,
+    eventNameChange,
+	eventChat,
+    objTaken,
+    objDropped,
+    objReturned,
+    objCapture,
+    objDynPlant,
+    objDynDefuse,
+    objSpawnFlag,
+    objDestroyed,
+	objKilledCarrier,
+	objProtectFlag,
+    redRespawn,
+    blueRespawn,
+    teamFirstSpawn,
+};
+
+// for different json output
+#define JSON_STAT 1   // output stats
+#define JSON_WSTAT 2  // output wstats in player stats
+#define JSON_CATEGORIES 4  // output player stats in categories
+#define JSON_TEAM 8  // output player stats by team
+#define JSON_KILLDATA 16  // include additional data on "kill event"
+
+typedef struct weapon_stat_s {
+	int kills;
+	int deaths;
+	int atts;
+	int hits;
+	int headshots;
+} weapon_stat_t;
+
+typedef struct playerStats_s {
+	int damage_given;
+	int damage_received;
+	int deaths;
+	int kills;
+	int rounds;
+	int suicides;
+	int team_damage;
+	int team_kills;
+	int headshots;
+	int med_given;
+	int ammo_given;
+	int gibs;
+	int revives;
+	int acc_shots;  // Overall acc
+	int acc_hits;	// -||-
+	int killPeak;
+	int knifeKills;
+	int obj_captured;
+	int obj_destroyed;
+	int obj_returned;
+	int obj_taken;
+	int obj_checkpoint;
+	int obj_killcarrier;
+	int obj_protectflag;
+	int dyn_planted;
+	int dyn_defused;
+	weapon_stat_t aWeaponStats[WS_MAX + 1];   // Weapon stats.  +1 to avoid invalid weapon check
+} playerStats_t;
+
 // client data that stays across multiple levels or tournament restarts
 // this is achieved by writing all the data to cvar strings at game shutdown
 // time and reading them back at connection time.  Anything added here
@@ -469,6 +540,8 @@ typedef struct {
 	int latchPlayerItem;            // DHM - Nerve :: for GT_WOLF not archived
 	int latchPlayerSkin;            // DHM - Nerve :: for GT_WOLF not archived
 	int spec_invite, specInvited, specLocked;
+	playerStats_t stats;
+	char* lastChatText;
 } clientSession_t;
 
 //
@@ -513,6 +586,14 @@ typedef struct {
 
 	//Competition
 	qboolean ready;
+
+	int antilag;
+	unsigned int hitSoundType;
+	unsigned int hitSoundBodyStyle;
+	unsigned int hitSoundHeadStyle;
+
+	unsigned int autoaction;            // End-of-match auto-requests
+	unsigned int clientFlags;           // Client settings that need server involvement
 } clientPersistant_t;
 
 typedef struct {
@@ -529,6 +610,42 @@ typedef struct {
 
 #define LT_SPECIAL_PICKUP_MOD   3       // JPW NERVE # of times (minus one for modulo) LT must drop ammo before scoring a point
 #define MEDIC_SPECIAL_PICKUP_MOD    4   // JPW NERVE same thing for medic
+
+//unlagged - backward reconciliation #1
+// the size of history we'll keep
+#define NUM_CLIENT_HISTORY 17
+
+// everything we need to know to backward reconcile
+typedef struct {
+	vec3_t		mins, maxs;
+	vec3_t		currentOrigin;
+	int			leveltime;
+	//clientAnimationInfo_t animInfo;
+} clientHistory_t;
+
+typedef struct unlagged_s {
+	//unlagged - backward reconciliation #1
+	// the serverTime the button was pressed
+	// (stored before pmove_fixed changes serverTime)
+	int attackTime;
+	// the head of the history queue
+	int	historyHead;
+	// the history queue
+	clientHistory_t	history[NUM_CLIENT_HISTORY];
+	// the client's saved position
+	clientHistory_t	saved;			// used to restore after time shift
+	// an approximation of the actual server time we received this
+	// command (not in 50ms increments)
+	int			frameOffset;
+//unlagged - backward reconciliation #1
+
+	//unlagged - smooth clients #1
+	// the last frame number we got an update from this client
+	int			lastUpdateFrame;
+	//unlagged - smooth clients #1
+	qboolean        spawnprotected;
+} unlagged_t;
+
 
 // this structure is cleared on each ClientSpawn(),
 // except for 'client->pers' and 'client->sess'
@@ -628,6 +745,8 @@ struct gclient_s {
 	gentity_t       *tempHead;  // Gordon: storing a temporary head for bullet head shot detection
 
 	pmoveExt_t pmext;
+
+	unlagged_t unlag;
 };
 
 
@@ -787,9 +906,13 @@ typedef struct {
 	int			cnPush;
 	int			cnNum;
 
-	int dwBlueReinfOffset;	// Reinforcements offset
-	int dwRedReinfOffset;	// Reinforcements offset
+	int blueReinfOffset;	// Reinforcements offset
+	int redReinfOffset;	// Reinforcements offset
 
+	int frameStartTime;
+
+	int sortedStats[MAX_CLIENTS];
+	qboolean resetStats;
 } level_locals_t;
 
 extern qboolean reloading;                  // loading up a savegame
@@ -822,6 +945,9 @@ void StopFollowing( gentity_t *ent );
 void SetTeam( gentity_t *ent, char *s );
 void SetWolfData( gentity_t *ent, char *ptype, char *weap, char *grenade, char *skinnum );  // DHM - Nerve
 void Cmd_FollowCycle_f( gentity_t *ent, int dir );
+int ClientNumberFromString( gentity_t *to, char *s );
+void SanitizeString(char* in, char* out);
+void SanitizeStringToLower(char* in, char* out, qboolean fToLower);
 
 //
 // g_items.c
@@ -901,6 +1027,7 @@ qboolean G_RadiusDamage( vec3_t origin, gentity_t *attacker, float damage, float
 void body_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int damage, int meansOfDeath );
 void TossClientItems( gentity_t *self );
 gentity_t* G_BuildHead( gentity_t *ent );
+void limbo( gentity_t *ent, qboolean makeCorpse );
 
 // damage flags
 #define DAMAGE_RADIUS           0x00000001  // damage was indirect
@@ -1049,6 +1176,8 @@ void SendScoreboardMessageToAllClients( void );
 void QDECL G_Printf( const char *fmt, ... );
 void QDECL G_DPrintf( const char *fmt, ... );
 void QDECL G_Error( const char *fmt, ... );
+void SortedActivePlayers(void);
+void HandleEmptyTeams(void);
 
 //
 // g_client.c
@@ -1091,7 +1220,6 @@ void G_WriteSessionData( void );
 //
 // g_bot.c
 //
-void G_InitBots( qboolean restart );
 char *G_GetBotInfoByNumber( int num );
 char *G_GetBotInfoByName( const char *name );
 void G_CheckBotSpawn( void );
@@ -1141,6 +1269,47 @@ float AngleDifference( float ang1, float ang2 );
 
 // g_props.c
 void Props_Chair_Skyboxtouch( gentity_t *ent );
+
+//g_unlagged.c
+void G_DoTimeShiftFor( gentity_t *ent );
+void G_UndoTimeShiftFor( gentity_t *ent );
+void G_DettachBodyParts(void);
+void G_AttachBodyParts( gentity_t* ent );
+int G_SwitchBodyPartEntity( gentity_t* ent );
+
+//g_match.c
+void CountDown(void);
+void G_spawnPrintf(int print_type, int print_time, gentity_t *owner);
+void G_handlePause(qboolean dPause, int time);
+void G_loadMatchGame(void);
+
+// g_stats.c
+void G_matchClockDump( gentity_t *ent );  // temp addition for cg_autoaction issue
+void doSound(gentity_t *ent, int type, char *path, char *sound);
+unsigned int G_weapStatIndex_MOD( int iWeaponMOD );
+void G_statsPrint( gentity_t *ent, int nType );
+void G_addStats( gentity_t *targ, gentity_t *attacker, int dmg_ref, int mod );
+void G_addStatsHeadShot( gentity_t *attacker, int mod );
+char *G_createStats(gentity_t* refEnt);
+void G_deleteStats( int nClient );
+void G_parseStats( char *pszStatsInfo );
+char *G_writeStats( gclient_t* client );
+char *G_createClientStats( gentity_t *refEnt );
+void G_clientStatsPrint( gentity_t *ent, int nType, qboolean toWindow );
+void G_weaponStatsLeaders_cmd( gentity_t* ent, qboolean doTop, qboolean doWindow );
+void G_weaponRankings_cmd( gentity_t *ent, unsigned int dwCommand, qboolean state );
+void G_printMatchInfo( gentity_t *ent, qboolean fDump );
+void G_matchInfoDump( unsigned int dwDumpType );
+void G_statsall_cmd( gentity_t *ent, unsigned int dwCommand, qboolean fDump );
+void G_gameStatsPrint(gentity_t* ent);
+
+typedef enum
+{
+	DP_PAUSEINFO = 0,   ///< Print current pause info
+	DP_UNPAUSING,       ///< Print unpause countdown + unpause
+	DP_CONNECTINFO,     ///< Display info on connect
+	DP_MVSPAWN          ///< Set up MV views for clients who need them
+} enum_t_dp;
 
 #include "g_team.h" // teamplay specific stuff
 
@@ -1257,6 +1426,26 @@ extern vmCvar_t g_swapteams;
 extern vmCvar_t g_antilag;
 
 extern vmCvar_t g_dbgRevive;
+
+extern vmCvar_t g_floatPlayerPosition;
+extern vmCvar_t g_delagHitscan;
+extern vmCvar_t g_maxExtrapolatedFrames;
+extern vmCvar_t g_maxLagCompensation;
+extern vmCvar_t g_delagMissiles;
+
+extern vmCvar_t match_timeoutcount;
+extern vmCvar_t match_timeoutlength;
+
+extern vmCvar_t g_allowForceTapout;
+
+extern vmCvar_t	g_hitsounds;
+
+extern vmCvar_t g_allowEnemySpawnTimer;
+extern vmCvar_t g_spawnOffset; // random spawn offset for both teams, between 1 and cvar integer - 1
+
+extern vmCvar_t g_gameStatslog;
+extern vmCvar_t g_preciseTimeSet;	// RTCWPro precise timelimit set each round
+extern vmCvar_t	sv_hostname;
 
 void    trap_Printf( const char *fmt );
 void    trap_Error( const char *fmt );
@@ -1495,6 +1684,14 @@ void G_ResetMarkers( gentity_t* ent );
 #define READY_AWAITING	0x01	// Awaiting all to ready up..
 #define READY_PENDING	0x02	// Awaiting but can start once treshold (minclients) is reached..
 
+// Stats
+#define EOM_WEAPONSTATS 0x01    // Dump of player weapon stats at end of match.
+#define EOM_MATCHINFO   0x02    // Dump of match stats at end of match.
+
+#define AA_STATSALL     0x01    // Client AutoAction: Dump ALL player stats
+#define AA_STATSTEAM    0x02    // Client AutoAction: Dump TEAM player stats
+
+
 typedef struct {
 	qboolean spec_lock;
 	qboolean team_lock;
@@ -1525,6 +1722,14 @@ void G_teamReset(int, qboolean, qboolean);
 qboolean playerCmds (gentity_t *ent, char *cmd );
 void Svcmd_ResetMatch_f(qboolean fDoReset, qboolean fDoRestart);
 void G_swapTeams( void );
+
+void DecolorString( char *in, char *out);
+
+//g_unlagged.c
+void G_TimeShiftAllClients(int time, gentity_t* skip);
+void G_UnTimeShiftAllClients(gentity_t* skip);
+
+void G_Hitsounds( gentity_t *target, gentity_t *attacker, int mod, qboolean headshot );
 
 // Macros
 //

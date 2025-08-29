@@ -223,7 +223,6 @@ void G_MissileImpact( gentity_t *ent, trace_t *trace, int impactDamage ) {
 	gentity_t       *other;
 	qboolean hitClient = qfalse;
 	vec3_t velocity;
-	int etype;
 
 	other = &g_entities[trace->entityNum];
 
@@ -311,7 +310,6 @@ void G_MissileImpact( gentity_t *ent, trace_t *trace, int impactDamage ) {
 	ent->freeAfterEvent = qtrue;
 
 	// change over to a normal entity right at the point of impact
-	etype = ent->s.eType;
 	ent->s.eType = ET_GENERAL;
 
 	SnapVectorTowards( trace->endpos, ent->s.pos.trBase );  // save net bandwidth
@@ -337,54 +335,11 @@ Concussive_think
 ==============
 */
 void Concussive_think( gentity_t *ent ) {
-	gentity_t *player;
-	vec3_t dir;
-	vec3_t kvel;
-	float grav = 24;
-	vec3_t vec;
-	float len;
-
 	if ( level.time > ent->delay ) {
 		ent->think = G_FreeEntity;
 	}
 
 	ent->nextthink = level.time + FRAMETIME;
-
-	if ( g_gametype.integer == GT_SINGLE_PLAYER ) { // JPW NERVE -- in multiplayer this should be handled by ground_shaker
-		player = AICast_FindEntityForName( "player" );
-
-		if ( !player ) {
-			return;
-		}
-
-		VectorSubtract( player->r.currentOrigin, ent->s.origin, vec );
-		len = VectorLength( vec );
-
-//	G_Printf ("len = %5.3f\n", len);
-
-		if ( len > 512 ) {
-			return;
-		}
-
-		VectorSet( dir, 0, 0, 1 );
-		VectorScale( dir, grav, kvel );
-		VectorAdd( player->client->ps.velocity, kvel, player->client->ps.velocity );
-
-		if ( !player->client->ps.pm_time ) {
-			int t;
-
-			t = grav * 2;
-			if ( t < 50 ) {
-				t = 50;
-			}
-			if ( t > 200 ) {
-				t = 200;
-			}
-			player->client->ps.pm_time = t;
-			player->client->ps.pm_flags |= PMF_TIME_KNOCKBACK;
-		}
-
-	}
 }
 
 /*
@@ -537,72 +492,61 @@ void G_ExplodeMissile( gentity_t *ent ) {
 	trap_LinkEntity( ent );
 
 	if ( etype == ET_MISSILE ) {
-		// DHM - Nerve :: ... in single player anyway
-		if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
-			if ( ent->s.weapon == WP_VENOM_FULL ) { // no default impact smoke
-				zombiespit = qtrue;
-			} else if ( ent->s.weapon == WP_DYNAMITE || ent->s.weapon == WP_DYNAMITE2 ) {
-//				// shot heard round the world...
-				gentity_t *player;
-				player = AICast_FindEntityForName( "player" );
-				Concussive_fx( player->r.currentOrigin );
-			}
-		}
+
 // JPW NERVE -- big nasty dynamite scoring section
-		else {
-			if ( g_gametype.integer >= GT_WOLF ) {
-				if ( ent->s.weapon == WP_DYNAMITE ) { // do some scoring
+
+		if ( g_gametype.integer >= GT_WOLF ) {
+			if ( ent->s.weapon == WP_DYNAMITE ) { // do some scoring
 // check if dynamite is in trigger_objective_info field
-					vec3_t mins, maxs;
-					//static vec3_t	range = { 18, 18, 18 }; // NOTE can use this to massage throw distance outside trigger field // TTimo unused
-					int i,num,touch[MAX_GENTITIES];
-					gentity_t   *hit;
+				vec3_t mins, maxs;
+				//static vec3_t	range = { 18, 18, 18 }; // NOTE can use this to massage throw distance outside trigger field // TTimo unused
+				int i,num,touch[MAX_GENTITIES];
+				gentity_t   *hit;
 
-					// NERVE - SMF - made this the actual bounding box of dynamite instead of range
-					VectorAdd( ent->r.currentOrigin, ent->r.mins, mins );
-					VectorAdd( ent->r.currentOrigin, ent->r.maxs, maxs );
-					num = trap_EntitiesInBox( mins, maxs, touch, MAX_GENTITIES );
-					VectorAdd( ent->r.currentOrigin, ent->r.mins, mins );
-					VectorAdd( ent->r.currentOrigin, ent->r.maxs, maxs );
+				// NERVE - SMF - made this the actual bounding box of dynamite instead of range
+				VectorAdd( ent->r.currentOrigin, ent->r.mins, mins );
+				VectorAdd( ent->r.currentOrigin, ent->r.maxs, maxs );
+				num = trap_EntitiesInBox( mins, maxs, touch, MAX_GENTITIES );
+				VectorAdd( ent->r.currentOrigin, ent->r.mins, mins );
+				VectorAdd( ent->r.currentOrigin, ent->r.maxs, maxs );
 
-					for ( i = 0 ; i < num ; i++ ) {
-						hit = &g_entities[touch[i]];
-						if ( !hit->target ) {
+				for ( i = 0 ; i < num ; i++ ) {
+					hit = &g_entities[touch[i]];
+					if ( !hit->target ) {
+						continue;
+					}
+
+					if ( !( hit->r.contents & CONTENTS_TRIGGER ) ) {
+						continue;
+					}
+					if ( !strcmp( hit->classname,"trigger_objective_info" ) ) {
+						if ( !( hit->spawnflags & ( AXIS_OBJECTIVE | ALLIED_OBJECTIVE ) ) ) {
 							continue;
 						}
 
-						if ( !( hit->r.contents & CONTENTS_TRIGGER ) ) {
-							continue;
-						}
-						if ( !strcmp( hit->classname,"trigger_objective_info" ) ) {
-							if ( !( hit->spawnflags & ( AXIS_OBJECTIVE | ALLIED_OBJECTIVE ) ) ) {
-								continue;
-							}
+						if ( ( ( hit->spawnflags & AXIS_OBJECTIVE ) && ( ent->s.teamNum == TEAM_BLUE ) ) ||
+								( ( hit->spawnflags & ALLIED_OBJECTIVE ) && ( ent->s.teamNum == TEAM_RED ) ) ) {
+							G_UseTargets( hit,ent );
+							hit->think = G_FreeEntity;
+							hit->nextthink = level.time + FRAMETIME;
 
-							if ( ( ( hit->spawnflags & AXIS_OBJECTIVE ) && ( ent->s.teamNum == TEAM_BLUE ) ) ||
-								 ( ( hit->spawnflags & ALLIED_OBJECTIVE ) && ( ent->s.teamNum == TEAM_RED ) ) ) {
-								G_UseTargets( hit,ent );
-								hit->think = G_FreeEntity;
-								hit->nextthink = level.time + FRAMETIME;
-
-								if ( ent->parent->client ) {
-									if ( ent->s.teamNum == ent->parent->client->sess.sessionTeam ) { // make sure player hasn't changed teams -- per atvi req
-										AddScore( ent->parent, hit->accuracy ); // set from map, see g_trigger
-									}
+							if ( ent->parent->client ) {
+								if ( ent->s.teamNum == ent->parent->client->sess.sessionTeam ) { // make sure player hasn't changed teams -- per atvi req
+									AddScore( ent->parent, hit->accuracy ); // set from map, see g_trigger
 								}
 							}
 						}
 					}
 				}
 			}
-			// give big weapons the shakey shakey
-			if ( ent->s.weapon == WP_DYNAMITE || ent->s.weapon == WP_PANZERFAUST || ent->s.weapon == WP_GRENADE_LAUNCHER ||
-				 ent->s.weapon == WP_GRENADE_PINEAPPLE || ent->s.weapon == WP_ROCKET_LAUNCHER || ent->s.weapon == WP_MORTAR ||
-				 ent->s.weapon == WP_ARTY ) {
-				Ground_Shaker( ent->r.currentOrigin, ent->splashDamage * 4 );
-			}
-			return;
 		}
+		// give big weapons the shakey shakey
+		if ( ent->s.weapon == WP_DYNAMITE || ent->s.weapon == WP_PANZERFAUST || ent->s.weapon == WP_GRENADE_LAUNCHER ||
+				ent->s.weapon == WP_GRENADE_PINEAPPLE || ent->s.weapon == WP_ROCKET_LAUNCHER || ent->s.weapon == WP_MORTAR ||
+				ent->s.weapon == WP_ARTY ) {
+			Ground_Shaker( ent->r.currentOrigin, ent->splashDamage * 4 );
+		}
+		return;
 // jpw
 	}
 
@@ -691,12 +635,6 @@ void G_RunMissile( gentity_t *ent ) {
 	trace_t tr;
 	int impactDamage;
 
-	// Ridah, make AI aware of this danger
-	// DHM - Nerve :: Only in single player
-	if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
-		AICast_CheckDangerousEntity( ent, DANGER_MISSILE, ent->splashRadius, 0.1, 0.99, qtrue );
-	}
-
 	// get current position
 	BG_EvaluateTrajectory( &ent->s.pos, level.time, origin );
 
@@ -742,9 +680,7 @@ void G_RunMissile( gentity_t *ent ) {
 
 		if ( ent->s.eType != ET_MISSILE ) {
 // JPW NERVE
-			if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-				Ground_Shaker( ent->r.currentOrigin, ent->splashDamage * 4 );
-			}
+			Ground_Shaker( ent->r.currentOrigin, ent->splashDamage * 4 );
 // jpw
 			return;     // exploded
 		}
@@ -1254,14 +1190,9 @@ gentity_t *fire_grenade( gentity_t *self, vec3_t start, vec3_t dir, int grenadeW
 
 		// dynamite is shootable
 		// JPW NERVE only in single player
-		if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
-			bolt->health                = 5;
-			bolt->takedamage            = qtrue;
-			bolt->die                   = G_MissileDie;
-		} else {
-			bolt->health                = 5;
-			bolt->takedamage            = qfalse;
-		}
+		bolt->health                = 5;
+		bolt->takedamage            = qfalse;
+		
 		// jpw
 
 		bolt->r.contents            = CONTENTS_CORPSE;      // (player can walk through)
@@ -1279,9 +1210,8 @@ gentity_t *fire_grenade( gentity_t *self, vec3_t start, vec3_t dir, int grenadeW
 	}
 
 // JPW NERVE -- blast radius proportional to damage
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-		bolt->splashRadius = G_GetWeaponDamage( grenadeWPID );
-	}
+	bolt->splashRadius = G_GetWeaponDamage( grenadeWPID );
+	
 // jpw
 
 	bolt->clipmask = MASK_MISSILESHOT;
@@ -1368,22 +1298,16 @@ gentity_t *fire_rocket( gentity_t *self, vec3_t start, vec3_t dir ) {
 	bolt->r.svFlags = SVF_USE_CURRENT_ORIGIN | SVF_BROADCAST;
 
 	//DHM - Nerve :: Use the correct weapon in multiplayer
-	if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
-		bolt->s.weapon = WP_ROCKET_LAUNCHER;
-	} else {
-		bolt->s.weapon = self->s.weapon;
-	}
+	bolt->s.weapon = self->s.weapon;
+	
 
 	bolt->r.ownerNum = self->s.number;
 	bolt->parent = self;
 	bolt->damage = G_GetWeaponDamage( WP_ROCKET_LAUNCHER ); // JPW NERVE
 	bolt->splashDamage = G_GetWeaponDamage( WP_ROCKET_LAUNCHER ); // JPW NERVE
 // JPW NERVE
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-		bolt->splashRadius = G_GetWeaponDamage( WP_ROCKET_LAUNCHER );
-	} else {
-		bolt->splashRadius = 120;
-	}
+	bolt->splashRadius = G_GetWeaponDamage( WP_ROCKET_LAUNCHER );
+	
 // jpw
 	bolt->methodOfDeath = MOD_ROCKET;
 	bolt->splashMethodOfDeath = MOD_ROCKET_SPLASH;
@@ -1394,11 +1318,8 @@ gentity_t *fire_rocket( gentity_t *self, vec3_t start, vec3_t dir ) {
 	bolt->s.pos.trTime = level.time - MISSILE_PRESTEP_TIME;     // move a bit on the very first frame
 	VectorCopy( start, bolt->s.pos.trBase );
 // JPW NERVE
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-		VectorScale( dir,2500,bolt->s.pos.trDelta );
-	} else {
-		VectorScale( dir, 900, bolt->s.pos.trDelta );
-	}
+	VectorScale( dir,2500,bolt->s.pos.trDelta );
+	
 // jpw
 	SnapVector( bolt->s.pos.trDelta );          // save net bandwidth
 	VectorCopy( start, bolt->r.currentOrigin );
@@ -1652,11 +1573,8 @@ gentity_t *fire_nail( gentity_t *self, vec3_t start, vec3_t forward, vec3_t righ
 	VectorNormalize( dir );
 
 // JPW NERVE
-	if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
-		scale = 555 + random() * 1800;
-	} else {
-		scale = 1200 + random() * 2500;
-	}
+	scale = 1200 + random() * 2500;
+	
 // jpw
 	VectorScale( dir, scale, bolt->s.pos.trDelta );
 	SnapVector( bolt->s.pos.trDelta );

@@ -124,7 +124,7 @@ void AAS_RoutingInfo( void ) {
 // Returns:				-
 // Changes Globals:		-
 //===========================================================================
-__inline int AAS_ClusterAreaNum( int cluster, int areanum ) {
+int AAS_ClusterAreaNum( int cluster, int areanum ) {
 	int side, areacluster;
 
 	areacluster = ( *aasworld ).areasettings[areanum].cluster;
@@ -195,7 +195,7 @@ int AAS_TravelFlagForType( int traveltype ) {
 // Returns:					-
 // Changes Globals:		-
 //===========================================================================
-__inline float AAS_RoutingTime( void ) {
+float AAS_RoutingTime( void ) {
 	return AAS_Time();
 } //end of the function AAS_RoutingTime
 //===========================================================================
@@ -410,9 +410,6 @@ void AAS_CalculateAreaTravelTimes( void ) {
 	aas_reversedlink_t *revlink;
 	aas_reachability_t *reach;
 	aas_areasettings_t *settings;
-	int starttime;
-
-	starttime = Sys_MilliSeconds();
 	//if there are still area travel times, free the memory
 	if ( ( *aasworld ).areatraveltimes ) {
 		AAS_RoutingFreeMemory( ( *aasworld ).areatraveltimes );
@@ -459,9 +456,6 @@ void AAS_CalculateAreaTravelTimes( void ) {
 			} //end for
 		} //end for
 	} //end for
-#ifdef DEBUG
-	botimport.Print( PRT_MESSAGE, "area travel times %d msec\n", Sys_MilliSeconds() - starttime );
-#endif //DEBUG
 } //end of the function AAS_CalculateAreaTravelTimes
 //===========================================================================
 //
@@ -824,11 +818,10 @@ void AAS_InitRoutingUpdate( void ) {
 //===========================================================================
 
 void AAS_CreateAllRoutingCache( void ) {
-	int i, j, k, t, tfl, numroutingareas;
+	int i, j, k, tfl;
 	aas_areasettings_t *areasettings;
 	aas_reachability_t *reach;
 
-	numroutingareas = 0;
 	tfl = TFL_DEFAULT & ~( TFL_JUMPPAD | TFL_ROCKETJUMP | TFL_BFGJUMP | TFL_GRAPPLEHOOK | TFL_DOUBLEJUMP | TFL_RAMPJUMP | TFL_STRAFEJUMP | TFL_LAVA );  //----(SA)	modified since slime is no longer deadly
 //	tfl = TFL_DEFAULT & ~(TFL_JUMPPAD|TFL_ROCKETJUMP|TFL_BFGJUMP|TFL_GRAPPLEHOOK|TFL_DOUBLEJUMP|TFL_RAMPJUMP|TFL_STRAFEJUMP|TFL_SLIME|TFL_LAVA);
 	botimport.Print( PRT_MESSAGE, "AAS_CreateAllRoutingCache\n" );
@@ -850,7 +843,6 @@ void AAS_CreateAllRoutingCache( void ) {
 			continue;
 		}
 		( *aasworld ).areasettings[i].areaflags |= AREA_USEFORROUTING;
-		numroutingareas++;
 	}
 	for ( i = 1; i < ( *aasworld ).numareas; i++ )
 	{
@@ -865,7 +857,6 @@ void AAS_CreateAllRoutingCache( void ) {
 			if ( !( ( *aasworld ).areasettings[j].areaflags & AREA_USEFORROUTING ) ) {
 				continue;
 			}
-			t = AAS_AreaTravelTimeToGoalArea( j, ( *aasworld ).areawaypoints[j], i, tfl );
 			//if (t) break;
 			//Log_Write("traveltime from %d to %d is %d", i, j, t);
 		} //end for
@@ -1209,7 +1200,7 @@ void AAS_FreeRoutingCaches( void ) {
 // Returns:				-
 // Changes Globals:		-
 //===========================================================================
-__inline void AAS_AddUpdateToList( aas_routingupdate_t **updateliststart,
+void AAS_AddUpdateToList( aas_routingupdate_t **updateliststart,
 								   aas_routingupdate_t **updatelistend,
 								   aas_routingupdate_t *update ) {
 	if ( !update->inlist ) {
@@ -2036,7 +2027,6 @@ void AAS_CreateVisibility( void ) {
 	bsp_trace_t trace;
 	byte *buf;
 	byte *validareas;
-	int numvalid = 0;
 
 	buf = (byte *) GetClearedMemory( ( *aasworld ).numareas * 2 * sizeof( byte ) );   // in case it ends up bigger than the decompressedvis, which is rare but possible
 	validareas = (byte *) GetClearedMemory( ( *aasworld ).numareas * sizeof( byte ) );
@@ -2060,7 +2050,6 @@ void AAS_CreateVisibility( void ) {
 		if ( !trace.startsolid && trace.fraction < 1 && AAS_PointAreaNum( trace.endpos ) == i ) {
 			VectorCopy( trace.endpos, ( *aasworld ).areawaypoints[i] );
 			validareas[i] = 1;
-			numvalid++;
 		} else {
 			continue;
 		}
@@ -2116,7 +2105,7 @@ float VectorDistance( vec3_t v1, vec3_t v2 );
 extern void ProjectPointOntoVector( vec3_t point, vec3_t vStart, vec3_t vEnd, vec3_t vProj ) ;
 int AAS_NearestHideArea( int srcnum, vec3_t origin, int areanum, int enemynum, vec3_t enemyorigin, int enemyareanum, int travelflags ) {
 	int i, j, nextareanum, badtravelflags, numreach, bestarea;
-	unsigned short int t, besttraveltime, enemytraveltime;
+	unsigned short int t, besttraveltime;
 	aas_routingupdate_t *updateliststart, *updatelistend, *curupdate, *nextupdate;
 	aas_reachability_t *reach;
 	float dist1, dist2;
@@ -2147,9 +2136,7 @@ int AAS_NearestHideArea( int srcnum, vec3_t origin, int areanum, int enemynum, v
 	} //end else
 	besttraveltime = 0;
 	bestarea = 0;
-	if ( enemyareanum ) {
-		enemytraveltime = AAS_AreaTravelTimeToGoalArea( areanum, origin, enemyareanum, travelflags );
-	}
+
 	VectorSubtract( enemyorigin, origin, enemyVec );
 	enemytraveldist = VectorNormalize( enemyVec );
 	startVisible = botimport.AICast_VisibleFromPos( enemyorigin, enemynum, origin, srcnum, qfalse );
@@ -2326,7 +2313,7 @@ int AAS_NearestHideArea( int srcnum, vec3_t origin, int areanum, int enemynum, v
 //===========================================================================
 int AAS_FindAttackSpotWithinRange( int srcnum, int rangenum, int enemynum, float rangedist, int travelflags, float *outpos ) {
 	int i, nextareanum, badtravelflags, numreach, bestarea;
-	unsigned short int t, besttraveltime, enemytraveltime;
+	unsigned short int t, besttraveltime;
 	aas_routingupdate_t *updateliststart, *updatelistend, *curupdate, *nextupdate;
 	aas_reachability_t *reach;
 	vec3_t srcorg, rangeorg, enemyorg;
@@ -2364,7 +2351,6 @@ int AAS_FindAttackSpotWithinRange( int srcnum, int rangenum, int enemynum, float
 	//
 	besttraveltime = 0;
 	bestarea = 0;
-	enemytraveltime = AAS_AreaTravelTimeToGoalArea( srcarea, srcorg, enemyarea, travelflags );
 	//
 	badtravelflags = ~travelflags;
 	//

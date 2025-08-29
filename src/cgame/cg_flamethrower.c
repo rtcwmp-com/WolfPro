@@ -594,7 +594,6 @@ CG_MoveFlameChunk
 void CG_MoveFlameChunk( flameChunk_t *f ) {
 	vec3_t newOrigin, sOrg;
 	trace_t trace;
-	int jiggleCount;
 	float dot;
 	// TTimo: unused
 	//static vec3_t	umins = {-1,-1,-1};
@@ -620,7 +619,6 @@ void CG_MoveFlameChunk( flameChunk_t *f ) {
 		}
 	}
 
-	jiggleCount = 0;
 	VectorCopy( f->baseOrg, sOrg );
 	while ( f->velSpeed > 1 ) {
 		CG_FlameCalcOrg( f, cg.time, newOrigin );
@@ -931,7 +929,7 @@ void CG_AddFlameToScene( flameChunk_t *fHead ) {
 #define FLAME_SOUND_RANGE   1024.0
 	//flameChunk_t *lastSoundFlameChunk=NULL; // TTimo: unused
 	flameChunk_t *lastBlowChunk = NULL;
-	qboolean isClientFlame, firing;
+	qboolean isClientFlame;
 	int shader;
 	flameChunk_t *lastBlueChunk = NULL;
 	qboolean skip = qfalse, droppedTrail;
@@ -945,10 +943,8 @@ void CG_AddFlameToScene( flameChunk_t *fHead ) {
 
 	if ( ( cg_entities[fHead->ownerCent].currentState.eFlags & EF_FIRING ) && ( centFlameInfo[fHead->ownerCent].lastFlameChunk == fHead ) ) {
 		headTimeStart = fHead->timeStart;
-		firing = qtrue;
 	} else {
 		headTimeStart = cg.time;
-		firing = qfalse;
 	}
 
 	VectorClear( lightOrg );
@@ -1400,19 +1396,4 @@ void CG_UpdateFlamethrowerSounds( void ) {
 
 		f = f->nextHead;
 	}
-
-	// DHM - Nerve :: No more client side damage
-	// send client damage updates if required
-	/*
-	for (cent=cg_entities, i=0; i<cgs.maxclients; cent++, i++) {
-		if (centFlameInfo[i].lastDmgCheck > centFlameInfo[i].lastDmgUpdate &&
-			centFlameInfo[i].lastDmgUpdate < cg.time - 50 ) // JPW NERVE (cgs.gametype == GT_SINGLE_PLAYER ? 50 : 50)) -- sean changed clientdamage so this isn't a saturation issue any longer
-		{
-			if ((cg.snap->ps.pm_flags & PMF_LIMBO) || ( cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR )) // JPW NERVE
-				return; // JPW NERVE don't do flame damage to guys in limbo or spectator, they drop out of the game
-			CG_ClientDamage( i, centFlameInfo[i].lastDmgEnemy, CLDMG_FLAMETHROWER );
-			centFlameInfo[i].lastDmgUpdate = cg.time;
-		}
-	}
-	*/
 }

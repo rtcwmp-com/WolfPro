@@ -50,7 +50,8 @@ static void ToggleGuiInput_f()
 
 
 void CL_ImGUI_Init(void){
-    igCreateContext(NULL);
+    cls.igContext = igCreateContext(NULL);
+	igGetAllocatorFunctions(&cls.igAlloc, &cls.igFree, (void**)cls.igUser);
     ImGuiIO *ioptr = igGetIO();
     ioptr->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NoMouseCursorChange;
     ioptr->MouseDrawCursor = false;
@@ -66,7 +67,7 @@ void CL_ImGUI_Shutdown(void){
     igDestroyContext(NULL);
 }
 
-void CL_ImGUI_Frame()
+void CL_ImGUI_Frame(void)
 {
 	if(Cvar_VariableIntegerValue("r_debugInput"))
 	{
@@ -208,51 +209,7 @@ void CL_ImGUI_ButtonMapping(){
 	}
 }
 
-
-typedef struct MainMenuItem
-{
-	ImGUI_MainMenu_Id menu;
-	const char* name;
-	const char* shortcut;
-	bool* selected;
-	bool enabled;
-} MainMenuItem;
-
-typedef struct MainMenu
-{
-	MainMenuItem items[64];
-	int itemCount;
-	int itemCountPerMenu[ImGUI_MainMenu_Count]; // effectively a histogram
-} MainMenu;
-
 static MainMenu mm;
-
-#define M(Enum, Desc) Desc,
-static const char* mainMenuNames[ImGUI_MainMenu_Count + 1] =
-{
-	MAIN_MENU_LIST(M)
-	""
-};
-#undef M
-
-// global requires shift key down, local requires shift up
-
-
-qbool IsShortcutPressed(ImGuiKey key, ImGUI_ShortcutOptions flags)
-{
-	const bool globalShortcut = (flags & ImGUI_ShortcutOptions_Global) != 0;
-	const bool shiftStateOK = globalShortcut == igIsKeyDown_Nil(ImGuiMod_Shift);
-	
-	return igIsKeyDown_Nil(ImGuiMod_Ctrl) && shiftStateOK && igIsKeyPressed_Bool(key, false);
-}
-
-void ToggleBooleanWithShortcut(qbool *value, ImGuiKey key, ImGUI_ShortcutOptions flags)
-{
-	if (IsShortcutPressed(key, flags))
-	{
-		*value = !*value;
-	}
-}
 
 void GUI_AddMainMenuItem(ImGUI_MainMenu_Id menu, const char* name, const char* shortcut, qbool* selected, qbool enabled)
 {
@@ -267,13 +224,13 @@ void GUI_AddMainMenuItem(ImGUI_MainMenu_Id menu, const char* name, const char* s
 	item->menu = menu;
 	item->name = name;
 	item->shortcut = shortcut;
-	item->selected = selected;
+	item->selected = (bool*)selected;
 	item->enabled = enabled;
 
 	mm.itemCountPerMenu[menu]++;
 }
 
-void GUI_DrawMainMenu()
+void GUI_DrawMainMenu(void)
 {
 	if(igBeginMainMenuBar())
 	{
@@ -306,49 +263,4 @@ void GUI_DrawMainMenu()
 
 	mm.itemCount = 0;
 	memset(mm.itemCountPerMenu, 0, sizeof(mm.itemCountPerMenu));
-}
-
-
-void TableHeader(int count, ...)
-{
-	va_list args;
-	va_start(args, count);
-	for(int i = 0; i < count; ++i)
-	{
-		const char* header = va_arg(args, const char*);
-		igTableSetupColumn(header, 0, 0, 0);
-	}
-	va_end(args);
-
-	igTableHeadersRow();
-}
-
-void TableRow(int count, ...)
-{
-	igTableNextRow(0, 0.0f);
-
-	va_list args;
-	va_start(args, count);
-	for(int i = 0; i < count; ++i)
-	{
-		const char* item = va_arg(args, const char*);
-		igTableSetColumnIndex(i);
-		igText(item);
-	}
-	va_end(args);
-}
-
-void TableRowBool(const char* item0, qbool item1)
-{
-	TableRow(2, item0, item1 ? "YES" : "NO");
-}
-
-void TableRowInt(const char* item0, int item1)
-{
-	TableRow(2, item0, va("%d", item1));
-}
-
-void TableRowStr(const char* item0, float item1, const char* format)
-{
-	TableRow(2, item0, va(format, item1));
 }

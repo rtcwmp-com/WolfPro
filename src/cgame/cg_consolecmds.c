@@ -269,62 +269,7 @@ void CG_FreeCamera( int camNum ) {
 	cameraInuse[camNum] = qfalse;
 }
 
-/*
-==============
-CG_StartCamera
-==============
-*/
-void CG_StartCamera( const char *name, qboolean startBlack ) {
-	char lname[MAX_QPATH];
 
-	if ( cgs.gametype != GT_SINGLE_PLAYER ) {
-		return;
-	}
-
-	COM_StripExtension( name, lname );    //----(SA)	added
-	strcat( lname, ".camera" );
-
-	if ( trap_loadCamera( CAM_PRIMARY, va( "cameras/%s", lname ) ) ) {
-		cg.cameraMode = qtrue;
-		if ( startBlack ) {
-			CG_Fade( 0, 0, 0, 255, 0 );           // go black
-		}
-		trap_Cvar_Set( "cg_letterbox", "1" ); // go letterbox
-		trap_SendClientCommand( "startCamera" );
-		trap_startCamera( CAM_PRIMARY, cg.time );
-	} else {
-
-		//----(SA)	temp until radiant stores cameras in own directory
-		//			check cameras dir then main dir
-		if ( trap_loadCamera( CAM_PRIMARY, name ) ) {
-			cg.cameraMode = qtrue;
-			trap_SendClientCommand( "startCamera" );
-			trap_startCamera( CAM_PRIMARY, cg.time );
-			return;
-		}
-		//----(SA)	end (remove when radiant stores cameras...)
-
-		trap_SendClientCommand( "stopCamera" );
-		CG_Fade( 0, 0, 0, 0, 0 );             // ensure fadeup
-		trap_Cvar_Set( "cg_letterbox", "0" );
-		cg.cameraMode = qfalse;
-		CG_Printf( "Unable to load camera %s\n",lname );
-	}
-}
-
-/*
-// TTimo: defined but not used
-static void CG_Camera_f( void ) {
-	char name[MAX_QPATH];
-
-	if ( cgs.gametype != GT_SINGLE_PLAYER )
-		return;
-
-	trap_Argv( 1, name, sizeof(name));
-
-	CG_StartCamera(name, qfalse );
-}
-*/
 
 static void CG_Fade_f( void ) {
 	int r, g, b, a;
@@ -524,6 +469,52 @@ static void CG_DumpLocation_f( void ) {
 			   (int) cg.snap->ps.origin[0], (int) cg.snap->ps.origin[1], (int) cg.snap->ps.origin[2] );
 }
 
+// Force tapout
+static void CG_ForceTapOut_f(void) {
+	trap_SendClientCommand("forcetapout");
+}
+
+/**
+ * @brief ETPro style enemy spawntimer
+ */
+static void CG_TimerSet_f(void) {
+
+	if (!cg_drawEnemyTimer.integer)
+	{
+		return;
+	}
+
+	if (cgs.gamestate != GS_PLAYING)
+	{
+		CG_Printf("You may only use this command during the match.\n");
+		return;
+	}
+
+	if (cg.snap->ps.pm_type == PM_INTERMISSION) {
+		return;
+	}
+
+	trap_Cvar_Set("cg_spawnTimer_period", "30"); // just set a default value - cg_draw will use cg_red/bluelimbotime
+	trap_Cvar_Set("cg_spawnTimer_set", va("%i", (cg.time - cgs.levelStartTime)));
+}
+
+/**
+ * @brief ETPro style timer resetting
+ */
+static void CG_TimerReset_f(void)
+{
+	if (cgs.gamestate != GS_PLAYING)
+	{
+		CG_Printf("You may only use this command during the match.\n");
+		return;
+	}
+
+	if (cg.snap->ps.pm_type == PM_INTERMISSION) {
+		return;
+	}
+
+	trap_Cvar_Set("cg_spawnTimer_set", va("%d", cg.time - cgs.levelStartTime));
+}
 
 typedef struct {
 	char    *cmd;
@@ -580,6 +571,10 @@ static consoleCommand_t commands[] = {
 
 	// Arnout
 	{ "dumploc", CG_DumpLocation_f },
+	{ "timerSet", CG_TimerSet_f },
+	{ "timerReset", CG_TimerReset_f },
+	{ "resetTimer", CG_TimerReset_f }, // keep ETPro compatibility
+	{ "forcetapout", CG_ForceTapOut_f }
 };
 
 
@@ -592,17 +587,18 @@ Cmd_Argc() / Cmd_Argv()
 =================
 */
 qboolean CG_ConsoleCommand( void ) {
-	const char  *cmd;
-	int i;
+	const char* cmd = CG_Argv(0);
+
+	if (!Q_stricmp(cmd, "drawgui")) {
+		return qtrue;
+	}
 
 	// Arnout - don't allow console commands until a snapshot is present
-	if ( !cg.snap ) {
+	if ( !cg.snap) {
 		return qfalse;
 	}
 
-	cmd = CG_Argv( 0 );
-
-	for ( i = 0 ; i < sizeof( commands ) / sizeof( commands[0] ) ; i++ ) {
+	for (int i = 0 ; i < sizeof( commands ) / sizeof( commands[0] ) ; i++ ) {
 		if ( !Q_stricmp( cmd, commands[i].cmd ) ) {
 			commands[i].function();
 			return qtrue;

@@ -360,6 +360,15 @@ void Weapon_Syringe( gentity_t *ent ) {
 				// DHM - Nerve :: Mark that the medicine was indeed dispensed
 				usedSyringe = qtrue;
 
+				if ( g_gamestate.integer == GS_PLAYING ) {
+					ent->client->sess.stats.aWeaponStats[WS_SYRINGE].hits++;
+					ent->client->sess.stats.revives++;
+					if (g_gameStatslog.integer) {
+                        //G_writeGeneralEvent(traceEnt,ent," ",eventRevive);
+                       // G_writeReviveEvent (traceEnt->client->pers.netname, ent->client->pers.netname);
+					}
+				}
+
 				// sound
 				te = G_TempEntity( traceEnt->r.currentOrigin, EV_GENERAL_SOUND );
 				te->s.eventParm = G_SoundIndex( "sound/multiplayer/vo_revive.wav" );
@@ -788,6 +797,9 @@ void weapon_callAirStrike( gentity_t *ent ) {
 
 		// move pos for next bomb
 		VectorAdd( pos,bombaxis,pos );
+
+		if (g_gamestate.integer == GS_PLAYING)
+			ent->parent->client->sess.stats.aWeaponStats[WS_AIRSTRIKE].atts++;
 	}
 }
 
@@ -1011,6 +1023,8 @@ void Weapon_Artillery( gentity_t *ent ) {
 		}
 		ent->client->ps.classWeaponTime = level.time;
 	}
+	if ( g_gamestate.integer == GS_PLAYING )
+		ent->client->sess.stats.aWeaponStats[WS_ARTILLERY].atts++;
 
 }
 
@@ -1137,84 +1151,46 @@ void SnapVectorTowards( vec3_t v, vec3_t to ) {
 // KLUDGE/FIXME: also modded #defines below to become macros that call this fn for minimal impact elsewhere
 //
 int G_GetWeaponDamage( int weapon ) {
-	if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
-		switch ( weapon ) {
-		case WP_LUGER:
-		case WP_SILENCER: return 6;
-		case WP_COLT: return 8;
-		case WP_AKIMBO: return 8;       //----(SA)	added
-		case WP_VENOM_FULL:
-		case WP_VENOM: return 12;       // 15  ----(SA)	slight modify for DM
-		case WP_MP40: return 6;
-		case WP_THOMPSON: return 8;
-		case WP_STEN: return 10;
-		case WP_FG42SCOPE:
-		case WP_FG42: return 15;
-		case WP_BAR:
-		case WP_BAR2: return 12;        //----(SA)	added
-		case WP_MAUSER: return 20;
-		case WP_GARAND: return 25;
-		case WP_SNIPERRIFLE: return 55;
-		case WP_SNOOPERSCOPE: return 25;
-		case WP_NONE: return 0;
-		case WP_KNIFE:
-		case WP_KNIFE2: return 5;
-		case WP_GRENADE_LAUNCHER: return 100;
-		case WP_GRENADE_PINEAPPLE: return 80;
-		case WP_DYNAMITE:
-		case WP_DYNAMITE2: return 300;
-		case WP_ROCKET_LAUNCHER:
-		case WP_PANZERFAUST: return 100;
-		case WP_MORTAR: return 100;
-		case WP_FLAMETHROWER:     // FIXME -- not used in single player yet
-		case WP_TESLA:
-		case WP_SPEARGUN:
-		case WP_SPEARGUN_CO2:
-		case WP_CROSS:
-		case WP_GAUNTLET:
-		case WP_SNIPER:
-		default:    return 1;
-		}
-	} else { // multiplayer damage
-		switch ( weapon ) {
-		case WP_LUGER:
-		case WP_SILENCER:
-		case WP_COLT: return 18;
-		case WP_AKIMBO: return 18;      //----(SA)	added
-		case WP_VENOM_FULL: return 10;
-		case WP_VENOM: return 20;
-		case WP_MP40: return 14;
-		case WP_THOMPSON: return 18;
-		case WP_STEN: return 14;
-		case WP_FG42SCOPE:
-		case WP_FG42: return 15;
-		case WP_BAR:
-		case WP_BAR2: return 12;        //----(SA)	added
-		case WP_MAUSER: return 80;     // was 25 JPW
-		case WP_GARAND: return 75;     // was 25 JPW
-		case WP_SNIPERRIFLE: return 80;
-		case WP_SNOOPERSCOPE: return 75;
-		case WP_NONE: return 0;
-		case WP_KNIFE:
-		case WP_KNIFE2: return 10;
-		case WP_SMOKE_GRENADE: return 140;     // just enough to kill somebody standing on it
-		case WP_GRENADE_LAUNCHER: return 250;
-		case WP_GRENADE_PINEAPPLE: return 250;
-		case WP_DYNAMITE:
-		case WP_DYNAMITE2: return 600;
-		case WP_ROCKET_LAUNCHER:
-		case WP_PANZERFAUST: return 400;
-		case WP_MORTAR: return 250;
-		case WP_FLAMETHROWER: return 1;
-		case WP_TESLA:
-		case WP_SPEARGUN:
-		case WP_SPEARGUN_CO2:
-		case WP_CROSS:
-		case WP_GAUNTLET:
-		case WP_SNIPER:
-		default:    return 1;
-		}
+
+	switch ( weapon ) {
+	case WP_LUGER:
+	case WP_SILENCER:
+	case WP_COLT: return 18;
+	case WP_AKIMBO: return 18;      //----(SA)	added
+	case WP_VENOM_FULL: return 10;
+	case WP_VENOM: return 20;
+	case WP_MP40: return 14;
+	case WP_THOMPSON: return 18;
+	case WP_STEN: return 14;
+	case WP_FG42SCOPE:
+	case WP_FG42: return 15;
+	case WP_BAR:
+	case WP_BAR2: return 12;        //----(SA)	added
+	case WP_MAUSER: return 80;     // was 25 JPW
+	case WP_GARAND: return 75;     // was 25 JPW
+	case WP_SNIPERRIFLE: return 80;
+	case WP_SNOOPERSCOPE: return 75;
+	case WP_NONE: return 0;
+	case WP_KNIFE:
+	case WP_KNIFE2: return 10;
+	case WP_SMOKE_GRENADE: return 140;     // just enough to kill somebody standing on it
+	case WP_GRENADE_LAUNCHER: return 250;
+	case WP_GRENADE_PINEAPPLE: return 250;
+	case WP_DYNAMITE:
+	case WP_DYNAMITE2: return 600;
+	case WP_ROCKET_LAUNCHER:
+	case WP_PANZERFAUST: return 400;
+	case WP_MORTAR: return 250;
+	case WP_FLAMETHROWER: return 1;
+	case WP_TESLA:
+	case WP_SPEARGUN:
+	case WP_SPEARGUN_CO2:
+	case WP_CROSS:
+	case WP_GAUNTLET:
+	case WP_SNIPER:
+	default:    return 1;
 	}
+	
 }
 // JPW - this chunk appears to not be used, right?
 /*
@@ -1226,48 +1202,7 @@ int G_GetWeaponDamage( int weapon ) {
 
 // RF, wrote this so we can dynamically switch between old and new values while testing g_userAim
 float G_GetWeaponSpread( int weapon ) {
-	if ( g_gametype.integer == GT_SINGLE_PLAYER ) {   // JPW NERVE -- don't affect SP game
-		if ( g_userAim.integer ) {
-			// these should be higher since they become erratic if aiming is out
-			switch ( weapon ) {
-			case WP_LUGER: return 600;
-			case WP_SILENCER: return 900;
-			case WP_COLT: return 700;
-			case WP_AKIMBO: return 700; //----(SA)	added
-			case WP_VENOM: return 1000;
-			case WP_MP40: return 1000;
-			case WP_FG42SCOPE:
-			case WP_FG42:   return 800;
-			case WP_BAR:
-			case WP_BAR2:   return 800;
-			case WP_THOMPSON: return 1200;
-			case WP_STEN: return 1200;
-			case WP_MAUSER: return 400;
-			case WP_GARAND: return 500;
-			case WP_SNIPERRIFLE: return 300;
-			case WP_SNOOPERSCOPE: return 300;
-			}
-		} else {    // old values
-			switch ( weapon ) {
-			case WP_LUGER: return 25;
-			case WP_SILENCER: return 150;
-			case WP_COLT: return 30;
-			case WP_AKIMBO: return 30;      //----(SA)	added
-			case WP_VENOM: return 200;
-			case WP_MP40: return 200;
-			case WP_FG42SCOPE:
-			case WP_FG42:   return 150;
-			case WP_BAR:
-			case WP_BAR2:   return 150;
-			case WP_THOMPSON: return 250;
-			case WP_STEN: return 300;
-			case WP_MAUSER: return 15;
-			case WP_GARAND: return 25;
-			case WP_SNIPERRIFLE: return 10;
-			case WP_SNOOPERSCOPE: return 10;
-			}
-		}
-	} else { // JPW NERVE but in multiplayer...  new spreads and don't look at g_userAim
+	
 		switch ( weapon ) {
 		case WP_LUGER: return 600;
 		case WP_SILENCER: return 900;
@@ -1286,7 +1221,7 @@ float G_GetWeaponSpread( int weapon ) {
 		case WP_SNIPERRIFLE: return 700;         // was 300
 		case WP_SNOOPERSCOPE: return 700;
 		}
-	}
+	
 	G_Printf( "shouldn't ever get here (weapon %d)\n",weapon );
 	// jpw
 	return 0;   // shouldn't get here
@@ -1446,13 +1381,6 @@ void SP5_Fire( gentity_t *ent, float aimSpreadScale ) {
 			CalcMuzzlePoints( traceEnt, traceEnt->s.weapon );
 			Bullet_Fire( traceEnt, 1000, damage );
 		} else {
-			// Ridah, don't hurt team-mates
-			// DHM - Nerve :: only in single player
-			if ( ent->client && traceEnt->client && g_gametype.integer == GT_SINGLE_PLAYER && ( traceEnt->r.svFlags & SVF_CASTAI ) && ( ent->r.svFlags & SVF_CASTAI ) && AICast_SameTeam( AICast_GetCastState( ent->s.number ), traceEnt->s.number ) ) {
-				// AI's don't hurt members of their own team
-				return;
-			}
-			// done.
 			G_Damage( traceEnt, ent, ent, forward, tr.endpos, damage, 0, MOD_SILENCER );
 		}
 	}
@@ -1543,8 +1471,7 @@ void EmitterCheck( gentity_t *ent, gentity_t *attacker, trace_t *tr ) {
 
 
 void SniperSoundEFX( vec3_t pos ) {
-	gentity_t *sniperEnt;
-	sniperEnt = G_TempEntity( pos, EV_SNIPER_SOUND );
+	G_TempEntity( pos, EV_SNIPER_SOUND );
 }
 
 
@@ -1592,8 +1519,43 @@ Bullet_Fire
 void Bullet_Fire( gentity_t *ent, float spread, int damage ) {
 	vec3_t end;
 
+	if (ent->client && (ent->client->pers.antilag) && g_antilag.integer == 2) 
+	{
+		G_DoTimeShiftFor(ent);
+	}
+
 	Bullet_Endpos( ent, spread, &end );
 	Bullet_Fire_Extended( ent, ent, muzzleTrace, end, spread, damage );
+
+	if (ent->client && (ent->client->pers.antilag) && g_antilag.integer == 2)
+	{
+		G_UndoTimeShiftFor(ent);
+	}
+}
+
+qboolean LogAccuracyShot(gentity_t* target, gentity_t* attacker) {
+	if (attacker && attacker->client)
+	{
+		if (target && target->client)
+		{
+			if (target->client->ps.stats[STAT_HEALTH] > 0 || (OnSameTeam(attacker, target)))
+			{
+				if ((target->client->ps.powerups[PW_INVULNERABLE] <= level.time))
+				{
+					return qtrue;
+				}
+			}
+		}
+		else
+		{
+			if (!target || !target->takedamage)
+			{
+				return qtrue;
+			}
+		}
+	}
+
+	return qfalse;
 }
 
 
@@ -1610,15 +1572,27 @@ void Bullet_Fire_Extended( gentity_t *source, gentity_t *attacker, vec3_t start,
 	trace_t tr;
 	gentity_t   *tent;
 	gentity_t   *traceEnt;
-
+	vec3_t dir;
+	int res;
 	damage *= s_quadFactor;
 
-	G_HistoricalTrace( source, &tr, start, NULL, NULL, end, source->s.number, MASK_SHOT );
+	//G_HistoricalTrace( source, &tr, start, NULL, NULL, end, source->s.number, MASK_SHOT );
+	G_AttachBodyParts( source ) ;
 
-	// DHM - Nerve :: only in single player
-	if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
-		AICast_ProcessBullet( attacker, start, tr.endpos );
+	trap_Trace( &tr, start, NULL, NULL, end, source->s.number, MASK_SHOT );
+	
+	res = G_SwitchBodyPartEntity( &g_entities[tr.entityNum] );
+
+
+	if ( res != tr.entityNum ) {							 
+		VectorSubtract( end, start, dir );						  
+		VectorNormalizeFast( dir );								  
+																	
+		VectorMA( tr.endpos, -1, dir, tr.endpos );	  
+		tr.entityNum = res;								
 	}
+
+	G_DettachBodyParts();
 
 	// bullet debugging using Q3A's railtrail
 	if ( g_debugBullets.integer & 1 ) {
@@ -1643,6 +1617,11 @@ void Bullet_Fire_Extended( gentity_t *source, gentity_t *attacker, vec3_t start,
 
 	EmitterCheck( traceEnt, attacker, &tr );
 
+	if (LogAccuracyShot(traceEnt, source) && g_gamestate.integer == GS_PLAYING)
+	{
+		source->client->sess.stats.acc_shots++;
+	}
+
 	// snap the endpos to integers, but nudged towards the line
 	SnapVectorTowards( tr.endpos, start );
 
@@ -1657,8 +1636,9 @@ void Bullet_Fire_Extended( gentity_t *source, gentity_t *attacker, vec3_t start,
 	if ( traceEnt->takedamage && traceEnt->client && !( traceEnt->flags & FL_DEFENSE_GUARD ) ) {
 		tent = G_TempEntity( tr.endpos, EV_BULLET_HIT_FLESH );
 		tent->s.eventParm = traceEnt->s.number;
-		if ( LogAccuracyHit( traceEnt, attacker ) ) {
+		if ( LogAccuracyHit( traceEnt, attacker ) && g_gamestate.integer == GS_PLAYING) {
 			attacker->client->ps.persistant[PERS_ACCURACY_HITS]++;
+			attacker->client->sess.stats.acc_hits++;
 		}
 
 //----(SA)	added
@@ -1745,13 +1725,6 @@ void Bullet_Fire_Extended( gentity_t *source, gentity_t *attacker, vec3_t start,
 //----(SA)	end
 
 		} else {
-			// Ridah, don't hurt team-mates
-			// DHM - Nerve :: Only in single player
-			if ( attacker->client && traceEnt->client && g_gametype.integer == GT_SINGLE_PLAYER && ( traceEnt->r.svFlags & SVF_CASTAI ) && ( attacker->r.svFlags & SVF_CASTAI ) && AICast_SameTeam( AICast_GetCastState( attacker->s.number ), traceEnt->s.number ) ) {
-				// AI's don't hurt members of their own team
-				return;
-			}
-			// done.
 
 			G_Damage( traceEnt, attacker, attacker, forward, tr.endpos, damage, 0, ammoTable[attacker->s.weapon].mod );
 
@@ -1932,7 +1905,6 @@ void VenomPattern( vec3_t origin, vec3_t origin2, int seed, gentity_t *ent ) {
 	float r, u;
 	vec3_t end;
 	vec3_t forward, right, up;
-	int oldScore;
 	qboolean hitClient = qfalse;
 
 	// derive the right and up vectors from the forward vector, because
@@ -1940,8 +1912,11 @@ void VenomPattern( vec3_t origin, vec3_t origin2, int seed, gentity_t *ent ) {
 	VectorNormalize2( origin2, forward );
 	PerpendicularVector( right, forward );
 	CrossProduct( forward, right, up );
-
-	oldScore = ent->client->ps.persistant[PERS_SCORE];
+	
+	if (ent->client && (ent->client->pers.antilag) && g_antilag.integer == 2) 
+	{
+		G_DoTimeShiftFor(ent);
+	}
 
 	// generate the "random" spread pattern
 	for ( i = 0 ; i < DEFAULT_VENOM_COUNT ; i++ ) {
@@ -1954,6 +1929,11 @@ void VenomPattern( vec3_t origin, vec3_t origin2, int seed, gentity_t *ent ) {
 			hitClient = qtrue;
 			ent->client->ps.persistant[PERS_ACCURACY_HITS]++;
 		}
+	}
+
+	if (ent->client && (ent->client->pers.antilag) && g_antilag.integer == 2)
+	{
+		G_UndoTimeShiftFor(ent);
 	}
 }
 
@@ -2047,6 +2027,10 @@ void Weapon_RocketLauncher_Fire( gentity_t *ent ) {
 	m->damage *= s_quadFactor;
 	m->splashDamage *= s_quadFactor;
 
+	if (g_gamestate.integer == GS_PLAYING) {  // add panzer attempts to accuracy
+		ent->client->sess.stats.acc_shots++;
+	}
+
 //	VectorAdd( m->s.pos.trDelta, ent->client->ps.velocity, m->s.pos.trDelta );	// "real" physics
 }
 
@@ -2107,7 +2091,6 @@ static vec3_t flameChunkMaxs = { 4,  4,  4};
 #define SQR_SIN_T 0.44 // ~ sqr(sin(20))
 
 void Weapon_FlamethrowerFire( gentity_t *ent ) {
-	gentity_t   *traceEnt;
 	vec3_t start;
 	vec3_t trace_start;
 	vec3_t trace_end;
@@ -2138,7 +2121,7 @@ void Weapon_FlamethrowerFire( gentity_t *ent ) {
 		}
 	}
 
-	traceEnt = fire_flamechunk( ent, start, forward );
+	fire_flamechunk( ent, start, forward );
 }
 
 //======================================================================
@@ -2166,6 +2149,11 @@ LogAccuracyHit
 ===============
 */
 qboolean LogAccuracyHit( gentity_t *target, gentity_t *attacker ) {
+	
+	if (!LogAccuracyShot(target, attacker)) {
+		return qfalse;
+	}
+
 	if ( !target->takedamage ) {
 		return qfalse;
 	}
@@ -2213,15 +2201,9 @@ void CalcMuzzlePoint( gentity_t *ent, int weapon, vec3_t forward, vec3_t right, 
 	switch ( weapon )  // Ridah, changed this so I can predict weapons
 	{
 	case WP_PANZERFAUST:
-		if ( g_gametype.integer == GT_SINGLE_PLAYER ) {   // JPW NERVE
-			VectorMA( muzzlePoint, 14, right, muzzlePoint );        //----(SA)	new first person rl position
-			VectorMA( muzzlePoint, -10, up, muzzlePoint );
-		}
-// JPW NERVE -- pfaust shoots into walls too much so we moved it to shoulder mount
-		else {
-			VectorMA( muzzlePoint,10,right,muzzlePoint );
+		VectorMA( muzzlePoint,10,right,muzzlePoint );
 //				VectorMA(muzzlePoint,10,up,muzzlePoint);
-		}
+		
 // jpw
 		break;
 	case WP_ROCKET_LAUNCHER:
@@ -2346,25 +2328,24 @@ void FireWeapon( gentity_t *ent ) {
 	}
 
 // JPW NERVE -- EARLY OUT: if I'm in multiplayer and I have binocs, try to use artillery and then early return b4 switch statement
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-		if ( ( ent->client->ps.eFlags & EF_ZOOMING ) && ( ent->client->ps.stats[STAT_KEYS] & ( 1 << INV_BINOCS ) ) &&
-			 ( ent->s.weapon != WP_SNIPERRIFLE ) ) {
+	
+	if ( ( ent->client->ps.eFlags & EF_ZOOMING ) && ( ent->client->ps.stats[STAT_KEYS] & ( 1 << INV_BINOCS ) ) &&
+			( ent->s.weapon != WP_SNIPERRIFLE ) ) {
 
-			if ( !( ent->client->ps.leanf ) ) {
-				Weapon_Artillery( ent );
-			}
-
-			return;
+		if ( !( ent->client->ps.leanf ) ) {
+			Weapon_Artillery( ent );
 		}
+
+		return;
 	}
+	
 // jpw
 
 // JPW NERVE -- if jumping, make aim bite ass
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-		if ( ent->client->ps.groundEntityNum == ENTITYNUM_NONE ) {
-			aimSpreadScale = 2.0f;
-		}
+	if ( ent->client->ps.groundEntityNum == ENTITYNUM_NONE ) {
+		aimSpreadScale = 2.0f;
 	}
+	
 // jpw
 
 	// fire the specific weapon
@@ -2412,19 +2393,15 @@ void FireWeapon( gentity_t *ent ) {
 	case WP_SNIPERRIFLE:
 		Bullet_Fire( ent, SNIPER_SPREAD * aimSpreadScale, SNIPER_DAMAGE );
 // JPW NERVE -- added muzzle flip in multiplayer
-		if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-			VectorCopy( ent->client->ps.viewangles,viewang );
+		VectorCopy( ent->client->ps.viewangles,viewang );
 //			viewang[PITCH] -= 6; // handled in clientthink instead
-			ent->client->sniperRifleMuzzleYaw = crandom() * 0.5; // used in clientthink
-			ent->client->sniperRifleFiredTime = level.time;
-			SetClientViewAngle( ent,viewang );
-		}
-// jpw
+		ent->client->sniperRifleMuzzleYaw = crandom() * 0.5; // used in clientthink
+		ent->client->sniperRifleFiredTime = level.time;
+		SetClientViewAngle( ent,viewang );
+
 		break;
 	case WP_MAUSER:
-		if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-			aimSpreadScale = 1.0;
-		}
+		aimSpreadScale = 1.0;
 		Bullet_Fire( ent, MAUSER_SPREAD * aimSpreadScale, MAUSER_DAMAGE );
 		break;
 	case WP_STEN:
@@ -2463,6 +2440,8 @@ void FireWeapon( gentity_t *ent ) {
 	default:
 		break;
 	}
+	if ( g_gamestate.integer == GS_PLAYING )
+		ent->client->sess.stats.aWeaponStats[BG_WeapStatForWeapon( ent->s.weapon )].atts++;
 }
 
 

@@ -780,7 +780,6 @@ void ClientThink_real( gentity_t *ent ) {
 	int oldEventSequence;
 	int msec;
 	usercmd_t   *ucmd;
-	int monsterslick = 0;
 // JPW NERVE
 	int i;
 	vec3_t muzzlebounce;
@@ -813,6 +812,11 @@ void ClientThink_real( gentity_t *ent ) {
 	ucmd = &ent->client->pers.cmd;
 
 	ent->client->ps.identifyClient = ucmd->identClient;     // NERVE - SMF
+
+	client->unlag.frameOffset = trap_Milliseconds() - level.frameStartTime;
+	client->unlag.attackTime = ucmd->serverTime;
+	client->unlag.lastUpdateFrame = level.framenum;
+
 
 // JPW NERVE -- update counter for capture & hold display
 	if ( g_gametype.integer == GT_WOLF_CPH ) {
@@ -881,6 +885,29 @@ void ClientThink_real( gentity_t *ent ) {
 		return;
 	}
 
+	if ( ( client->ps.eFlags & EF_VIEWING_CAMERA ) || level.paused != PAUSE_NONE ) {
+		ucmd->buttons = 0;
+		ucmd->forwardmove = 0;
+		ucmd->rightmove = 0;
+		ucmd->upmove = 0;
+		ucmd->wbuttons = 0;
+
+		// freeze player (RELOAD_FAILED still allowed to move/look)
+		if ( level.paused != PAUSE_NONE ) {
+			client->ps.pm_type = PM_FREEZE;
+		} else if ( ( client->ps.eFlags & EF_VIEWING_CAMERA )) {
+			VectorClear( client->ps.velocity );
+			client->ps.pm_type = PM_FREEZE;
+		}
+	} else if ( client->noclip ) {
+		client->ps.pm_type = PM_NOCLIP;
+	} else if ( client->ps.stats[STAT_HEALTH] <= 0 ) {
+		client->ps.pm_type = PM_DEAD;
+	} else {
+		client->ps.pm_type = PM_NORMAL;
+	}
+	
+
 	// JPW NERVE do some time-based muzzle flip -- this never gets touched in single player (see g_weapon.c)
 	// #define RIFLE_SHAKE_TIME 150 // JPW NERVE this one goes with the commented out old damped "realistic" behavior below
 	#define RIFLE_SHAKE_TIME 300 // per Id request, longer recoil time
@@ -907,65 +934,65 @@ void ClientThink_real( gentity_t *ent ) {
 
 	// JPW drop button drops secondary weapon so new one can be picked up
 	// TTimo explicit braces to avoid ambiguous 'else'
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-		if ( ucmd->wbuttons & WBUTTON_DROP ) {
-			if ( !client->dropWeaponTime ) {
-				client->dropWeaponTime = 1; // just latch it for now
-				if ( ( client->ps.stats[STAT_PLAYER_CLASS] == PC_SOLDIER ) || ( client->ps.stats[STAT_PLAYER_CLASS] == PC_LT ) ) {
-					for ( i = 0; i < MAX_WEAPS_IN_BANK_MP; i++ ) {
-						weapon = weapBanksMultiPlayer[3][i];
-						if ( COM_BitCheck( client->ps.weapons,weapon ) ) {
+	
+	if ( ucmd->wbuttons & WBUTTON_DROP ) {
+		if ( !client->dropWeaponTime ) {
+			client->dropWeaponTime = 1; // just latch it for now
+			if ( ( client->ps.stats[STAT_PLAYER_CLASS] == PC_SOLDIER ) || ( client->ps.stats[STAT_PLAYER_CLASS] == PC_LT ) ) {
+				for ( i = 0; i < MAX_WEAPS_IN_BANK_MP; i++ ) {
+					weapon = weapBanksMultiPlayer[3][i];
+					if ( COM_BitCheck( client->ps.weapons,weapon ) ) {
 
-							item = BG_FindItemForWeapon( weapon );
-							VectorCopy( client->ps.viewangles, angles );
+						item = BG_FindItemForWeapon( weapon );
+						VectorCopy( client->ps.viewangles, angles );
 
-							// clamp pitch
-							if ( angles[PITCH] < -30 ) {
-								angles[PITCH] = -30;
-							} else if ( angles[PITCH] > 30 ) {
-								angles[PITCH] = 30;
-							}
-
-							AngleVectors( angles, velocity, NULL, NULL );
-							VectorScale( velocity, 64, offset );
-							offset[2] += client->ps.viewheight / 2;
-							VectorScale( velocity, 75, velocity );
-							velocity[2] += 50 + random() * 35;
-
-							VectorAdd( client->ps.origin,offset,org );
-
-							VectorSet( mins, -ITEM_RADIUS, -ITEM_RADIUS, 0 );
-							VectorSet( maxs, ITEM_RADIUS, ITEM_RADIUS, 2 * ITEM_RADIUS );
-
-							trap_Trace( &tr, client->ps.origin, mins, maxs, org, ent->s.number, MASK_SOLID );
-							VectorCopy( tr.endpos, org );
-
-							ent2 = LaunchItem( item, org, velocity, client->ps.clientNum );
-							COM_BitClear( client->ps.weapons,weapon );
-
-							if ( weapon == WP_MAUSER ) {
-								COM_BitClear( client->ps.weapons,WP_SNIPERRIFLE );
-							}
-
-							// Clear out empty weapon, change to next best weapon
-							G_AddEvent( ent, EV_NOAMMO, 0 );
-
-							i = MAX_WEAPS_IN_BANK_MP;
-							// show_bug.cgi?id=568
-							if ( client->ps.weapon == weapon ) {
-								client->ps.weapon = 0;
-							}
-							ent2->count = client->ps.ammoclip[BG_FindClipForWeapon( weapon )];
-							ent2->item->quantity = client->ps.ammoclip[BG_FindClipForWeapon( weapon )];
-							client->ps.ammoclip[BG_FindClipForWeapon( weapon )] = 0;
+						// clamp pitch
+						if ( angles[PITCH] < -30 ) {
+							angles[PITCH] = -30;
+						} else if ( angles[PITCH] > 30 ) {
+							angles[PITCH] = 30;
 						}
+
+						AngleVectors( angles, velocity, NULL, NULL );
+						VectorScale( velocity, 64, offset );
+						offset[2] += client->ps.viewheight / 2;
+						VectorScale( velocity, 75, velocity );
+						velocity[2] += 50 + random() * 35;
+
+						VectorAdd( client->ps.origin,offset,org );
+
+						VectorSet( mins, -ITEM_RADIUS, -ITEM_RADIUS, 0 );
+						VectorSet( maxs, ITEM_RADIUS, ITEM_RADIUS, 2 * ITEM_RADIUS );
+
+						trap_Trace( &tr, client->ps.origin, mins, maxs, org, ent->s.number, MASK_SOLID );
+						VectorCopy( tr.endpos, org );
+
+						ent2 = LaunchItem( item, org, velocity, client->ps.clientNum );
+						COM_BitClear( client->ps.weapons,weapon );
+
+						if ( weapon == WP_MAUSER ) {
+							COM_BitClear( client->ps.weapons,WP_SNIPERRIFLE );
+						}
+
+						// Clear out empty weapon, change to next best weapon
+						G_AddEvent( ent, EV_NOAMMO, 0 );
+
+						i = MAX_WEAPS_IN_BANK_MP;
+						// show_bug.cgi?id=568
+						if ( client->ps.weapon == weapon ) {
+							client->ps.weapon = 0;
+						}
+						ent2->count = client->ps.ammoclip[BG_FindClipForWeapon( weapon )];
+						ent2->item->quantity = client->ps.ammoclip[BG_FindClipForWeapon( weapon )];
+						client->ps.ammoclip[BG_FindClipForWeapon( weapon )] = 0;
 					}
 				}
 			}
-		} else {
-			client->dropWeaponTime = 0;
 		}
+	} else {
+		client->dropWeaponTime = 0;
 	}
+	
 // jpw
 
 	// check for inactivity timer, but never drop the local client of a non-dedicated server
@@ -973,16 +1000,21 @@ void ClientThink_real( gentity_t *ent ) {
 		return;
 	}
 
-	if ( reloading || client->cameraPortal ) {
+	if ( reloading || client->cameraPortal || level.paused != PAUSE_NONE) {
 		ucmd->buttons = 0;
 		ucmd->forwardmove = 0;
 		ucmd->rightmove = 0;
 		ucmd->upmove = 0;
 		ucmd->wbuttons = 0;
 		ucmd->wolfkick = 0;
-		if ( client->cameraPortal ) {
+		if ( level.paused != PAUSE_NONE ) {
+			client->ps.pm_type = PM_FREEZE;
+		} else if ( client->cameraPortal ) {
+			VectorClear( client->ps.velocity );
 			client->ps.pm_type = PM_FREEZE;
 		}
+	} else if ( level.paused != PAUSE_NONE ) {
+		client->ps.pm_type = PM_FREEZE;
 	} else if ( client->noclip ) {
 		client->ps.pm_type = PM_NOCLIP;
 	} else if ( client->ps.stats[STAT_HEALTH] <= 0 ) {
@@ -1058,52 +1090,7 @@ void ClientThink_real( gentity_t *ent ) {
 	pm.medicChargeTime = g_medicChargeTime.integer;
 	// -NERVE - SMF
 
-	monsterslick = Pmove( &pm );
-
-	if ( monsterslick && !( ent->flags & FL_NO_MONSTERSLICK ) ) {
-		//vec3_t	dir;
-		//vec3_t	kvel;
-		//vec3_t	forward;
-		// TTimo gcc: might be used unitialized in this function
-		float angle = 0.0f;
-		qboolean bogus = qfalse;
-
-		// NE
-		if ( ( monsterslick & SURF_MONSLICK_N ) && ( monsterslick & SURF_MONSLICK_E ) ) {
-			angle = 45;
-		}
-		// NW
-		else if ( ( monsterslick & SURF_MONSLICK_N ) && ( monsterslick & SURF_MONSLICK_W ) ) {
-			angle = 135;
-		}
-		// N
-		else if ( monsterslick & SURF_MONSLICK_N ) {
-			angle = 90;
-		}
-		// SE
-		else if ( ( monsterslick & SURF_MONSLICK_S ) && ( monsterslick & SURF_MONSLICK_E ) ) {
-			angle = 315;
-		}
-		// SW
-		else if ( ( monsterslick & SURF_MONSLICK_S ) && ( monsterslick & SURF_MONSLICK_W ) ) {
-			angle = 225;
-		}
-		// S
-		else if ( monsterslick & SURF_MONSLICK_S ) {
-			angle = 270;
-		}
-		// E
-		else if ( monsterslick & SURF_MONSLICK_E ) {
-			angle = 0;
-		}
-		// W
-		else if ( monsterslick & SURF_MONSLICK_W ) {
-			angle = 180;
-		} else
-		{
-			bogus = qtrue;
-		}
-	}
+	Pmove( &pm );
 
 	// server cursor hints
 	if ( ent->lastHintCheckTime < level.time ) {
@@ -1150,7 +1137,9 @@ void ClientThink_real( gentity_t *ent ) {
 	ent->watertype = pm.watertype;
 
 	// execute client events
-	ClientEvents( ent, oldEventSequence );
+	if ( level.paused == PAUSE_NONE ) {
+		ClientEvents( ent, oldEventSequence );
+	}
 
 	// link entity now, after any personal teleporters have been used
 	trap_LinkEntity( ent );
@@ -1160,9 +1149,6 @@ void ClientThink_real( gentity_t *ent ) {
 
 	// NOTE: now copy the exact origin over otherwise clients can be snapped into solid
 	VectorCopy( ent->client->ps.origin, ent->r.currentOrigin );
-
-	// store the client's current position for antilag traces
-	G_StoreClientPosition( ent );
 
 	// touch other objects
 	ClientImpacts( ent, &pm );
@@ -1207,8 +1193,7 @@ void ClientThink_real( gentity_t *ent ) {
 		// wait for the attack button to be pressed
 		if ( level.time > client->respawnTime ) {
 			// forcerespawn is to prevent users from waiting out powerups
-			if ( ( g_gametype.integer != GT_SINGLE_PLAYER ) &&
-				 ( g_forcerespawn.integer > 0 ) &&
+			if ( ( g_forcerespawn.integer > 0 ) &&
 				 ( ( level.time - client->respawnTime ) > g_forcerespawn.integer * 1000 )  &&
 				 ( !( ent->client->ps.pm_flags & PMF_LIMBO ) ) ) { // JPW NERVE
 				// JPW NERVE
@@ -1223,11 +1208,7 @@ void ClientThink_real( gentity_t *ent ) {
 
 			// DHM - Nerve :: Single player game respawns immediately as before,
 			//				  but in multiplayer, require button press before respawn
-			if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
-				respawn( ent );
-			}
-			// NERVE - SMF - we want to only respawn on jump button now
-			else if ( ( ucmd->upmove > 0 ) &&
+			if ( ( ucmd->upmove > 0 ) &&
 					  ( !( ent->client->ps.pm_flags & PMF_LIMBO ) ) ) { // JPW NERVE
 				// JPW NERVE
 				if ( g_gametype.integer >= GT_WOLF ) {
@@ -1252,7 +1233,9 @@ void ClientThink_real( gentity_t *ent ) {
 	}
 
 	// perform once-a-second actions
-	ClientTimerActions( ent, msec );
+	if ( level.paused == PAUSE_NONE ) {
+		ClientTimerActions( ent, msec );
+	}
 }
 
 /*
@@ -1312,13 +1295,13 @@ void SpectatorClientEndFrame( gentity_t *ent ) {
 		{
 			do_respawn = 1;
 		} else if ( ent->client->sess.sessionTeam == TEAM_RED ) {
-			testtime = (level.dwRedReinfOffset + level.timeCurrent - level.startTime) % g_redlimbotime.integer;
+			testtime = (level.redReinfOffset + level.timeCurrent - level.startTime) % g_redlimbotime.integer;
 			if ( testtime < ent->client->pers.lastReinforceTime ) {
 				do_respawn = 1;
 			}
 			ent->client->pers.lastReinforceTime = testtime;
 		} else if ( ent->client->sess.sessionTeam == TEAM_BLUE )     {
-			testtime = (level.dwBlueReinfOffset + level.timeCurrent - level.startTime) % g_bluelimbotime.integer;
+			testtime = (level.blueReinfOffset + level.timeCurrent - level.startTime) % g_bluelimbotime.integer;
 			if ( testtime < ent->client->pers.lastReinforceTime ) {
 				do_respawn = 1;
 			}
@@ -1449,6 +1432,13 @@ extern vec3_t playerMins, playerMaxs;
 void WolfRevivePushEnt( gentity_t *self, gentity_t *other ) {
 	vec3_t dir, push;
 
+	if (self->client && other->client) {
+		// no push in pause state
+		if (self->client->ps.pm_type == PM_FREEZE || other->client->ps.pm_type == PM_FREEZE) {
+			return;
+		}
+	}
+
 	VectorSubtract( self->r.currentOrigin, other->r.currentOrigin, dir );
 	dir[2] = 0;
 	VectorNormalizeFast( dir );
@@ -1503,6 +1493,10 @@ void WolfReviveBbox( gentity_t *self ) {
 
 					// Reset value so we don't continue to warp them
 					self->props_frame_state = -1;
+
+					// reset push velocity, otherwise player will fly away if is velocity too strong
+					VectorClear(self->s.pos.trDelta);
+					VectorClear(self->client->ps.velocity);
 				}
 			} else if ( hit->health > 0 ) {
 				if ( hit->s.number != self->s.number ) {
@@ -1573,7 +1567,13 @@ void ClientEndFrame( gentity_t *ent ) {
 				ent->client->ps.powerups[ i ] = 0;
 			}
 		}
-	}
+
+		// Make sure we dont let stuff like CTF flags expire.
+		if ( level.paused != PAUSE_NONE &&
+				ent->client->ps.powerups[i] != INT_MAX ) {
+			ent->client->ps.powerups[i] += level.time - level.previousTime;
+		}
+}
 
 	// save network bandwidth
 #if 0
@@ -1583,6 +1583,26 @@ void ClientEndFrame( gentity_t *ent ) {
 	}
 #endif
 
+
+	if ( level.paused != PAUSE_NONE ) {
+		int time_delta = level.time - level.previousTime;
+
+		ent->client->airOutTime += time_delta;
+		ent->client->inactivityTime += time_delta;
+		ent->client->lastBurnTime += time_delta;
+		ent->client->pers.connectTime += time_delta;
+		ent->client->pers.enterTime += time_delta;
+		ent->client->pers.teamState.lastreturnedflag += time_delta;
+		ent->client->pers.teamState.lasthurtcarrier += time_delta;
+		ent->client->pers.teamState.lastfraggedcarrier += time_delta;
+		ent->client->ps.classWeaponTime += time_delta;
+		ent->client->respawnTime += time_delta;
+		ent->client->sniperRifleFiredTime += time_delta;
+		ent->lastHintCheckTime += time_delta;
+		ent->pain_debounce_time += time_delta;
+		ent->s.onFireEnd += time_delta;
+	}
+
 	//
 	// If the end of unit layout is displayed, don't give
 	// the player any normal movement attributes
@@ -1590,6 +1610,8 @@ void ClientEndFrame( gentity_t *ent ) {
 	if ( level.intermissiontime ) {
 		return;
 	}
+
+	
 
 	// burn from lava, etc
 	P_WorldEffects( ent );
@@ -1639,4 +1661,6 @@ void ClientEndFrame( gentity_t *ent ) {
 		ent->count2 = 0;
 	}
 	// dhm
+
+	
 }

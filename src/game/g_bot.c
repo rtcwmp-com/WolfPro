@@ -125,29 +125,6 @@ const char *G_GetArenaInfoByMap( const char *map ) {
 }
 
 
-/*
-=================
-PlayerIntroSound
-=================
-*/
-static void PlayerIntroSound( const char *modelAndSkin ) {
-	char model[MAX_QPATH];
-	char    *skin;
-
-	Q_strncpyz( model, modelAndSkin, sizeof( model ) );
-	skin = Q_strrchr( model, '/' );
-	if ( skin ) {
-		*skin++ = '\0';
-	} else {
-		skin = model;
-	}
-
-	if ( Q_stricmp( skin, "default" ) == 0 ) {
-		skin = model;
-	}
-
-	trap_SendConsoleCommand( EXEC_APPEND, va( "play sound/player/announce/%s.wav\n", skin ) );
-}
 
 /*
 ===============
@@ -391,7 +368,6 @@ G_CheckBotSpawn
 */
 void G_CheckBotSpawn( void ) {
 	int n;
-	char userinfo[MAX_INFO_STRING];
 
 	G_CheckMinimumPlayers();
 
@@ -404,11 +380,6 @@ void G_CheckBotSpawn( void ) {
 		}
 		ClientBegin( botSpawnQueue[n].clientNum );
 		botSpawnQueue[n].spawnTime = 0;
-
-		if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
-			trap_GetUserinfo( botSpawnQueue[n].clientNum, userinfo, sizeof( userinfo ) );
-			PlayerIntroSound( Info_ValueForKey( userinfo, "model" ) );
-		}
 	}
 }
 
@@ -465,11 +436,9 @@ qboolean G_BotConnect( int clientNum, qboolean restart ) {
 		return qfalse;
 	}
 
-	if ( restart && g_gametype.integer == GT_SINGLE_PLAYER ) {
-		g_entities[clientNum].botDelayBegin = qtrue;
-	} else {
-		g_entities[clientNum].botDelayBegin = qfalse;
-	}
+	
+	g_entities[clientNum].botDelayBegin = qfalse;
+	
 
 	return qtrue;
 }
@@ -778,70 +747,3 @@ char *G_GetBotInfoByName( const char *name ) {
 	return NULL;
 }
 
-/*
-===============
-G_InitBots
-===============
-*/
-void G_InitBots( qboolean restart ) {
-
-	// Ridah, we don't need this anymore
-	return;
-	// done.
-/*
-	int			fragLimit;
-	int			timeLimit;
-	const char	*arenainfo;
-	char		*strValue;
-	int			basedelay;
-	char		map[MAX_QPATH];
-	char		serverinfo[MAX_INFO_STRING];
-
-	G_LoadBots();
-	G_LoadArenas();
-
-	trap_Cvar_Register( &bot_minplayers, "bot_minplayers", "0", CVAR_SERVERINFO );
-
-	if( g_gametype.integer == GT_SINGLE_PLAYER ) {
-		trap_GetServerinfo( serverinfo, sizeof(serverinfo) );
-		Q_strncpyz( map, Info_ValueForKey( serverinfo, "mapname" ), sizeof(map) );
-		arenainfo = G_GetArenaInfoByMap( map );
-		if ( !arenainfo ) {
-			return;
-		}
-
-		strValue = Info_ValueForKey( arenainfo, "fraglimit" );
-		fragLimit = atoi( strValue );
-		if ( fragLimit ) {
-			trap_Cvar_Set( "fraglimit", strValue );
-		}
-		else {
-			trap_Cvar_Set( "fraglimit", "0" );
-		}
-
-		strValue = Info_ValueForKey( arenainfo, "timelimit" );
-		timeLimit = atoi( strValue );
-		if ( timeLimit ) {
-			trap_Cvar_Set( "timelimit", strValue );
-		}
-		else {
-			trap_Cvar_Set( "timelimit", "0" );
-		}
-
-		if ( !fragLimit && !timeLimit ) {
-			trap_Cvar_Set( "fraglimit", "10" );
-			trap_Cvar_Set( "timelimit", "0" );
-		}
-
-		basedelay = BOT_BEGIN_DELAY_BASE;
-		strValue = Info_ValueForKey( arenainfo, "special" );
-		if( Q_stricmp( strValue, "training" ) == 0 ) {
-			basedelay += 10000;
-		}
-
-		if( !restart ) {
-			G_SpawnBots( Info_ValueForKey( arenainfo, "bots" ), basedelay );
-		}
-	}
-*/
-}

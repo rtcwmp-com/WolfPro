@@ -56,11 +56,6 @@ void SV_GetChallenge( netadr_t from ) {
 	int oldestTime;
 	challenge_t *challenge;
 
-	// ignore if we are in single player
-	if ( Cvar_VariableValue( "g_gametype" ) == GT_SINGLE_PLAYER ) {
-		return;
-	}
-
 	oldest = 0;
 	oldestTime = 0x7fffffff;
 
@@ -138,7 +133,7 @@ void SV_GetChallenge( netadr_t from ) {
 		char game[1024];
 
 		game[0] = 0;
-		fs = Cvar_Get( "fs_game", "rtcwmod", CVAR_INIT | CVAR_SYSTEMINFO );
+		fs = Cvar_Get( "fs_game", "wolfpro", CVAR_INIT | CVAR_SYSTEMINFO );
 		if ( fs && fs->string[0] != 0 ) {
 			strcpy( game, fs->string );
 		}
@@ -1389,6 +1384,51 @@ static qboolean SV_ClientCommand( client_t *cl, msg_t *msg ) {
 
 //==================================================================================
 
+void PushUserCmd(client_t *cl, usercmd_t *cmd){
+	mergedUserCmd_t *merge = &sv.mergedUserCmd[cl - svs.clients];
+	if(merge->count < ARRAY_LEN(merge->userCmds)){
+		merge->userCmds[merge->count++] = *cmd;
+	}
+}
+
+void MergeUserCmds(client_t *cl){
+	
+	mergedUserCmd_t *merge = &sv.mergedUserCmd[cl - svs.clients];
+	Q_assert(merge->count > 1);
+	usercmd_t *dest = &merge->merged;
+	usercmd_t *last = &merge->userCmds[merge->count - 1];
+	*dest = (usercmd_t){0};
+	int32_t fwd = 0;
+	int32_t right = 0;
+	int32_t up = 0;
+	int32_t kick = 0;
+
+	for(int i = 0; i < merge->count; i++){
+		usercmd_t *cur = &merge->userCmds[i];
+		dest->buttons |= cur->buttons;
+		dest->wbuttons |= cur->wbuttons;
+		fwd += cur->forwardmove;
+		right += cur->rightmove;
+		up += cur->upmove;
+		kick += cur->wolfkick;
+
+		// never overwrite a merged ucmd's weapon if panzer was used
+		if(cur->weapon != 0 && dest->weapon != WP_PANZERFAUST){
+			dest->weapon = cur->weapon;
+		}
+
+	}
+	VectorCopy(last->angles, dest->angles);
+	dest->serverTime = last->serverTime;
+	dest->identClient = last->identClient;
+	dest->mpSetup = last->mpSetup;
+	dest->holdable = last->holdable;
+
+	dest->forwardmove = fwd / merge->count;
+	dest->rightmove = right / merge->count;
+	dest->upmove = up / merge->count;
+	dest->wolfkick = kick / merge->count;
+}
 
 /*
 ==================
@@ -1397,6 +1437,7 @@ SV_ClientThink
 Also called by bot code
 ==================
 */
+
 void SV_ClientThink( client_t *cl, usercmd_t *cmd ) {
 	cl->lastUsercmd = *cmd;
 
@@ -1404,8 +1445,39 @@ void SV_ClientThink( client_t *cl, usercmd_t *cmd ) {
 		return;     // may have been kicked during the last usercmd
 	}
 
-	VM_Call( gvm, GAME_CLIENT_THINK, cl - svs.clients );
+	//nothing to do
+	//use the merged cmd
+	//use the current cmd
+
+	if(sv_minUserCmdInterval->integer <= 0) {
+		VM_Call( gvm, GAME_CLIENT_THINK, cl - svs.clients );
+	}else{
+		mergedUserCmd_t *merge = &sv.mergedUserCmd[cl - svs.clients];
+		PushUserCmd(cl, cmd);
+		if(cmd->serverTime >= merge->nextClientThinkTime + sv_minUserCmdInterval->integer){
+			merge->nextClientThinkTime = cmd->serverTime + sv_minUserCmdInterval->integer - (cmd->serverTime % sv_minUserCmdInterval->integer);
+		} else if(cmd->serverTime >=  merge->nextClientThinkTime){
+			merge->nextClientThinkTime += sv_minUserCmdInterval->integer;
+			if(merge->count == 1){
+				VM_Call( gvm, GAME_CLIENT_THINK, cl - svs.clients );
+				merge->count = 0;
+			}else if(merge->count > 1){
+				MergeUserCmds(cl);
+				merge->merged.serverTime = merge->nextClientThinkTime - sv_minUserCmdInterval->integer;
+				cl->lastUsercmd = merge->merged;
+				VM_Call( gvm, GAME_CLIENT_THINK, cl - svs.clients );
+				merge->count = 0;
+			}
+		}
+
+	}
+
+	cl->lastUsercmd.serverTime = cmd->serverTime;
+
+	
 }
+
+
 
 /*
 ==================
@@ -1506,16 +1578,20 @@ static void SV_UserMove( client_t *cl, msg_t *msg, qboolean delta ) {
 		//if ( cmds[i].serverTime > svs.time + 3000 ) {
 		//	continue;
 		//}
-		if ( sv_gametype->integer != GT_SINGLE_PLAYER ) { // RF, we need to allow this in single player, where loadgame's can cause the player to freeze after reloading if we do this check
-			// don't execute if this is an old cmd which is already executed
-			// these old cmds are included when cl_packetdup > 0
-			if ( cmds[i].serverTime <= cl->lastUsercmd.serverTime ) {   // Q3_MISSIONPACK
+		// RF, we need to allow this in single player, where loadgame's can cause the player to freeze after reloading if we do this check
+		// don't execute if this is an old cmd which is already executed
+		// these old cmds are included when cl_packetdup > 0
+		if ( cmds[i].serverTime <= cl->lastUsercmd.serverTime ) {   // Q3_MISSIONPACK
 //			if ( cmds[i].serverTime > cmds[cmdCount-1].serverTime ) {
-				continue;   // from just before a map_restart
-			}
+			continue;   // from just before a map_restart
 		}
+
+
 		SV_ClientThink( cl, &cmds[ i ] );
+
 	}
+
+
 }
 
 

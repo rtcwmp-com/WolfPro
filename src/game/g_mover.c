@@ -687,7 +687,9 @@ void G_RunMover( gentity_t *ent ) {
 
 	// if stationary at one of the positions, don't move anything
 	if ( ent->s.pos.trType != TR_STATIONARY || ent->s.apos.trType != TR_STATIONARY ) {
-		G_MoverTeam( ent );
+		if ( level.paused == PAUSE_NONE ) {
+			G_MoverTeam( ent );
+		} else { ent->s.pos.trTime += level.time - level.previousTime;}
 	}
 
 	// check think function
@@ -1695,7 +1697,6 @@ so the movement delta can be calculated
 */
 void InitMoverRotate( gentity_t *ent ) {
 	vec3_t move;
-	float distance;
 	float light;
 	vec3_t color;
 	qboolean lightSet, colorSet;
@@ -1750,7 +1751,6 @@ void InitMoverRotate( gentity_t *ent ) {
 
 	// calculate time to reach second position from speed
 	VectorSubtract( ent->pos2, ent->pos1, move );
-	distance = VectorLength( move );
 	if ( !ent->speed ) {
 		ent->speed = 100;
 	}

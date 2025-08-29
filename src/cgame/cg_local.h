@@ -41,6 +41,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "tr_types.h"
 #include "../game/bg_public.h"
 #include "cg_public.h"
+#include "cg_ndp.h"
 
 
 #define POWERUP_BLINKS      5
@@ -992,6 +993,15 @@ typedef struct {
 
 	pmoveExt_t pmext;
 
+	qbool ndpDemoEnabled;
+
+	int popinPrintTime;
+	int popinPrintCharWidth;
+	int popinPrintX;
+	int popinPrintY;
+	char popinPrint[1024];
+	int popinPrintLines;
+	qboolean popinBlink;
 } cg_t;
 
 #define NUM_FUNNEL_SPRITES  21
@@ -1484,8 +1494,58 @@ typedef struct {
 	qhandle_t selectCursor;
 	qhandle_t sizeCursor;
 
+	qhandle_t skullIcon;
+	qhandle_t exclamationIcon;
+
+	sfxHandle_t alliesWin;
+	sfxHandle_t axisWin;
+
 } cgMedia_t;
 
+typedef enum {
+	PAUSE_NONE,
+	PAUSE_ON,
+	PAUSE_RESUMING
+} cPauseSts_t;
+
+typedef struct {
+	qboolean fHasStats;
+	int nClientID;
+	int nRounds;
+	int fadeTime;
+	int show;
+	int requestTime;
+	int kills;
+	int deaths;
+	int suicides;
+	int damage_giv;
+	int damage_rec;
+	int gibs;
+	int revives;
+	int health_given;
+	int ammo_given;
+} gameStats_t;
+
+typedef struct {
+	char strStats[MAX_STRING_TOKENS];
+	int cWeapons;
+	int cSkills;
+	qboolean fHasStats;
+	int nClientID;
+	int nRounds;
+	int fadeTime;
+	int show;
+	int requestTime;
+} clientGameStats_t;
+
+
+typedef struct {
+	char strWS[WS_MAX * 2][MAX_STRING_TOKENS];
+	int cWeapons;
+	int fadeTime;
+	int show;
+	int requestTime;
+} topshotStats_t;
 
 // The client game static (cgs) structure hold everything
 // loaded or calculated from the gamestate.  It will NOT
@@ -1595,6 +1655,25 @@ typedef struct {
 	int readyState;		// Ready
 	int playersReady;   // number of players ready so far
 	int playerCount;	// number of players
+	void *igContext;
+	void *igAlloc;
+	void *igFree;
+	void **igUserData;
+
+	cPauseSts_t match_paused;
+	int match_resumes;
+	int pause_elapsed;
+	int match_stepTimer;
+
+	int reinfOffset[TEAM_NUM_TEAMS];   // Reinforcements offset
+
+	// OSP's stats
+	gameStats_t gamestats;
+	clientGameStats_t clientGameStats; // L0 - 1.0 alike
+	topshotStats_t topshots;
+	fileHandle_t dumpStatsFile;
+	char* dumpStatsFileName;  // Name of file to dump stats
+	int dumpStatsTime;
 } cgs_t;
 
 //==============================================================================
@@ -1781,6 +1860,31 @@ extern vmCvar_t cg_descriptiveText;
 extern vmCvar_t cg_autoReload;
 extern vmCvar_t cg_antilag;
 
+extern vmCvar_t cg_uinfo;
+
+extern vmCvar_t cg_hitsounds;
+extern vmCvar_t cg_hitsoundBodyStyle;
+extern vmCvar_t cg_hitsoundHeadStyle;
+
+// RT and ERT
+extern vmCvar_t cg_drawReinforcementTime;
+extern vmCvar_t cg_drawEnemyTimer;
+extern vmCvar_t cg_enemyTimerColor;
+extern vmCvar_t cg_enemyTimerX;
+extern vmCvar_t cg_enemyTimerY;
+extern vmCvar_t cg_enemyTimerProX;
+extern vmCvar_t cg_enemyTimerProY;
+extern vmCvar_t cg_reinforcementTimeColor;
+extern vmCvar_t cg_reinforcementTimeX;
+extern vmCvar_t cg_reinforcementTimeY;
+extern vmCvar_t cg_reinforcementTimeProX;
+extern vmCvar_t cg_reinforcementTimeProY;
+
+extern vmCvar_t cg_spawnTimer_period;
+extern vmCvar_t cg_spawnTimer_set;
+
+extern vmCvar_t cg_autoAction;
+
 //
 // cg_main.c
 //
@@ -1807,6 +1911,7 @@ qboolean CG_GetTag( int clientNum, char *tagname, orientation_t * or );
 qboolean CG_GetWeaponTag( int clientNum, char *tagname, orientation_t * or );
 
 qboolean CG_CheckCenterView();
+void CG_printConsoleString( char *str );
 
 //
 // cg_view.c
@@ -1912,7 +2017,6 @@ qboolean CG_OwnerDrawVisible( int flags );
 void CG_RunMenuScript( char **args );
 void CG_ShowResponseHead();
 void CG_SetPrintString( int type, const char *p );
-void CG_InitTeamChat();
 void CG_GetTeamColor( vec4_t *color );
 const char *CG_GetGameStatusText();
 const char *CG_GetKillerText();
@@ -1920,9 +2024,7 @@ void CG_Draw3DModel( float x, float y, float w, float h, qhandle_t model, qhandl
 void CG_Text_PaintChar( float x, float y, float width, float height, float scale, float s, float t, float s2, float t2, qhandle_t hShader );
 void CG_CheckOrderPending();
 const char *CG_GameTypeString();
-qboolean CG_YourTeamHasFlag();
-qboolean CG_OtherTeamHasFlag();
-qhandle_t CG_StatusHandle( int task );
+
 void CG_Fade( int r, int g, int b, int a, float time );
 
 
@@ -1973,6 +2075,7 @@ void CG_AdjustPositionForMover( const vec3_t in, int moverNum, int fromTime, int
 void CG_PositionEntityOnTag( refEntity_t *entity, const refEntity_t *parent,
 							 char *tagName, int startIndex, vec3_t *offset );
 void CG_PositionRotatedEntityOnTag( refEntity_t *entity, const refEntity_t *parent, char *tagName );
+void CG_PrintEntityState(const entityState_t* ent);
 
 
 //----(SA)
@@ -2040,8 +2143,6 @@ void CG_HoldableUsedupChange( void ); //----(SA)	added
 //----(SA) added to header to access from outside cg_weapons.c
 void CG_AddDebris( vec3_t origin, vec3_t dir, int speed, int duration, int count );
 //----(SA) done
-
-void CG_ClientDamage( int entnum, int enemynum, int id );
 
 //
 // cg_marks.c
@@ -2181,6 +2282,7 @@ void CG_RumbleEfx( float pitch, float yaw );
 // cg_snapshot.c
 //
 void CG_ProcessSnapshots( void );
+void CG_NDP_ProcessSnapshots( void );
 
 //
 // cg_spawn.c
@@ -2223,6 +2325,9 @@ void CG_SendMoveSpeed( animation_t *animList, int numAnims, char *modelName );
 void CG_LoadVoiceChats();               // NERVE - SMF
 void CG_PlayBufferedVoiceChats();       // NERVE - SMF
 void CG_AddToNotify( const char *str );
+void CG_ParseReinforcementTimes(const char *pszReinfSeedString);
+void CG_ParseReady(const char* pState);
+void CG_ParsePause( const char *pTime );
 
 //
 // cg_playerstate.c
@@ -2456,6 +2561,7 @@ e_status trap_CIN_RunCinematic( int handle );
 void trap_CIN_DrawCinematic( int handle );
 void trap_CIN_SetExtents( int handle, int x, int y, int w, int h );
 
+int trap_RealTime(qtime_t *qtime);
 void trap_SnapVector( float *v );
 
 qboolean    trap_GetEntityToken( char *buffer, int bufferSize );
@@ -2465,7 +2571,7 @@ qboolean    trap_GetEntityToken( char *buffer, int bufferSize );
 qboolean    trap_loadCamera( int camNum, const char *name );
 void        trap_startCamera( int camNum, int time );
 qboolean    trap_getCameraInfo( int camNum, int time, vec3_t *origin, vec3_t *angles, float *fov );
-void        CG_StartCamera( const char *name, qboolean startBlack );
+
 
 //----(SA)	added
 int         CG_LoadCamera( const char *name );
@@ -2478,10 +2584,10 @@ void        CG_FreeCamera( int camNum );
 #define CREADY_PENDING	0x02	// Awaiting but can start once treshold (minclients) is reached..
 
 // Ready
-void CG_ParseReady(const char* pState);
 const char* CG_LocalizeServerCommand( const char *buf ); // L0 - So it's more accessible
 int is_ready( int clientNum );
 const char* WM_TimeToString(float msec);
+
 
 // OSP's macro's
 #define Pri( x ) CG_Printf( "[cgnotify]%s", CG_LocalizeServerCommand( x ) )
@@ -2504,3 +2610,38 @@ extern vmCvar_t cg_customCrosshairYGap;
 extern vmCvar_t cg_customCrosshairColor;
 extern vmCvar_t cg_customCrosshairColorAlt;
 extern vmCvar_t cg_customCrosshairVMirror;
+
+extern vmCvar_t cg_showPriorityText;
+extern vmCvar_t cg_priorityTextX;
+extern vmCvar_t cg_priorityTextY;
+
+extern vmCvar_t cg_muzzleFlash;
+extern vmCvar_t cg_crosshairPulse;
+extern vmCvar_t cg_tracers;
+
+// Get capabilities from the client
+qbool trap_GetValue(char* value, int valueSize, const char* key);
+int trap_Cvar_VariableIntegerValue(const char* var_name);
+
+typedef struct {
+	int trap_LocateInteropData;
+	int trap_CNQ3_NDP_Enable;
+	int trap_CNQ3_NDP_Seek;
+	int trap_CNQ3_NDP_ReadUntil;
+	int trap_CNQ3_NDP_StartVideo;
+	int trap_CNQ3_NDP_StopVideo;
+	int trap_CL_AddGuiMenu;
+} cgExt_t;
+
+void CG_ImGUI_Update(void);
+void CG_ImGUI_Share(void *ctx, void *alloc, void *free, void** user);
+int trap_CL_AddGuiMenu(int menu, const char* name, const char* shortcut, qbool* selected, qbool enabled);
+void trap_IgImage(qhandle_t shader, float x, float y);
+void trap_IgImageEx(qhandle_t shader, float x, float y, float s1, float t1, float s2, float t2);
+
+void CG_PopinPrint(const char *str, int charWidth, qboolean blink);
+
+// OSP's Autoaction values
+#define AA_DEMORECORD   0x01
+#define AA_SCREENSHOT   0x02
+#define AA_STATSDUMP    0x04

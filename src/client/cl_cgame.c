@@ -32,6 +32,14 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "../game/botlib.h"
 
+#include "cl_imgui.h"
+
+//pointer for the mod to the engine
+static const byte* interopBufferIn;
+static int interopBufferInSize;
+static byte* interopBufferOut;
+static int interopBufferOutSize;
+
 extern botlib_export_t *botlib_export;
 
 extern qboolean loadCamera( int camNum, const char *name );
@@ -121,6 +129,10 @@ CL_GetCurrentSnapshotNumber
 ====================
 */
 void    CL_GetCurrentSnapshotNumber( int *snapshotNumber, int *serverTime ) {
+	if (clc.newDemoPlayer) {
+		CL_NDP_GetCurrentSnapshotNumber(snapshotNumber, serverTime);
+		return;
+	}
 	*snapshotNumber = cl.snap.messageNum;
 	*serverTime = cl.snap.serverTime;
 }
@@ -131,8 +143,9 @@ CL_GetSnapshot
 ====================
 */
 qboolean    CL_GetSnapshot( int snapshotNumber, snapshot_t *snapshot ) {
-	clSnapshot_t    *clSnap;
-	int i, count;
+	if (clc.newDemoPlayer) {
+		return CL_NDP_GetSnapshot(snapshotNumber, snapshot);
+	}
 
 	if ( snapshotNumber > cl.snap.messageNum ) {
 		Com_Error( ERR_DROP, "CL_GetSnapshot: snapshotNumber > cl.snapshot.messageNum" );
@@ -144,7 +157,7 @@ qboolean    CL_GetSnapshot( int snapshotNumber, snapshot_t *snapshot ) {
 	}
 
 	// if the frame is not valid, we can't return it
-	clSnap = &cl.snapshots[snapshotNumber & PACKET_MASK];
+	clSnapshot_t *clSnap = &cl.snapshots[snapshotNumber & PACKET_MASK];
 	if ( !clSnap->valid ) {
 		return qfalse;
 	}
@@ -162,13 +175,13 @@ qboolean    CL_GetSnapshot( int snapshotNumber, snapshot_t *snapshot ) {
 	snapshot->serverTime = clSnap->serverTime;
 	memcpy( snapshot->areamask, clSnap->areamask, sizeof( snapshot->areamask ) );
 	snapshot->ps = clSnap->ps;
-	count = clSnap->numEntities;
+	int count = clSnap->numEntities;
 	if ( count > MAX_ENTITIES_IN_SNAPSHOT ) {
 		Com_DPrintf( "CL_GetSnapshot: truncated %i entities to %i\n", count, MAX_ENTITIES_IN_SNAPSHOT );
 		count = MAX_ENTITIES_IN_SNAPSHOT;
 	}
 	snapshot->numEntities = count;
-	for ( i = 0 ; i < count ; i++ ) {
+	for ( int i = 0 ; i < count ; i++ ) {
 		snapshot->entities[i] =
 			cl.parseEntities[ ( clSnap->parseEntitiesNum + i ) & ( MAX_PARSE_ENTITIES - 1 ) ];
 	}
@@ -292,6 +305,10 @@ Set up argc/argv for the given command
 ===================
 */
 qboolean CL_GetServerCommand( int serverCommandNumber ) {
+	if (clc.newDemoPlayer) {
+		return CL_NDP_GetServerCommand(serverCommandNumber);
+	}
+
 	char    *s;
 	char    *cmd;
 	static char bigConfigString[BIG_INFO_STRING];
@@ -503,6 +520,75 @@ static int  FloatAsInt( float f ) {
 	*(float *)&temp = f;
 
 	return temp;
+}
+
+static qbool CL_CG_GetValue(char* value, int valueSize, const char* key)
+{
+	typedef struct { const char* name; int number; } syscall_t;
+	static const syscall_t syscalls[] = {
+		// syscalls
+		{ "trap_LocateInteropData", CG_EXT_LOCATEINTEROPDATA },
+		{ "trap_CNQ3_NDP_Enable", CG_EXT_NDP_ENABLE },
+		{ "trap_CNQ3_NDP_Seek", CG_EXT_NDP_SEEK },
+		{ "trap_CNQ3_NDP_ReadUntil", CG_EXT_NDP_READUNTIL },
+		{ "trap_CNQ3_NDP_StartVideo", CG_EXT_NDP_STARTVIDEO },
+		{ "trap_CNQ3_NDP_StopVideo", CG_EXT_NDP_STOPVIDEO },
+		{ "trap_CL_AddGuiMenu", CG_IMGUI_ADDMENU },
+		{ "trap_IgImage", CG_IMGUI_IMAGE },
+		{ "trap_IgImageEx", CG_IMGUI_IMAGE_EX },
+	};
+
+	for (int i = 0; i < ARRAY_LEN(syscalls); ++i) {
+		if (Q_stricmp(key, syscalls[i].name) == 0) {
+			Com_sprintf(value, valueSize, "%d", syscalls[i].number);
+			return qtrue;
+		}
+	}
+
+	return qfalse;
+}
+
+void CL_CGNDP_AnalyzeCommand(int serverTime)
+{
+	Q_assert(cls.cgameNewDemoPlayer);
+	VM_Call(cgvm, cls.cgvmCalls[CGVM_NDP_ANALYZE_COMMAND], serverTime);
+}
+
+
+void CL_CGNDP_GenerateCommands(const char** commands, int* numCommandBytes)
+{
+	Q_assert(cls.cgameNewDemoPlayer);
+	Q_assert(commands);
+	Q_assert(numCommandBytes);
+	VM_Call(cgvm, cls.cgvmCalls[CGVM_NDP_GENERATE_COMMANDS]);
+	*numCommandBytes = *(int*)interopBufferIn; //mod sharing pointer to the engine
+	*commands = (const char*)interopBufferIn + 4;
+	
+}
+
+
+qbool CL_CGNDP_IsConfigStringNeeded(int csIndex)
+{
+	Q_assert(cls.cgameNewDemoPlayer);
+	Q_assert(csIndex >= 0 && csIndex < MAX_CONFIGSTRINGS);
+	return (qbool)VM_Call(cgvm, cls.cgvmCalls[CGVM_NDP_IS_CS_NEEDED], csIndex);
+}
+
+
+qbool CL_CGNDP_AnalyzeSnapshot(int progress)
+{
+	Q_assert(cls.cgameNewDemoPlayer);
+	Q_assert(progress >= 0 && progress < 100);
+	return (qbool)VM_Call(cgvm, cls.cgvmCalls[CGVM_NDP_ANALYZE_SNAPSHOT], progress);
+}
+
+
+void CL_CGNDP_EndAnalysis(const char* filePath, int firstServerTime, int lastServerTime, qbool videoRestart)
+{
+	Q_assert(cls.cgameNewDemoPlayer);
+	Q_assert(lastServerTime > firstServerTime);
+	Q_strncpyz((char*)interopBufferOut, filePath, interopBufferOutSize);
+	VM_Call(cgvm, cls.cgvmCalls[CGVM_NDP_END_ANALYSIS], filePath, firstServerTime, lastServerTime, videoRestart);
 }
 
 /*
@@ -920,7 +1006,56 @@ int CL_CgameSystemCalls( int *args ) {
 	case CG_REQUEST_SS:
 		CL_GenerateSS(VMA(1), VMA(2), VMA(3), VMA(4), VMA(5));
 		return 0;
+	
+	case CG_EXT_GETVALUE:
+		return CL_CG_GetValue(VMA(1), args[2], VMA(3));
 
+	case CG_EXT_LOCATEINTEROPDATA:
+		interopBufferIn = VMA(1);
+		interopBufferInSize = args[2];
+		interopBufferOut = VMA(3);
+		interopBufferOutSize = args[4];
+		return 0;
+	case CG_EXT_NDP_ENABLE:
+		if (clc.demoplaying && cl_demoPlayer->integer) {
+			cls.cgameNewDemoPlayer = qtrue;
+			cls.cgvmCalls[CGVM_NDP_ANALYZE_COMMAND] = args[1];
+			cls.cgvmCalls[CGVM_NDP_GENERATE_COMMANDS] = args[2];
+			cls.cgvmCalls[CGVM_NDP_IS_CS_NEEDED] = args[3];
+			cls.cgvmCalls[CGVM_NDP_ANALYZE_SNAPSHOT] = args[4];
+			cls.cgvmCalls[CGVM_NDP_END_ANALYSIS] = args[5];
+			return qtrue;
+		}
+		else {
+			return qfalse;
+		}
+
+	case CG_EXT_NDP_SEEK:
+		return CL_NDP_Seek(args[1]);
+
+	case CG_EXT_NDP_READUNTIL:
+		CL_NDP_ReadUntil(args[1]);
+		return 0;
+
+	case CG_EXT_NDP_STARTVIDEO:
+		//Cvar_Set(cl_aviFrameRate->name, va("%d", (int)args[2]));
+		//return CL_OpenAVIForWriting(VMA(1));
+		return 0;
+
+	case CG_EXT_NDP_STOPVIDEO:
+		//CL_CloseAVI();
+		return 0;
+#ifdef RTCW_VULKAN
+	case CG_IMGUI_ADDMENU:
+		GUI_AddMainMenuItem(args[1], VMA(2), VMA(3), VMA(4), args[5]);
+		return 0;
+	case CG_IMGUI_IMAGE:
+		RE_GUI_Image(args[1], VMF(2), VMF(3));
+		return 0;
+	case CG_IMGUI_IMAGE_EX:
+		RE_GUI_Image_Ex(args[1], VMF(2), VMF(3), VMF(4), VMF(5), VMF(6), VMF(7));
+		return 0;
+#endif
 	default:
 		Com_Error( ERR_DROP, "Bad cgame system trap: %i", args[0] );
 	}
@@ -1038,7 +1173,7 @@ void CL_InitCGame( void ) {
 	const char          *info;
 	const char          *mapname;
 	int t1, t2;
-
+	cls.cgameNewDemoPlayer = qfalse;
 	t1 = Sys_Milliseconds();
 
 	// put away the console
@@ -1083,6 +1218,9 @@ void CL_InitCGame( void ) {
 
 	// Ridah, update the memory usage file
 	CL_UpdateLevelHunkUsage();
+
+	cls.cgameImGUI = CL_CG_ImGUI_Support();
+	CL_CG_ImGUI_Share();
 }
 
 
@@ -1137,7 +1275,6 @@ or bursted delayed packets.
 #define RESET_TIME  500
 
 void CL_AdjustTimeDelta( void ) {
-	int resetTime;
 	int newDelta;
 	int deltaDelta;
 
@@ -1146,13 +1283,6 @@ void CL_AdjustTimeDelta( void ) {
 	// the delta never drifts when replaying a demo
 	if ( clc.demoplaying ) {
 		return;
-	}
-
-	// if the current time is WAY off, just correct to the current value
-	if ( com_sv_running->integer ) {
-		resetTime = 100;
-	} else {
-		resetTime = RESET_TIME;
 	}
 
 	newDelta = cl.snap.serverTime - cls.realtime;
@@ -1226,10 +1356,83 @@ void CL_FirstSnapshot( void ) {
 
 /*
 ==================
+CL_AvgPing
+Calculates Average Ping from snapshots in buffer. Used by AutoNudge.
+==================
+*/
+static float CL_AvgPing( void ) {
+	int ping[PACKET_BACKUP];
+	int count = 0;
+	float result;
+
+	for (int i = 0; i < PACKET_BACKUP; i++ ) {
+		if ( cl.snapshots[i].ping > 0 && cl.snapshots[i].ping < 999 ) {
+			ping[count] = cl.snapshots[i].ping;
+			count++;
+		}
+	}
+
+	if ( count == 0 )
+		return 0;
+
+	// sort ping array
+	int iTemp;
+	for (int i = count - 1; i > 0; --i ) {
+		for (int j = 0; j < i; ++j ) {
+			if (ping[j] > ping[j + 1]) {
+				iTemp = ping[j];
+				ping[j] = ping[j + 1];
+				ping[j + 1] = iTemp;
+			}
+		}
+	}
+
+	// use median average ping
+	if ( (count % 2) == 0 )
+		result = (ping[count / 2] + ping[(count / 2) - 1]) / 2.0f;
+	else
+		result = ping[count / 2];
+
+	return result;
+}
+
+
+/*
+==================
+CL_TimeNudge
+Returns either auto-nudge or cl_timeNudge value.
+==================
+*/
+static int CL_TimeNudge( void ) {
+	float autoNudge = Com_Clamp(0.0f, 1.0f, cl_autoNudge->value);
+	
+	if ( autoNudge != 0.0f ) {
+		return (int)((CL_AvgPing() * autoNudge) + 0.5f) * -1;
+	}
+	else {
+		int tn = cl_timeNudge->integer;
+		if (tn < -30) {
+			tn = -30;
+		}
+		else if (tn > 30) {
+			tn = 30;
+		}
+		return tn;
+	}
+}
+
+
+
+/*
+==================
 CL_SetCGameTime
 ==================
 */
 void CL_SetCGameTime( void ) {
+	if (clc.newDemoPlayer) {
+		CL_NDP_SetCGameTime();
+		return;
+	}
 	// getting a valid frame message ends the connection process
 	if ( cls.state != CA_ACTIVE ) {
 		if ( cls.state != CA_PRIMED ) {
@@ -1285,7 +1488,7 @@ void CL_SetCGameTime( void ) {
 		// cl_timeNudge is a user adjustable cvar that allows more
 		// or less latency to be added in the interest of better
 		// smoothness or better responsiveness.
-		int tn;
+		/*int tn;
 
 		tn = cl_timeNudge->integer;
 		if ( tn < -30 ) {
@@ -1294,7 +1497,8 @@ void CL_SetCGameTime( void ) {
 			tn = 30;
 		}
 
-		cl.serverTime = cls.realtime + cl.serverTimeDelta - tn;
+	cl.serverTime = cls.realtime + cl.serverTimeDelta - tn;*/
+	cl.serverTime = cls.realtime + cl.serverTimeDelta - CL_TimeNudge();
 
 		// guarantee that time will never flow backwards, even if
 		// serverTimeDelta made an adjustment or cl_timeNudge was changed
@@ -1362,4 +1566,31 @@ qboolean CL_GetTag( int clientNum, char *tagname, orientation_t *or ) {
 	}
 
 	return VM_Call( cgvm, CG_GET_TAG, clientNum, tagname, or );
+}
+
+
+/*
+====================
+ImGUI cgame
+====================
+*/
+qboolean CL_CG_ImGUI_Support( void ) {
+	if ( !cgvm ) {
+		return qfalse;
+	}
+
+	Cmd_TokenizeString( "drawgui\n" );
+	return VM_Call( cgvm, CG_CONSOLE_COMMAND );
+}
+
+void CL_CG_ImGUI_Update(void){
+	if(cls.cgameImGUI && cgvm){
+		VM_Call(cgvm, CG_IMGUI_UPDATE);
+	}
+}
+
+void CL_CG_ImGUI_Share(void){
+	if(cls.cgameImGUI && cls.igContext && cgvm){
+		VM_Call( cgvm, CG_IMGUI_SHARE, cls.igContext, cls.igAlloc, cls.igFree, cls.igUser );
+	}
 }

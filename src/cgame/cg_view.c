@@ -192,7 +192,7 @@ Sets the coordinates of the rendered window
 
 static void CG_CalcVrect( void ) {
 	int xsize, ysize;
-	float lbheight, lbdiff;
+	float lbheight;
 
 	// NERVE - SMF
 	if ( cg.limboMenu ) {
@@ -234,23 +234,9 @@ static void CG_CalcVrect( void ) {
 // letterbox is yy:yy  (85% of 'normal' height)
 
 	lbheight = ysize * 0.85;
-	lbdiff = ysize - lbheight;
 
 	if ( cg_letterbox.integer ) {
 		ysize = lbheight;
-//		if(letterbox_frac != 0) {
-//			letterbox_frac -= 0.01f;	// (SA) TODO: make non fps dependant
-//			if(letterbox_frac < 0)
-//				letterbox_frac = 0;
-//			ysize += (lbdiff * letterbox_frac);
-//		}
-//	} else {
-//		if(letterbox_frac != 1) {
-//			letterbox_frac += 0.01f;	// (SA) TODO: make non fps dependant
-//			if(letterbox_frac > 1)
-//				letterbox_frac = 1;
-//			ysize = lbheight + (lbdiff * letterbox_frac);
-//		}
 	}
 //----(SA)	end
 
@@ -847,18 +833,10 @@ static int CG_CalcFov( void ) {
 			fov_x = 90;
 		} else {
 			fov_x = cg_fov.value;
-			if ( cgs.gametype == GT_SINGLE_PLAYER ) {
-				if ( fov_x < 1 ) {
-					fov_x = 1;
-				} else if ( fov_x > 160 ) {
-					fov_x = 160;
-				}
-			} else {
-				if ( fov_x < 90 ) {
-					fov_x = 90;
-				} else if ( fov_x > 160 ) {
-					fov_x = 160;
-				}
+			if ( fov_x < 90 ) {
+				fov_x = 90;
+			} else if ( fov_x > 160 ) {
+				fov_x = 160;
 			}
 		}
 
@@ -889,9 +867,7 @@ static int CG_CalcFov( void ) {
 			lastfov = fov_x;
 		} else {                    // binoc zooming out
 			f = ( cg.time - cg.zoomTime ) / (float)ZOOM_TIME;
-			if ( f > 1.0 ) {
-				fov_x = fov_x;
-			} else {
+			if ( f <= 1.0 ) {
 				fov_x = zoomFov + f * ( fov_x - zoomFov );
 			}
 		}
@@ -936,7 +912,10 @@ static int CG_CalcFov( void ) {
 	cg.refdef.fov_x = fov_x;
 	cg.refdef.fov_y = fov_y;
 
-	if ( !cg.zoomedBinoc ) {
+	if ( cg.snap->ps.pm_type == PM_FREEZE ) {
+		// No movement for pauses
+		cg.zoomSensitivity = 0;
+	} else if ( !cg.zoomedBinoc ) {
 		// NERVE - SMF - fix for zoomed in/out movement bug
 		if ( cg.zoomval ) {
 			if ( cg.snap->ps.weapon == WP_SNOOPERSCOPE ) {
@@ -983,14 +962,12 @@ static void CG_DamageBlendBlob( void ) {
 	refEntity_t ent;
 	qboolean pointDamage;
 	viewDamage_t *vd;
-	float redFlash;
 
 	// ragePro systems can't fade blends, so don't obscure the screen
 	if ( cgs.glconfig.hardwareType == GLHW_RAGEPRO ) {
 		return;
 	}
 
-	redFlash = 0;
 
 	for ( i = 0; i < MAX_VIEWDAMAGE; i++ ) {
 
@@ -1011,7 +988,6 @@ static void CG_DamageBlendBlob( void ) {
 
 		// if not point Damage, only do flash blend
 		if ( !pointDamage ) {
-			redFlash += 10.0 * ( 1.0 - (float)t / maxTime );
 			continue;
 		}
 
@@ -1035,30 +1011,8 @@ static void CG_DamageBlendBlob( void ) {
 		ent.shaderRGBA[3] = 255 * (	(cg_bloodDamageBlend.value > 1.0f) ? 1.0f :
 									(cg_bloodDamageBlend.value < 0.0f) ? 0.0f : cg_bloodDamageBlend.value);
 		trap_R_AddRefEntityToScene( &ent );
-
-		redFlash += ent.radius;
 	}
 
-	/* moved over to cg_draw.c
-	if (cg.v_dmg_time > cg.time) {
-		redFlash = fabs(cg.v_dmg_pitch * ((cg.v_dmg_time - cg.time) / DAMAGE_TIME));
-
-		// blend the entire screen red
-		if (redFlash > 5)
-			redFlash = 5;
-
-		memset( &ent, 0, sizeof( ent ) );
-		ent.reType = RT_SPRITE;
-		ent.renderfx = RF_FIRST_PERSON;
-
-		VectorMA( cg.refdef.vieworg, 8, cg.refdef.viewaxis[0], ent.origin );
-		ent.radius = 80;	// occupy entire screen
-		ent.customShader = cgs.media.viewFlashBlood;
-		ent.shaderRGBA[3] = (int)(180.0 * redFlash/5.0);
-
-		trap_R_AddRefEntityToScene( &ent );
-	}
-	*/
 }
 
 /*
@@ -1324,13 +1278,6 @@ void CG_DrawSkyBoxPortal( void ) {
 		return;
 	}
 
-	// if they are waiting at the mission stats screen, show the stats
-	if ( cg_gameType.integer == GT_SINGLE_PLAYER ) {
-		if ( strlen( cg_missionStats.string ) > 1 ) {
-			return;
-		}
-	}
-
 	backuprefdef = cg.refdef;
 
 	token = COM_ParseExt( &cstr, qfalse );
@@ -1462,9 +1409,7 @@ void CG_DrawSkyBoxPortal( void ) {
 			lastfov = fov_x;
 		} else {                    // binoc zooming out
 			f = ( cg.time - cg.zoomTime ) / (float)ZOOM_TIME;
-			if ( f > 1.0 ) {
-				fov_x = fov_x;
-			} else {
+			if ( f <= 1.0 ) {
 				fov_x = zoomFov + f * ( fov_x - zoomFov );
 			}
 		}
@@ -1621,6 +1566,10 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 #endif
 	DEBUGTIME
 
+	if (cg.demoPlayback && cg.ndpDemoEnabled) {
+		CG_NDP_SetGameTime();
+	}
+
 	// if we are only updating the screen as a loading
 	// pacifier, don't even try to read snapshots
 	if ( cg.infoScreenText[0] != 0 ) {
@@ -1641,6 +1590,13 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 
 	// set up cg.snap and possibly cg.nextSnap
 	CG_ProcessSnapshots();
+
+	if(cgs.match_paused != PAUSE_NONE){
+		if(cg.snap){
+			cg.time = cg.snap->serverTime;
+		}
+		
+	}
 
 	DEBUGTIME
 

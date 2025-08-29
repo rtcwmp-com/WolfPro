@@ -32,7 +32,7 @@ if(UNIX)
 	LIST(APPEND COMMON_SRC "src/unix/linux_common.c")
 	LIST(APPEND COMMON_SRC "src/unix/linux_signals.c")
 	LIST(APPEND COMMON_SRC "src/unix/snapvector.nasm")
-	LIST(APPEND COMMON_SRC "src/unix/unix_threads.c")
+	LIST(APPEND COMMON_SRC "src/unix/linux_threads.c")
 	LIST(APPEND CLIENT_SRC ${SDL_SRC})
 	LIST(APPEND CLIENT_SRC "src/unix/linux_qgl.c")
 elseif(WIN32)
@@ -98,6 +98,7 @@ FILE(GLOB CGAME_SRC
 	"src/game/q_math.c"
 	"src/game/q_shared.c"
 	"src/game/bg_*.c"
+	"src/client/cl_imgui_helpers.c"
 	"src/cgame/cgame.def"
 )
 
@@ -196,6 +197,7 @@ LIST(APPEND CLIENT_SRC_VK
 message(STATUS ${CLIENT_SRC_GL})
 LIST(REMOVE_ITEM CLIENT_SRC_GL
 	"${CMAKE_CURRENT_SOURCE_DIR}/src/client/cl_imgui.c"
+	"${CMAKE_CURRENT_SOURCE_DIR}/src/client/cl_imgui_helpers.c"
 )
 
 message(STATUS ${CLIENT_SRC_GL})

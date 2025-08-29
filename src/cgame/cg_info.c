@@ -122,7 +122,7 @@ void CG_LoadingClient( int clientNum ) {
 	char model[MAX_QPATH];
 	char iconName[MAX_QPATH];
 
-	if ( cgs.gametype == GT_SINGLE_PLAYER  && clientNum > 0 ) { // for now only show the player's icon in SP games
+	if (clientNum > 0 ) { // for now only show the player's icon in SP games
 		return;
 	}
 
@@ -147,10 +147,6 @@ void CG_LoadingClient( int clientNum ) {
 
 	Q_strncpyz( personality, Info_ValueForKey( info, "n" ), sizeof( personality ) );
 	Q_CleanStr( personality );
-
-	if ( cgs.gametype == GT_SINGLE_PLAYER ) {
-		trap_S_RegisterSound( va( "sound/player/announce/%s.wav", personality ) );
-	}
 
 	CG_LoadingString( personality );
 }
@@ -381,7 +377,7 @@ void CG_DrawInformation( void ) {
 
 	// Ridah, in single player, cheats disabled, don't show unnecessary information
 	// DHM - Nerve :: maybe temp, but we want to display the same as single player right now
-	if ( cgs.gametype == GT_SINGLE_PLAYER || cgs.gametype >= GT_WOLF ) {
+	if ( cgs.gametype >= GT_WOLF ) {
 		vec2_t xy = { 200, 468 };
 		vec2_t wh = { 240, 10 };
 
@@ -467,9 +463,6 @@ void CG_DrawInformation( void ) {
 	case GT_FFA:
 		s = "Free For All";
 		break;
-	case GT_SINGLE_PLAYER:
-		s = "Single Player";
-		break;
 	case GT_TOURNAMENT:
 		s = "Tournament";
 		break;
@@ -512,7 +505,7 @@ void CG_DrawInformation( void ) {
 		y += PROP_HEIGHT;
 	}
 
-	if ( cgs.gametype != GT_CTF && cgs.gametype != GT_SINGLE_PLAYER ) {
+	if ( cgs.gametype != GT_CTF) {
 		value = atoi( Info_ValueForKey( info, "fraglimit" ) );
 		if ( value ) {
 			UI_DrawProportionalString( 320, y, va( "fraglimit %i", value ),

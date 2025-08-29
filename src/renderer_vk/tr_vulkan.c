@@ -488,7 +488,7 @@ void PickPhysicalDevice(void)
     ri.Printf(PRINT_ALL, "Physical device selected: %s\n", vk.deviceProperties.deviceName);
 }
 
-static void CreateQueryPool(){
+static void CreateQueryPool(void){
     for(int i = 0; i < RHI_FRAMES_IN_FLIGHT; i++){
         VkQueryPoolCreateInfo query_pool_info = {};
         query_pool_info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
@@ -499,7 +499,7 @@ static void CreateQueryPool(){
     
 }
 
-static void CreateDevice()
+static void CreateDevice(void)
 {
     uint32_t queueCount = 0;
     float queuePriority = 1.0f;
@@ -567,7 +567,7 @@ static void CreateDevice()
     vkGetDeviceQueue(vk.device, vk.queues.presentFamily, 0, &vk.queues.present);
 }
 
-static void CreateAllocator()
+static void CreateAllocator(void)
 {
     VmaAllocatorCreateInfo allocatorInfo = {};
     allocatorInfo.vulkanApiVersion = MINIMUM_VULKAN_API_VERSION;
@@ -658,20 +658,6 @@ VkFormat GetVkFormat(rhiTextureFormatId format)
     }
 }
 
-static VkFormat GetVkFormatCnt(rhiDataTypeId type, uint32_t count)
-{
-	assert((unsigned int)type < rhiDataTypeIdCount);
-	assert(count >= 1 && count <= 4);
-
-	const VkFormat formats[rhiDataTypeIdCount][4] =
-	{
-		{ VK_FORMAT_R32_SFLOAT, VK_FORMAT_R32G32_SFLOAT, VK_FORMAT_R32G32B32_SFLOAT, VK_FORMAT_R32G32B32A32_SFLOAT },
-		{ VK_FORMAT_R8_UNORM, VK_FORMAT_R8G8_UNORM, VK_FORMAT_R8G8B8_UNORM, VK_FORMAT_R8G8B8A8_UNORM },
-		{ VK_FORMAT_R32_UINT, VK_FORMAT_R32G32_UINT, VK_FORMAT_R32G32B32_UINT, VK_FORMAT_R32G32B32A32_UINT }
-	};
-
-	return formats[type][count - 1];
-}
 
 VkImageAspectFlags GetVkImageAspectFlags(VkFormat format)
 {
@@ -686,7 +672,7 @@ VkImageAspectFlags GetVkImageAspectFlags(VkFormat format)
 }
 
 
-static void CreateSwapChain()
+static void CreateSwapChain(void)
 {
     VkSurfaceCapabilitiesKHR caps;
     VK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk.physicalDevice, vk.surface, &caps));
@@ -953,7 +939,7 @@ void RecreateSwapchain(void){
 //     vk.tempCommandBuffer = buffer;
 // }
 
-static void CreateCommandPool()
+static void CreateCommandPool(void)
 {
     VkCommandPoolCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -1282,7 +1268,7 @@ static void CreateCommandPool()
 
 
 
-void RHI_BeginFrame() {
+void RHI_BeginFrame(void) {
     if(r_swapInterval->modified){
         qbool currentVsync = r_swapInterval->integer != 0;
         if(currentVsync != vk.vsync){
@@ -1292,7 +1278,6 @@ void RHI_BeginFrame() {
     }
     vk.currentFrameIndex = (vk.currentFrameIndex + 1) % RHI_FRAMES_IN_FLIGHT;
     vk.durationQueryCount[vk.currentFrameIndex] = 0;
-    VkCommandBufferResetFlags flags;
     
     // VkSemaphoreWaitInfo waitInfo = {};
     // waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
@@ -1319,7 +1304,7 @@ void RHI_BeginFrame() {
     // BuildCommandBuffer();
 }
 
-void RHI_EndFrame() {
+void RHI_EndFrame(void) {
     int64_t currentTime = Sys_Microseconds();
     static int64_t previousTime = INT64_MIN;
     const int64_t us = currentTime - previousTime;
@@ -1400,32 +1385,6 @@ void RHI_EndFrame() {
 // 	SetObjectName(VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)layout.pipelineLayout, "Pipeline Layout");
 // }
 
-static void BuildSpecializationDesc(const VkSpecializationInfo** outPtr, VkSpecializationInfo* out,
-									size_t maxEntries, VkSpecializationMapEntry* entries,
-									const rhiSpecialization* input)
-{
-	if(input->entryCount == 0)
-	{
-		*outPtr = VK_NULL_HANDLE;
-		return;
-	}
-
-	assert(input->entryCount <= maxEntries);
-
-	out->mapEntryCount = input->entryCount;
-	out->pMapEntries = entries;
-	out->dataSize = input->byteCount;
-	out->pData = input->data;
-
-	for(uint32_t c = 0; c < input->entryCount; ++c)
-	{
-		entries[c].constantID = input->entries[c].constandId;
-		entries[c].offset = input->entries[c].byteOffset;
-		entries[c].size = input->entries[c].byteCount;
-	}
-
-	*outPtr = out;
-}
 
 VkBlendFactor GetSourceColorBlendFactor(unsigned int bits)
 {

@@ -449,12 +449,12 @@ rhiDescriptorSet RHI_CreateDescriptorSet(const char *name, rhiDescriptorSetLayou
 
 void RHI_UpdateDescriptorSet(rhiDescriptorSet descriptorHandle, uint32_t bindingIndex, RHI_DescriptorType type, uint32_t offset, uint32_t descriptorCount, const void *handles, uint32_t mipIndex){
     DescriptorSet *descSet = GET_DESCRIPTORSET(descriptorHandle);
+#ifdef _DEBUG
     DescriptorSetLayout *layout = GET_LAYOUT(descSet->layout);
-
     assert(bindingIndex < layout->desc.bindingCount);
     assert(layout->desc.bindings[bindingIndex].descriptorType == type);
     assert(layout->desc.bindings[bindingIndex].descriptorCount >= offset + descriptorCount);
-
+#endif
 
     VkWriteDescriptorSet write = {};
 	write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -688,7 +688,7 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
 	rasterizer.polygonMode = graphicsDesc->wireframe ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
 	rasterizer.cullMode = GetVkCullModeFlags(graphicsDesc->cullType);
 	rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
-	rasterizer.depthClampEnable = vk.deviceFeatures.depthClamp;
+	//rasterizer.depthClampEnable = vk.deviceFeatures.depthClamp;
 	rasterizer.rasterizerDiscardEnable = VK_FALSE;
 	rasterizer.lineWidth = 1.0f;
 
@@ -696,7 +696,8 @@ rhiPipeline RHI_CreateGraphicsPipeline(const rhiGraphicsPipelineDesc *graphicsDe
     if(graphicsDesc->polygonOffset){
         rasterizer.depthBiasEnable = VK_TRUE;
         rasterizer.depthBiasConstantFactor = -1.0f;
-        rasterizer.depthBiasSlopeFactor = -1.0f;
+        rasterizer.depthBiasSlopeFactor = -2.0f;
+        rasterizer.depthClampEnable = VK_FALSE;
     }
 
 	// VkPipelineMultisampleStateCreateInfo multiSampling {};
@@ -1707,9 +1708,8 @@ void DrawGUI_RHI(void){
 	ToggleBooleanWithShortcut(&breakdownActive, ImGuiKey_R, ImGUI_ShortcutOptions_Global);
 	GUI_AddMainMenuItem(ImGUI_MainMenu_Info, "RHI Status", "Ctrl+Shift+R", &breakdownActive, qtrue);
 	if(breakdownActive){
-		if(igBegin("RHI", &breakdownActive, 0)){
+		if(igBegin("RHI", (bool*)&breakdownActive, 0)) {
 			igNewLine();
-			int32_t renderPassDuration = 0;
 			if(igBeginTable("Status",2,ImGuiTableFlags_RowBg,(ImVec2){0,0},0.0f)){
 				TableHeader(2, "Pool", "Size");
                 #define POOL_ITEM(pool, name) TableRowInt(name, Pool_Size(&pool));

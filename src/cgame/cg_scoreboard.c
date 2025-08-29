@@ -677,11 +677,6 @@ qboolean CG_DrawScoreboard( void ) {
 		return qfalse;
 	}
 
-	if ( cgs.gametype == GT_SINGLE_PLAYER && cg.predictedPlayerState.pm_type == PM_INTERMISSION ) {
-		cg.deferredPlayerLoading = 0;
-		return qfalse;
-	}
-
 	// don't draw scoreboard during death while warmup up
 	if ( cg.warmup && !cg.showScores ) {
 		return qfalse;
@@ -717,7 +712,7 @@ qboolean CG_DrawScoreboard( void ) {
 	// current rank
 
 	//----(SA) enclosed this so it doesn't draw for SP
-	if ( cgs.gametype != GT_SINGLE_PLAYER && cgs.gametype < GT_WOLF ) {  // NERVE - SMF - added wolf multiplayer check
+	if ( cgs.gametype < GT_WOLF ) {  // NERVE - SMF - added wolf multiplayer check
 		if ( cg.snap->ps.persistant[PERS_TEAM] != TEAM_SPECTATOR ) {
 			if ( cgs.gametype < GT_TEAM ) {
 				s = va( "%s place with %i",
@@ -747,10 +742,6 @@ qboolean CG_DrawScoreboard( void ) {
 		x = 320 - SCOREBOARD_WIDTH / 2;
 		y = 86;
 
-	#if 0
-		CG_DrawBigStringColor( x, y, "SCORE PING TIME NAME", fadeColor );
-		CG_DrawBigStringColor( x, y + 12, "----- ---- ---- ---------------", fadeColor );
-	#endif
 		CG_DrawPic( x + 1 * 16, y, 64, 32, cgs.media.scoreboardScore );
 		CG_DrawPic( x + 6 * 16 + 8, y, 64, 32, cgs.media.scoreboardPing );
 		CG_DrawPic( x + 11 * 16 + 8, y, 64, 32, cgs.media.scoreboardTime );
@@ -759,18 +750,6 @@ qboolean CG_DrawScoreboard( void ) {
 		y += 32;
 	}
 
-//----(SA) added
-
-	// Secrets
-	if ( cgs.gametype == GT_SINGLE_PLAYER ) {
-		s = "Secrets: 0/12";
-		w = CG_DrawStrlen( s ) * BIGCHAR_WIDTH;
-		x = ( SCREEN_WIDTH - w ) / 2;
-		y = 60;
-//		CG_DrawBigStringColor( x, y, s, fadeColor );
-	}
-
-//----(SA) end
 
 	// NERVE - SMF
 	if ( cgs.gametype >= GT_WOLF ) {
@@ -815,12 +794,6 @@ qboolean CG_DrawScoreboard( void ) {
 		}
 		y = CG_TeamScoreboard( x, y, TEAM_SPECTATOR, fade );
 
-	} else if ( cgs.gametype != GT_SINGLE_PLAYER ) {   //----(SA) modified
-		//
-		// free for all scoreboard
-		//
-		y = CG_TeamScoreboard( x, y, TEAM_FREE, fade );
-		y = CG_TeamScoreboard( x, y, TEAM_SPECTATOR, fade );
 	}
 
 	// load any models that have been deferred

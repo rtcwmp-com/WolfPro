@@ -17,12 +17,12 @@ endif(UNIX)
 #
 if(BUILD_CLIENT_MOD)
 	add_library(cgame MODULE ${CGAME_SRC})
-	target_link_libraries(cgame cgame_libraries mod_libraries)
+	target_link_libraries(cgame cgame_libraries mod_libraries cimgui)
 
 	set_target_properties(cgame
 		PROPERTIES
 		PREFIX ""
-		C_STANDARD 90
+		C_STANDARD 11
 		OUTPUT_NAME "cgame${LIB_SUFFIX}${ARCH}"
 		LIBRARY_OUTPUT_DIRECTORY "${MODNAME}"
 		LIBRARY_OUTPUT_DIRECTORY_DEBUG "${MODNAME}"
@@ -49,7 +49,7 @@ if(BUILD_CLIENT_MOD)
 	set_target_properties(ui
 		PROPERTIES
 		PREFIX ""
-		C_STANDARD 90
+		C_STANDARD 11
 		OUTPUT_NAME "ui${LIB_SUFFIX}${ARCH}"
 		LIBRARY_OUTPUT_DIRECTORY "${MODNAME}"
 		LIBRARY_OUTPUT_DIRECTORY_DEBUG "${MODNAME}"
@@ -76,7 +76,7 @@ if(BUILD_SERVER_MOD)
 	set_target_properties(qagame
 		PROPERTIES
 		PREFIX ""
-		C_STANDARD 90
+		C_STANDARD 11
 		OUTPUT_NAME "qagame${LIB_SUFFIX}${ARCH}"
 		LIBRARY_OUTPUT_DIRECTORY "${MODNAME}"
 		LIBRARY_OUTPUT_DIRECTORY_DEBUG "${MODNAME}"
@@ -122,6 +122,14 @@ if(BUILD_MOD_PK3)
 		file(RELATIVE_PATH REL "${CMAKE_CURRENT_SOURCE_DIR}/MAIN" ${FILE})
 		list(APPEND MAIN_FILES_LIST ${REL})
 	endforeach()
+
+	# Remove old mod pk3 files from the build directory (useful for the development)
+	file(GLOB OLD_PK3_FILES "${CMAKE_CURRENT_BINARY_DIR}/${MODNAME}/${MODNAME}_*.pk3")
+	list(REMOVE_ITEM OLD_PK3_FILES)
+	add_custom_target(remove_old_pk3_files
+		COMMAND ${CMAKE_COMMAND} -E remove -f "${OLD_PK3_FILES}"
+		COMMAND_EXPAND_LISTS
+	)
 
 	add_custom_command(
 		OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${MODNAME}/${MODNAME}_bin.pk3

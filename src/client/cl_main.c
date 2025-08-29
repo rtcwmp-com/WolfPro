@@ -49,6 +49,7 @@ cvar_t  *rconAddress;
 cvar_t  *cl_timeout;
 cvar_t  *cl_maxpackets;
 cvar_t  *cl_packetdup;
+cvar_t  *cl_autoNudge;
 cvar_t  *cl_timeNudge;
 cvar_t  *cl_showTimeDelta;
 cvar_t  *cl_freezeDemo;
@@ -95,6 +96,8 @@ cvar_t  *cl_debugTranslation;
 cvar_t  *cl_updateavailable;
 cvar_t  *cl_updatefiles;
 // DHM - Nerve
+
+cvar_t* cl_demoPlayer;
 
 clientActive_t cl;
 clientConnection_t clc;
@@ -183,10 +186,8 @@ CL_ChangeReliableCommand
 ======================
 */
 void CL_ChangeReliableCommand( void ) {
-	int r, index, l;
+	int index, l;
 
-	// NOTE TTimo: what is the randomize for?
-	r = clc.reliableSequence - ( random() * 5 );
 	index = clc.reliableSequence & ( MAX_RELIABLE_COMMANDS - 1 );
 	l = strlen( clc.reliableCommands[ index ] );
 	if ( l >= MAX_STRING_CHARS - 1 ) {
@@ -558,7 +559,8 @@ demo <demoname>
 
 ====================
 */
-void CL_PlayDemo_f( void ) {
+void CL_PlayDemo(qbool videoRestart)
+{
 	char name[MAX_OSPATH], extension[32];
 	char        *arg;
 
@@ -578,11 +580,11 @@ void CL_PlayDemo_f( void ) {
 
 	// open the demo file
 	arg = Cmd_Argv( 1 );
-	Com_sprintf( extension, sizeof( extension ), ".dm_%d", PROTOCOL_VERSION );
+	Com_sprintf( extension, sizeof( extension ), ".dm_%d", GAME_PROTOCOL_VERSION );
 	if ( !Q_stricmp( arg + strlen( arg ) - strlen( extension ), extension ) ) {
 		Com_sprintf( name, sizeof( name ), "demos/%s", arg );
 	} else {
-		Com_sprintf( name, sizeof( name ), "demos/%s.dm_%d", arg, PROTOCOL_VERSION );
+		Com_sprintf( name, sizeof( name ), "demos/%s.dm_%d", arg, GAME_PROTOCOL_VERSION );
 	}
 
 	FS_FOpenFileRead( name, &clc.demofile, qtrue );
@@ -604,6 +606,14 @@ void CL_PlayDemo_f( void ) {
 
 	Q_strncpyz( cls.servername, Cmd_Argv( 1 ), sizeof( cls.servername ) );
 
+	if (cl_demoPlayer->integer) {
+		//while (CL_MapDownload_Active()) {
+		//	Sys_Sleep(50);
+		//}
+		CL_NDP_PlayDemo(videoRestart);
+		return;
+	}
+
 	// read demo messages until connected
 	while ( cls.state >= CA_CONNECTED && cls.state < CA_PRIMED ) {
 		CL_ReadDemoMessage();
@@ -618,6 +628,17 @@ void CL_PlayDemo_f( void ) {
 		CL_WriteWaveClose();
 		clc.waverecording = qfalse;
 	}
+}
+
+/*
+====================
+CL_PlayDemo_f
+
+demo <demoname>
+====================
+*/
+void CL_PlayDemo_f(void) {
+	CL_PlayDemo(qfalse);
 }
 
 
@@ -1323,8 +1344,15 @@ void CL_Vid_Restart_f( void ) {
 	// startup all the client stuff
 	CL_StartHunkUsers();
 
+	// we don't really technically need to run everything again,
+	// but trying to optimize parts out is very likely to lead to nasty bugs
+	if (clc.demoplaying && clc.newDemoPlayer) {
+		Cmd_TokenizeString(va("demo \"%s\"", clc.demoName));
+		CL_PlayDemo(qtrue);
+	}
+
 	// start the cgame if connected
-	if ( cls.state > CA_CONNECTED && cls.state != CA_CINEMATIC ) {
+	else if ( cls.state > CA_CONNECTED && cls.state != CA_CINEMATIC ) {
 		cls.cgameStarted = qtrue;
 		CL_InitCGame();
 		// send pure checksums
@@ -2607,6 +2635,7 @@ void CL_InitRef( void ) {
 	#ifdef RTCW_VULKAN
 	ri.IsRecordingVideo = CL_IsRecordingVideo;
 	ri.CL_ImGUI_Update = CL_ImGUI_Update;
+	ri.CL_CG_ImGUI_Update = CL_CG_ImGUI_Update;
 	#endif
 
 	ret = GetRefAPI( REF_API_VERSION, &ri );
@@ -2630,25 +2659,6 @@ void CL_InitRef( void ) {
 // RF, trap manual client damage commands so users can't issue them manually
 void CL_ClientDamageCommand( void ) {
 	// do nothing
-}
-
-// NERVE - SMF
-void CL_startSingleplayer_f( void ) {
-#if defined( __linux__ )
-	Sys_StartProcess( "./wolfsp.x86", qtrue );
-#else
-	Sys_StartProcess( "WolfSP.exe", qtrue );
-#endif
-}
-
-// NERVE - SMF
-void CL_buyNow_f( void ) {
-	Sys_OpenURL( "http://www.activision.com/games/wolfenstein/purchase.html", qtrue );
-}
-
-// NERVE - SMF
-void CL_singlePlayLink_f( void ) {
-	Sys_OpenURL( "http://www.activision.com/games/wolfenstein/home.html", qtrue );
 }
 
 #if !defined( __MACOS__ )
@@ -2709,6 +2719,7 @@ void CL_Init( void ) {
 
 	cl_wavefilerecord = Cvar_Get( "cl_wavefilerecord", "0", CVAR_TEMP );
 
+	cl_autoNudge = Cvar_Get( "cl_autoNudge", "0", CVAR_TEMP );
 	cl_timeNudge = Cvar_Get( "cl_timeNudge", "0", CVAR_TEMP );
 	cl_shownet = Cvar_Get( "cl_shownet", "0", CVAR_TEMP );
 	cl_shownuments = Cvar_Get( "cl_shownuments", "0", CVAR_TEMP );
@@ -2768,6 +2779,9 @@ void CL_Init( void ) {
 	m_filter = Cvar_Get( "m_filter", "0", CVAR_ARCHIVE );
 
 	cl_motdString = Cvar_Get( "cl_motdString", "", CVAR_ROM );
+
+	cl_demoPlayer = Cvar_Get("cl_demoPlayer", "1", CVAR_ARCHIVE);
+
 
 	Cvar_Get( "cl_maxPing", "800", CVAR_ARCHIVE );
 
@@ -2878,10 +2892,6 @@ void CL_Init( void ) {
 	// RF, add this command so clients can't bind a key to send client damage commands to the server
 //	Cmd_AddCommand ("cld", CL_ClientDamageCommand );
 
-	Cmd_AddCommand( "startSingleplayer", CL_startSingleplayer_f );      // NERVE - SMF
-	Cmd_AddCommand( "buyNow", CL_buyNow_f );                            // NERVE - SMF
-	Cmd_AddCommand( "singlePlayLink", CL_singlePlayLink_f );            // NERVE - SMF
-
 	Cmd_AddCommand( "setRecommended", CL_SetRecommended_f );
 
 	CL_InitRef();
@@ -2891,6 +2901,9 @@ void CL_Init( void ) {
 	Cbuf_Execute();
 
 	Cvar_Set( "cl_running", "1" );
+
+	// Allow cgame to interrogate the client if it supports extensions
+	Cvar_Set("//trap_GetValue", "700");
 
 	// DHM - Nerve
 	autoupdateChecked = qfalse;
@@ -3026,7 +3039,6 @@ CL_ServerInfoPacket
 void CL_ServerInfoPacket( netadr_t from, msg_t *msg ) {
 	int i, type;
 	char info[MAX_INFO_STRING];
-	char*   str;
 	char    *infoString;
 	int prot;
 	char    *gameName;
@@ -3064,12 +3076,10 @@ void CL_ServerInfoPacket( netadr_t from, msg_t *msg ) {
 			{
 			case NA_BROADCAST:
 			case NA_IP:
-				str = "udp";
 				type = 1;
 				break;
 
 			default:
-				str = "???";
 				type = 0;
 				break;
 			}
@@ -3170,10 +3180,8 @@ CL_GetServerStatus
 ===================
 */
 serverStatus_t *CL_GetServerStatus( netadr_t from ) {
-	serverStatus_t *serverStatus;
 	int i, oldest, oldestTime;
 
-	serverStatus = NULL;
 	for ( i = 0; i < MAX_SERVERSTATUSREQUESTS; i++ ) {
 		if ( NET_CompareAdr( from, cl_serverStatusList[i].address ) ) {
 			return &cl_serverStatusList[i];
@@ -3867,12 +3875,9 @@ CL_AddToLimboChat
 */
 void CL_AddToLimboChat( const char *str ) {
 	int len;
-	char *p, *ls;
-	int lastcolor;
-	int chatHeight;
+	char *p;
 	int i;
 
-	chatHeight = LIMBOCHAT_HEIGHT;
 	cl.limboChatPos = LIMBOCHAT_HEIGHT - 1;
 	len = 0;
 
@@ -3885,9 +3890,6 @@ void CL_AddToLimboChat( const char *str ) {
 	p = cl.limboChatMsgs[0];
 	*p = 0;
 
-	lastcolor = '7';
-
-	ls = NULL;
 	while ( *str ) {
 		if ( len > LIMBOCHAT_WIDTH - 1 ) {
 			break;
@@ -3895,12 +3897,8 @@ void CL_AddToLimboChat( const char *str ) {
 
 		if ( Q_IsColorString( str ) ) {
 			*p++ = *str++;
-			lastcolor = *str;
 			*p++ = *str++;
 			continue;
-		}
-		if ( *str == ' ' ) {
-			ls = p;
 		}
 		*p++ = *str++;
 		len++;

@@ -182,51 +182,6 @@ void SanitizeString( char *in, char *out ) {
 	*out = 0;
 }
 
-/*
-==================
-ClientNumberFromString
-
-Returns a player number for either a number or name string
-Returns -1 if invalid
-==================
-*/
-int ClientNumberFromString( gentity_t *to, char *s ) {
-	gclient_t   *cl;
-	int idnum;
-	char s2[MAX_STRING_CHARS];
-	char n2[MAX_STRING_CHARS];
-
-	// numeric values are just slot numbers
-	if ( s[0] >= '0' && s[0] <= '9' ) {
-		idnum = atoi( s );
-		if ( idnum < 0 || idnum >= level.maxclients ) {
-			trap_SendServerCommand( to - g_entities, va( "print \"Bad client slot: [lof]%i\n\"", idnum ) );
-			return -1;
-		}
-
-		cl = &level.clients[idnum];
-		if ( cl->pers.connected != CON_CONNECTED ) {
-			trap_SendServerCommand( to - g_entities, va( "print \"Client[lof] %i [lon]is not active\n\"", idnum ) );
-			return -1;
-		}
-		return idnum;
-	}
-
-	// check for a name match
-	SanitizeString( s, s2 );
-	for ( idnum = 0,cl = level.clients ; idnum < level.maxclients ; idnum++,cl++ ) {
-		if ( cl->pers.connected != CON_CONNECTED ) {
-			continue;
-		}
-		SanitizeString( cl->pers.netname, n2 );
-		if ( !strcmp( n2, s2 ) ) {
-			return idnum;
-		}
-	}
-
-	trap_SendServerCommand( to - g_entities, va( "print \"User [lof]%s [lon]is not on the server\n\"", s ) );
-	return -1;
-}
 
 /*
 ==================
@@ -324,14 +279,6 @@ void Cmd_Give_f( gentity_t *ent ) {
 	}
 
 	if ( give_all || Q_stricmpn( name, "armor", 5 ) == 0 ) {
-		if ( g_gametype.integer == GT_SINGLE_PLAYER ) { // JPW NERVE -- no armor in multiplayer
-			//----(SA)	modified
-			if ( amount ) {
-				ent->client->ps.stats[STAT_ARMOR] += amount;
-			} else {
-				ent->client->ps.stats[STAT_ARMOR] = 200;
-			}
-		} // jpw
 		if ( !give_all ) {
 			return;
 		}
@@ -507,7 +454,9 @@ Cmd_Kill_f
 =================
 */
 void Cmd_Kill_f( gentity_t *ent ) {
-	if ( ent->client->sess.sessionTeam == TEAM_SPECTATOR ) {
+	if ( ent->client->sess.sessionTeam == TEAM_SPECTATOR ||
+		 ( ent->client->ps.pm_flags & PMF_LIMBO ) ||
+		 ent->health <= 0 || level.paused != PAUSE_NONE ) {
 		return;
 	}
 	if ( g_gametype.integer >= GT_WOLF && ent->client->ps.pm_flags & PMF_LIMBO ) {
@@ -517,7 +466,8 @@ void Cmd_Kill_f( gentity_t *ent ) {
 	ent->flags &= ~FL_GODMODE;
 	ent->client->ps.stats[STAT_HEALTH] = ent->health = 0;
 	ent->client->ps.persistant[PERS_HWEAPON_USE] = 0; // TTimo - if using /kill while at MG42
-	player_die( ent, ent, ent, 100000, MOD_SUICIDE );
+	player_die( ent, ent, ent, ent->health, MOD_SUICIDE );
+	if (g_gamestate.integer == GS_PLAYING) ent->client->sess.stats.suicides++;
 }
 
 
@@ -677,6 +627,11 @@ void SetTeam( gentity_t *ent, char *s ) {
 	ClientUserinfoChanged( clientNum );
 
 	ClientBegin( clientNum );
+
+	// Reset stats when changing teams
+	if (team != oldTeam) {
+		G_deleteStats(clientNum);
+	}
 }
 
 // DHM - Nerve
@@ -848,6 +803,9 @@ Cmd_FollowCycle_f
 void Cmd_FollowCycle_f( gentity_t *ent, int dir ) {
 	int clientnum;
 	int original;
+
+	if (level.paused != PAUSE_NONE && ent->client->sess.sessionTeam != TEAM_SPECTATOR)  //added to allow spectators to cycle during pause
+		return;
 
 	// if they are playing a tournement game, count as a loss
 	if ( g_gametype.integer == GT_TOURNAMENT && ent->client->sess.sessionTeam == TEAM_FREE ) {
@@ -2085,46 +2043,6 @@ int Cmd_WolfKick_f( gentity_t *ent ) {
 }
 // done
 
-/*
-============================
-Cmd_ClientMonsterSlickAngle
-============================
-*/
-/*
-void Cmd_ClientMonsterSlickAngle (gentity_t *clent) {
-
-	char s[MAX_STRING_CHARS];
-	int	entnum;
-	int angle;
-	gentity_t *ent;
-	vec3_t	dir, kvel;
-	vec3_t	forward;
-
-	if (trap_Argc() != 3) {
-		G_Printf( "ClientDamage command issued with incorrect number of args\n" );
-	}
-
-	trap_Argv( 1, s, sizeof( s ) );
-	entnum = atoi(s);
-	ent = &g_entities[entnum];
-
-	trap_Argv( 2, s, sizeof( s ) );
-	angle = atoi(s);
-
-	// sanity check (also protect from cheaters)
-	if (g_gametype.integer != GT_SINGLE_PLAYER && entnum != clent->s.number) {
-		trap_DropClient( clent->s.number, "Dropped due to illegal ClientMonsterSlick command\n" );
-		return;
-	}
-
-	VectorClear (dir);
-	dir[YAW] = angle;
-	AngleVectors (dir, forward, NULL, NULL);
-
-	VectorScale (forward, 32, kvel);
-	VectorAdd (ent->client->ps.velocity, kvel, ent->client->ps.velocity);
-}
-*/
 
 // NERVE - SMF
 /*
@@ -2140,54 +2058,33 @@ void ClientDamage( gentity_t *clent, int entnum, int enemynum, int id ) {
 
 	enemy = &g_entities[enemynum];
 
-	// NERVE - SMF - took this out, this is causing more problems than its helping
-	//  Either a new way has to be found, or this check needs to change.
-	// sanity check (also protect from cheaters)
-//	if (g_gametype.integer != GT_SINGLE_PLAYER && entnum != clent->s.number) {
-//		trap_DropClient( clent->s.number, "Dropped due to illegal ClientDamage command\n" );
-//		return;
-//	}
-	// -NERVE - SMF
-
 	// if the attacker can't see the target, then don't allow damage
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-		// TTimo it can happen that enemy->client == NULL
-		// see Changelog 09/22/2001
-		if ( ( enemy->client ) && ( !CanDamage( ent, enemy->client->ps.origin ) ) ) {
-			return; // don't allow damage
-		}
+	
+	// TTimo it can happen that enemy->client == NULL
+	// see Changelog 09/22/2001
+	if ( ( enemy->client ) && ( !CanDamage( ent, enemy->client->ps.origin ) ) ) {
+		return; // don't allow damage
 	}
+	
 
 	switch ( id ) {
 	case CLDMG_SPIRIT:
-		if ( g_gametype.integer == GT_SINGLE_PLAYER ) {
-			G_Damage( ent, enemy, enemy, vec3_origin, vec3_origin, 3, DAMAGE_NO_KNOCKBACK, MOD_ZOMBIESPIRIT );
-		}
 		break;
 	case CLDMG_BOSS1LIGHTNING:
-		if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
 			break;
-		}
-		if ( ent->takedamage ) {
-			VectorSubtract( ent->r.currentOrigin, enemy->r.currentOrigin, vec );
-			VectorNormalize( vec );
-			G_Damage( ent, enemy, enemy, vec, ent->r.currentOrigin, 6 + rand() % 3, 0, MOD_LIGHTNING );
-		}
-		break;
+		
 	case CLDMG_TESLA:
 		// do some cheat protection
-		if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-			if ( enemy->s.weapon != WP_TESLA ) {
-				break;
-			}
-			if ( !( enemy->client->buttons & BUTTON_ATTACK ) ) {
-				break;
-			}
-			//if ( AICast_GetCastState( enemy->s.number )->lastWeaponFiredWeaponNum != WP_TESLA )
-			//	break;
-			//if ( AICast_GetCastState( enemy->s.number )->lastWeaponFired < level.time - 400 )
-			//	break;
+		if ( enemy->s.weapon != WP_TESLA ) {
+			break;
 		}
+		if ( !( enemy->client->buttons & BUTTON_ATTACK ) ) {
+			break;
+		}
+		//if ( AICast_GetCastState( enemy->s.number )->lastWeaponFiredWeaponNum != WP_TESLA )
+		//	break;
+		//if ( AICast_GetCastState( enemy->s.number )->lastWeaponFired < level.time - 400 )
+		//	break;
 
 		if (    ( ent->aiCharacter == AICHAR_PROTOSOLDIER ) ||
 				( ent->aiCharacter == AICHAR_SUPERSOLDIER ) ||
@@ -2203,57 +2100,6 @@ void ClientDamage( gentity_t *clent, int entnum, int enemynum, int id ) {
 		}
 		break;
 	case CLDMG_FLAMETHROWER:
-		// do some cheat protection
-/*  JPW NERVE pulled flamethrower client damage completely
-		if (g_gametype.integer != GT_SINGLE_PLAYER) {
-			if ( enemy->s.weapon != WP_FLAMETHROWER )
-				break;
-//			if ( !(enemy->client->buttons & BUTTON_ATTACK) ) // JPW NERVE flames should be able to damage while puffs are active
-//				break;
-		} else {
-			// this is required for Zombie flame attack
-			//if ((enemy->aiCharacter == AICHAR_ZOMBIE) && !AICast_VisibleFromPos( enemy->r.currentOrigin, enemy->s.number, ent->r.currentOrigin, ent->s.number, qfalse ))
-			//	break;
-		}
-
-		if ( ent->takedamage && !AICast_NoFlameDamage(ent->s.number) ) {
-			#define	FLAME_THRESHOLD	50
-			int damage = 5;
-
-			// RF, only do damage once they start burning
-			//if (ent->health > 0)	// don't explode from flamethrower
-			//	G_Damage( traceEnt, ent, ent, forward, tr.endpos, 1, 0, MOD_LIGHTNING);
-
-			// now check the damageQuota to see if we should play a pain animation
-			// first reduce the current damageQuota with time
-			if (ent->flameQuotaTime && ent->flameQuota > 0) {
-				ent->flameQuota -= (int)(((float)(level.time - ent->flameQuotaTime)/1000) * (float)damage/2.0);
-				if (ent->flameQuota < 0)
-					ent->flameQuota = 0;
-			}
-
-			// add the new damage
-			ent->flameQuota += damage;
-			ent->flameQuotaTime = level.time;
-
-			// Ridah, make em burn
-			if (ent->client && ( !(ent->r.svFlags & SVF_CASTAI) || ent->health <= 0 || ent->flameQuota > FLAME_THRESHOLD)) {				if (ent->s.onFireEnd < level.time)
-					ent->s.onFireStart = level.time;
-				if (ent->health <= 0 || !(ent->r.svFlags & SVF_CASTAI) || (g_gametype.integer != GT_SINGLE_PLAYER)) {
-					if (ent->r.svFlags & SVF_CASTAI) {
-						ent->s.onFireEnd = level.time + 6000;
-					} else {
-						ent->s.onFireEnd = level.time + FIRE_FLASH_TIME;
-					}
-				} else {
-					ent->s.onFireEnd = level.time + 99999;	// make sure it goes for longer than they need to die
-				}
-				ent->flameBurnEnt = enemy->s.number;
-				// add to playerState for client-side effect
-				ent->client->ps.onFireStart = level.time;
-			}
-		}
-*/
 		break;
 	}
 }
@@ -2476,7 +2322,107 @@ void ClientCommand( int clientNum ) {
 		Cmd_EntityCount_f( ent );
 	} else if ( Q_stricmp( cmd, "setspawnpt" ) == 0 )  {
 		Cmd_SetSpawnPoint_f( ent );
+	} else if (!Q_stricmp(cmd, "forcetapout")) {
+		if (!g_allowForceTapout.integer)
+		{
+			return;
+		}
+
+		 if (!ent || !ent->client || level.paused != PAUSE_NONE) { // Do not allow forcetapout during pause
+			 return;
+		 }
+
+		 if (ent->client->ps.stats[STAT_HEALTH] <= 0 && (ent->client->sess.sessionTeam == TEAM_RED || ent->client->sess.sessionTeam == TEAM_BLUE)) {
+			 limbo(ent, qtrue);
+		 }
+
+		 return;
 	} else {
 		trap_SendServerCommand( clientNum, va( "print \"unknown cmd[lof] %s\n\"", cmd ) );
 	}
+}
+
+
+/*
+==================
+SanitizeString with tolower option
+
+Remove case and control characters
+==================
+*/
+void SanitizeStringToLower(char* in, char* out, qboolean fToLower) {
+	while (*in) {
+		if (*in == 27 || *in == '^') {
+			in++;       // skip color code
+			if (*in) {
+				in++;
+			}
+			continue;
+		}
+
+		if (*in < 32) {
+			in++;
+			continue;
+		}
+
+		*out++ = (fToLower) ? tolower(*in++) : *in++;
+	}
+
+	*out = 0;
+}
+
+/*
+==================
+ClientNumberFromString
+
+Returns a player number for either a number or name string
+Returns -1 if invalid
+==================
+*/
+int ClientNumberFromString( gentity_t *to, char *s ) {
+	gclient_t   *cl;
+	int idnum;
+	char s2[MAX_STRING_CHARS];
+	char n2[MAX_STRING_CHARS];
+	qboolean fIsNumber = qtrue;
+
+	// See if its a number or string
+	for ( idnum = 0; idnum < strlen( s ) && s[idnum] != 0; idnum++ ) {
+		if ( s[idnum] < '0' || s[idnum] > '9' ) {
+			fIsNumber = qfalse;
+			break;
+		}
+	}
+
+	// check for a name match
+	SanitizeStringToLower( s, s2, qtrue );
+	for ( idnum = 0, cl = level.clients; idnum < level.maxclients; idnum++, cl++ ) {
+		if ( cl->pers.connected != CON_CONNECTED ) {
+			continue;
+		}
+
+		SanitizeStringToLower( cl->pers.netname, n2, qtrue );
+		if ( !strcmp( n2, s2 ) ) {
+			return( idnum );
+		}
+	}
+
+	// numeric values are just slot numbers
+	if ( fIsNumber ) {
+		idnum = atoi( s );
+		if ( idnum < 0 || idnum >= level.maxclients ) {
+			CPx( to - g_entities, va( "print \"Bad client slot: [lof]%i\n\"", idnum ) );
+			return -1;
+		}
+
+		cl = &level.clients[idnum];
+		if ( cl->pers.connected != CON_CONNECTED ) {
+			CPx( to - g_entities, va( "print \"Client[lof] %i [lon]is not active\n\"", idnum ) );
+			return -1;
+		}
+		return( idnum );
+	}
+
+	CPx( to - g_entities, va( "print \"User [lof]%s [lon]is not on the server\n\"", s ) );
+	return( -1 );
 }

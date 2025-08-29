@@ -3115,7 +3115,6 @@ weapon_t BG_FindAmmoForWeapon( weapon_t weapon ) {
 
 	for ( it = bg_itemlist + 1 ; it->classname ; it++ ) {
 		if ( it->giType == IT_WEAPON && it->giTag == weapon ) {
-//			if(g_gametype.integer != GT_SINGLE_PLAYER)
 			if ( 0 ) {
 				if ( DEATHMATCH_SHARED_AMMO ) { // this would be a !single_player server cvar that lets Allied and Axis like-weapons share like-ammo for dm
 					switch ( it->giAmmoIndex )
@@ -4079,4 +4078,223 @@ void BG_PlayerStateToEntityStateExtraPolate( playerState_t *ps, entityState_t *s
 	s->aiChar = ps->aiChar; // Ridah
 	s->teamNum = ps->teamNum;
 	s->aiState = ps->aiState;
+}
+
+
+void DecolorString(char* in, char* out)
+{
+	while (*in) {
+		if (*in == 27 || *in == '^') {
+			in++;		// skip color code
+			if (*in) in++;
+			continue;
+		}
+		*out++ = *in++;
+	}
+	*out = 0;
+}
+
+const unsigned int BG_ReinfSeeds[MAX_REINFSEEDS] = { 11, 3, 13, 7, 2, 5, 1, 17 };
+
+/*
+===============
+RTCWPro
+
+BG_ParseColorCvar
+Reads RBG(A) cvars and sets parsed color var components
+===============
+*/
+void BG_ParseColorCvar(char* cvarString, float* color, float alpha) {
+	char* s = cvarString;
+	unsigned int i = 0;
+
+	if (alpha > 1.0f)
+	{
+		alpha = 1.0f;
+	}
+	else if (alpha < 0.f)
+	{
+		alpha = 0.f;
+	}
+
+	// white in case we have no good format
+	Vector4Copy(colorWhite, color);
+	color[3] = alpha; // rtcwpro - split this up
+
+	// hex format
+	if (*s == '0' && (*(s + 1) == 'x' || *(s + 1) == 'X')) {
+		s += 2;
+		if (Q_IsHexColorString(s)) {
+			color[0] = ((float)(gethex(*(s)) * 16 + gethex(*(s + 1)))) / 255.00;
+			color[1] = ((float)(gethex(*(s + 2)) * 16 + gethex(*(s + 3)))) / 255.00;
+			color[2] = ((float)(gethex(*(s + 4)) * 16 + gethex(*(s + 5)))) / 255.00;
+			return;
+		}
+	}
+
+	// colortable
+	while (OSP_Colortable[i].colorname != NULL) {
+		if (!Q_stricmp(s, OSP_Colortable[i].colorname)) {
+			color[0] = (*OSP_Colortable[i].color)[0];
+			color[1] = (*OSP_Colortable[i].color)[1];
+			color[2] = (*OSP_Colortable[i].color)[2];
+			return;
+		}
+		i++;
+	}
+
+	// get space count
+	int spaces = 0;
+	for (i = 0; i < strlen(s); ++i) {
+		if (s[i] == ' ') {
+			spaces++;
+		}
+	}
+
+	// "R G B( A)" format
+	if (spaces >= 2) {
+		char temp[4][8];
+		int j = 0, k = 0;
+		for (i = 0; i < strlen(s) + 1; ++i) {
+			if (s[i] == ' ' || i == strlen(s)) {
+				color[j] = atof(temp[j]);
+				k = i + 1;
+				j++;
+				if (j == 4) {
+					if (color[0] > 1 || color[1] > 1 || color[2] > 1 || color[3] > 1) { // true RGB(A)
+						color[0] /= 255.0f;
+						color[1] /= 255.0f;
+						color[2] /= 255.0f;
+						color[3] /= 255.0f;
+					}
+					return;
+				}
+				continue;
+			}
+
+			if (i - k < 10) {
+				temp[j][i - k] = s[i];
+			}
+		}
+	}
+}
+
+const colorTable_t OSP_Colortable[] =
+{
+	{ "white", &colorWhite, {'7'} },
+	{ "red", &colorRed, {'1'} },
+	{ "green", &colorGreen, {'2'} },
+	{ "blue", &colorBlue, {'4'} },
+	{ "yellow", &colorYellow, {'3'} },
+	{ "magenta", &colorMagenta, {'6'} },
+	{ "cyan", &colorCyan, {'5'} },
+	{ "orange", &colorOrange, {'8'} },
+	{ "mdred", &colorMdRed, {'?'} },
+	{ "mdgreen", &colorMdGreen, {'<'} },
+	{ "dkgreen", &colorDkGreen, {'h'} },
+	{ "mdcyan", &colorMdCyan, {'b'} },
+	{ "mdyellow", &colorMdYellow, {'='} },
+	{ "mdorange", &colorMdOrange, {'x'} },
+	{ "mdblue", &colorMdBlue, {'>'} },
+	{ "ltgrey", &colorLtGrey, {':'} },
+	{ "mdgrey", &colorMdGrey, {'9'} },
+	{ "dkgrey", &colorDkGrey, {'y'} },
+	{ "black", &colorBlack, {'0'} },
+	{ NULL, NULL }
+};
+
+// Weapon full names + headshot capability
+const weap_ws_t aWeaponInfo[WS_MAX] = {
+	{ qfalse,   "KNIF",  "Knife"      },  // 0
+	{ qtrue,    "LUGR",  "Luger"      },  // 1
+	{ qtrue,    "COLT",  "Colt"       },  // 2
+	{ qtrue,    "MP40",  "MP-40"      },  // 3
+	{ qtrue,    "TMPS",  "Thompson"   },  // 4
+	{ qtrue,    "STEN",  "Sten"       },  // 5
+	{ qtrue,    "FG42",  "FG-42"      },  // 6
+	{ qtrue,    "PNZR",  "Panzer" },      // 7
+	{ qtrue,    "FLAM",  "F.Thrower"  },  // 8
+	{ qfalse,   "GRND",  "Grenade"    },  // 9
+	{ qfalse,   "MRTR",  "Mortar" },	  // 10
+	{ qfalse,   "DYNA",  "Dynamite"   },  // 11
+	{ qfalse,   "ARST",  "Airstrike"  },  // 12
+	{ qfalse,   "ARTY",  "Artillery"  },  // 13
+	{ qfalse,   "SRNG",  "Syringe"    },  // 14
+	{ qfalse,   "SMOK", "SmokeScrn"   },  // 15
+	{ qtrue,    "MG42",  "MG-42 Gun"  },  // 16
+	{ qtrue,    "RIFL",  "Mauser" },	  // 17
+	{ qtrue,    "VENM",  "Venom" },		  // 18
+};
+
+// strip colors and control codes, copying up to dwMaxLength-1 "good" chars and nul-terminating
+// returns the length of the cleaned string
+int BG_cleanName( const char *pszIn, char *pszOut, unsigned int dwMaxLength, qboolean fCRLF ) {
+	const char *pInCopy = pszIn;
+	const char *pszOutStart = pszOut;
+
+	while ( *pInCopy && ( pszOut - pszOutStart < dwMaxLength - 1 ) ) {
+		if ( *pInCopy == '^' ) {
+			pInCopy += ( ( pInCopy[1] == 0 ) ? 1 : 2 );
+		} else if ( ( *pInCopy < 32 && ( !fCRLF || *pInCopy != '\n' ) ) || ( *pInCopy > 126 ) )    {
+			pInCopy++;
+		} else {
+			*pszOut++ = *pInCopy++;
+		}
+	}
+
+	*pszOut = 0;
+	return( pszOut - pszOutStart );
+}
+
+static const weap_ws_convert_t aWeapID[WP_NUM_WEAPONS] = {
+
+	{ WP_NONE,              WS_MAX },           // 0
+
+	// German weapons
+	{ WP_KNIFE,             WS_KNIFE },
+	{ WP_LUGER,             WS_LUGER },
+	{ WP_MP40,              WS_MP40 },
+	{ WP_GRENADE_LAUNCHER,  WS_GRENADE },       // 5
+	{ WP_PANZERFAUST,       WS_PANZERFAUST },
+	{ WP_FLAMETHROWER,      WS_FLAMETHROWER },
+	{ WP_VENOM,				WS_VENOM },
+
+	// American equivalents
+	{ WP_COLT,              WS_COLT },          // 10
+	{ WP_THOMPSON,          WS_THOMPSON },
+	{ WP_GRENADE_PINEAPPLE, WS_GRENADE },
+	{ WP_STEN,              WS_STEN },
+	{ WP_MEDIC_SYRINGE,     WS_SYRINGE },
+	{ WP_AMMO,              WS_MAX },
+	{ WP_ARTY,              WS_ARTILLERY },
+
+	{ WP_SILENCER,          WS_LUGER },         // 20
+	{ WP_DYNAMITE,          WS_DYNAMITE },
+	{ WP_SMOKETRAIL,        WS_ARTILLERY },
+	{ VERYBIGEXPLOSION,     WS_MAX },
+	{ WP_MEDKIT,            WS_MAX },
+	{ WP_BINOCULARS,        WS_MAX },
+
+	{ WP_PLIERS,            WS_MAX },
+	{ WP_MAUSER,			WS_RIFLE },
+	{ WP_SNIPERRIFLE,       WS_RIFLE },
+	
+	{ WP_FG42,              WS_FG42 },
+	{ WP_FG42SCOPE,         WS_FG42 },
+	
+	{ WP_MORTAR,            WS_MORTAR }
+
+	// L0 - Did I cover all?
+};
+
+extWeaponStats_t BG_WeapStatForWeapon( weapon_t iWeaponID ) {
+	weapon_t i;
+
+	for ( i = WP_NONE; i < WP_NUM_WEAPONS; i++ ) {
+		if ( iWeaponID == aWeapID[i].iWeapon ) {
+			return aWeapID[i].iWS;
+		}
+	}
+
+	return WS_MAX;
 }

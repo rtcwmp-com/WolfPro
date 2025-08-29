@@ -46,13 +46,11 @@ A player has predicted a teleport, but hasn't arrived yet
 ================
 */
 static void RB_Hyperspace( void ) {
-	float c;
 
 	if ( !backEnd.isHyperspace ) {
 		// do initialization shit
 	}
 
-	c = ( backEnd.refdef.time & 255 ) / 255.0f;
 	//@TODO clear color buffer
 
 	backEnd.isHyperspace = qtrue;
@@ -182,7 +180,7 @@ void RB_BeginDrawingView( void ) {
 	// clip to the plane of the portal
 	if ( backEnd.viewParms.isPortal ) {
 		float plane[4];
-		double plane2[4];
+		float plane2[4];
 
 		plane[0] = backEnd.viewParms.portalPlane.normal[0];
 		plane[1] = backEnd.viewParms.portalPlane.normal[1];
@@ -382,7 +380,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int firstSurfIndex, int lastS
 
 void RB_RenderLitSurfList( drawSurf_t *drawSurfs, int firstSurfIndex, int lastSurfIndex, dlight_t *dlight) {
 	shader_t        *shader, *oldShader;
-	int fogNum, oldFogNum;
+	int fogNum;
 	int entityNum, oldEntityNum;
 	int dlighted;
 	qboolean depthRange, oldDepthRange;
@@ -403,7 +401,6 @@ void RB_RenderLitSurfList( drawSurf_t *drawSurfs, int firstSurfIndex, int lastSu
 	oldEntityNum = -1;
 	backEnd.currentEntity = &tr.worldEntity;
 	oldShader = NULL;
-	oldFogNum = -1;
 	oldDepthRange = qfalse;
 	oldSort = -1;
 	depthRange = qfalse;
@@ -1035,8 +1032,8 @@ RB_EndFrame
 void DrawGUI_ShaderTrace(void){
 
 	static bool breakdownActive = false;
-	ToggleBooleanWithShortcut(&breakdownActive, ImGuiKey_T, ImGUI_ShortcutOptions_Global);
-	GUI_AddMainMenuItem(ImGUI_MainMenu_Perf, "Shader Trace", "Ctrl+Shift+T", &breakdownActive, qtrue);
+	ToggleBooleanWithShortcut((qbool*)&breakdownActive, ImGuiKey_T, ImGUI_ShortcutOptions_Global);
+	GUI_AddMainMenuItem(ImGUI_MainMenu_Perf, "Shader Trace", "Ctrl+Shift+T", (qbool*)&breakdownActive, qtrue);
 	
 	if(breakdownActive){
 		if(igBegin("Shader Trace", &breakdownActive, 0)){
@@ -1094,7 +1091,6 @@ void DrawGUI_ShaderTrace(void){
 
 void DrawGUI_Performance(void){
 	int f = (backEnd.currentFrameIndex - 1 + RHI_FRAMES_IN_FLIGHT) % RHI_FRAMES_IN_FLIGHT;
-	int p = (backEnd.currentFrameIndex - 2 + RHI_FRAMES_IN_FLIGHT) % RHI_FRAMES_IN_FLIGHT;
 	for(int i = 0; i < backEnd.renderPassCount[f]; i++){
 		renderPass *currentRenderPass = &backEnd.renderPasses[f][i];
 		renderPass *previousRenderPass = &backEnd.renderPasses[f][i];
@@ -1106,8 +1102,8 @@ void DrawGUI_Performance(void){
 	AddHistory(&s_fullFrameHistory, 0, 0, duration);
 
 	static bool breakdownActive = false;
-	ToggleBooleanWithShortcut(&breakdownActive, ImGuiKey_F, ImGUI_ShortcutOptions_Global);
-	GUI_AddMainMenuItem(ImGUI_MainMenu_Perf, "Frame breakdown", "Ctrl+Shift+F", &breakdownActive, qtrue);
+	ToggleBooleanWithShortcut((qbool*)&breakdownActive, ImGuiKey_F, ImGUI_ShortcutOptions_Global);
+	GUI_AddMainMenuItem(ImGUI_MainMenu_Perf, "Frame breakdown", "Ctrl+Shift+F", (qbool*)&breakdownActive, qtrue);
 	if(breakdownActive){
 		if(igBegin("Frame breakdown", &breakdownActive, 0)){
 			igNewLine();
@@ -1185,6 +1181,7 @@ const void  *RB_EndFrame( const void *data ) {
 	DrawGUI_ShaderTrace();
 	ri.CL_ImGUI_Update();
 	DrawGUI_RHI();
+	ri.CL_CG_ImGUI_Update();
 
 	RB_ImGUI_Draw(backEnd.colorBuffer);
 
@@ -1238,8 +1235,6 @@ void RB_ExecuteRenderCommands( const void *data ) {
 	t1 = ri.Milliseconds();
 
 	static qbool begun = qfalse;
-	static int counter = 0;
-	counter++;
 
 
 	while ( 1 ) {

@@ -152,9 +152,6 @@ void AICast_InputToUserCommand( cast_state_t *cs, bot_input_t *bi, usercmd_t *uc
 	short temp;
 	int j;
 	signed char movechar;
-	gentity_t *ent;
-
-	ent = &g_entities[cs->entityNum];
 
 	//clear the whole structure
 	memset( ucmd, 0, sizeof( usercmd_t ) );
@@ -847,135 +844,10 @@ AICast_StartServerFrame
 ============
 */
 void AICast_StartServerFrame( int time ) {
-	int i, elapsed, count, clCount;
-	cast_state_t    *cs;
-	int castcount;
-	static int lasttime;
-	static vmCvar_t aicast_disable;
-	gentity_t *ent;
-	cast_state_t *pcs;
-//	int		oldLegsTimer;
-
 	if ( trap_Cvar_VariableIntegerValue( "savegame_loading" ) ) {
 		return;
 	}
-
-	if ( g_gametype.integer != GT_SINGLE_PLAYER ) {
-		return;
-	}
-
-	if ( saveGamePending ) {
-		return;
-	}
-
-	// if waiting at intermission, don't think
-	if ( strlen( g_missionStats.string ) > 1 ) {
-		return;
-	}
-
-	if ( !aicast_disable.handle ) {
-		trap_Cvar_Register( &aicast_disable, "aicast_disable", "0", CVAR_CHEAT );
-	} else
-	{
-		trap_Cvar_Update( &aicast_disable );
-		if ( aicast_disable.integer ) {
-			return;
-		}
-	}
-
-	trap_Cvar_Update( &aicast_debug );
-
-	// no need to think during the intermission
-	if ( level.intermissiontime ) {
-		return;
-	}
-	//
-	// make sure the AAS gets updated
-	trap_BotLibStartFrame( (float) time / 1000 );
-	//
-	//
-	elapsed = time - lasttime;
-	if ( elapsed == 0 ) {
-		return;         // no time has elapsed
-	}
-
-	pcs = AICast_GetCastState( 0 );
-
-//G_Printf( "AI startserverframe: %i\n", time );
-
-	if ( elapsed < 0 ) {
-		elapsed = 0;
-		lasttime = time;
-	}
-	// don't let the framerate drop below 10
-	if ( elapsed > 100 ) {
-		elapsed = 100;
-	}
-	//
-	// process player's current script if it exists
-	AICast_ScriptRun( AICast_GetCastState( 0 ), qfalse );
-	//
-	AICast_SightUpdate( (int)( (float)SIGHT_PER_SEC * ( (float)elapsed / 1000 ) ) );
-	//
-	count = 0;
-	castcount = 0;
-	clCount = 0;
-	ent = g_entities;
-	//
-	//update the AI characters
-	// TTimo gcc: left-hand operand of comma expression has no effect
-	// initial line: for (i = 0; i < aicast_maxclients, clCount < level.numPlayingClients; i++, ent++)
-	for ( i = 0; ( i < aicast_maxclients ) && ( clCount < level.numPlayingClients ) ; i++, ent++ )
-	{
-		if ( ent->client ) {
-			clCount++;
-		}
-		//
-		cs = AICast_GetCastState( i );
-		// is this a cast AI?
-		if ( cs->bs ) {
-			if ( ent->aiInactive == qfalse && ent->inuse ) {
-				//
-				elapsed = level.time - cs->lastMoveThink;
-				//
-				// optimization, if they're not in the player's PVS, and they aren't trying to move, then don't bother thinking
-				if (    ( ( ent->health > 0 ) && ( elapsed > 300 ) )
-						||  ( g_entities[0].client && g_entities[0].client->cameraPortal )
-						||  ( cs->vislist[0].visible_timestamp == cs->vislist[0].lastcheck_timestamp )
-						||  ( pcs->vislist[cs->entityNum].visible_timestamp == pcs->vislist[cs->entityNum].lastcheck_timestamp )
-						||  ( VectorLength( ent->client->ps.velocity ) > 0 )
-						||  ( cs->bs->lastucmd.forwardmove || cs->bs->lastucmd.rightmove || cs->bs->lastucmd.upmove > 0 || cs->bs->lastucmd.buttons || cs->bs->lastucmd.wbuttons )
-						||  ( trap_InPVS( cs->bs->origin, g_entities[0].s.pos.trBase ) ) ) { // do pvs check last, since it's the most expensive to call
-//					oldLegsTimer = ent->client->ps.legsTimer;
-					//
-					// send it's movement commands
-					//
-					serverTime = time;
-					AICast_UpdateInput( cs, elapsed );
-					trap_BotUserCommand( cs->bs->client, &( cs->bs->lastucmd ) );
-					cs->lastMoveThink = level.time;
-					//
-					// check for anim changes that may require us to stay still
-					//
-/*					if (oldLegsTimer != ent->client->ps.legsTimer) {
-						// dont move until they are finished
-						if (cs->castScriptStatus.scriptNoMoveTime < level.time + ent->client->ps.legsTimer) {
-							cs->castScriptStatus.scriptNoMoveTime = level.time + ent->client->ps.legsTimer;
-						}
-					}
-*/              }
-			} else {
-				trap_UnlinkEntity( ent );
-			}
-			//
-			// see if we've checked all cast AI's
-			if ( ++castcount >= numcast ) {
-				break;
-			}
-		}
-	}
-	//
-	lasttime = time;
+	return;
 }
 
 /*
@@ -1111,7 +983,7 @@ AICast_GetAvoid
 ============
 */
 qboolean AICast_GetAvoid( cast_state_t *cs, bot_goal_t *goal, vec3_t outpos, qboolean reverse, int blockEnt ) {
-	float yaw, oldyaw, distmoved, bestmoved, bestyaw;
+	float yaw, oldyaw, distmoved, bestmoved;
 	vec3_t bestpos;
 	aicast_predictmove_t castmove;
 	usercmd_t ucmd;
@@ -1119,11 +991,11 @@ qboolean AICast_GetAvoid( cast_state_t *cs, bot_goal_t *goal, vec3_t outpos, qbo
 	float angleDiff;
 	// TTimo might be used uninitialized
 	int starttraveltime = 0;
-	int besttraveltime, traveltime;
+	int traveltime;
 	int invert;
 	float inc;
 	qboolean averting = qfalse;
-	float maxYaw, simTime;
+	float maxYaw;
 	static int lastTime;
 
 	VectorCopy( vec3_origin, bestpos );
@@ -1150,8 +1022,6 @@ qboolean AICast_GetAvoid( cast_state_t *cs, bot_goal_t *goal, vec3_t outpos, qbo
 	//
 	// look for a good direction to move out of the way
 	bestmoved = 0;
-	bestyaw = 360;
-	besttraveltime = 9999999;
 	if ( goal ) {
 		starttraveltime = trap_AAS_AreaTravelTimeToGoalArea( cs->bs->areanum, cs->bs->origin, goal->areanum, cs->travelflags );
 	}
@@ -1166,7 +1036,6 @@ qboolean AICast_GetAvoid( cast_state_t *cs, bot_goal_t *goal, vec3_t outpos, qbo
 	}
 	//
 	maxYaw = 0;
-	simTime = 1.2;
 	//
 	if ( averting ) {
 		// avoiding danger, go anywhere!
@@ -1184,7 +1053,6 @@ qboolean AICast_GetAvoid( cast_state_t *cs, bot_goal_t *goal, vec3_t outpos, qbo
 	}
 	if ( blockEnt > aicast_maxclients ) {
 		maxYaw = angleDiff;
-		simTime = 0.5;
 	}
 	//
 	for ( yaw = -angleDiff * invert; yaw*invert <= maxYaw; yaw += inc * invert ) {
@@ -1212,9 +1080,7 @@ qboolean AICast_GetAvoid( cast_state_t *cs, bot_goal_t *goal, vec3_t outpos, qbo
 			// they all passed, check any other stuff
 			if ( !enemyVisible || AICast_CheckAttackAtPos( cs->entityNum, cs->bs->enemy, castmove.endpos, qfalse, qfalse ) ) {
 				if ( !goal || ( traveltime = trap_AAS_AreaTravelTimeToGoalArea( BotPointAreaNum( castmove.endpos ), castmove.endpos, goal->areanum, cs->travelflags ) ) < ( starttraveltime + 200 ) ) {
-					bestyaw = yaw;
 					bestmoved = distmoved;
-					besttraveltime = traveltime;
 					VectorCopy( castmove.endpos, bestpos );
 				}
 			}

@@ -1265,7 +1265,6 @@ void Script_NotebookShowpage( itemDef_t *item, char **args ) {
 		}
 
 		if ( inc ) {
-			int dec = 0;
 
 			if ( inc > 0 ) {
 				for ( i = 1; i < NOTEBOOK_MAX_PAGES; i++ ) {
@@ -1279,9 +1278,6 @@ void Script_NotebookShowpage( itemDef_t *item, char **args ) {
 					}
 
 					if ( pages & ( 1 << ( newpage - 1 ) ) ) {
-						dec++;
-//						if(dec == inc)
-//							break;
 						break;
 					}
 				}
@@ -1791,12 +1787,8 @@ int Item_Slider_OverSlider( itemDef_t *item, float x, float y ) {
 
 int Item_ListBox_OverLB( itemDef_t *item, float x, float y ) {
 	rectDef_t r;
-	listBoxDef_t *listPtr;
 	int thumbstart;
-	int count;
 
-	count = DC->feederCount( item->special );
-	listPtr = (listBoxDef_t*)item->typeData;
 	if ( item->window.flags & WINDOW_HORIZONTAL ) {
 		// check if on left arrow
 		r.x = item->window.rect.x;
@@ -3762,10 +3754,8 @@ char* BindingFromName( const char *cvar ) {
 
 void Item_Slider_Paint( itemDef_t *item ) {
 	vec4_t newColor, lowLight;
-	float x, y, value;
+	float x, y;
 	menuDef_t *parent = (menuDef_t*)item->parent;
-
-	value = ( item->cvar ) ? DC->getCVarValue( item->cvar ) : 0;
 
 	if ( item->window.flags & WINDOW_HASFOCUS ) {
 		lowLight[0] = 0.8 * parent->focusColor[0];
@@ -4216,13 +4206,10 @@ void Item_ListBox_Paint( itemDef_t *item ) {
 
 
 void Item_OwnerDraw_Paint( itemDef_t *item ) {
-	menuDef_t *parent;
 
 	if ( item == NULL ) {
 		return;
 	}
-
-	parent = (menuDef_t*)item->parent;
 
 	if ( DC->ownerDrawItem ) {
 		vec4_t color, lowLight;
@@ -4867,16 +4854,13 @@ qboolean ItemParse_group( itemDef_t *item, int handle ) {
 // asset_model <string>
 qboolean ItemParse_asset_model( itemDef_t *item, int handle ) {
 	const char *temp;
-	modelDef_t *modelPtr;
 	Item_ValidateTypeData( item );
-	modelPtr = (modelDef_t*)item->typeData;
 
 	if ( !PC_String_Parse( handle, &temp ) ) {
 		return qfalse;
 	}
 	if ( !( item->asset ) ) {
 		item->asset = DC->registerModel( temp );
-//		modelPtr->angle = rand() % 360;
 	}
 	return qtrue;
 }
