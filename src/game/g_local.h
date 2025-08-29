@@ -595,7 +595,6 @@ typedef struct {
 
 	unsigned int autoaction;            // End-of-match auto-requests
 	unsigned int clientFlags;           // Client settings that need server involvement
-	qboolean renamed;
 } clientPersistant_t;
 
 typedef struct {
@@ -1448,8 +1447,6 @@ extern vmCvar_t g_spawnOffset; // random spawn offset for both teams, between 1 
 extern vmCvar_t g_gameStatslog;
 extern vmCvar_t g_preciseTimeSet;	// RTCWPro precise timelimit set each round
 extern vmCvar_t	sv_hostname;
-
-extern vmCvar_t g_enforceNames;
 
 void    trap_Printf( const char *fmt );
 void    trap_Error( const char *fmt );
