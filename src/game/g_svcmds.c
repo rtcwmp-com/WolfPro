@@ -754,11 +754,6 @@ qboolean    ConsoleCommand( void ) {
 		return qtrue;
 	}
 
-	if ( Q_stricmp( cmd, "rename" ) == 0 ) {
-		G_Rename_f();
-		return qtrue;
-	}
-
 	return qfalse;
 }
 
