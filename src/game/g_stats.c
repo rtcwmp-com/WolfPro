@@ -710,8 +710,11 @@ void G_printMatchInfo( gentity_t *ent, qboolean fDump ) { // fDump is bad name b
 	char *ref;
 	char n1[MAX_NETNAME];
 	char n2[MAX_NETNAME];
+	char n3[MAX_NETNAME];
+	char n4[MAX_NETNAME];
 	qtime_t ct;
 	trap_RealTime(&ct);
+	
 	CP(va("sc \"\nMod: %s \n^7Server: %s  \n^7Time: ^7%02d:%02d:%02d ^d(^7%02d %s %d^d)\n\n\"",
 			GAMEVERSION, sv_hostname.string, ct.tm_hour, ct.tm_min, ct.tm_sec, ct.tm_mday, dMonths[ct.tm_mon], 1900+ct.tm_year));
 
@@ -752,6 +755,10 @@ void G_printMatchInfo( gentity_t *ent, qboolean fDump ) { // fDump is bad name b
 			SanitizeString(n1, n2);
 			Q_CleanStr(n2);
 			n2[15] = 0;
+			DecolorString(cl->pers.username, n3);
+			SanitizeString(n3, n4);
+			Q_CleanStr(n4);
+			n4[15] = 0;
             ref = "^7";
 
 			tot_kills += cl->sess.stats.kills;
@@ -781,9 +788,26 @@ void G_printMatchInfo( gentity_t *ent, qboolean fDump ) { // fDump is bad name b
 			}
 
 			cnt++;
-			CP(va("sc \"%s%-15s^7%4d^7%4d%4d%3d%s%4d%3d %6.2f%4d^2%5d^1%5d^4%5d^5%5d^7^3%5d\n\"",
+			CP(va("netnamesc \"%s%-15s^7%4d^7%4d%4d%3d%s%4d%3d %6.2f%4d^2%5d^1%5d^4%5d^5%5d^7^3%5d\n\"",
 				ref,
 				n2,
+				cl->sess.stats.kills,
+				cl->sess.stats.deaths,
+				cl->sess.stats.suicides,
+				cl->sess.stats.team_kills,
+				ref,
+				eff,
+				cl->sess.stats.gibs,
+				((cl->sess.stats.acc_shots == 0) ? 0.00 : ((float)cl->sess.stats.acc_hits / (float)cl->sess.stats.acc_shots) * 100.00f),
+				cl->sess.stats.headshots,
+				cl->sess.stats.damage_given,
+				cl->sess.stats.damage_received,
+				cl->sess.stats.team_damage,
+				cl->sess.stats.revives,
+				cl->ps.persistant[PERS_SCORE] ) );
+			CP(va("usernamesc \"%s%-15s^7%4d^7%4d%4d%3d%s%4d%3d %6.2f%4d^2%5d^1%5d^4%5d^5%5d^7^3%5d\n\"",
+				ref,
+				n4,
 				cl->sess.stats.kills,
 				cl->sess.stats.deaths,
 				cl->sess.stats.suicides,

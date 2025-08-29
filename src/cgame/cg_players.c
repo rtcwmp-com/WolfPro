@@ -947,8 +947,14 @@ void CG_NewClientInfo( int clientNum ) {
 	newInfo.clientNum = clientNum;
 
 	// isolate the player's name
-	v = Info_ValueForKey( configstring, "n" );
-	Q_strncpyz( newInfo.name, v, sizeof( newInfo.name ) );
+	if(cg_registeredPlayers.integer){
+		v = Info_ValueForKey( configstring, "un" );
+		Q_strncpyz( newInfo.name, v, sizeof( newInfo.name ) );
+	}else{
+		v = Info_ValueForKey( configstring, "n" );
+		Q_strncpyz( newInfo.name, v, sizeof( newInfo.name ) );
+	}
+	
 
 	// colors
 	v = Info_ValueForKey( configstring, "c1" );

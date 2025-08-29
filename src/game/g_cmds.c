@@ -610,17 +610,25 @@ void SetTeam( gentity_t *ent, char *s ) {
 	client->sess.spectatorClient = specClient;
 
 	if ( team == TEAM_RED ) {
-		trap_SendServerCommand( -1, va( "cp \"[lof]%s" S_COLOR_WHITE " [lon]joined the Axis team.\n\"",
+		trap_SendServerCommand( -1, va( "netnamecp \"[lof]%s" S_COLOR_WHITE " [lon]joined the Axis team.\n\"",
 										client->pers.netname ) );
+		trap_SendServerCommand( -1, va( "usernamecp \"[lof]%s" S_COLOR_WHITE " [lon]joined the Axis team.\n\"",
+										client->pers.username ) );
 	} else if ( team == TEAM_BLUE ) {
-		trap_SendServerCommand( -1, va( "cp \"[lof]%s" S_COLOR_WHITE " [lon]joined the Allied team.\n\"",
+		trap_SendServerCommand( -1, va( "netnamecp \"[lof]%s" S_COLOR_WHITE " [lon]joined the Allied team.\n\"",
 										client->pers.netname ) );
+		trap_SendServerCommand( -1, va( "usernamecp \"[lof]%s" S_COLOR_WHITE " [lon]joined the Allied team.\n\"",
+										client->pers.username ) );
 	} else if ( team == TEAM_SPECTATOR && oldTeam != TEAM_SPECTATOR ) {
-		trap_SendServerCommand( -1, va( "cp \"[lof]%s" S_COLOR_WHITE " [lon]joined the spectators.\n\"",
+		trap_SendServerCommand( -1, va( "netnamecp \"[lof]%s" S_COLOR_WHITE " [lon]joined the spectators.\n\"",
 										client->pers.netname ) );
+		trap_SendServerCommand( -1, va( "usernamecp \"[lof]%s" S_COLOR_WHITE " [lon]joined the spectators.\n\"",
+										client->pers.username ) );
 	} else if ( team == TEAM_FREE ) {
-		trap_SendServerCommand( -1, va( "cp \"[lof]%s" S_COLOR_WHITE " [lon]joined the battle.\n\"",
+		trap_SendServerCommand( -1, va( "netnamecp \"[lof]%s" S_COLOR_WHITE " [lon]joined the battle.\n\"",
 										client->pers.netname ) );
+		trap_SendServerCommand( -1, va( "usernamecp \"[lof]%s" S_COLOR_WHITE " [lon]joined the battle.\n\"",
+										client->pers.username ) );
 	}
 
 	// get and distribute relevent paramters
@@ -880,7 +888,7 @@ G_Say
 #define SAY_TELL    2
 #define SAY_LIMBO   3           // NERVE - SMF
 
-void G_SayTo( gentity_t *ent, gentity_t *other, int mode, int color, const char *name, const char *message, qboolean localize ) { // removed static so it would link
+void G_SayTo( gentity_t *ent, gentity_t *other, int mode, int color, const char *netname, const char *username, const char *message, qboolean localize ) { // removed static so it would link
 	if ( !other ) {
 		return;
 	}
@@ -910,13 +918,18 @@ void G_SayTo( gentity_t *ent, gentity_t *other, int mode, int color, const char 
 	// NERVE - SMF
 	if ( mode == SAY_LIMBO ) {
 		trap_SendServerCommand( other - g_entities, va( "%s \"%s%c%c%s\"",
-														"lchat", name, Q_COLOR_ESCAPE, color, message ) );
+														"netnamelchat", netname, Q_COLOR_ESCAPE, color, message ) );
+		trap_SendServerCommand(other - g_entities, va("%s \"%s%c%c%s\"",
+														"netnamelchat", username, Q_COLOR_ESCAPE, color, message));
 	}
 	// -NERVE - SMF
 	else {
 		trap_SendServerCommand( other - g_entities, va( "%s \"%s%c%c%s\" %i",
-														mode == SAY_TEAM ? "tchat" : "chat",
-														name, Q_COLOR_ESCAPE, color, message, localize ) );
+														mode == SAY_TEAM ? "netnametchat" : "netnamechat",
+														netname, Q_COLOR_ESCAPE, color, message, localize ) );
+		trap_SendServerCommand( other - g_entities, va( "%s \"%s%c%c%s\" %i",
+														mode == SAY_TEAM ? "usernametchat" : "usernamechat",
+														username, Q_COLOR_ESCAPE, color, message, localize ) );
 	}
 }
 
@@ -924,7 +937,8 @@ void G_Say( gentity_t *ent, gentity_t *target, int mode, const char *chatText ) 
 	int j;
 	gentity_t   *other;
 	int color;
-	char name[64];
+	char netname[64];
+	char username[64];
 	// don't let text be too long for malicious reasons
 	char text[MAX_SAY_TEXT];
 	char location[64];
@@ -937,19 +951,24 @@ void G_Say( gentity_t *ent, gentity_t *target, int mode, const char *chatText ) 
 	switch ( mode ) {
 	default:
 	case SAY_ALL:
-		G_LogPrintf( "say: %s: %s\n", ent->client->pers.netname, chatText );
-		Com_sprintf( name, sizeof( name ), "%s%c%c: ", ent->client->pers.netname, Q_COLOR_ESCAPE, COLOR_WHITE );
+		G_LogPrintf( "say: %s: %s\n", ent->client->pers.username, chatText );
+		Com_sprintf( netname, sizeof( netname ), "%s%c%c: ", ent->client->pers.netname, Q_COLOR_ESCAPE, COLOR_WHITE );
+		Com_sprintf( username, sizeof( username ), "%s%c%c: ", ent->client->pers.username, Q_COLOR_ESCAPE, COLOR_WHITE );
 		color = COLOR_GREEN;
 		break;
 	case SAY_TEAM:
 		localize = qtrue;
-		G_LogPrintf( "sayteam: %s: %s\n", ent->client->pers.netname, chatText );
+		G_LogPrintf( "sayteam: %s: %s\n", ent->client->pers.username, chatText );
 		if ( Team_GetLocationMsg( ent, location, sizeof( location ) ) ) {
-			Com_sprintf( name, sizeof( name ), "[lof](%s%c%c) (%s): ",
+			Com_sprintf( netname, sizeof( netname ), "[lof](%s%c%c) (%s): ",
 						 ent->client->pers.netname, Q_COLOR_ESCAPE, COLOR_WHITE, location );
+			Com_sprintf( username, sizeof( username ), "[lof](%s%c%c) (%s): ",
+						 ent->client->pers.username, Q_COLOR_ESCAPE, COLOR_WHITE, location );
 		} else {
-			Com_sprintf( name, sizeof( name ), "(%s%c%c): ",
+			Com_sprintf( netname, sizeof( netname ), "(%s%c%c): ",
 						 ent->client->pers.netname, Q_COLOR_ESCAPE, COLOR_WHITE );
+			Com_sprintf( username, sizeof( username ), "(%s%c%c): ",
+						 ent->client->pers.username, Q_COLOR_ESCAPE, COLOR_WHITE );
 		}
 		color = COLOR_CYAN;
 		break;
@@ -957,16 +976,19 @@ void G_Say( gentity_t *ent, gentity_t *target, int mode, const char *chatText ) 
 		if ( target && g_gametype.integer >= GT_TEAM &&
 			 target->client->sess.sessionTeam == ent->client->sess.sessionTeam &&
 			 Team_GetLocationMsg( ent, location, sizeof( location ) ) ) {
-			Com_sprintf( name, sizeof( name ), "[%s%c%c] (%s): ", ent->client->pers.netname, Q_COLOR_ESCAPE, COLOR_WHITE, location );
+			Com_sprintf( netname, sizeof( netname ), "[%s%c%c] (%s): ", ent->client->pers.netname, Q_COLOR_ESCAPE, COLOR_WHITE, location );
+			Com_sprintf( username, sizeof( username ), "[%s%c%c] (%s): ", ent->client->pers.username, Q_COLOR_ESCAPE, COLOR_WHITE, location );
 		} else {
-			Com_sprintf( name, sizeof( name ), "[%s%c%c]: ", ent->client->pers.netname, Q_COLOR_ESCAPE, COLOR_WHITE );
+			Com_sprintf( netname, sizeof( netname ), "[%s%c%c]: ", ent->client->pers.netname, Q_COLOR_ESCAPE, COLOR_WHITE );
+			Com_sprintf( username, sizeof( username ), "[%s%c%c]: ", ent->client->pers.username, Q_COLOR_ESCAPE, COLOR_WHITE );
 		}
 		color = COLOR_MAGENTA;
 		break;
 		// NERVE - SMF
 	case SAY_LIMBO:
-		G_LogPrintf( "say_limbo: %s: %s\n", ent->client->pers.netname, chatText );
-		Com_sprintf( name, sizeof( name ), "%s%c%c: ", ent->client->pers.netname, Q_COLOR_ESCAPE, COLOR_WHITE );
+		G_LogPrintf( "say_limbo: %s: %s\n", ent->client->pers.username, chatText );
+		Com_sprintf( netname, sizeof( netname ), "%s%c%c: ", ent->client->pers.netname, Q_COLOR_ESCAPE, COLOR_WHITE );
+		Com_sprintf( username, sizeof( username ), "%s%c%c: ", ent->client->pers.username, Q_COLOR_ESCAPE, COLOR_WHITE );
 		color = COLOR_GREEN;
 		break;
 		// -NERVE - SMF
@@ -975,19 +997,19 @@ void G_Say( gentity_t *ent, gentity_t *target, int mode, const char *chatText ) 
 	Q_strncpyz( text, chatText, sizeof( text ) );
 
 	if ( target ) {
-		G_SayTo( ent, target, mode, color, name, text, localize );
+		G_SayTo( ent, target, mode, color, netname, username, text, localize );
 		return;
 	}
 
 	// echo the text to the console
 	if ( g_dedicated.integer ) {
-		G_Printf( "%s%s\n", name, text );
+		G_Printf( "%s%s\n", username, text );
 	}
 
 	// send it to all the apropriate clients
 	for ( j = 0; j < level.maxclients; j++ ) {
 		other = &g_entities[j];
-		G_SayTo( ent, other, mode, color, name, text, localize );
+		G_SayTo( ent, other, mode, color, netname, username, text, localize );
 	}
 }
 
@@ -1042,7 +1064,7 @@ static void Cmd_Tell_f( gentity_t *ent ) {
 
 	p = ConcatArgs( 2 );
 
-	G_LogPrintf( "tell: %s to %s: %s\n", ent->client->pers.netname, target->client->pers.netname, p );
+	G_LogPrintf( "tell: %s to %s: %s\n", ent->client->pers.username, target->client->pers.username, p );
 	G_Say( ent, target, SAY_TELL, p );
 	G_Say( ent, ent, SAY_TELL, p );
 }
@@ -1119,7 +1141,8 @@ void G_Voice( gentity_t *ent, gentity_t *target, int mode, const char *id, qbool
 
 	// echo the text to the console
 	if ( g_dedicated.integer ) {
-		G_Printf( "voice: %s %s\n", ent->client->pers.netname, id );
+		G_Printf( "netnamevoice: %s %s\n", ent->client->pers.netname, id );
+		G_Printf( "usernamevoice: %s %s\n", ent->client->pers.username, id );
 	}
 
 	// send it to all the apropriate clients
@@ -1449,13 +1472,13 @@ void Cmd_CallVote_f( gentity_t *ent ) {
 				continue;
 			}
 // strip the color crap out
-			Q_strncpyz( cleanName, level.clients[i].pers.netname, sizeof( cleanName ) );
+			Q_strncpyz( cleanName, level.clients[i].pers.username, sizeof( cleanName ) );
 			Q_CleanStr( cleanName );
 			if ( !Q_stricmp( cleanName, arg2 ) ) {
 				kicknum = i;
 			}
 		}
-		Com_sprintf( level.voteDisplayString, sizeof( level.voteDisplayString ), "kick %s", level.clients[kicknum].pers.netname );
+		Com_sprintf( level.voteDisplayString, sizeof( level.voteDisplayString ), "kick %s", level.clients[kicknum].pers.username );
 		if ( kicknum != MAX_CLIENTS ) { // found a client # to kick, so override votestring with better one
 			Com_sprintf( level.voteString, sizeof( level.voteString ),"clientkick \"%d\"",kicknum );
 		} else { // if it can't do a name match, don't allow kick (to prevent votekick text spam wars)
@@ -1468,7 +1491,7 @@ void Cmd_CallVote_f( gentity_t *ent ) {
 		Com_sprintf( level.voteDisplayString, sizeof( level.voteDisplayString ), "%s", level.voteString );
 	}
 
-	trap_SendServerCommand( -1, va( "print \"[lof]%s [lon]called a vote.\n\"", ent->client->pers.netname ) );
+	trap_SendServerCommand( -1, va( "print \"[lof]%s [lon]called a vote.\n\"", ent->client->pers.username ) );
 
 	// start the voting, the caller autoamtically votes yes
 	level.voteTime = level.time;
@@ -2402,6 +2425,10 @@ int ClientNumberFromString( gentity_t *to, char *s ) {
 		}
 
 		SanitizeStringToLower( cl->pers.netname, n2, qtrue );
+		if ( !strcmp( n2, s2 ) ) {
+			return( idnum );
+		}
+		SanitizeStringToLower( cl->pers.username, n2, qtrue );
 		if ( !strcmp( n2, s2 ) ) {
 			return( idnum );
 		}

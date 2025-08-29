@@ -563,6 +563,7 @@ typedef struct {
 	qboolean predictItemPickup;     // based on cg_predictItems userinfo
 	qboolean pmoveFixed;            //
 	char netname[MAX_NETNAME];
+	char username[MAX_NETNAME];
 
 	int autoActivate;               // based on cg_autoactivate userinfo		(uses the PICKUP_ values above)
 	int emptySwitch;                // based on cg_emptyswitch userinfo (means "switch my weapon for me when ammo reaches '0' rather than -1)
@@ -594,7 +595,6 @@ typedef struct {
 
 	unsigned int autoaction;            // End-of-match auto-requests
 	unsigned int clientFlags;           // Client settings that need server involvement
-	qboolean renamed;
 } clientPersistant_t;
 
 typedef struct {
@@ -1160,7 +1160,7 @@ void DeathmatchScoreboardMessage( gentity_t *client );
 //
 // g_cmds.c
 //
-void G_SayTo( gentity_t *ent, gentity_t *other, int mode, int color, const char *name, const char *message, qboolean localize ); // JPW NERVE removed static declaration so it would link
+void G_SayTo( gentity_t *ent, gentity_t *other, int mode, int color, const char *name, const char *username, const char *message, qboolean localize ); // JPW NERVE removed static declaration so it would link
 
 //
 // g_pweapon.c
@@ -1447,8 +1447,6 @@ extern vmCvar_t g_spawnOffset; // random spawn offset for both teams, between 1 
 extern vmCvar_t g_gameStatslog;
 extern vmCvar_t g_preciseTimeSet;	// RTCWPro precise timelimit set each round
 extern vmCvar_t	sv_hostname;
-
-extern vmCvar_t g_enforceNames;
 
 void    trap_Printf( const char *fmt );
 void    trap_Error( const char *fmt );

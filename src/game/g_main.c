@@ -192,7 +192,6 @@ vmCvar_t g_gameStatslog; // temp cvar for event logging
 vmCvar_t g_preciseTimeSet;
 vmCvar_t sv_hostname;	// So it's more accesible
 
-vmCvar_t g_enforceNames;
 
 cvarTable_t gameCvarTable[] = {
 	// don't override the cheat state set by the system
@@ -353,9 +352,7 @@ cvarTable_t gameCvarTable[] = {
 
 	{ &g_gameStatslog, "g_gameStatslog", "16", CVAR_ARCHIVE, 0, qfalse  }, // default to 16 so the server saves JSON stats
 	{ &g_preciseTimeSet, "g_preciseTimeSet", "0", CVAR_WOLFINFO, 0, qfalse  },
-	{ &sv_hostname, "sv_hostname", "", CVAR_SERVERINFO, 0, qfalse },
-
-	{ &g_enforceNames, "g_enforceNames", "0", CVAR_SERVERINFO, 0, qfalse }
+	{ &sv_hostname, "sv_hostname", "", CVAR_SERVERINFO, 0, qfalse }
 };
 
 // bk001129 - made static to avoid aliasing
@@ -2010,7 +2007,7 @@ void LogExit( const char *string ) {
 
 		G_LogPrintf( "score: %i  ping: %i  client: %i %s\n",
 					 cl->ps.persistant[PERS_SCORE], ping, level.sortedClients[i],
-					 cl->pers.netname );
+					 cl->pers.username );
 	}
 
 	// NERVE - SMF
@@ -2291,7 +2288,9 @@ void CheckExitRules( void ) {
 
 			if ( cl->ps.persistant[PERS_SCORE] >= g_fraglimit.integer ) {
 				LogExit( "Fraglimit hit." );
-				trap_SendServerCommand( -1, va( "print \"%s" S_COLOR_WHITE " hit the fraglimit.\n\"",
+				trap_SendServerCommand( -1, va( "usernameprint \"%s" S_COLOR_WHITE " hit the fraglimit.\n\"",
+												cl->pers.username ) );
+				trap_SendServerCommand( -1, va( "netnameprint \"%s" S_COLOR_WHITE " hit the fraglimit.\n\"",
 												cl->pers.netname ) );
 				return;
 			}

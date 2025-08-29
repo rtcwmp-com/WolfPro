@@ -1648,7 +1648,7 @@ void ClientEndFrame( gentity_t *ent ) {
 	}
 
 	if ( ent->health > 0 && StuckInClient( ent ) ) {
-		G_DPrintf( "%s is stuck in a client.\n", ent->client->pers.netname );
+		G_DPrintf( "%s is stuck in a client.\n", ent->client->pers.username );
 		ent->r.contents = CONTENTS_CORPSE;
 	}
 
