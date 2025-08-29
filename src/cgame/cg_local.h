@@ -2615,6 +2615,10 @@ extern vmCvar_t cg_showPriorityText;
 extern vmCvar_t cg_priorityTextX;
 extern vmCvar_t cg_priorityTextY;
 
+extern vmCvar_t cg_muzzleFlash;
+extern vmCvar_t cg_crosshairPulse;
+extern vmCvar_t cg_tracers;
+
 // Get capabilities from the client
 qbool trap_GetValue(char* value, int valueSize, const char* key);
 int trap_Cvar_VariableIntegerValue(const char* var_name);

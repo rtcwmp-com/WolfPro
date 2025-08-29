@@ -354,6 +354,10 @@ vmCvar_t cg_spawnTimer_period;      // spawntimer
 
 vmCvar_t cg_autoAction;
 
+vmCvar_t cg_muzzleFlash;
+vmCvar_t cg_crosshairPulse;
+vmCvar_t cg_tracers;
+
 typedef struct {
 	vmCvar_t    *vmCvar;
 	char        *cvarName;
@@ -599,7 +603,11 @@ cvarTable_t cvarTable[] = {
 	{ &cg_spawnTimer_period, "cg_spawnTimer_period", "0", CVAR_TEMP },
 
 	// Autoaction
-	{ &cg_autoAction, "cg_autoAction", "0", CVAR_ARCHIVE }
+	{ &cg_autoAction, "cg_autoAction", "0", CVAR_ARCHIVE },
+
+	{ &cg_muzzleFlash, "cg_muzzleFlash", "1", CVAR_ARCHIVE },
+	{ &cg_tracers, "cg_tracers", "1", CVAR_ARCHIVE },
+	{ &cg_crosshairPulse, "cg_crosshairPulse", "1", CVAR_ARCHIVE }
 };
 int cvarTableSize = sizeof( cvarTable ) / sizeof( cvarTable[0] );
 

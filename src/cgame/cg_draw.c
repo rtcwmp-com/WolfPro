@@ -2098,9 +2098,9 @@ static void CG_DrawCrosshair( void ) {
 	w = h = cg_crosshairSize.value;
 
 	// RF, crosshair size represents aim spread
-	f = (float)cg.snap->ps.aimSpreadScale / 255.0;
-	w *= ( 1 + f * 2.0 );
-	h *= ( 1 + f * 2.0 );
+	f = (float)((cg_crosshairPulse.integer == 0) ? 0.0f : cg.snap->ps.aimSpreadScale / 255.0f);
+	w *= ( 1.0f + f * 2.0f );
+	h *= ( 1.0f + f * 2.0f );
 
 	x = cg_crosshairX.integer;
 	y = cg_crosshairY.integer;

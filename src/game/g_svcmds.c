@@ -657,7 +657,13 @@ void G_Rename_f(void){
 	Info_SetValueForKey(userinfo, "name", clientName);
 	trap_SetUserinfo(clientNum, userinfo);
 
+	gentity_t *ent = g_entities + clientNum;
+	gclient_t *client = ent->client;
+	client->pers.renamed = qfalse;
+	//do the rename and inform everybody
 	ClientUserinfoChanged( clientNum );
+
+	client->pers.renamed = qtrue;
 }
 
 
