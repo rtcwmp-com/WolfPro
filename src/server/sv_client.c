@@ -1191,7 +1191,15 @@ void SV_UserinfoChanged( client_t *cl ) {
 	int i;
 
 	// name for C code
-	Q_strncpyz( cl->name, Info_ValueForKey( cl->userinfo, "name" ), sizeof( cl->name ) );
+	
+	char *username = Info_ValueForKey( cl->userinfo, "username" );
+	if(!strlen(username)){
+		Q_strncpyz( cl->name, Info_ValueForKey( cl->userinfo, "name" ), sizeof( cl->name ) );
+	}else{
+		Q_strncpyz( cl->name, Info_ValueForKey( cl->userinfo, "username" ), sizeof( cl->name ) );
+	}
+
+	
 
 	// rate command
 

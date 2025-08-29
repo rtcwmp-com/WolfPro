@@ -41,6 +41,7 @@ displayContextDef_t cgDC;
 
 int forceModelModificationCount = -1;
 int autoReloadModificationCount = -1;
+int registeredPlayersModificationCount = -1;
 
 void CG_Init( int serverMessageNum, int serverCommandSequence, int clientNum );
 void CG_Shutdown( void );
@@ -358,6 +359,8 @@ vmCvar_t cg_muzzleFlash;
 vmCvar_t cg_crosshairPulse;
 vmCvar_t cg_tracers;
 
+vmCvar_t cg_registeredPlayers;
+
 typedef struct {
 	vmCvar_t    *vmCvar;
 	char        *cvarName;
@@ -607,7 +610,9 @@ cvarTable_t cvarTable[] = {
 
 	{ &cg_muzzleFlash, "cg_muzzleFlash", "1", CVAR_ARCHIVE },
 	{ &cg_tracers, "cg_tracers", "1", CVAR_ARCHIVE },
-	{ &cg_crosshairPulse, "cg_crosshairPulse", "1", CVAR_ARCHIVE }
+	{ &cg_crosshairPulse, "cg_crosshairPulse", "1", CVAR_ARCHIVE },
+
+	{ &cg_registeredPlayers, "cg_registeredPlayers", "1", CVAR_ARCHIVE }
 };
 int cvarTableSize = sizeof( cvarTable ) / sizeof( cvarTable[0] );
 
@@ -719,6 +724,11 @@ void CG_UpdateCvars( void ) {
 			cg.pmext.bAutoReload = qfalse;
 		}
 		autoReloadModificationCount = cg_autoReload.modificationCount;
+	}
+
+	if(registeredPlayersModificationCount != cg_registeredPlayers.modificationCount){
+		registeredPlayersModificationCount = cg_registeredPlayers.modificationCount;
+		CG_ForceModelChange();
 	}
 
 	CG_setClientFlags();

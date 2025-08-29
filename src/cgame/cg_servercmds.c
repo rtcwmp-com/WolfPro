@@ -1860,29 +1860,44 @@ static void CG_ServerCommand( void ) {
 		return;
 	}
 
-	if ( !strcmp( cmd, "cp" ) ) {
+	if ( !strcmp( cmd, "cp" ) || !strcmp( cmd, "usernamecp" ) || !strcmp( cmd, "netnamecp" )) {
 		// NERVE - SMF
 		int args = trap_Argc();
 		char *s;
 
-		if ( args >= 3 ) {
-			s = CG_TranslateString( CG_Argv( 1 ) );
+		if((cg_registeredPlayers.integer && !strcmp( cmd, "usernamecp" )) 
+		 ||(cg_registeredPlayers.integer == 0 && !strcmp( cmd, "netnamecp" ))
+		 || !strcmp( cmd, "cp" ) ){
+			if ( args >= 3 ) {
+				s = CG_TranslateString( CG_Argv( 1 ) );
 
-			if ( args == 4 ) {
-				s = va( "%s%s", CG_Argv( 3 ), s );
+				if ( args == 4 ) {
+					s = va( "%s%s", CG_Argv( 3 ), s );
+				}
+
+				CG_PriorityCenterPrint( s, SCREEN_HEIGHT - ( SCREEN_HEIGHT * 0.25 ), SMALLCHAR_WIDTH, atoi( CG_Argv( 2 ) ) );
+			} else {
+				CG_CenterPrint( CG_LocalizeServerCommand( CG_Argv( 1 ) ), SCREEN_HEIGHT - ( SCREEN_HEIGHT * 0.25 ), SMALLCHAR_WIDTH );  //----(SA)	modified
 			}
-
-			CG_PriorityCenterPrint( s, SCREEN_HEIGHT - ( SCREEN_HEIGHT * 0.25 ), SMALLCHAR_WIDTH, atoi( CG_Argv( 2 ) ) );
-		} else {
-			CG_CenterPrint( CG_LocalizeServerCommand( CG_Argv( 1 ) ), SCREEN_HEIGHT - ( SCREEN_HEIGHT * 0.25 ), SMALLCHAR_WIDTH );  //----(SA)	modified
+			return;
 		}
-		return;
+		else {
+			return;
+		}
 	}
 
-		if ( !strcmp( cmd, "@print" ) ) {
-		CG_Printf( "[skipnotify]%s\n", CG_Argv( 1 )  );  // Add to console so people can toggle it and see it again..
-		return;
+	if ( !strcmp( cmd, "@print" ) || !strcmp( cmd, "@usernameprint" ) || !strcmp( cmd, "@netnameprint" )) {
+		if((cg_registeredPlayers.integer && !strcmp( cmd, "@usernameprint" )) 
+		 ||(cg_registeredPlayers.integer == 0 && !strcmp( cmd, "@netnameprint" ))
+		 || !strcmp( cmd, "@print" ) ){
+			CG_Printf( "[skipnotify]%s\n", CG_Argv( 1 )  );  // Add to console so people can toggle it and see it again..
+			return;
+		}
+		else {
+			return;
+		}
 	}
+
 	// End
 	// Pop In
 	if (!Q_stricmp(cmd, "popin")) {
@@ -1921,22 +1936,36 @@ static void CG_ServerCommand( void ) {
 	}
 	// -NERVE - SMF
 
-	if ( !strcmp( cmd, "print" ) ) {
-		CG_Printf( "[cgnotify]%s", CG_LocalizeServerCommand( CG_Argv( 1 ) ) );
-		return;
+	if ( !strcmp( cmd, "print" ) || !strcmp( cmd, "usernameprint" ) || !strcmp( cmd, "netnameprint" )) {
+		if((cg_registeredPlayers.integer && !strcmp( cmd, "usernameprint" )) 
+		 ||(cg_registeredPlayers.integer == 0 && !strcmp( cmd, "netnameprint" ))
+		 || !strcmp( cmd, "print" ) ){
+			CG_Printf( "[cgnotify]%s", CG_LocalizeServerCommand( CG_Argv( 1 ) ) );
+			return;
+		}else{
+			return;
+		}
 	}
 
-	if ( !strcmp( cmd, "chat" ) ) {
+
+	if ( !strcmp( cmd, "chat" ) || !strcmp( cmd, "usernamechat" ) || !strcmp( cmd, "netnamechat" )) {
 		const char *s;
 
 		if ( cg_teamChatsOnly.integer ) {
 			return;
 		}
 
-		if ( atoi( CG_Argv( 2 ) ) ) {
-			s = CG_LocalizeServerCommand( CG_Argv( 1 ) );
-		} else {
-			s = CG_Argv( 1 );
+		if((cg_registeredPlayers.integer && !strcmp( cmd, "usernamechat" )) 
+		 ||(cg_registeredPlayers.integer == 0 && !strcmp( cmd, "netnamechat" ))
+		 || !strcmp( cmd, "chat" ) ){
+			if ( atoi( CG_Argv( 2 ) ) ) {
+				s = CG_LocalizeServerCommand( CG_Argv( 1 ) );
+			} else {
+				s = CG_Argv( 1 );
+			}
+		}
+		else {
+			return;
 		}
 
 		trap_S_StartLocalSound( cgs.media.talkSound, CHAN_LOCAL_SOUND );
@@ -1953,13 +1982,21 @@ static void CG_ServerCommand( void ) {
 		return;
 	}
 
-	if ( !strcmp( cmd, "tchat" ) ) {
+	if ( !strcmp( cmd, "tchat" ) || !strcmp( cmd, "usernametchat" ) || !strcmp( cmd, "netnametchat" )) {
 		const char *s;
 
-		if ( atoi( CG_Argv( 2 ) ) ) {
-			s = CG_LocalizeServerCommand( CG_Argv( 1 ) );
-		} else {
-			s = CG_Argv( 1 );
+		if((cg_registeredPlayers.integer && !strcmp( cmd, "usernametchat" )) 
+		 ||(cg_registeredPlayers.integer == 0 && !strcmp( cmd, "netnametchat" ))
+		 || !strcmp( cmd, "tchat" ) ){
+			if ( atoi( CG_Argv( 2 ) ) ) {
+				s = CG_LocalizeServerCommand( CG_Argv( 1 ) );
+			} else {
+				s = CG_Argv( 1 );
+			}
+
+		}
+		else {
+			return;
 		}
 
 		trap_S_StartLocalSound( cgs.media.talkSound, CHAN_LOCAL_SOUND );
@@ -2052,9 +2089,16 @@ static void CG_ServerCommand( void ) {
 	}
 
 	// Scores
-	if ( !Q_stricmp( cmd, "sc" ) ) {
-		CG_scores_cmd();
-		return;
+	if ( !Q_stricmp( cmd, "sc" ) || !strcmp( cmd, "usernamesc" ) || !strcmp( cmd, "netnamesc" )) {
+		if((cg_registeredPlayers.integer && !strcmp( cmd, "usernamesc" )) 
+		 ||(cg_registeredPlayers.integer == 0 && !strcmp( cmd, "netnamesc" ))
+		 || !strcmp( cmd, "sc" ) ){
+			CG_scores_cmd();
+			return;
+		}
+		else {
+			return;
+		}
 	}
 	// Weapon stats (console dump)
 	if ( !Q_stricmp( cmd, "ws" ) ) {

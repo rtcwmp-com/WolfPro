@@ -494,6 +494,9 @@ gclient_t   *ClientForString( const char *s ) {
 		if ( !Q_stricmp( cl->pers.netname, s ) ) {
 			return cl;
 		}
+		if ( !Q_stricmp( cl->pers.username, s ) ) {
+			return cl;
+		}
 	}
 
 	G_Printf( "User %s is not on the server\n", s );
@@ -654,7 +657,7 @@ void G_Rename_f(void){
 
 	char userinfo[MAX_INFO_STRING];
 	trap_GetUserinfo(clientNum, userinfo, sizeof(userinfo));
-	Info_SetValueForKey(userinfo, "name", clientName);
+	Info_SetValueForKey(userinfo, "username", clientName);
 	trap_SetUserinfo(clientNum, userinfo);
 
 	gentity_t *ent = g_entities + clientNum;

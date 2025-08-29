@@ -536,6 +536,7 @@ typedef struct {
 	int clientNum;
 
 	char name[MAX_QPATH];
+	char username[MAX_QPATH];
 	team_t team;
 
 	int botSkill;                   // 0 = not bot, 1-5 = bot
@@ -1884,6 +1885,7 @@ extern vmCvar_t cg_spawnTimer_period;
 extern vmCvar_t cg_spawnTimer_set;
 
 extern vmCvar_t cg_autoAction;
+extern vmCvar_t cg_registeredPlayers;
 
 //
 // cg_main.c

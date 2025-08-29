@@ -555,7 +555,7 @@ void respawn( gentity_t *ent ) {
 		ent->client->ps.persistant[PERS_RESPAWNS_LEFT]--;
 	}
 
-	G_DPrintf( "Respawning %s, %i lives left\n", ent->client->pers.netname, ent->client->ps.persistant[PERS_RESPAWNS_LEFT] );
+	G_DPrintf( "Respawning %s, %i lives left\n", ent->client->pers.username, ent->client->ps.persistant[PERS_RESPAWNS_LEFT] );
 
 	// DHM - Nerve :: Already handled in 'limbo()'
 	if ( g_gametype.integer < GT_WOLF ) {
@@ -1294,7 +1294,8 @@ void ClientUserinfoChanged( int clientNum ) {
 //----(SA) added this for head separation
 	char head[MAX_QPATH];
 
-	char oldname[MAX_STRING_CHARS];
+	char oldusername[MAX_STRING_CHARS];
+	char oldnetname[MAX_STRING_CHARS];
 	gclient_t   *client;
 	char    *c1;
 	char userinfo[MAX_INFO_STRING];
@@ -1348,13 +1349,24 @@ void ClientUserinfoChanged( int clientNum ) {
 	}
 
 	// set name
-	Q_strncpyz( oldname, client->pers.netname, sizeof( oldname ) );
-	if(!client->pers.renamed){
-		s = Info_ValueForKey( userinfo, "name" );
-		G_ClientCleanName( s, client->pers.netname, sizeof( client->pers.netname ) );
-	}else if(g_enforceNames.integer){
-		CP(va("print \"" S_COLOR_YELLOW "Names are currently enforced by the server.\n\""));
+	Q_strncpyz( oldnetname, client->pers.netname, sizeof( oldnetname ) );
+	Q_strncpyz( oldusername, client->pers.username, sizeof( oldusername ) );
+
+	s = Info_ValueForKey( userinfo, "name" );
+	G_ClientCleanName( s, client->pers.netname, sizeof( client->pers.netname ) );
+	s = Info_ValueForKey( userinfo, "username" );
+	if (!strlen(s)) {
+		Info_SetValueForKey(userinfo, "username", client->pers.netname);
+		Q_strncpyz(client->pers.username, client->pers.netname, sizeof(client->pers.username));
+		trap_SetUserinfo(clientNum, userinfo);
 	}
+	else {
+		G_ClientCleanName(s, client->pers.username, sizeof(client->pers.username));
+	}
+
+
+	// s = Info_ValueForKey( userinfo, "username" );
+	// G_ClientCleanName( s, client->pers.username, sizeof( client->pers.username ) );
 	
 
 	if ( client->sess.sessionTeam == TEAM_SPECTATOR ) {
@@ -1364,9 +1376,16 @@ void ClientUserinfoChanged( int clientNum ) {
 	}
 
 	if ( client->pers.connected == CON_CONNECTED ) {
-		if ( strcmp( oldname, client->pers.netname ) ) {
-			trap_SendServerCommand( -1, va( "print \"[lof]%s" S_COLOR_WHITE " [lon]renamed to[lof] %s\n\"", oldname,
+		if ( strcmp( oldnetname, client->pers.netname ) ) {
+			trap_SendServerCommand( -1, va( "netnameprint \"[lof]%s" S_COLOR_WHITE " [lon]renamed to[lof] %s\n\"", oldnetname,
 											client->pers.netname ) );
+		}
+	}
+
+	if ( client->pers.connected == CON_CONNECTED ) {
+		if ( strcmp( oldusername, client->pers.username ) ) {
+			trap_SendServerCommand( -1, va( "usernameprint \"[lof]%s" S_COLOR_WHITE " [lon]renamed to[lof] %s\n\"", oldusername,
+											client->pers.username ) );
 		}
 	}
 
@@ -1466,14 +1485,14 @@ void ClientUserinfoChanged( int clientNum ) {
 
 	if ( ent->r.svFlags & SVF_BOT ) {
 
-		s = va( "n\\%s\\t\\%i\\model\\%s\\head\\%s\\c1\\%s\\hc\\%i\\w\\%i\\l\\%i\\skill\\%s",
+		s = va( "n\\%s\\t\\%i\\model\\%s\\head\\%s\\c1\\%s\\hc\\%i\\w\\%i\\l\\%i\\skill\\%s\\un\\%s",
 				client->pers.netname, client->sess.sessionTeam, model, head, c1,
 				client->pers.maxHealth, client->sess.wins, client->sess.losses,
-				Info_ValueForKey( userinfo, "skill" ) );
+				Info_ValueForKey( userinfo, "skill" ), client->pers.username );
 	} else {
-		s = va( "n\\%s\\t\\%i\\model\\%s\\head\\%s\\c1\\%s\\hc\\%i\\w\\%i\\l\\%i",
+		s = va( "n\\%s\\t\\%i\\model\\%s\\head\\%s\\c1\\%s\\hc\\%i\\w\\%i\\l\\%i\\un\\%s",
 				client->pers.netname, client->sess.sessionTeam, model, head, c1,
-				client->pers.maxHealth, client->sess.wins, client->sess.losses );
+				client->pers.maxHealth, client->sess.wins, client->sess.losses, client->pers.username );
 	}
 
 //----(SA) end
@@ -1584,7 +1603,8 @@ char *ClientConnect( int clientNum, qboolean firstTime, qboolean isBot ) {
 		// Ridah
 		if ( !(ent->r.svFlags & SVF_CASTAI) ) {
 			// done.
-			trap_SendServerCommand( -1, va( "print \"[lof]%s" S_COLOR_WHITE " [lon]connected\n\"", client->pers.netname ) );
+			trap_SendServerCommand( -1, va( "netnameprint \"[lof]%s" S_COLOR_WHITE " [lon]connected\n\"", client->pers.netname ) );
+			trap_SendServerCommand( -1, va( "usernameprint \"[lof]%s" S_COLOR_WHITE " [lon]connected\n\"", client->pers.username ) );
 		}
 	}
 

@@ -334,7 +334,12 @@ qbool CG_NDP_AnalyzeObituary(entityState_t* ent, snapshot_t* snapshot) {
 	if (!targetInfo) {
 		return qtrue;
 	}
-	Q_strncpyz(targetName, Info_ValueForKey(targetInfo, "n"), sizeof(targetName) - 2);
+	if(cg_registeredPlayers.integer){
+		Q_strncpyz(targetName, Info_ValueForKey(targetInfo, "un"), sizeof(targetName) - 2);
+	}else{
+		Q_strncpyz(targetName, Info_ValueForKey(targetInfo, "n"), sizeof(targetName) - 2);
+	}
+	
 	targetTeam = atoi(Info_ValueForKey(targetInfo, "t"));
 
 	// check for kill messages from the current clientNum, ignore self kills and team kills
