@@ -563,6 +563,7 @@ typedef struct {
 	qboolean predictItemPickup;     // based on cg_predictItems userinfo
 	qboolean pmoveFixed;            //
 	char netname[MAX_NETNAME];
+	char username[MAX_NETNAME];
 
 	int autoActivate;               // based on cg_autoactivate userinfo		(uses the PICKUP_ values above)
 	int emptySwitch;                // based on cg_emptyswitch userinfo (means "switch my weapon for me when ammo reaches '0' rather than -1)
@@ -1159,7 +1160,7 @@ void DeathmatchScoreboardMessage( gentity_t *client );
 //
 // g_cmds.c
 //
-void G_SayTo( gentity_t *ent, gentity_t *other, int mode, int color, const char *name, const char *message, qboolean localize ); // JPW NERVE removed static declaration so it would link
+void G_SayTo( gentity_t *ent, gentity_t *other, int mode, int color, const char *name, const char *username, const char *message, qboolean localize ); // JPW NERVE removed static declaration so it would link
 
 //
 // g_pweapon.c

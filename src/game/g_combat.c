@@ -296,7 +296,7 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 	if ( attacker ) {
 		killer = attacker->s.number;
 		if ( attacker->client ) {
-			killerName = attacker->client->pers.netname;
+			killerName = attacker->client->pers.username;
 		} else {
 			killerName = "<non-client>";
 		}
@@ -318,7 +318,7 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 
 	G_LogPrintf( "Kill: %i %i %i: %s killed %s by %s\n",
 				 killer, self->s.number, meansOfDeath, killerName,
-				 self->client->pers.netname, obit );
+				 self->client->pers.username, obit );
 
 	// broadcast the death event to everyone
 	ent = G_TempEntity( self->r.currentOrigin, EV_OBITUARY );

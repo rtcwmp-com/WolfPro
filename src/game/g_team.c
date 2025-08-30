@@ -86,7 +86,7 @@ const char *TeamColorString( int team ) {
 }
 
 // NULL for everyone
-void QDECL PrintMsg( gentity_t *ent, const char *fmt, ... ) {
+void QDECL PrintMsg( gentity_t *ent, qboolean username, const char *fmt, ... ) {
 	char msg[1024];
 	va_list argptr;
 	char        *p;
@@ -102,7 +102,12 @@ void QDECL PrintMsg( gentity_t *ent, const char *fmt, ... ) {
 	while ( ( p = strchr( msg, '"' ) ) != NULL )
 		*p = '\'';
 
-	trap_SendServerCommand( ( ( ent == NULL ) ? -1 : ent - g_entities ), va( "print \"%s\"", msg ) );
+	if(username){
+		trap_SendServerCommand( ( ( ent == NULL ) ? -1 : ent - g_entities ), va( "usernameprint \"%s\"", msg ) );
+	}else{
+		trap_SendServerCommand( ( ( ent == NULL ) ? -1 : ent - g_entities ), va( "netnameprint \"%s\"", msg ) );
+	}
+	
 }
 
 /*
@@ -190,8 +195,10 @@ void Team_FragBonuses( gentity_t *targ, gentity_t *inflictor, gentity_t *attacke
 			AddScore( attacker, WOLF_FRAG_CARRIER_BONUS );
 		} else {
 			AddScore( attacker, CTF_FRAG_CARRIER_BONUS );
-			PrintMsg( NULL, "%s" S_COLOR_WHITE " fragged %s's flag carrier!\n",
+			PrintMsg( NULL, qfalse, "%s" S_COLOR_WHITE " fragged %s's flag carrier!\n",
 					  attacker->client->pers.netname, TeamName( team ) );
+			PrintMsg( NULL, qtrue, "%s" S_COLOR_WHITE " fragged %s's flag carrier!\n",
+					  attacker->client->pers.username, TeamName( team ) );
 		}
 		attacker->client->pers.teamState.fragcarrier++;
 
@@ -215,8 +222,10 @@ void Team_FragBonuses( gentity_t *targ, gentity_t *inflictor, gentity_t *attacke
 
 			attacker->client->pers.teamState.carrierdefense++;
 			team = attacker->client->sess.sessionTeam;
-			PrintMsg( NULL, "%s" S_COLOR_WHITE " defends %s's flag carrier against an agressive enemy\n",
+			PrintMsg( NULL, qfalse, "%s" S_COLOR_WHITE " defends %s's flag carrier against an agressive enemy\n",
 					  attacker->client->pers.netname, TeamName( team ) );
+			PrintMsg( NULL, qtrue, "%s" S_COLOR_WHITE " defends %s's flag carrier against an agressive enemy\n",
+					  attacker->client->pers.username, TeamName( team ) );
 			return;
 		}
 	}
@@ -272,12 +281,18 @@ void Team_FragBonuses( gentity_t *targ, gentity_t *inflictor, gentity_t *attacke
 			} else {
 				AddScore( attacker, CTF_FLAG_DEFENSE_BONUS );
 				if ( !flag->r.contents ) {
-					PrintMsg( NULL, "%s" S_COLOR_WHITE " defends the %s base.\n",
+					PrintMsg( NULL, qfalse, "%s" S_COLOR_WHITE " defends the %s base.\n",
 							  attacker->client->pers.netname,
 							  TeamName( attacker->client->sess.sessionTeam ) );
+					PrintMsg( NULL, qtrue, "%s" S_COLOR_WHITE " defends the %s base.\n",
+							  attacker->client->pers.username,
+							  TeamName( attacker->client->sess.sessionTeam ) );
 				} else {
-					PrintMsg( NULL, "%s" S_COLOR_WHITE " defends the %s flag.\n",
+					PrintMsg( NULL, qfalse, "%s" S_COLOR_WHITE " defends the %s flag.\n",
 							  attacker->client->pers.netname,
+							  TeamName( attacker->client->sess.sessionTeam ) );
+					PrintMsg( NULL, qtrue, "%s" S_COLOR_WHITE " defends the %s flag.\n",
+							  attacker->client->pers.username,
 							  TeamName( attacker->client->sess.sessionTeam ) );
 				}
 			}
@@ -295,8 +310,11 @@ void Team_FragBonuses( gentity_t *targ, gentity_t *inflictor, gentity_t *attacke
 					 CanDamage( carrier, targ->s.origin ) || CanDamage( carrier, attacker->s.origin ) ) {
 					AddScore( attacker, CTF_CARRIER_PROTECT_BONUS );
 					attacker->client->pers.teamState.carrierdefense++;
-					PrintMsg( NULL, "%s" S_COLOR_WHITE " defends the %s's flag carrier.\n",
+					PrintMsg( NULL, qfalse, "%s" S_COLOR_WHITE " defends the %s's flag carrier.\n",
 							  attacker->client->pers.netname,
+							  TeamName( attacker->client->sess.sessionTeam ) );
+					PrintMsg( NULL, qtrue, "%s" S_COLOR_WHITE " defends the %s's flag carrier.\n",
+							  attacker->client->pers.username,
 							  TeamName( attacker->client->sess.sessionTeam ) );
 					return;
 				}
@@ -402,7 +420,7 @@ void Team_ReturnFlagSound( gentity_t *ent, int team ) {
 
 void Team_ReturnFlag( int team ) {
 	Team_ReturnFlagSound( Team_ResetFlag( team ), team );
-	PrintMsg( NULL, "The %s flag has returned!\n", TeamName( team ) );
+	PrintMsg( NULL, qfalse, "The %s flag has returned!\n", TeamName( team ) );
 }
 
 void Team_FreeEntity( gentity_t *ent ) {
@@ -490,8 +508,10 @@ int Team_TouchOurFlag( gentity_t *ent, gentity_t *other, int team ) {
 		}
 // jpw 800 672 2420
 		else {
-			PrintMsg( NULL, "%s" S_COLOR_WHITE " returned the %s flag!\n",
+			PrintMsg( NULL, qfalse, "%s" S_COLOR_WHITE " returned the %s flag!\n",
 					  cl->pers.netname, TeamName( team ) );
+			PrintMsg( NULL, qtrue, "%s" S_COLOR_WHITE " returned the %s flag!\n",
+					  cl->pers.username, TeamName( team ) );
 			AddScore( other, CTF_RECOVERY_BONUS );
 		}
 		other->client->pers.teamState.flagrecovery++;
@@ -512,8 +532,10 @@ int Team_TouchOurFlag( gentity_t *ent, gentity_t *other, int team ) {
 		return 0; // We don't have the flag
 
 	}
-	PrintMsg( NULL, "%s" S_COLOR_WHITE " captured the %s flag!\n",
+	PrintMsg( NULL, qfalse, "%s" S_COLOR_WHITE " captured the %s flag!\n",
 			  cl->pers.netname, TeamName( OtherTeam( team ) ) );
+	PrintMsg( NULL, qtrue, "%s" S_COLOR_WHITE " captured the %s flag!\n",
+			  cl->pers.username, TeamName( OtherTeam( team ) ) );
 
 	cl->ps.powerups[enemy_flag] = 0;
 
@@ -528,7 +550,8 @@ int Team_TouchOurFlag( gentity_t *ent, gentity_t *other, int team ) {
 	// other gets another 10 frag bonus
 	if ( g_gametype.integer >= GT_WOLF ) {
 		AddScore( other, WOLF_CAPTURE_BONUS );
-		PrintMsg( NULL,"%s" S_COLOR_WHITE " captured enemy objective!\n",cl->pers.netname );
+		PrintMsg( NULL, qfalse, "%s" S_COLOR_WHITE " captured enemy objective!\n",cl->pers.netname );
+		PrintMsg( NULL, qtrue, "%s" S_COLOR_WHITE " captured enemy objective!\n",cl->pers.username );
 	} else {
 		AddScore( other, CTF_CAPTURE_BONUS );
 	}
@@ -566,17 +589,24 @@ int Team_TouchOurFlag( gentity_t *ent, gentity_t *other, int team ) {
 			if ( g_gametype.integer < GT_WOLF ) {
 				if ( player->client->pers.teamState.lastreturnedflag +
 					 CTF_RETURN_FLAG_ASSIST_TIMEOUT > level.time ) {
-					PrintMsg( NULL,
+					PrintMsg( NULL, qfalse,
 							  "%s" S_COLOR_WHITE " gets an assist for returning the %s flag!\n",
 							  player->client->pers.netname,
+							  TeamName( team ) );
+					PrintMsg( NULL, qtrue,
+							  "%s" S_COLOR_WHITE " gets an assist for returning the %s flag!\n",
+							  player->client->pers.username,
 							  TeamName( team ) );
 					AddScore( player, CTF_RETURN_FLAG_ASSIST_BONUS );
 					other->client->pers.teamState.assists++;
 				}
 				if ( player->client->pers.teamState.lastfraggedcarrier +
 					 CTF_FRAG_CARRIER_ASSIST_TIMEOUT > level.time ) {
-					PrintMsg( NULL, "%s" S_COLOR_WHITE " gets an assist for fragging the %s flag carrier!\n",
+					PrintMsg( NULL, qfalse, "%s" S_COLOR_WHITE " gets an assist for fragging the %s flag carrier!\n",
 							  player->client->pers.netname,
+							  TeamName( OtherTeam( team ) ) );
+					PrintMsg( NULL, qtrue, "%s" S_COLOR_WHITE " gets an assist for fragging the %s flag carrier!\n",
+							  player->client->pers.username,
 							  TeamName( OtherTeam( team ) ) );
 					AddScore( player, CTF_FRAG_CARRIER_ASSIST_BONUS );
 					other->client->pers.teamState.assists++;
@@ -622,8 +652,10 @@ int Team_TouchEnemyFlag( gentity_t *ent, gentity_t *other, int team ) {
 		// dhm
 // jpw
 	} else {
-		PrintMsg( NULL, "%s" S_COLOR_WHITE " got the %s flag!\n",
+		PrintMsg( NULL, qfalse, "%s" S_COLOR_WHITE " got the %s flag!\n",
 				  other->client->pers.netname, TeamName( team ) );
+		PrintMsg( NULL, qtrue, "%s" S_COLOR_WHITE " got the %s flag!\n",
+				  other->client->pers.username, TeamName( team ) );
 		AddScore( other, CTF_FLAG_BONUS );
 	}
 
@@ -648,7 +680,7 @@ int Pickup_Team( gentity_t *ent, gentity_t *other ) {
 	} else if ( strcmp( ent->classname, "team_CTF_blueflag" ) == 0 )   {
 		team = TEAM_BLUE;
 	} else {
-		PrintMsg( other, "Don't know what team the flag is on.\n" );
+		PrintMsg( other, qfalse, "Don't know what team the flag is on.\n" );
 		return 0;
 	}
 

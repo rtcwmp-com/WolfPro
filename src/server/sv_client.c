@@ -1191,7 +1191,15 @@ void SV_UserinfoChanged( client_t *cl ) {
 	int i;
 
 	// name for C code
-	Q_strncpyz( cl->name, Info_ValueForKey( cl->userinfo, "name" ), sizeof( cl->name ) );
+	
+	char *username = Info_ValueForKey( cl->userinfo, "username" );
+	if(!strlen(username)){
+		Q_strncpyz( cl->name, Info_ValueForKey( cl->userinfo, "name" ), sizeof( cl->name ) );
+	}else{
+		Q_strncpyz( cl->name, Info_ValueForKey( cl->userinfo, "username" ), sizeof( cl->name ) );
+	}
+
+	
 
 	// rate command
 
@@ -1394,7 +1402,7 @@ void PushUserCmd(client_t *cl, usercmd_t *cmd){
 void MergeUserCmds(client_t *cl){
 	
 	mergedUserCmd_t *merge = &sv.mergedUserCmd[cl - svs.clients];
-	Q_assert(merge->count > 1);
+	Q_assert(merge->count >= 1);
 	usercmd_t *dest = &merge->merged;
 	usercmd_t *last = &merge->userCmds[merge->count - 1];
 	*dest = (usercmd_t){0};
@@ -1411,13 +1419,8 @@ void MergeUserCmds(client_t *cl){
 		right += cur->rightmove;
 		up += cur->upmove;
 		kick += cur->wolfkick;
-
-		// never overwrite a merged ucmd's weapon if panzer was used
-		if(cur->weapon != 0 && dest->weapon != WP_PANZERFAUST){
-			dest->weapon = cur->weapon;
-		}
-
 	}
+
 	VectorCopy(last->angles, dest->angles);
 	dest->serverTime = last->serverTime;
 	dest->identClient = last->identClient;
@@ -1428,6 +1431,7 @@ void MergeUserCmds(client_t *cl){
 	dest->rightmove = right / merge->count;
 	dest->upmove = up / merge->count;
 	dest->wolfkick = kick / merge->count;
+	dest->weapon = last->weapon;
 }
 
 /*
@@ -1454,6 +1458,17 @@ void SV_ClientThink( client_t *cl, usercmd_t *cmd ) {
 	}else{
 		mergedUserCmd_t *merge = &sv.mergedUserCmd[cl - svs.clients];
 		PushUserCmd(cl, cmd);
+
+		// finish merging immediately if the user is attacking or is using a single shot weapon
+		if (cmd->buttons & BUTTON_ATTACK || cmd->weapon == WP_PANZERFAUST || cmd->weapon == WP_SMOKE_GRENADE) {
+			MergeUserCmds(cl);
+			cl->lastUsercmd = merge->merged;
+			cl->lastUsercmd.serverTime = cmd->serverTime;
+			VM_Call(gvm, GAME_CLIENT_THINK, cl - svs.clients);
+			merge->count = 0;
+			return;
+		}
+
 		if(cmd->serverTime >= merge->nextClientThinkTime + sv_minUserCmdInterval->integer){
 			merge->nextClientThinkTime = cmd->serverTime + sv_minUserCmdInterval->integer - (cmd->serverTime % sv_minUserCmdInterval->integer);
 		} else if(cmd->serverTime >=  merge->nextClientThinkTime){

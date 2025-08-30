@@ -58,7 +58,8 @@ void G_ready_cmd( gentity_t *ent, qboolean state ) {
 			}
 
 			// Doesn't rly matter..score tab will show slow ones..
-			AP( va( "cp \"\n%s \n^3is %s!\n\"", ent->client->pers.netname, status[state] ) );
+			AP( va( "netnamecp \"\n%s \n^3is %s!\n\"", ent->client->pers.netname, status[state] ) );
+			AP( va( "usernamecp \"\n%s \n^3is %s!\n\"", ent->client->pers.username, status[state] ) );
 		}
 	}
 }
@@ -112,7 +113,7 @@ void pCmd_teamReady(gentity_t *ent, qboolean ready) {
 	}
 	else {
 		AP(va("cp \"%s ^7team is %s%s!\n\"", aTeams[team], (ready ? "^3" : "^z"), status[ready]));
-		G_matchPrintInfo(va("%s ^7team is %s%s! ^7(%s)\n", aTeams[team], (ready ? "^3" : "^z"), status[ready], ent->client->pers.netname), qfalse);
+		G_matchPrintInfo(va("%s ^7team is %s%s! ^7(%s)\n", aTeams[team], (ready ? "^3" : "^z"), status[ready], ent->client->pers.username), qfalse);
 		level.readyTeam[team] = ready;
 	}
 }
@@ -171,7 +172,8 @@ void pCmd_pauseHandle(gentity_t *ent, qboolean dPause) {
 
 		AP(va("chat \"^zconsole: ^7%s has ^3Paused ^7the match!\n\"", tName));
 		AP(va("cp \"[%s^7] %d Timeouts Remaining\n\"3", aTeams[team], teamInfo[team].timeouts));
-		AP(va("@print \"^z>> ^7%s ^zPaused the match.\n\"", ent->client->pers.netname));
+		AP(va("@usernameprint \"^z>> ^7%s ^zPaused the match.\n\"", ent->client->pers.username));
+		AP(va("@netnameprint \"^z>> ^7%s ^zPaused the match.\n\"", ent->client->pers.netname));
 		//AAPS("sound/match/klaxon1.wav");
 
 	} 
@@ -184,7 +186,8 @@ void pCmd_pauseHandle(gentity_t *ent, qboolean dPause) {
 		level.paused = PAUSE_UNPAUSING;
 		G_spawnPrintf(DP_UNPAUSING, level.time + 10, NULL);
 		AP(va("chat \"^zconsole: ^7%s has ^3Unpaused ^7a match!\n\"", tName));
-		AP(va("print \"^z>> ^7%s ^zUnpaused the match.\n\"", ent->client->pers.netname));
+		AP(va("usernameprint \"^z>> ^7%s ^zUnpaused the match.\n\"", ent->client->pers.username));
+		AP(va("netnameprint \"^z>> ^7%s ^zUnpaused the match.\n\"", ent->client->pers.netname));
 		// lock the teams after unpausing
 		teamInfo[TEAM_RED].team_lock = qtrue;
 		teamInfo[TEAM_BLUE].team_lock = qtrue;
