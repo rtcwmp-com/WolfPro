@@ -185,6 +185,11 @@ static void CG_Obituary( entityState_t *ent ) {
 		case MOD_EXPLOSIVE:
 			message = "died in his own explosion";
 			break;
+		case MOD_ARTILLERY:			
+			message = "fired-for-effect on himself";
+			break;
+		case MOD_SWITCHTEAM:
+			return;
 		default:
 			message = "killed himself";
 			break;
