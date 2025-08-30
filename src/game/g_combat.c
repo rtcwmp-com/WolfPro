@@ -1220,64 +1220,130 @@ CanDamage
 
 Returns qtrue if the inflictor can directly damage the target.  Used for
 explosions and melee attacks.
+
+This version is from the GPL Enemy Territory release that addressed Z axis
 ============
 */
 qboolean CanDamage( gentity_t *targ, vec3_t origin ) {
 	vec3_t dest;
 	trace_t tr;
 	vec3_t midpoint;
+	vec3_t offsetmins = { -16.f, -16.f, -16.f };
+	vec3_t offsetmaxs = { 16.f, 16.f, 16.f };
 
 	// use the midpoint of the bounds instead of the origin, because
 	// bmodels may have their origin is 0,0,0
-	VectorAdd( targ->r.absmin, targ->r.absmax, midpoint );
-	VectorScale( midpoint, 0.5, midpoint );
+	// - well, um, just check then ...
+	if (targ->r.currentOrigin[0] != 0.f || targ->r.currentOrigin[1] != 0.f || targ->r.currentOrigin[2] != 0.f)
+	{
+		VectorCopy(targ->r.currentOrigin, midpoint);
 
-	VectorCopy( midpoint, dest );
-	trap_Trace( &tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID );
-	if ( tr.fraction == 1.0 ) {
+		if (targ->s.eType == ET_MOVER)
+		{
+			midpoint[2] += 32;
+		}
+	}
+	else
+	{
+		VectorAdd(targ->r.absmin, targ->r.absmax, midpoint);
+		VectorScale(midpoint, 0.5f, midpoint);
+	}
+
+	trap_Trace(&tr, origin, vec3_origin, vec3_origin, midpoint, ENTITYNUM_NONE, MASK_CAN_DAMAGE);
+	if (tr.fraction == 1.0f || &g_entities[tr.entityNum] == targ)
+	{
 		return qtrue;
 	}
 
-
-
-	if ( &g_entities[tr.entityNum] == targ ) {
-		return qtrue;
+	if (targ->client)
+	{
+		VectorCopy(targ->client->ps.mins, offsetmins);
+		VectorCopy(targ->client->ps.maxs, offsetmaxs);
 	}
 
 	// this should probably check in the plane of projection,
-	// rather than in world coordinate, and also include Z
-	VectorCopy( midpoint, dest );
-	dest[0] += 15.0;
-	dest[1] += 15.0;
-	trap_Trace( &tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID );
-	if ( tr.fraction == 1.0 ) {
+	// rather than in world coordinate
+	VectorCopy(midpoint, dest);
+	dest[0] += offsetmaxs[0];
+	dest[1] += offsetmaxs[1];
+	dest[2] += offsetmaxs[2];
+	trap_Trace(&tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_CAN_DAMAGE);
+	if (tr.fraction == 1.f || &g_entities[tr.entityNum] == targ)
+	{
 		return qtrue;
 	}
 
-	VectorCopy( midpoint, dest );
-	dest[0] += 15.0;
-	dest[1] -= 15.0;
-	trap_Trace( &tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID );
-	if ( tr.fraction == 1.0 ) {
+	VectorCopy(midpoint, dest);
+	dest[0] += offsetmaxs[0];
+	dest[1] += offsetmins[1];
+	dest[2] += offsetmaxs[2];
+	trap_Trace(&tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_CAN_DAMAGE);
+	if (tr.fraction == 1.f || &g_entities[tr.entityNum] == targ)
+	{
 		return qtrue;
 	}
 
-	VectorCopy( midpoint, dest );
-	dest[0] -= 15.0;
-	dest[1] += 15.0;
-	trap_Trace( &tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID );
-	if ( tr.fraction == 1.0 ) {
+	VectorCopy(midpoint, dest);
+	dest[0] += offsetmins[0];
+	dest[1] += offsetmaxs[1];
+	dest[2] += offsetmaxs[2];
+	trap_Trace(&tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_CAN_DAMAGE);
+	if (tr.fraction == 1.f || &g_entities[tr.entityNum] == targ)
+	{
 		return qtrue;
 	}
 
-	VectorCopy( midpoint, dest );
-	dest[0] -= 15.0;
-	dest[1] -= 15.0;
-	trap_Trace( &tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID );
-	if ( tr.fraction == 1.0 ) {
+	VectorCopy(midpoint, dest);
+	dest[0] += offsetmins[0];
+	dest[1] += offsetmins[1];
+	dest[2] += offsetmaxs[2];
+	trap_Trace(&tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_CAN_DAMAGE);
+	if (tr.fraction == 1.f || &g_entities[tr.entityNum] == targ)
+	{
 		return qtrue;
 	}
 
+	// =========================
+
+	VectorCopy(midpoint, dest);
+	dest[0] += offsetmaxs[0];
+	dest[1] += offsetmaxs[1];
+	dest[2] += offsetmins[2];
+	trap_Trace(&tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_CAN_DAMAGE);
+	if (tr.fraction == 1.f || &g_entities[tr.entityNum] == targ)
+	{
+		return qtrue;
+	}
+
+	VectorCopy(midpoint, dest);
+	dest[0] += offsetmaxs[0];
+	dest[1] += offsetmins[1];
+	dest[2] += offsetmins[2];
+	trap_Trace(&tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_CAN_DAMAGE);
+	if (tr.fraction == 1.f || &g_entities[tr.entityNum] == targ)
+	{
+		return qtrue;
+	}
+
+	VectorCopy(midpoint, dest);
+	dest[0] += offsetmins[0];
+	dest[1] += offsetmaxs[1];
+	dest[2] += offsetmins[2];
+	trap_Trace(&tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_CAN_DAMAGE);
+	if (tr.fraction == 1.f || &g_entities[tr.entityNum] == targ)
+	{
+		return qtrue;
+	}
+
+	VectorCopy(midpoint, dest);
+	dest[0] += offsetmins[0];
+	dest[1] += offsetmins[1];
+	dest[2] += offsetmins[2];
+	trap_Trace(&tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_CAN_DAMAGE);
+	if (tr.fraction == 1.f || &g_entities[tr.entityNum] == targ)
+	{
+		return qtrue;
+	}
 
 	return qfalse;
 }
@@ -1365,7 +1431,9 @@ qboolean G_RadiusDamage( vec3_t origin, gentity_t *attacker, float damage, float
 		points = damage * ( 1.0 - dist / radius );
 
 // JPW NERVE -- different radiusdmg behavior for MP -- big explosions should do less damage (over less distance) through failed traces
+		origin[2] += 16.0f; //move the explosion up a little bit to get out of the solid geometry
 		if ( CanDamage( ent, origin ) ) {
+			origin[2] -= 16.0f;
 			if ( LogAccuracyHit( ent, attacker ) ) {
 				hitClient = qtrue;
 			}
@@ -1377,6 +1445,7 @@ qboolean G_RadiusDamage( vec3_t origin, gentity_t *attacker, float damage, float
 		}
 // JPW NERVE --  MP weapons should do 1/8 damage through walls over 1/8th distance
 		else {
+			origin[2] -= 16.0f;
 			VectorAdd( ent->r.absmin, ent->r.absmax, midpoint );
 			VectorScale( midpoint, 0.5, midpoint );
 			VectorCopy( midpoint, dest );
@@ -1452,7 +1521,7 @@ void G_Hitsounds( gentity_t *target, gentity_t *attacker, int mod, qboolean head
 		return;  // this happens at flaming your self... just return silence...			
 	}
 
-	if (//mod == MOD_ARTILLERY ||
+	if (mod == MOD_ARTILLERY ||
 		mod == MOD_GRENADE_SPLASH ||
 		mod == MOD_DYNAMITE_SPLASH ||
 		mod == MOD_DYNAMITE ||

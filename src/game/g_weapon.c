@@ -667,7 +667,6 @@ void Weapon_Engineer( gentity_t *ent ) {
 	}
 }
 
-
 // JPW NERVE -- launch airstrike as line of bombs mostly-perpendicular to line of grenade travel
 // (close air support should *always* drop parallel to friendly lines, tho accidents do happen)
 extern void G_ExplodeMissile( gentity_t *ent );
@@ -676,6 +675,10 @@ void G_AirStrikeExplode( gentity_t *self ) {
 
 	self->r.svFlags &= ~SVF_NOCLIENT;
 	self->r.svFlags |= SVF_BROADCAST;
+
+	self->damage = 400;
+	self->splashDamage = 400;
+	self->splashRadius = 400;
 
 	self->think = G_ExplodeMissile;
 	self->nextthink = level.time + 50;
@@ -953,8 +956,8 @@ void Weapon_Artillery( gentity_t *ent ) {
 				bomb->r.svFlags     = SVF_USE_CURRENT_ORIGIN | SVF_BROADCAST;
 				bomb->classname = "props_explosion"; // was "air strike"
 				bomb->damage        = 0; // maybe should un-hard-code these?
-				bomb->splashDamage  = 90;
-				bomb->splashRadius  = 50;
+				bomb->splashDamage  = 0;
+				bomb->splashRadius  = 0;
 //		bomb->s.weapon	= WP_SMOKE_GRENADE;
 				// TTimo ambiguous else
 				if ( ent->client != NULL ) { // set team color on smoke
@@ -969,11 +972,11 @@ void Weapon_Artillery( gentity_t *ent ) {
 				bomb->nextthink = level.time + 8950 + 2000 * i + crandom() * 800;
 				bomb->classname = "air strike";
 				bomb->damage        = 0;
-				bomb->splashDamage  = 400;
-				bomb->splashRadius  = 400;
+				bomb->splashDamage  = 0;
+				bomb->splashRadius  = 0;
 			}
-			bomb->methodOfDeath         = MOD_AIRSTRIKE;
-			bomb->splashMethodOfDeath   = MOD_AIRSTRIKE;
+			bomb->methodOfDeath         = MOD_ARTILLERY;
+			bomb->splashMethodOfDeath   = MOD_ARTILLERY;
 			bomb->clipmask = MASK_MISSILESHOT;
 			bomb->s.pos.trType = TR_STATIONARY; // was TR_GRAVITY,  might wanna go back to this and drop from height
 			bomb->s.pos.trTime = level.time;        // move a bit on the very first frame
