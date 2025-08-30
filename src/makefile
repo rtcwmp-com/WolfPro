@@ -18,7 +18,7 @@ binaries-windows:
 	cd ../build && rm -rf CMakeCache.txt CMakeFiles cmake_install.cmake *.lib build.ninja *.user
 
 build-pk3-crosscompiled:
-	cd ../build/rtcwmod && zip -r rtcwmod_bin.pk3 *.dll *.so
+	cd ../build/wolfpro && zip -r wolfpro_bin.pk3 *.dll *.so
 
 clean:
 	rm -rf ../build
