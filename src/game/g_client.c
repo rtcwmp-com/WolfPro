@@ -1386,6 +1386,20 @@ void ClientUserinfoChanged( int clientNum ) {
 		if ( strcmp( oldusername, client->pers.username ) ) {
 			trap_SendServerCommand( -1, va( "usernameprint \"[lof]%s" S_COLOR_WHITE " [lon]renamed to[lof] %s\n\"", oldusername,
 											client->pers.username ) );
+		
+		if (level.intermissiontime) {
+				Q_strncpyz(client->pers.username, oldusername, sizeof(client->pers.username));
+				Info_SetValueForKey(userinfo, "username", oldusername);
+				trap_SetUserinfo(clientNum, userinfo);
+				CPx(client->ps.clientNum, "print \"^1Denied! ^7You cannot rename during intermission^1!\n\"");
+				return;
+			} else {
+				AP(va("print \"[lof]%s" S_COLOR_WHITE " [lon]renamed to[lof] %s\n\"", oldusername, client->pers.username));
+			}
+
+            if (g_gameStatslog.integer && (g_gamestate.integer == GS_PLAYING)) {
+                G_writeGeneralEvent (ent,ent, " ", eventNameChange);
+            }
 		}
 	}
 
@@ -1952,6 +1966,10 @@ void ClientSpawn( gentity_t *ent, qboolean revived ) {
 
 			if ( update ) {
 				ClientUserinfoChanged( index );
+
+				if (g_gameStatslog.integer && (g_gamestate.integer == GS_PLAYING) ) {
+                    G_writeGeneralEvent (ent,ent, " ", eventClassChange);
+                }
 			}
 		}
 
@@ -2099,9 +2117,9 @@ void ClientDisconnect( int clientNum ) {
 			}
 
 			if ( item ) {
-				launchvel[0] = crandom() * 20;
-				launchvel[1] = crandom() * 20;
-				launchvel[2] = 10 + random() * 10;
+				launchvel[0] = 0;
+				launchvel[1] = 0;
+				launchvel[2] = 40;
 
 				flag = LaunchItem( item,ent->r.currentOrigin,launchvel,ent->s.number );
 				flag->s.modelindex2 = ent->s.otherEntityNum2; // JPW NERVE FIXME set player->otherentitynum2 with old modelindex2 from flag and restore here
@@ -2109,6 +2127,13 @@ void ClientDisconnect( int clientNum ) {
 				// Clear out player's temp copies
 				ent->s.otherEntityNum2 = 0;
 				ent->message = NULL;
+			}
+
+			// Record the players stats if they /quit so we can reload or save them
+			if (g_gameStatslog.integer && (ent->client->sess.sessionTeam == TEAM_BLUE || ent->client->sess.sessionTeam == TEAM_RED))
+			{
+				// record any player that disconnects
+				G_jstatsByPlayers(qtrue, qtrue, ent->client);
 			}
 		}
 	}
@@ -2130,6 +2155,10 @@ void ClientDisconnect( int clientNum ) {
 		G_readyResetOnPlayerLeave(ent->client->sess.sessionTeam);
 	}
 
+	if (g_gameStatslog.integer && g_gamestate.integer == GS_PLAYING) {
+        G_writeDisconnectEvent(ent);
+    }
+
 	trap_UnlinkEntity( ent );
 	ent->s.modelindex = 0;
 	ent->inuse = qfalse;
@@ -2149,6 +2178,8 @@ void ClientDisconnect( int clientNum ) {
 	if ( ent->r.svFlags & SVF_BOT ) {
 		BotAIShutdownClient( clientNum );
 	}
+
+	
 }
 
 

@@ -193,6 +193,8 @@ void Team_FragBonuses( gentity_t *targ, gentity_t *inflictor, gentity_t *attacke
 		attacker->client->pers.teamState.lastfraggedcarrier = level.time;
 		if ( g_gametype.integer >= GT_WOLF ) {
 			AddScore( attacker, WOLF_FRAG_CARRIER_BONUS );
+			G_writeObjectiveEvent(attacker, objKilledCarrier);
+			attacker->client->sess.stats.obj_killcarrier++;
 		} else {
 			AddScore( attacker, CTF_FRAG_CARRIER_BONUS );
 			PrintMsg( NULL, qfalse, "%s" S_COLOR_WHITE " fragged %s's flag carrier!\n",
@@ -331,6 +333,8 @@ void Team_FragBonuses( gentity_t *targ, gentity_t *inflictor, gentity_t *attacke
 			if ( VectorLength( v1 ) < WOLF_CP_PROTECT_RADIUS ) {
 				if ( flag->spawnflags & 1 ) {                     // protected spawnpoint
 					AddScore( attacker, WOLF_SP_PROTECT_BONUS );
+					G_writeObjectiveEvent(attacker, objProtectFlag);
+					attacker->client->sess.stats.obj_protectflag++;
 				} else {
 					AddScore( attacker, WOLF_CP_PROTECT_BONUS );  // protected checkpoint
 				}
@@ -494,15 +498,21 @@ int Team_TouchOurFlag( gentity_t *ent, gentity_t *other, int team ) {
 			if ( cl->sess.sessionTeam == TEAM_RED ) {
 				te->s.eventParm = G_SoundIndex( "sound/multiplayer/axis/g-objective_secure.wav" );
 				trap_SendServerCommand( -1, va( "cp \"Axis have returned %s!\n\" 2", ent->message ) );
+				AP(va("prioritypopin \"^5Axis have returned %s!\n\"", ent->message));
 				if ( gm ) {
 					G_Script_ScriptEvent( gm, "trigger", "axis_object_returned" );
 				}
+				G_writeObjectiveEvent(other, objReturned  );
+				cl->sess.stats.obj_returned++;
 			} else {
 				te->s.eventParm = G_SoundIndex( "sound/multiplayer/allies/a-objective_secure.wav" );
 				trap_SendServerCommand( -1, va( "cp \"Allies have returned %s!\n\" 2", ent->message ) );
+				AP(va("prioritypopin \"^5Allies have returned %s!\n\"", ent->message));
 				if ( gm ) {
 					G_Script_ScriptEvent( gm, "trigger", "allied_object_returned" );
 				}
+				G_writeObjectiveEvent(other, objReturned  );
+				cl->sess.stats.obj_returned++;
 			}
 			// dhm
 		}
@@ -639,15 +649,21 @@ int Team_TouchEnemyFlag( gentity_t *ent, gentity_t *other, int team ) {
 		if ( cl->sess.sessionTeam == TEAM_RED ) {
 			te->s.eventParm = G_SoundIndex( "sound/multiplayer/axis/g-objective_taken.wav" );
 			trap_SendServerCommand( -1, va( "cp \"Axis have stolen %s!\n\" 2", ent->message ) );
+			AP(va("prioritypopin \"^1Axis have stolen %s!\n\"", ent->message));
 			if ( gm ) {
 				G_Script_ScriptEvent( gm, "trigger", "allied_object_stolen" );
 			}
+			cl->sess.stats.obj_taken++;
+            G_writeObjectiveEvent(other, objTaken  );
 		} else {
 			te->s.eventParm = G_SoundIndex( "sound/multiplayer/allies/a-objective_taken.wav" );
 			trap_SendServerCommand( -1, va( "cp \"Allies have stolen %s!\n\" 2", ent->message ) );
+			AP(va("prioritypopin \"^1Allies have stolen %s!\n\"", ent->message));
 			if ( gm ) {
 				G_Script_ScriptEvent( gm, "trigger", "axis_object_stolen" );
 			}
+			G_writeObjectiveEvent(other, objTaken  );
+            cl->sess.stats.obj_taken++;
 		}
 		// dhm
 // jpw
@@ -1522,8 +1538,12 @@ void checkpoint_spawntouch( gentity_t *self, gentity_t *other, trace_t *trace ) 
 	// Run script trigger
 	if ( self->count == TEAM_RED ) {
 		G_Script_ScriptEvent( self, "trigger", "axis_capture" );
+		G_writeObjectiveEvent(other, objSpawnFlag  );
+        other->client->sess.stats.obj_checkpoint++;
 	} else {
 		G_Script_ScriptEvent( self, "trigger", "allied_capture" );
+		G_writeObjectiveEvent(other, objSpawnFlag  );
+        other->client->sess.stats.obj_checkpoint++;
 	}
 
 	// Don't allow touch again until animation is finished

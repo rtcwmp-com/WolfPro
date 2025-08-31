@@ -945,27 +945,26 @@ void G_matchInfoDump( unsigned int dwDumpType ) {
 		}
 	}
 
-   // this will all be redone in a much more efficient way but since time is limited and with no real direction...it is done the lazy way
     if (g_gameStatslog.integer) {
-		//char cs[MAX_STRING_CHARS];
-		//char* buf;
-		//int winner;
-		//trap_GetConfigstring(CS_MULTI_MAPWINNER, cs, sizeof(cs));
-		//buf = Info_ValueForKey(cs, "winner");
-		//winner = atoi(buf);
-  //      qboolean wstats;
-  //      wstats = ((g_gameStatslog.integer & JSON_WSTAT) ? qtrue : qfalse);
-        //G_writeGameLogEnd();  // write last event and close the gamelog array...will provide better solution later
-        //G_writeGameInfo(winner);  // write out the game info relating to the match & round
+        qboolean wstats;
+        wstats = ((g_gameStatslog.integer & JSON_WSTAT) ? qtrue : qfalse);
+        G_writeGameLogEnd();  // write last event and close the gamelog array...will provide better solution later
+
+		int winner;
+		char cs[MAX_STRING_CHARS];
+		trap_GetConfigstring(CS_MULTI_MAPWINNER, cs, sizeof(cs));
+		char *buf = Info_ValueForKey(cs, "winner");
+		winner = atoi(buf);
+        G_writeGameInfo(winner);  // write out the game info relating to the match & round
 
         if (g_gameStatslog.integer & JSON_TEAM) {
-            //G_jstatsByTeam(wstats); // write out the player stats
+            G_jstatsByTeam(wstats); // write out the player stats
         }
         else {
-            //G_jstatsByPlayers(wstats, qfalse, NULL);  // write out player stats
+            G_jstatsByPlayers(wstats, qfalse, NULL);  // write out player stats
         }
 
-        //G_writeClosingJson();  // need a closing bracket....will provide better solution later
+        G_writeClosingJson();  // need a closing bracket....will provide better solution later
 
     }
 

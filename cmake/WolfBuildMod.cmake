@@ -71,6 +71,10 @@ endif()
 #
 if(BUILD_SERVER_MOD)
 	add_library(qagame MODULE ${QAGAME_SRC})
+	find_package(JANSSON)
+	#target_link_libraries(renderer_libraries INTERFACE ${JPEG_LIBRARIES})
+	target_include_directories(qagame_libraries INTERFACE ${JANSSON_INCLUDE_DIR})
+	target_link_libraries(qagame_libraries INTERFACE ${JANSSON_LIBRARY})
 	target_link_libraries(qagame qagame_libraries mod_libraries)
 
 	set_target_properties(qagame

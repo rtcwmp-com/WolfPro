@@ -11,7 +11,7 @@ find_path(CURL_INCLUDE_DIR curl
 
 if(CMAKE_CROSSCOMPILING)
 find_library(CURL_LIBRARY
-	NAMES ${JPEG_NAMES} libcurl
+	NAMES ${CURL_NAMES} libcurl
 	PATHS
     ${PROJECT_SOURCE_DIR}/deps/bin
     ${PROJECT_SOURCE_DIR}/deps/curl/bin
@@ -27,7 +27,7 @@ find_library(CURL_LIBRARY
 )
 else()
 find_library(CURL_LIBRARY
-	NAMES ${JPEG_NAMES} libcurl
+	NAMES ${CURL_NAMES} libcurl
 	PATHS
     ${PROJECT_SOURCE_DIR}/deps/bin
     ${PROJECT_SOURCE_DIR}/deps/curl/bin
