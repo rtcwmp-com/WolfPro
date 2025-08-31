@@ -3550,7 +3550,7 @@ void CG_DrawObjectiveIcons() {
 	trap_R_SetColor( hcolor );
 	if ( cgs.clientinfo[cg.snap->ps.clientNum].powerups & ( 1 << PW_REDFLAG ) ||
 		 cgs.clientinfo[cg.snap->ps.clientNum].powerups & ( 1 << PW_BLUEFLAG ) ) {
-		CG_DrawPic( -7, y, 48, 48, trap_R_RegisterShader( "models/multiplayer/treasure/treasure" ) );
+		CG_DrawPic( -7, y, 48, 48, cgs.media.exclamationIcon );
 		y += 50;
 	}
 }
