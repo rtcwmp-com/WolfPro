@@ -1,5 +1,5 @@
 # - Find jansson
-set(JANSSON_NAMES jansson)
+set(JANSSON_NAMES libjansson.a jansson )
 find_path(JANSSON_INCLUDE_DIR jansson.h
 	${PROJECT_SOURCE_DIR}/deps/jansson/build/include/
 	${PROJECT_SOURCE_DIR}/deps/jansson/build-win/include/
