@@ -18,7 +18,7 @@ find_library(JANSSON_LIBRARY
     ${PROJECT_SOURCE_DIR}/deps/jansson/bin
     ${PROJECT_SOURCE_DIR}/deps/jansson/build/lib/Release
 	${PROJECT_SOURCE_DIR}/deps/jansson/build/lib
-	${PROJECT_SOURCE_DIR}/deps/jansson/build-win
+	${PROJECT_SOURCE_DIR}/deps/jansson/build-win/lib
 	/usr/lib64
 	/usr/lib
 	/usr/local/lib64
@@ -35,7 +35,7 @@ find_library(JANSSON_LIBRARY
     ${PROJECT_SOURCE_DIR}/deps/jansson/bin
     ${PROJECT_SOURCE_DIR}/deps/jansson/build/lib/Release
 	${PROJECT_SOURCE_DIR}/deps/jansson/build/lib
-	${PROJECT_SOURCE_DIR}/deps/jansson/build-win
+	${PROJECT_SOURCE_DIR}/deps/jansson/build-win/lib
 	/usr/lib64
 	/usr/lib
 	/usr/local/lib64
