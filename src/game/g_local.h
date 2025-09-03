@@ -595,6 +595,8 @@ typedef struct {
 
 	unsigned int autoaction;            // End-of-match auto-requests
 	unsigned int clientFlags;           // Client settings that need server involvement
+
+	int deathYaw;
 } clientPersistant_t;
 
 typedef struct {
