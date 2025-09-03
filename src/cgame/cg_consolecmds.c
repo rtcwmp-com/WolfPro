@@ -516,6 +516,20 @@ static void CG_TimerReset_f(void)
 	trap_Cvar_Set("cg_spawnTimer_set", va("%d", cg.time - cgs.levelStartTime));
 }
 
+void CG_vstrDown_f(void) {
+	if (trap_Argc() == 5) {
+		trap_SendConsoleCommand(va("vstr %s;", CG_Argv(1)));
+	}
+	else { CG_Printf("[cgnotify]^3Usage: ^7+vstr [down_vstr] [up_vstr]\n"); }
+}
+
+void CG_vstrUp_f(void) {
+	if (trap_Argc() == 5) {
+		trap_SendConsoleCommand(va("vstr %s;", CG_Argv(2)));
+	}
+	else { CG_Printf("[cgnotify]^3Usage: ^7+vstr [down_vstr] [up_vstr]\n"); }
+}
+
 typedef struct {
 	char    *cmd;
 	void ( *function )( void );
@@ -574,7 +588,10 @@ static consoleCommand_t commands[] = {
 	{ "timerSet", CG_TimerSet_f },
 	{ "timerReset", CG_TimerReset_f },
 	{ "resetTimer", CG_TimerReset_f }, // keep ETPro compatibility
-	{ "forcetapout", CG_ForceTapOut_f }
+	{ "forcetapout", CG_ForceTapOut_f }, 
+
+	{ "+vstr", CG_vstrDown_f },
+	{ "-vstr", CG_vstrUp_f }
 };
 
 
@@ -678,4 +695,5 @@ void CG_InitConsoleCommands( void ) {
 	trap_AddCommand("readyteam");
 	trap_AddCommand("ready");
 	trap_AddCommand("notready");
+	
 }
