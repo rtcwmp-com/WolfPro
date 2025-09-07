@@ -13,7 +13,10 @@ if(WIN32 AND NOT CMAKE_CROSSCOMPILE)
 	target_include_directories(wolfded PRIVATE ${CURL_INCLUDE_DIR})
 elseif(UNIX)
 	add_executable(wolfded ${COMMON_SRC} ${SERVER_SRC})
-	target_link_options(wolfded PRIVATE "LINKER:-melf_i386")
+	if(WOLF_64BITS)
+	else()
+		target_link_options(wolfded PRIVATE "LINKER:-melf_i386")
+	endif()
 	target_link_libraries(wolfded
 		server_libraries
 		engine_libraries

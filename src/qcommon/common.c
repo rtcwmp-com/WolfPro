@@ -2979,6 +2979,11 @@ void Com_Shutdown( void ) {
 }
 
 
+void Sys_SnapVector( float *v ) {
+	v[0] = rintf( v[0] );
+	v[1] = rintf( v[1] );
+	v[2] = rintf( v[2] );
+}
 
 
 //------------------------------------------------------------------------

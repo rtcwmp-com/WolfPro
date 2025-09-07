@@ -42,6 +42,7 @@ find_library(CURL_LIBRARY
     ${PROJECT_SOURCE_DIR}/${DEPS}/curl/bin
     ${PROJECT_SOURCE_DIR}/${DEPS}/curl/build/lib
 	${PROJECT_SOURCE_DIR}/${DEPS}/curl/build-win
+	/usr/lib/x86_64-linux-gnu
 	/usr/lib64
 	/usr/lib
 	/usr/local/lib64
