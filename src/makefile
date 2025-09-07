@@ -6,15 +6,32 @@ dependencies:
 	cp ../deps/libjpeg-turbo/build-win/libjpeg-62.dll ../build
 	cp ../deps/curl-win/curl/bin/libcurl.dll ../build
 
+dependencies64:
+	cd .. && bash fetch-dependencies.sh
+	mkdir -p ../build64
+	cp ../deps64/libjpeg-turbo/build-win/libjpeg-62.dll ../build
+	cp ../deps64/curl-win/curl/bin/libcurl.dll ../build
+
 binaries-linux:
 	mkdir -p ../build
 	cd ../build && CC=clang CFLAGS=-m32 CXXFLAGS=-m32 LDFLAGS=-m32 cmake -G Ninja -DCMAKE_LIBRARY_PATH=/usr/lib/i386-linux-gnu -DCMAKE_PREFIX_PATH=/usr/lib/i386-linux-gnu/cmake/ -DBUILD_CLIENT=OFF  .. && ninja
 	cd ../build && rm -rf CMakeCache.txt  CMakeFiles build.ninja cmake_install.cmake  librenderer.a
 
+binaries-linux64:
+	mkdir -p ../build64
+	cd ../build64 && cmake -G Ninja -DBUILD_CLIENT=OFF  .. && ninja
+	cd ../build64 && rm -rf CMakeCache.txt  CMakeFiles build.ninja cmake_install.cmake  librenderer.a
+
 binaries-windows:
 	mkdir -p ../build
 	cd ../build && \
 	cmake .. -G Ninja -DCMAKE_TOOLCHAIN_FILE="../cmake/clang-cl-msvc.cmake" -DHOST_ARCH=x86 -DLLVM_NATIVE_TOOLCHAIN=/usr/ -DMSVC_BASE=../deps/xwin/crt -DWINSDK_BASE=../deps/xwin/sdk -DBUILD_CLIENT=OFF -DCMAKE_BUILD_TYPE=Release  && ninja
+	cd ../build && rm -rf CMakeCache.txt CMakeFiles cmake_install.cmake *.lib build.ninja *.user
+
+binaries-windows64:
+	mkdir -p ../build64
+	cd ../build64 && \
+	cmake .. -G Ninja -DCMAKE_TOOLCHAIN_FILE="../cmake/clang-cl-msvc.cmake" -DHOST_ARCH=x64 -DLLVM_NATIVE_TOOLCHAIN=/usr/ -DMSVC_BASE=../deps/xwin/crt -DWINSDK_BASE=../deps/xwin/sdk -DBUILD_CLIENT=OFF -DCMAKE_BUILD_TYPE=Release  && ninja
 	cd ../build && rm -rf CMakeCache.txt CMakeFiles cmake_install.cmake *.lib build.ninja *.user
 
 build-pk3-crosscompiled:
