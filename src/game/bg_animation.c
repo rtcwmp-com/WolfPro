@@ -1865,8 +1865,9 @@ BG_GetConditionValue
 int BG_GetConditionValue( int client, int condition, qboolean checkConversion ) {
 	int value, i;
 
-	// TTimo gcc: assignment makes integer from pointer without a cast
-	value = (int)globalScriptData->clientConditions[client][condition];
+	
+	value = globalScriptData->clientConditions[client][condition][0]; //this used to return the address of [0]
+	
 
 	if ( checkConversion ) {
 		// we may need to convert to a value
@@ -1883,7 +1884,7 @@ int BG_GetConditionValue( int client, int condition, qboolean checkConversion ) 
 			//BG_AnimParseError( "BG_GetConditionValue: internal error" );
 		}
 	}
-
+		
 	return value;
 }
 
