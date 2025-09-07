@@ -1,4 +1,4 @@
-all: clean dependencies64 binaries-linux64 binaries-windows64 build-pk3-crosscompiled
+all: clean dependencies64 binaries-linux64 binaries-windows64 build-pk3-crosscompiled64
 
 dependencies:
 	cd .. && bash fetch-dependencies.sh
@@ -9,8 +9,8 @@ dependencies:
 dependencies64:
 	cd .. && bash fetch-dependencies.sh
 	mkdir -p ../build64
-	cp ../deps64/libjpeg-turbo/build-win/libjpeg-62.dll ../build
-	cp ../deps64/curl-win/curl/bin/libcurl.dll ../build
+	cp ../deps64/libjpeg-turbo/build-win/libjpeg-62.dll ../build64
+	cp ../deps64/curl-win/curl/bin/libcurl.dll ../build64
 
 binaries-linux:
 	mkdir -p ../build
@@ -37,8 +37,14 @@ binaries-windows64:
 build-pk3-crosscompiled:
 	cd ../build/wolfpro && zip -r wolfpro_bin.pk3 *.dll *.so
 
+build-pk3-crosscompiled64:
+	cd ../build64/wolfpro && zip -r wolfpro_bin.pk3 *.dll *.so
+
+
 clean:
 	rm -rf ../build
+	rm -rf ../build64
 
 clean-deps:
 	rm -rf ../deps
+	rm -rf ../deps64
