@@ -72,101 +72,6 @@ void RB_CheckOverflow( int verts, int indexes ) {
 
 /*
 ==============
-RB_AddQuadStampFadingCornersExt
-
-  Creates a sprite with the center at colors[3] alpha, and the corners all 0 alpha
-==============
-*/
-void RB_AddQuadStampFadingCornersExt( vec3_t origin, vec3_t left, vec3_t up, byte *color, float s1, float t1, float s2, float t2 ) {
-	vec3_t normal;
-	int ndx;
-	byte lColor[4];
-
-	RB_CHECKOVERFLOW( 5, 12 );
-
-	ndx = tess.numVertexes;
-
-	// triangle indexes for a simple quad
-	tess.indexes[ tess.numIndexes + 0 ] = ndx + 0;
-	tess.indexes[ tess.numIndexes + 1 ] = ndx + 1;
-	tess.indexes[ tess.numIndexes + 2 ] = ndx + 4;
-
-	tess.indexes[ tess.numIndexes + 3 ] = ndx + 1;
-	tess.indexes[ tess.numIndexes + 4 ] = ndx + 2;
-	tess.indexes[ tess.numIndexes + 5 ] = ndx + 4;
-
-	tess.indexes[ tess.numIndexes + 6 ] = ndx + 2;
-	tess.indexes[ tess.numIndexes + 7 ] = ndx + 3;
-	tess.indexes[ tess.numIndexes + 8 ] = ndx + 4;
-
-	tess.indexes[ tess.numIndexes + 9 ] = ndx + 3;
-	tess.indexes[ tess.numIndexes + 10] = ndx + 0;
-	tess.indexes[ tess.numIndexes + 11] = ndx + 4;
-
-	tess.xyz[ndx][0] = origin[0] + left[0] + up[0];
-	tess.xyz[ndx][1] = origin[1] + left[1] + up[1];
-	tess.xyz[ndx][2] = origin[2] + left[2] + up[2];
-
-	tess.xyz[ndx + 1][0] = origin[0] - left[0] + up[0];
-	tess.xyz[ndx + 1][1] = origin[1] - left[1] + up[1];
-	tess.xyz[ndx + 1][2] = origin[2] - left[2] + up[2];
-
-	tess.xyz[ndx + 2][0] = origin[0] - left[0] - up[0];
-	tess.xyz[ndx + 2][1] = origin[1] - left[1] - up[1];
-	tess.xyz[ndx + 2][2] = origin[2] - left[2] - up[2];
-
-	tess.xyz[ndx + 3][0] = origin[0] + left[0] - up[0];
-	tess.xyz[ndx + 3][1] = origin[1] + left[1] - up[1];
-	tess.xyz[ndx + 3][2] = origin[2] + left[2] - up[2];
-
-	tess.xyz[ndx + 4][0] = origin[0];
-	tess.xyz[ndx + 4][1] = origin[1];
-	tess.xyz[ndx + 4][2] = origin[2];
-
-
-	// constant normal all the way around
-	VectorSubtract( vec3_origin, backEnd.viewParms.or.axis[0], normal );
-
-	tess.normal[ndx][0] = tess.normal[ndx + 1][0] = tess.normal[ndx + 2][0] = tess.normal[ndx + 3][0] = tess.normal[ndx + 4][0] = normal[0];
-	tess.normal[ndx][1] = tess.normal[ndx + 1][1] = tess.normal[ndx + 2][1] = tess.normal[ndx + 3][1] = tess.normal[ndx + 4][1] = normal[1];
-	tess.normal[ndx][2] = tess.normal[ndx + 1][2] = tess.normal[ndx + 2][2] = tess.normal[ndx + 3][2] = tess.normal[ndx + 4][2] = normal[2];
-
-	// standard square texture coordinates
-	tess.texCoords[ndx][0][0] = tess.texCoords[ndx][1][0] = s1;
-	tess.texCoords[ndx][0][1] = tess.texCoords[ndx][1][1] = t1;
-
-	tess.texCoords[ndx + 1][0][0] = tess.texCoords[ndx + 1][1][0] = s2;
-	tess.texCoords[ndx + 1][0][1] = tess.texCoords[ndx + 1][1][1] = t1;
-
-	tess.texCoords[ndx + 2][0][0] = tess.texCoords[ndx + 2][1][0] = s2;
-	tess.texCoords[ndx + 2][0][1] = tess.texCoords[ndx + 2][1][1] = t2;
-
-	tess.texCoords[ndx + 3][0][0] = tess.texCoords[ndx + 3][1][0] = s1;
-	tess.texCoords[ndx + 3][0][1] = tess.texCoords[ndx + 3][1][1] = t2;
-
-	tess.texCoords[ndx + 4][0][0] = tess.texCoords[ndx + 4][1][0] = ( s1 + s2 ) / 2.0;
-	tess.texCoords[ndx + 4][0][1] = tess.texCoords[ndx + 4][1][1] = ( t1 + t2 ) / 2.0;
-
-	// center uses full alpha
-	*( unsigned int * ) &tess.vertexColors[ndx + 4] =
-		*( unsigned int * )color;
-
-	// fade around edges
-	memcpy( lColor, color, sizeof( byte ) * 4 );
-	lColor[3] = 0;
-	*( unsigned int * ) &tess.vertexColors[ndx] =
-		*( unsigned int * ) &tess.vertexColors[ndx + 1] =
-			*( unsigned int * ) &tess.vertexColors[ndx + 2] =
-				*( unsigned int * ) &tess.vertexColors[ndx + 3] =
-					*( unsigned int * )lColor;
-
-
-	tess.numVertexes += 5;
-	tess.numIndexes += 12;
-}
-
-/*
-==============
 RB_AddQuadStampExt
 ==============
 */
@@ -226,11 +131,11 @@ void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, byte *color, flo
 
 	// constant color all the way around
 	// should this be identity and let the shader specify from entity?
-	*( unsigned int * ) &tess.vertexColors[ndx] =
-		*( unsigned int * ) &tess.vertexColors[ndx + 1] =
-			*( unsigned int * ) &tess.vertexColors[ndx + 2] =
-				*( unsigned int * ) &tess.vertexColors[ndx + 3] =
-					*( unsigned int * )color;
+	*(intptr_t*)&tess.vertexColors[ndx] =
+		*(intptr_t*)&tess.vertexColors[ndx + 1] =
+		*(intptr_t*)&tess.vertexColors[ndx + 2] =
+		*(intptr_t*)&tess.vertexColors[ndx + 3] =
+		*(intptr_t*)color;
 
 
 	tess.numVertexes += 4;
@@ -320,7 +225,7 @@ void RB_SurfacePolychain( srfPoly_t *p ) {
 		VectorCopy( p->verts[i].xyz, tess.xyz[numv] );
 		tess.texCoords[numv][0][0] = p->verts[i].st[0];
 		tess.texCoords[numv][0][1] = p->verts[i].st[1];
-		*(int *)&tess.vertexColors[numv] = *(int *)p->verts[ i ].modulate;
+		*(intptr_t *)&tess.vertexColors[numv] = *(intptr_t*)p->verts[ i ].modulate;
 
 		numv++;
 	}
@@ -1142,7 +1047,7 @@ void RB_SurfaceFace( srfSurfaceFace_t *surf ) {
 		tess.texCoords[ndx][0][1] = v[4];
 		tess.texCoords[ndx][1][0] = v[5];
 		tess.texCoords[ndx][1][1] = v[6];
-		*( unsigned int * ) &tess.vertexColors[ndx] = *( unsigned int * ) &v[7];
+		*(intptr_t * ) &tess.vertexColors[ndx] = *(intptr_t * ) &v[7];
 		tess.vertexDlightBits[ndx] = dlightBits;
 	}
 

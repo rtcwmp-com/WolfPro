@@ -57,7 +57,7 @@ void AsmCall( void );
 int _ftol( float );
 
 //static	int		ftolPtr = (int)_ftol;
-static int asmCallPtr = (int)AsmCall;
+static intptr_t asmCallPtr = (intptr_t)AsmCall;
 
 #else
 
@@ -304,15 +304,15 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 			EmitString( "8B 07" );       // mov	eax,dword ptr [edi]
 			EmitString( "89 86" );       // mov	dword ptr [esi+database],eax
 			// FIXME: range check
-			Emit4( Constant1() + (int)vm->dataBase );
+			Emit4( Constant1() + (intptr_t)vm->dataBase );
 			EmitString( "83 EF 04" );    // sub	edi,4
 			break;
 		case OP_CALL:
 			EmitString( "C7 86" );       // mov dword ptr [esi+database],0x12345678
-			Emit4( (int)vm->dataBase );
+			Emit4( (intptr_t)vm->dataBase );
 			Emit4( pc );
 			EmitString( "FF 15" );       // call asmCallPtr
-			Emit4( (int)&asmCallPtr );
+			Emit4( (intptr_t)&asmCallPtr );
 			break;
 		case OP_PUSH:
 			EmitString( "83 C7 04" );    // add edi,4
@@ -331,7 +331,7 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 			EmitString( "81 E3" );       // and ebx, 0x12345678
 			Emit4( vm->dataMask );
 			EmitString( "8B 83" );       // mov	eax, dword ptr [ebx + 0x12345678]
-			Emit4( (int)vm->dataBase );
+			Emit4( (intptr_t)vm->dataBase );
 			EmitString( "89 07" );       // mov dword ptr [edi], eax
 			break;
 		case OP_LOAD2:
@@ -339,7 +339,7 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 			EmitString( "81 E3" );       // and ebx, 0x12345678
 			Emit4( vm->dataMask );
 			EmitString( "0F B7 83" );    // movzx	eax, word ptr [ebx + 0x12345678]
-			Emit4( (int)vm->dataBase );
+			Emit4( (intptr_t)vm->dataBase );
 			EmitString( "89 07" );       // mov dword ptr [edi], eax
 			break;
 		case OP_LOAD1:
@@ -347,7 +347,7 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 			EmitString( "81 E3" );       // and ebx, 0x12345678
 			Emit4( vm->dataMask );
 			EmitString( "0F B6 83" );    // movzx eax, byte ptr [ebx + 0x12345678]
-			Emit4( (int)vm->dataBase );
+			Emit4( (intptr_t)vm->dataBase );
 			EmitString( "89 07" );       // mov dword ptr [edi], eax
 			break;
 		case OP_STORE4:
@@ -356,7 +356,7 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 			Emit4( vm->dataMask & ~3 );
 			EmitString( "8B 07" );       // mov eax, dword ptr [edi];
 			EmitString( "89 83" );       // mov dword ptr [ebx+0x12345678], eax
-			Emit4( (int)vm->dataBase );
+			Emit4( (intptr_t)vm->dataBase );
 			EmitString( "83 EF 08" );    // sub edi, 8
 			break;
 		case OP_STORE2:
@@ -365,7 +365,7 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 			Emit4( vm->dataMask & ~1 );
 			EmitString( "8B 07" );       // mov eax, dword ptr [edi];
 			EmitString( "66 89 83" );    // mov word ptr [ebx+0x12345678], eax
-			Emit4( (int)vm->dataBase );
+			Emit4( (intptr_t)vm->dataBase );
 			EmitString( "83 EF 08" );    // sub edi, 8
 			break;
 		case OP_STORE1:
@@ -374,7 +374,7 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 			Emit4( vm->dataMask );
 			EmitString( "8B 07" );       // mov eax, dword ptr [edi];
 			EmitString( "88 83" );       // mov byte ptr [ebx+0x12345678], eax
-			Emit4( (int)vm->dataBase );
+			Emit4( (intptr_t)vm->dataBase );
 			EmitString( "83 EF 08" );    // sub edi, 8
 			break;
 
@@ -384,7 +384,7 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 			EmitString( "3B 47 08" );    // cmp	eax, dword ptr [edi+8]
 			EmitString( "75 06" );       // jne +6
 			EmitString( "FF 25" );       // jmp	[0x12345678]
-			Emit4( (int)vm->instructionPointers + Constant4() * 4 );
+			Emit4( (intptr_t)vm->instructionPointers + Constant4() * 4 );
 			break;
 		case OP_NE:
 			EmitString( "83 EF 08" );    // sub	edi,8
@@ -392,7 +392,7 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 			EmitString( "3B 47 08" );    // cmp	eax, dword ptr [edi+8]
 			EmitString( "74 06" );       // je +6
 			EmitString( "FF 25" );       // jmp	[0x12345678]
-			Emit4( (int)vm->instructionPointers + Constant4() * 4 );
+			Emit4( (intptr_t)vm->instructionPointers + Constant4() * 4 );
 			break;
 		case OP_LTI:
 			EmitString( "83 EF 08" );    // sub	edi,8
@@ -400,7 +400,7 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 			EmitString( "3B 47 08" );    // cmp	eax, dword ptr [edi+8]
 			EmitString( "7D 06" );       // jnl +6
 			EmitString( "FF 25" );       // jmp	[0x12345678]
-			Emit4( (int)vm->instructionPointers + Constant4() * 4 );
+			Emit4( (intptr_t)vm->instructionPointers + Constant4() * 4 );
 			break;
 		case OP_LEI:
 			EmitString( "83 EF 08" );    // sub	edi,8
@@ -408,7 +408,7 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 			EmitString( "3B 47 08" );    // cmp	eax, dword ptr [edi+8]
 			EmitString( "7F 06" );       // jnle +6
 			EmitString( "FF 25" );       // jmp	[0x12345678]
-			Emit4( (int)vm->instructionPointers + Constant4() * 4 );
+			Emit4( (intptr_t)vm->instructionPointers + Constant4() * 4 );
 			break;
 		case OP_GTI:
 			EmitString( "83 EF 08" );    // sub	edi,8
@@ -416,7 +416,7 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 			EmitString( "3B 47 08" );    // cmp	eax, dword ptr [edi+8]
 			EmitString( "7E 06" );       // jng +6
 			EmitString( "FF 25" );       // jmp	[0x12345678]
-			Emit4( (int)vm->instructionPointers + Constant4() * 4 );
+			Emit4( (intptr_t)vm->instructionPointers + Constant4() * 4 );
 			break;
 		case OP_GEI:
 			EmitString( "83 EF 08" );    // sub	edi,8
@@ -424,7 +424,7 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 			EmitString( "3B 47 08" );    // cmp	eax, dword ptr [edi+8]
 			EmitString( "7C 06" );       // jnge +6
 			EmitString( "FF 25" );       // jmp	[0x12345678]
-			Emit4( (int)vm->instructionPointers + Constant4() * 4 );
+			Emit4( (intptr_t)vm->instructionPointers + Constant4() * 4 );
 			break;
 		case OP_LTU:
 			EmitString( "83 EF 08" );    // sub	edi,8
@@ -432,7 +432,7 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 			EmitString( "3B 47 08" );    // cmp	eax, dword ptr [edi+8]
 			EmitString( "73 06" );       // jnb +6
 			EmitString( "FF 25" );       // jmp	[0x12345678]
-			Emit4( (int)vm->instructionPointers + Constant4() * 4 );
+			Emit4( (intptr_t)vm->instructionPointers + Constant4() * 4 );
 			break;
 		case OP_LEU:
 			EmitString( "83 EF 08" );    // sub	edi,8
@@ -440,7 +440,7 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 			EmitString( "3B 47 08" );    // cmp	eax, dword ptr [edi+8]
 			EmitString( "77 06" );       // jnbe +6
 			EmitString( "FF 25" );       // jmp	[0x12345678]
-			Emit4( (int)vm->instructionPointers + Constant4() * 4 );
+			Emit4( (intptr_t)vm->instructionPointers + Constant4() * 4 );
 			break;
 		case OP_GTU:
 			EmitString( "83 EF 08" );    // sub	edi,8
@@ -448,7 +448,7 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 			EmitString( "3B 47 08" );    // cmp	eax, dword ptr [edi+8]
 			EmitString( "76 06" );       // jna +6
 			EmitString( "FF 25" );       // jmp	[0x12345678]
-			Emit4( (int)vm->instructionPointers + Constant4() * 4 );
+			Emit4( (intptr_t)vm->instructionPointers + Constant4() * 4 );
 			break;
 		case OP_GEU:
 			EmitString( "83 EF 08" );    // sub	edi,8
@@ -456,7 +456,7 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 			EmitString( "3B 47 08" );    // cmp	eax, dword ptr [edi+8]
 			EmitString( "72 06" );       // jnae +6
 			EmitString( "FF 25" );       // jmp	[0x12345678]
-			Emit4( (int)vm->instructionPointers + Constant4() * 4 );
+			Emit4( (intptr_t)vm->instructionPointers + Constant4() * 4 );
 			break;
 		case OP_EQF:
 			EmitString( "83 EF 08" );    // sub	edi,8
@@ -466,7 +466,7 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 			EmitString( "F6 C4 40" );    // test	ah,0x40
 			EmitString( "74 06" );       // je +6
 			EmitString( "FF 25" );       // jmp	[0x12345678]
-			Emit4( (int)vm->instructionPointers + Constant4() * 4 );
+			Emit4( (intptr_t)vm->instructionPointers + Constant4() * 4 );
 			break;
 		case OP_NEF:
 			EmitString( "83 EF 08" );    // sub	edi,8
@@ -476,7 +476,7 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 			EmitString( "F6 C4 40" );    // test	ah,0x40
 			EmitString( "75 06" );       // jne +6
 			EmitString( "FF 25" );       // jmp	[0x12345678]
-			Emit4( (int)vm->instructionPointers + Constant4() * 4 );
+			Emit4( (intptr_t)vm->instructionPointers + Constant4() * 4 );
 			break;
 		case OP_LTF:
 			EmitString( "83 EF 08" );    // sub	edi,8
@@ -486,7 +486,7 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 			EmitString( "F6 C4 01" );    // test	ah,0x01
 			EmitString( "74 06" );       // je +6
 			EmitString( "FF 25" );       // jmp	[0x12345678]
-			Emit4( (int)vm->instructionPointers + Constant4() * 4 );
+			Emit4( (intptr_t)vm->instructionPointers + Constant4() * 4 );
 			break;
 		case OP_LEF:
 			EmitString( "83 EF 08" );    // sub	edi,8
@@ -496,7 +496,7 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 			EmitString( "F6 C4 41" );    // test	ah,0x41
 			EmitString( "74 06" );       // je +6
 			EmitString( "FF 25" );       // jmp	[0x12345678]
-			Emit4( (int)vm->instructionPointers + Constant4() * 4 );
+			Emit4( (intptr_t)vm->instructionPointers + Constant4() * 4 );
 			break;
 		case OP_GTF:
 			EmitString( "83 EF 08" );    // sub	edi,8
@@ -506,7 +506,7 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 			EmitString( "F6 C4 41" );    // test	ah,0x41
 			EmitString( "75 06" );       // jne +6
 			EmitString( "FF 25" );       // jmp	[0x12345678]
-			Emit4( (int)vm->instructionPointers + Constant4() * 4 );
+			Emit4( (intptr_t)vm->instructionPointers + Constant4() * 4 );
 			break;
 		case OP_GEF:
 			EmitString( "83 EF 08" );    // sub	edi,8
@@ -516,7 +516,7 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 			EmitString( "F6 C4 01" );    // test	ah,0x01
 			EmitString( "75 06" );       // jne +6
 			EmitString( "FF 25" );       // jmp	[0x12345678]
-			Emit4( (int)vm->instructionPointers + Constant4() * 4 );
+			Emit4( (intptr_t)vm->instructionPointers + Constant4() * 4 );
 			break;
 		case OP_NEGI:
 			EmitString( "F7 1F" );       // neg dword ptr [edi]
@@ -669,7 +669,7 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 			EmitString( "B8" );          // mov eax, datamask
 			Emit4( vm->dataMask );
 			EmitString( "BB" );          // mov ebx, database
-			Emit4( (int)vm->dataBase );
+			Emit4( (intptr_t)vm->dataBase );
 			EmitString( "23 F0" );       // and esi, eax
 			EmitString( "03 F3" );       // add esi, ebx
 			EmitString( "23 F8" );       // and edi, eax
@@ -685,7 +685,7 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 			EmitString( "8B 47 04" );    // mov eax,dword ptr [edi+4]
 			// FIXME: range check
 			EmitString( "FF 24 85" );    // jmp dword ptr [instructionPointers + eax * 4]
-			Emit4( (int)vm->instructionPointers );
+			Emit4( (intptr_t)vm->instructionPointers );
 			break;
 		default:
 			Com_Error( ERR_DROP, "VM_CompileX86: bad opcode %i at offset %i", op, pc );
@@ -702,7 +702,7 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 
 	// offset all the instruction pointers for the new location
 	for ( i = 0 ; i < header->instructionCount ; i++ ) {
-		vm->instructionPointers[i] += (int)vm->codeBase;
+		vm->instructionPointers[i] += (intptr_t)vm->codeBase;
 	}
 
 #if 0 // ndef _WIN32
@@ -712,9 +712,9 @@ void VM_Compile( vm_t *vm, vmHeader_t *header ) {
 		unsigned long addr;
 		int psize = getpagesize();
 
-		addr = ( (int)vm->codeBase & ~( psize - 1 ) ) - psize;
+		addr = ( (intptr_t)vm->codeBase & ~( psize - 1 ) ) - psize;
 
-		r = mprotect( (char*)addr, vm->codeLength + (int)vm->codeBase - addr + psize,
+		r = mprotect( (char*)addr, vm->codeLength + (intptr_t)vm->codeBase - addr + psize,
 					  PROT_READ | PROT_WRITE | PROT_EXEC );
 
 		if ( r < 0 ) {

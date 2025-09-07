@@ -537,13 +537,13 @@ static qboolean GLW_CreateWindow( const char *drivername, int width, int height,
 		memset( &wc, 0, sizeof( wc ) );
 
 		wc.style         = 0;
-		wc.lpfnWndProc   = (WNDPROC) glw_state.wndproc;
+		wc.lpfnWndProc   = (WNDPROC) MainWndProc;
 		wc.cbClsExtra    = 0;
 		wc.cbWndExtra    = 0;
 		wc.hInstance     = g_wv.hInstance;
 		wc.hIcon         = LoadIcon( g_wv.hInstance, MAKEINTRESOURCE( IDI_ICON1 ) );
 		wc.hCursor       = LoadCursor( NULL,IDC_ARROW );
-		wc.hbrBackground = (void *)COLOR_GRAYTEXT;
+		wc.hbrBackground = (HBRUSH)COLOR_GRAYTEXT;
 		wc.lpszMenuName  = 0;
 		wc.lpszClassName = WINDOW_CLASS_NAME;
 
@@ -1243,10 +1243,10 @@ void GLimp_Init( void ) {
 
 	// save off hInstance and wndproc
 	cv = ri.Cvar_Get( "win_hinstance", "", 0 );
-	sscanf( cv->string, "%i", (int *)&g_wv.hInstance );
+	sscanf( cv->string, "%llu", (intptr_t *)&g_wv.hInstance );
 
 	cv = ri.Cvar_Get( "win_wndproc", "", 0 );
-	sscanf( cv->string, "%i", (int *)&glw_state.wndproc );
+	sscanf( cv->string, "%llu", (intptr_t *)&glw_state.wndproc );
 
 	r_allowSoftwareGL = ri.Cvar_Get( "r_allowSoftwareGL", "0", CVAR_LATCH );
 	r_maskMinidriver = ri.Cvar_Get( "r_maskMinidriver", "0", CVAR_LATCH );
@@ -1429,44 +1429,7 @@ HANDLE renderCommandsEvent;
 HANDLE renderCompletedEvent;
 HANDLE renderActiveEvent;
 
-void ( *glimpRenderThread )( void );
 
-void __RPC_CALLEE GLimp_RenderThreadWrapper( void ) {
-	glimpRenderThread();
-
-	// unbind the context before we die
-	qwglMakeCurrent( glw_state.hDC, NULL );
-}
-
-/*
-=======================
-GLimp_SpawnRenderThread
-=======================
-*/
-HANDLE renderThreadHandle;
-int renderThreadId;
-qboolean GLimp_SpawnRenderThread( void ( *function )( void ) ) {
-
-	renderCommandsEvent = CreateEvent( NULL, TRUE, FALSE, NULL );
-	renderCompletedEvent = CreateEvent( NULL, TRUE, FALSE, NULL );
-	renderActiveEvent = CreateEvent( NULL, TRUE, FALSE, NULL );
-
-	glimpRenderThread = function;
-
-	renderThreadHandle = CreateThread(
-		NULL,   // LPSECURITY_ATTRIBUTES lpsa,
-		0,      // DWORD cbStack,
-		(LPTHREAD_START_ROUTINE)GLimp_RenderThreadWrapper,  // LPTHREAD_START_ROUTINE lpStartAddr,
-		0,          // LPVOID lpvThreadParm,
-		0,          //   DWORD fdwCreate,
-		(LPDWORD)&renderThreadId );
-
-	if ( !renderThreadHandle ) {
-		return qfalse;
-	}
-
-	return qtrue;
-}
 
 static void    *smpData;
 static int wglErrors;

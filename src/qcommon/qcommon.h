@@ -378,6 +378,22 @@ VIRTUAL MACHINE
 ==============================================================
 */
 
+
+typedef union {
+	float f;
+	int i;
+	unsigned int ui;
+} floatint_t;
+
+static inline float iptrtof(intptr_t x)
+{
+	floatint_t fi;
+	fi.i = (int) x;
+	return fi.f;
+}
+#define	VMF(x)	iptrtof(args[x])
+#define VMA( x ) ( (void *) args[x] )
+
 typedef struct vm_s vm_t;
 
 typedef enum {
@@ -405,7 +421,7 @@ typedef enum {
 } sharedTraps_t;
 
 void    VM_Init( void );
-vm_t    *VM_Create( const char *module, int ( *systemCalls )( int * ),
+vm_t    *VM_Create( const char *module, intptr_t( *systemCalls )(intptr_t* ),
 					vmInterpret_t interpret );
 // module should be bare: "cgame", not "cgame.dll" or "vm/cgame.qvm"
 
@@ -413,12 +429,12 @@ void    VM_Free( vm_t *vm );
 void    VM_Clear( void );
 vm_t    *VM_Restart( vm_t *vm );
 
-int QDECL VM_Call( vm_t *vm, int callNum, ... );
+intptr_t QDECL VM_Call( vm_t *vm, intptr_t callNum, ... );
 
 void    VM_Debug( int level );
 
-void    *VM_ArgPtr( int intValue );
-void    *VM_ExplicitArgPtr( vm_t *vm, int intValue );
+void* VM_ArgPtr( intptr_t intValue );
+void* VM_ExplicitArgPtr( vm_t *vm, intptr_t intValue );
 
 /*
 ==============================================================
@@ -1063,8 +1079,8 @@ void Sys_LeaveCriticalSection( void *ptr );
 // FIXME: wants win32 implementation
 char* Sys_GetDLLName( const char *name );
 // fqpath param added 2/15/02 by T.Ray - Sys_LoadDll is only called in vm.c at this time
-void    * QDECL Sys_LoadDll( const char *name, char *fqpath, int( QDECL * *entryPoint ) ( int, ... ),
-							 int ( QDECL * systemcalls )( int, ... ) );
+void    * QDECL Sys_LoadDll( const char *name, char *fqpath, intptr_t( QDECL * *entryPoint ) ( intptr_t, ... ),
+							 intptr_t ( QDECL * systemcalls )( intptr_t, ... ) );
 void    Sys_UnloadDll( void *dllHandle );
 
 void    Sys_UnloadGame( void );
@@ -1166,23 +1182,33 @@ int StatHuff_WriteSymbol(int symbol, byte* buffer, int bitIndex); // returns the
 #define CL_ENCODE_START     12
 #define CL_DECODE_START     4
 
+
 // TTimo
 // dll checksuming stuff, centralizing OS-dependent parts
 // *_SHIFT is the shifting we applied to the reference string
 
 #if defined( _WIN32 )
 
-// qagame_mp_x86.dll
+
 #define SYS_DLLNAME_QAGAME_SHIFT 6
-#define SYS_DLLNAME_QAGAME "wgmgskesve~><4jrr"
-
-// cgame_mp_x86.dll
 #define SYS_DLLNAME_CGAME_SHIFT 2
-#define SYS_DLLNAME_CGAME "eicogaoraz:80fnn"
-
-// ui_mp_x86.dll
 #define SYS_DLLNAME_UI_SHIFT 5
-#define SYS_DLLNAME_UI "zndrud}=;3iqq"
+
+#if id386
+	// qagame_mp_x86.dll
+	#define SYS_DLLNAME_QAGAME "wgmgskesve~><4jrr"
+	// cgame_mp_x86.dll
+	#define SYS_DLLNAME_CGAME "eicogaoraz:80fnn"
+	// ui_mp_x86.dll
+	#define SYS_DLLNAME_UI "zndrud}=;3iqq"
+#elif idx64
+	// qagame_mp_x64.dll
+	#define SYS_DLLNAME_QAGAME "wgmgskesve~<:4jrr"
+	// cgame_mp_x64.dll
+	#define SYS_DLLNAME_CGAME "eicogaoraz860fnn"
+	// ui_mp_x64.dll
+	#define SYS_DLLNAME_UI "zndrud};93iqq"
+#endif
 
 #elif defined( __linux__ )
 

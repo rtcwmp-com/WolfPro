@@ -257,7 +257,7 @@ rhiTexture RHI_CreateTexture(const rhiTextureDesc *desc)
     assert(__popcnt(desc->initialState) == 1);
     assert((desc->initialState & desc->allowedStates) != 0);
 
-    const qbool ownsImage = desc->nativeImage == VK_NULL_HANDLE;
+    const qbool ownsImage = (qbool)(desc->nativeImage == 0);
     
 
     VkImage image = VK_NULL_HANDLE;

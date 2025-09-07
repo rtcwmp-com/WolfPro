@@ -64,5 +64,7 @@ if(JPEGTURBO_FOUND)
 	set(CMAKE_REQUIRED_LIBRARIES ${JPEG_LIBRARY})
 	# FIXME: function is checked, but HAVE_JPEG_MEM_SRC is empty. Why?
 	check_function_exists("jpeg_mem_src" HAVE_JPEG_MEM_SRC)
+	message(STATUS "JPEG Include dir: " ${JPEG_INCLUDE_DIR})
+	message(STATUS "JPEG library: " ${JPEG_LIBRARY})
 endif()
 

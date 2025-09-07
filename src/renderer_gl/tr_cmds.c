@@ -89,15 +89,6 @@ R_InitCommandBuffers
 */
 void R_InitCommandBuffers( void ) {
 	glConfig.smpActive = qfalse;
-	if ( r_smp->integer ) {
-		ri.Printf( PRINT_ALL, "Trying SMP acceleration...\n" );
-		if ( GLimp_SpawnRenderThread( RB_RenderThread ) ) {
-			ri.Printf( PRINT_ALL, "...succeeded.\n" );
-			glConfig.smpActive = qtrue;
-		} else {
-			ri.Printf( PRINT_ALL, "...failed.\n" );
-		}
-	}
 }
 
 /*
@@ -208,9 +199,10 @@ void *R_GetCommandBuffer( int bytes ) {
 		return NULL;
 	}
 	cmdList = &backEndData[tr.smpFrame]->commands;
+	bytes = PAD(bytes, sizeof(void *));
 
 	// always leave room for the end of list command
-	if ( cmdList->used + bytes + 4 > MAX_RENDER_COMMANDS ) {
+	if ( cmdList->used + bytes + sizeof(int) + PAD( sizeof( swapBuffersCommand_t ), sizeof(void *) ) > MAX_RENDER_COMMANDS ) {
 		if ( bytes > MAX_RENDER_COMMANDS - 4 ) {
 			ri.Error( ERR_FATAL, "R_GetCommandBuffer: bad size %i", bytes );
 		}

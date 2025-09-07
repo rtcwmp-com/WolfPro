@@ -142,12 +142,20 @@ If you have questions concerning this license or the applicable additional terms
 #define CPUSTRING   "win-x86"
 #elif defined _M_ALPHA
 #define CPUSTRING   "win-AXP"
+#elif defined __amd64__
+#define CPUSTRING   "win-x64"
+#undef idx64
+#define idx64 1
 #endif
 #else
 #ifdef _M_IX86
 #define CPUSTRING   "win-x86-debug"
 #elif defined _M_ALPHA
 #define CPUSTRING   "win-AXP-debug"
+#elif defined __amd64__
+#define CPUSTRING   "win-x64"
+#undef idx64
+#define idx64 1
 #endif
 #endif
 
@@ -155,6 +163,14 @@ If you have questions concerning this license or the applicable additional terms
 #define PATH_SEP '\\'
 
 #endif
+
+#define Com_Memset memset
+#define Com_Memcpy memcpy
+
+#define PAD(base, alignment)	(((base)+(alignment)-1) & ~((alignment)-1))
+#define PADLEN(base, alignment)	(PAD((base), (alignment)) - (base))
+
+#define PADP(base, alignment)	((void *) PAD((intptr_t) (base), (alignment)))
 
 //======================= MAC OS X SERVER DEFINES =====================
 
@@ -263,6 +279,10 @@ static inline float idSqrt( float x ) {
 #define CPUSTRING   "linux-i386"
 #elif defined __axp__
 #define CPUSTRING   "linux-alpha"
+#elif defined __amd64__
+#undef idx64
+#define idx64 1
+#define CPUSTRING "linux-amd64"
 #else
 #define CPUSTRING   "linux-other"
 #endif
@@ -428,8 +448,6 @@ void Snd_Memset( void* dest, const int val, const size_t count );
 #define Snd_Memset Com_Memset
 #endif
 
-void Com_Memset( void* dest, const int val, const size_t count );
-void Com_Memcpy( void* dest, const void* src, const size_t count );
 
 #define CIN_system  1
 #define CIN_loop    2

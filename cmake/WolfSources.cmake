@@ -12,11 +12,10 @@ FILE(GLOB QCOMMON
 	"src/game/q_shared.h"
 	"src/game/q_math.c"
 )
-
-if(UNIX)
-	FILE(GLOB COMMON_SRC_REMOVE
+FILE(GLOB COMMON_SRC_REMOVE
 		"src/qcommon/vm_x86.c"
 	)
+if(UNIX)
 	FILE(GLOB SDL_SRC
 		"src/unix/sdl_*.c"
 	)

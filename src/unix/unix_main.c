@@ -705,6 +705,8 @@ qboolean CopyDLLForMod( char **p_fn, const char* gamedir, const char *pwdpath, c
 char* Sys_GetDLLName( const char *name ) {
 #if defined __i386__
 	return va( "%s.mp.i386.so", name );
+#elif defined idx64
+	return va( "%s.mp.x64.so", name );
 #elif defined __powerpc__
 	return va( "%s.mp.ppc.so", name );
 #elif defined __axp__
@@ -717,10 +719,10 @@ char* Sys_GetDLLName( const char *name ) {
 }
 
 void *Sys_LoadDll( const char *name, char *fqpath,
-				   int( **entryPoint ) ( int, ... ),
-				   int ( *systemcalls )( int, ... ) ) {
+				   intptr_t( **entryPoint ) ( intptr_t, ... ),
+				   intptr_t ( *systemcalls )( intptr_t, ... ) ) {
 	void *libHandle;
-	void ( *dllEntry )( int ( *syscallptr )( int, ... ) );
+	void ( *dllEntry )( intptr_t ( *syscallptr )( intptr_t, ... ) );
 	char fname[MAX_OSPATH];
 	char  *pwdpath;
 	char  *homepath;

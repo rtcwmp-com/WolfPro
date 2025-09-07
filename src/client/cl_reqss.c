@@ -64,6 +64,7 @@ void CL_GenerateSS(char* address, char* hookid, char* hooktoken, char* waittime,
 
 	if (clc.demoplaying || cls.state == CA_CINEMATIC || cls.state < CA_ACTIVE)
 	{
+		free(SS_info);
 		return;
 	}
 

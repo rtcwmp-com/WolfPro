@@ -93,16 +93,16 @@ rem ***************************************************************************
 
 :fetchDeps
 	rem assume we are being called inside a project, do stuff inside a directory
-	if not exist "deps" (
-		mkdir deps
+	if not exist "deps64" (
+		mkdir deps64
 	)
-	cd deps
+	cd deps64
 
 	echo Fetching Dependencies...
 
 	if not exist "curl" (
 		echo curl...
-		call powershell "Invoke-WebRequest -Uri https://curl.se/windows/latest.cgi?p=win32-mingw.zip -Out curl.zip"
+		call powershell "Invoke-WebRequest -Uri https://curl.se/windows/latest.cgi?p=win64-mingw.zip -Out curl.zip"
 		call powershell "Expand-Archive -Path curl.zip -DestinationPath curl"
 		call powershell "Get-ChildItem """curl\*\*""" | move-item -Destination """curl\""
 		call powershell "rm curl.zip"
@@ -138,7 +138,7 @@ rem ***************************************************************************
 		set SKIP_JANSSON=1
 	)
 :buildDeps
-	call "%PF%\%VC_PATH%\VC\Auxiliary\Build\vcvars32.bat"
+	call "%PF%\%VC_PATH%\VC\Auxiliary\Build\vcvars64.bat"
 	set ROOT_DEP_DIR=%cd%
 :buildCurl
 	if defined SKIP_CURL (
@@ -146,17 +146,20 @@ rem ***************************************************************************
 	)
 	cd "%ROOT_DEP_DIR%\curl"
 	cd bin
-	lib /def:libcurl.def /OUT:libcurl.lib /MACHINE:X86
+	lib /def:libcurl-x64.def /OUT:libcurl-x64.lib /MACHINE:X64
 	
 :buildLibJPEG
 	if defined SKIP_JPEG (
 		goto buildJansson
 	)
 	cd "%ROOT_DEP_DIR%\libjpeg-turbo"
+	set JPEG_SRC=%cd%
 	mkdir build
 	cd build
-	call cmake -G"%cmake_makefiles%" -A Win32  -DCMAKE_POLICY_VERSION_MINIMUM="3.5" -DCMAKE_BUILD_TYPE=Release ..
-	call "%PF%\%VC_PATH%\Common7\IDE\devenv.exe" libjpeg-turbo.sln /Build Release
+	rem call cmake -G"%cmake_makefiles%" -A x64  -DCMAKE_POLICY_VERSION_MINIMUM="3.5" -DCMAKE_BUILD_TYPE=Release %JPEG_SRC%
+	rem call "%PF%\%VC_PATH%\Common7\IDE\devenv.exe" libjpeg-turbo.sln /Build Release
+	call cmake -G"NMake Makefiles" -DCMAKE_POLICY_VERSION_MINIMUM="3.5" -DCMAKE_BUILD_TYPE=Release %JPEG_SRC%
+	nmake
 	call powershell "Get-ChildItem """..\src\*.h""" | copy-item -Destination """..\""
 	call powershell "Get-ChildItem """*.h""" | copy-item -Destination """..\""
 	
@@ -165,9 +168,10 @@ rem ***************************************************************************
 		goto harvest
 	)
 	cd "%ROOT_DEP_DIR%\jansson"
+	set JANSON_SRC=%cd%
 	mkdir build
 	cd build
-	call cmake -G"%cmake_makefiles%" -A Win32 -DCMAKE_POLICY_VERSION_MINIMUM="3.5" -DCMAKE_BUILD_TYPE=Release ..
+	call cmake -G"%cmake_makefiles%" -A x64 -DCMAKE_POLICY_VERSION_MINIMUM="3.5" -DCMAKE_BUILD_TYPE=Release -DJANSSON_BUILD_DOCS=OFF %JANSON_SRC%
 	call "%PF%\%VC_PATH%\Common7\IDE\devenv.exe" jansson.sln /Build Release
 	
 :harvest
@@ -177,8 +181,8 @@ rem ***************************************************************************
 	)
 	call powershell "Get-ChildItem """curl\bin\*.dll""" | copy-item -Destination """bin\""
 	call powershell "Get-ChildItem """curl\bin\*.lib""" | copy-item -Destination """bin\""
-	call powershell "Get-ChildItem """libjpeg-turbo\build\Release\*.dll""" | copy-item -Destination """bin\""
-	call powershell "Get-ChildItem """libjpeg-turbo\build\Release\*.lib""" | copy-item -Destination """bin\""
+	call powershell "Get-ChildItem """libjpeg-turbo\build\*.dll""" | copy-item -Destination """bin\""
+	call powershell "Get-ChildItem """libjpeg-turbo\build\*.lib""" | copy-item -Destination """bin\""
 	call powershell "Get-ChildItem """jansson\build\lib\Release\*.lib""" | copy-item -Destination """bin\""
 	echo Copy the DLL files from deps/bin to your RtcwPro install location where wolfMP.exe is
 	pause

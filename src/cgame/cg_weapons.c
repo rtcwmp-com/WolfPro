@@ -1490,7 +1490,7 @@ void CG_RegisterItemVisuals( int itemNum ) {
 
 	item = &bg_itemlist[ itemNum ];
 
-	memset( itemInfo, 0, sizeof( &itemInfo ) );
+	memset( itemInfo, 0, sizeof( *itemInfo ) );
 
 	for ( i = 0; i < MAX_ITEM_MODELS; i++ )
 		itemInfo->models[i] = trap_R_RegisterModel( item->world_model[i] );

@@ -87,11 +87,7 @@ void WIN_RegisterExceptionCommands(void);
 void WIN_EndTimePeriod(void);
 
 // window procedure
-LONG WINAPI MainWndProc(
-	HWND hWnd,
-	UINT uMsg,
-	WPARAM wParam,
-	LPARAM lParam );
+LRESULT CALLBACK MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
 
 void Conbuf_AppendText( const char *msg );
 

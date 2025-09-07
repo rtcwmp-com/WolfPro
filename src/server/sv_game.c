@@ -309,27 +309,21 @@ SV_GameSystemCalls
 The module is making a system call
 ====================
 */
-//rcg010207 - see my comments in VM_DllSyscall(), in qcommon/vm.c ...
-#if ( ( defined __linux__ ) && ( defined __powerpc__ ) ) || ( defined MACOS_X )
-#define VMA( x ) ( (void *) args[x] )
-#else
-#define VMA( x ) VM_ArgPtr( args[x] )
-#endif
 
-#define VMF( x )  ( (float *)args )[x]
 
-int SV_GameSystemCalls( int *args ) {
+
+intptr_t SV_GameSystemCalls(intptr_t* args ) {
 	switch ( args[0] ) {
 	case G_PRINT:
-		Com_Printf( "%s", VMA( 1 ) );
+		Com_Printf( "%s", (char*)VMA( 1 ) );
 		return 0;
 	case G_ERROR:
-		Com_Error( ERR_DROP, "%s", VMA( 1 ) );
+		Com_Error( ERR_DROP, "%s", (char*)VMA( 1 ) );
 		return 0;
 	case G_MILLISECONDS:
 		return Sys_Milliseconds();
 	case G_CVAR_REGISTER:
-		Cvar_Register( VMA( 1 ), VMA( 2 ), VMA( 3 ), args[4] );
+		Cvar_Register( VMA( 1 ), (const char*)VMA( 2 ), (const char*)VMA( 3 ), args[4] );
 		return 0;
 	case G_CVAR_UPDATE:
 		Cvar_Update( VMA( 1 ) );
@@ -340,32 +334,32 @@ int SV_GameSystemCalls( int *args ) {
 	case G_CVAR_VARIABLE_INTEGER_VALUE:
 		return Cvar_VariableIntegerValue( (const char *)VMA( 1 ) );
 	case G_CVAR_VARIABLE_STRING_BUFFER:
-		Cvar_VariableStringBuffer( VMA( 1 ), VMA( 2 ), args[3] );
+		Cvar_VariableStringBuffer((const char*)VMA( 1 ), (char*)VMA( 2 ), args[3] );
 		return 0;
 	case G_ARGC:
 		return Cmd_Argc();
 	case G_ARGV:
-		Cmd_ArgvBuffer( args[1], VMA( 2 ), args[3] );
+		Cmd_ArgvBuffer( args[1], (char*)VMA( 2 ), args[3] );
 		return 0;
 	case G_SEND_CONSOLE_COMMAND:
-		Cbuf_ExecuteText( args[1], VMA( 2 ) );
+		Cbuf_ExecuteText( args[1], (const char*)VMA( 2 ) );
 		return 0;
 
 	case G_FS_FOPEN_FILE:
-		return FS_FOpenFileByMode( VMA( 1 ), VMA( 2 ), args[3] );
+		return FS_FOpenFileByMode((const char*)VMA( 1 ), VMA( 2 ), args[3] );
 	case G_FS_READ:
-		FS_Read( VMA( 1 ), args[2], args[3] );
+		FS_Read( (void*)VMA( 1 ), args[2], args[3] );
 		return 0;
 	case G_FS_WRITE:
-		return FS_Write( VMA( 1 ), args[2], args[3] );
+		return FS_Write( (void*)VMA( 1 ), args[2], args[3] );
 	case G_FS_RENAME:
-		FS_Rename( VMA( 1 ), VMA( 2 ) );
+		FS_Rename((const char*)VMA( 1 ), (const char*)VMA( 2 ) );
 		return 0;
 	case G_FS_FCLOSE_FILE:
 		FS_FCloseFile( args[1] );
 		return 0;
 	case G_FS_GETFILELIST:
-		return FS_GetFileList( VMA( 1 ), VMA( 2 ), VMA( 3 ), args[4] );
+		return FS_GetFileList((const char*)VMA( 1 ), (const char*)VMA( 2 ), (char*)VMA( 3 ), args[4] );
 
 	case G_LOCATE_GAME_DATA:
 		SV_LocateGameData( VMA( 1 ), args[2], args[3], VMA( 4 ), args[5] );
@@ -854,7 +848,7 @@ int SV_GameSystemCalls( int *args ) {
 		return 0;
 
 	case TRAP_STRNCPY:
-		return (int)strncpy( VMA( 1 ), VMA( 2 ), args[3] );
+		return (intptr_t)strncpy( VMA( 1 ), VMA( 2 ), args[3] );
 
 	case TRAP_SIN:
 		return FloatAsInt( sin( VMF( 1 ) ) );

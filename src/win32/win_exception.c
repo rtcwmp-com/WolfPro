@@ -493,7 +493,7 @@ static qbool WIN_WouldDebuggingBeOkay()
 	//if (g_wv.monitorCount >= 2 || g_wv.hWnd == NULL)
 	//	return qtrue;
 
-	const qbool fullScreen = (GetWindowLongA(g_wv.hWnd, GWL_STYLE) & WS_POPUP) != 0;
+	const qbool fullScreen = (GetWindowLongPtr(g_wv.hWnd, GWL_STYLE) & WS_POPUP) != 0;
 	if (!fullScreen)
 		return qtrue;
 

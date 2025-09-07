@@ -1,7 +1,14 @@
 # - Find curl
 
+if(WOLF_64BITS)
+	set(DEPS deps64)
+	set(CURL_NAMES libcurl-x64)
+else()
+	set(DEPS deps)
+endif()
+
 find_path(CURL_INCLUDE_DIR curl
-	${PROJECT_SOURCE_DIR}/deps/curl/include/
+	${PROJECT_SOURCE_DIR}/${DEPS}/curl/include/
 	/usr/include
 	/usr/local/include
 	/sw/include
@@ -11,12 +18,12 @@ find_path(CURL_INCLUDE_DIR curl
 
 if(CMAKE_CROSSCOMPILING)
 find_library(CURL_LIBRARY
-	NAMES ${JPEG_NAMES} libcurl
+	NAMES ${CURL_NAMES} libcurl
 	PATHS
-    ${PROJECT_SOURCE_DIR}/deps/bin
-    ${PROJECT_SOURCE_DIR}/deps/curl/bin
-    ${PROJECT_SOURCE_DIR}/deps/curl/build
-	${PROJECT_SOURCE_DIR}/deps/curl/build-win
+    ${PROJECT_SOURCE_DIR}/${DEPS}/bin
+    ${PROJECT_SOURCE_DIR}/${DEPS}/curl/bin
+    ${PROJECT_SOURCE_DIR}/${DEPS}/curl/build
+	${PROJECT_SOURCE_DIR}/${DEPS}/curl/build-win
 	/usr/lib64
 	/usr/lib
 	/usr/local/lib64
@@ -27,12 +34,12 @@ find_library(CURL_LIBRARY
 )
 else()
 find_library(CURL_LIBRARY
-	NAMES ${JPEG_NAMES} libcurl
+	NAMES ${CURL_NAMES} libcurl
 	PATHS
-    ${PROJECT_SOURCE_DIR}/deps/bin
-    ${PROJECT_SOURCE_DIR}/deps/curl/bin
-    ${PROJECT_SOURCE_DIR}/deps/curl/build
-	${PROJECT_SOURCE_DIR}/deps/curl/build-win
+    ${PROJECT_SOURCE_DIR}/${DEPS}/bin
+    ${PROJECT_SOURCE_DIR}/${DEPS}/curl/bin
+    ${PROJECT_SOURCE_DIR}/${DEPS}/curl/build
+	${PROJECT_SOURCE_DIR}/${DEPS}/curl/build-win
 	/usr/lib64
 	/usr/lib
 	/usr/local/lib64

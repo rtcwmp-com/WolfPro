@@ -6,11 +6,16 @@
 #  JPEGTURBO_FOUND, If false, do not try to use libjpeg-turbo.
 # also defined, but not for general use are
 #  JPEG_LIBRARY, where to find the libjpeg-turbo library.
+if(WOLF_64BITS)
+	set(DEPS deps64)
+else()
+	set(DEPS deps)
+endif()
 
 find_path(JPEG_INCLUDE_DIR jconfig.h
-	${PROJECT_SOURCE_DIR}/deps/libjpeg-turbo	
-	${PROJECT_SOURCE_DIR}/deps/libjpeg-turbo/build
-	${PROJECT_SOURCE_DIR}/deps/libjpeg-turbo/build-win
+	${PROJECT_SOURCE_DIR}/${DEPS}/libjpeg-turbo	
+	${PROJECT_SOURCE_DIR}/${DEPS}/libjpeg-turbo/build
+	${PROJECT_SOURCE_DIR}/${DEPS}/libjpeg-turbo/build-win
 	/usr/include
 	/usr/local/include
 	/sw/include
@@ -22,9 +27,9 @@ if(CMAKE_CROSSCOMPILING)
 find_library(JPEG_LIBRARY
 	NAMES ${JPEG_NAMES} libjpeg-62
 	PATHS
-    ${PROJECT_SOURCE_DIR}/deps/bin
-    ${PROJECT_SOURCE_DIR}/deps/libjpeg-turbo/build
-	${PROJECT_SOURCE_DIR}/deps/libjpeg-turbo/build-win
+    ${PROJECT_SOURCE_DIR}/${DEPS}/bin
+    ${PROJECT_SOURCE_DIR}/${DEPS}/libjpeg-turbo/build
+	${PROJECT_SOURCE_DIR}/${DEPS}/libjpeg-turbo/build-win
 	/usr/lib64
 	/usr/lib
 	/usr/local/lib64
@@ -35,11 +40,11 @@ find_library(JPEG_LIBRARY
 )
 else()
 find_library(JPEG_LIBRARY
-	NAMES ${JPEG_NAMES} jpeg
+	NAMES ${JPEG_NAMES} jpeg-static
 	PATHS
-    ${PROJECT_SOURCE_DIR}/deps/bin
-    ${PROJECT_SOURCE_DIR}/deps/libjpeg-turbo/build
-	${PROJECT_SOURCE_DIR}/deps/libjpeg-turbo/build-win
+    ${PROJECT_SOURCE_DIR}/${DEPS}/bin
+    ${PROJECT_SOURCE_DIR}/${DEPS}/libjpeg-turbo/build
+	${PROJECT_SOURCE_DIR}/${DEPS}/libjpeg-turbo/build-win
 	/usr/lib64
 	/usr/lib
 	/usr/local/lib64
