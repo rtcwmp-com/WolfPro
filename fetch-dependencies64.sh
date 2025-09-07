@@ -162,9 +162,9 @@ mv *xwin* xwin
 
 cd $XWIN_DIR
 while : ; do
-	./xwin --arch x64 --accept-license download
-	./xwin --arch x64 --accept-license unpack
-	./xwin --arch x64 --accept-license splat --output .
+	./xwin --arch x86_64 --accept-license download
+	./xwin --arch x86_64 --accept-license unpack
+	./xwin --arch x86_64 --accept-license splat --output .
 	ret=$?
 	[[ $ret -ne 0 ]] || break
 done

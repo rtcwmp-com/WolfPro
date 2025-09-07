@@ -1,4 +1,4 @@
-all: clean dependencies binaries-linux binaries-windows build-pk3-crosscompiled
+all: clean dependencies64 binaries-linux64 binaries-windows64 build-pk3-crosscompiled
 
 dependencies:
 	cd .. && bash fetch-dependencies.sh
