@@ -2,13 +2,15 @@
 
 if(WOLF_64BITS)
 	set(DEPS deps64)
-	set(CURL_NAMES libcurl-x64)
+	set(CURL_NAMES libcurl-x64 curl-x64 libcurl.a)
+	message(${CURL_NAMES})
 else()
 	set(DEPS deps)
 endif()
 
 find_path(CURL_INCLUDE_DIR curl
 	${PROJECT_SOURCE_DIR}/${DEPS}/curl/include/
+	${PROJECT_SOURCE_DIR}/${DEPS}/curl/build/include/
 	/usr/include
 	/usr/local/include
 	/sw/include
@@ -38,7 +40,7 @@ find_library(CURL_LIBRARY
 	PATHS
     ${PROJECT_SOURCE_DIR}/${DEPS}/bin
     ${PROJECT_SOURCE_DIR}/${DEPS}/curl/bin
-    ${PROJECT_SOURCE_DIR}/${DEPS}/curl/build
+    ${PROJECT_SOURCE_DIR}/${DEPS}/curl/build/lib
 	${PROJECT_SOURCE_DIR}/${DEPS}/curl/build-win
 	/usr/lib64
 	/usr/lib
