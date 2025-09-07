@@ -771,18 +771,6 @@ static int GetConfigString( int index, char *buf, int size ) {
 	return qtrue;
 }
 
-/*
-====================
-FloatAsInt
-====================
-*/
-static int FloatAsInt( float f ) {
-	int temp;
-
-	*(float *)&temp = f;
-
-	return temp;
-}
 
 
 /*

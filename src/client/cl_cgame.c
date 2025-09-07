@@ -514,13 +514,7 @@ void CL_ShutdownCGame( void ) {
 	cgvm = NULL;
 }
 
-static int  FloatAsInt( float f ) {
-	int temp;
 
-	*(float *)&temp = f;
-
-	return temp;
-}
 
 static qbool CL_CG_GetValue(char* value, int valueSize, const char* key)
 {

@@ -391,6 +391,13 @@ static inline float iptrtof(intptr_t x)
 	fi.i = (int) x;
 	return fi.f;
 }
+
+static inline int  FloatAsInt( float f ) {
+	floatint_t fl;
+	fl.f = f;
+	return fl.i;
+}
+
 #define	VMF(x)	iptrtof(args[x])
 #define VMA( x ) ( (void *) args[x] )
 
