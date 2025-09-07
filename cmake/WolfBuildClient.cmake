@@ -92,5 +92,10 @@ install(FILES $<TARGET_PDB_FILE:ui> DESTINATION ${INSTALL_DEFAULT_BASEDIR}/${MOD
 install(FILES $<TARGET_PDB_FILE:cgame> DESTINATION ${INSTALL_DEFAULT_BASEDIR}/${MODNAME} OPTIONAL)
 endfunction()
 
-setup_client(wolfmp_gl FALSE)
-setup_client(wolfmp_vk TRUE)
+if(WOLF_64BITS)
+	setup_client(wolfmp_gl_x64 FALSE)
+	setup_client(wolfmp_vk_x64 TRUE)
+else()
+	setup_client(wolfmp_gl_x86 FALSE)
+	setup_client(wolfmp_vk_x86 TRUE)
+endif()
