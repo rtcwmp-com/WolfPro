@@ -31,7 +31,7 @@ binaries-windows:
 binaries-windows64:
 	mkdir -p ../build64
 	cd ../build64 && \
-	cmake .. -G Ninja -DCMAKE_TOOLCHAIN_FILE="../cmake/clang-cl-msvc.cmake" -DHOST_ARCH=x64 -DLLVM_NATIVE_TOOLCHAIN=/usr/ -DMSVC_BASE=../deps/xwin/crt -DWINSDK_BASE=../deps/xwin/sdk -DBUILD_CLIENT=OFF -DCMAKE_BUILD_TYPE=Release  && ninja
+	cmake .. -G Ninja -DCMAKE_TOOLCHAIN_FILE="../cmake/clang-cl-msvc.cmake" -DHOST_ARCH=x64 -DLLVM_NATIVE_TOOLCHAIN=/usr/ -DMSVC_BASE=../deps64/xwin/crt -DWINSDK_BASE=../deps64/xwin/sdk -DBUILD_CLIENT=OFF -DCMAKE_BUILD_TYPE=Release  && ninja
 	cd ../build && rm -rf CMakeCache.txt CMakeFiles cmake_install.cmake *.lib build.ninja *.user
 
 build-pk3-crosscompiled:

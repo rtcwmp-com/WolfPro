@@ -152,6 +152,7 @@ if(CURL_FOUND)
 endif()
 
 add_library(cimgui STATIC ${RENDERER_CIMGUI_FILES})
+set_property(TARGET cimgui PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_include_directories(cimgui PRIVATE src/cimgui)
 
 set_target_properties(cimgui PROPERTIES
