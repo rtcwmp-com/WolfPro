@@ -2,7 +2,7 @@
 
 if(WOLF_64BITS)
 	set(DEPS deps64)
-	set(CURL_NAMES libcurl-x64 curl-x64 libcurl.a)
+	set(CURL_NAMES libcurl-x64 curl-x64)
 	message(${CURL_NAMES})
 else()
 	set(DEPS deps)
