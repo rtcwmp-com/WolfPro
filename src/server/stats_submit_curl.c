@@ -1,7 +1,7 @@
 //#include "../game/g_local.h"
 #include "../game/q_shared.h"
-#include "qcommon.h"
-#include "http.h"
+#include "../qcommon/qcommon.h"
+#include "../qcommon/http.h"
 #include <curl/curl.h>
 #include <sys/stat.h>
 #include <fcntl.h>

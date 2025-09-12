@@ -875,6 +875,9 @@ void SV_Init( void ) {
 	sv_dl_maxRate = Cvar_Get( "sv_dl_maxRate", "60000", CVAR_ARCHIVE );
 #endif
 
+	sv_serverIP = Cvar_Get("sv_serverIP", "", CVAR_LATCH);
+	sv_serverCountry = Cvar_Get("sv_serverCountry", "", CVAR_SERVERINFO | CVAR_ROM);
+
 	// initialize bot cvars so they are listed and can be set before loading the botlib
 	SV_BotInitCvars();
 

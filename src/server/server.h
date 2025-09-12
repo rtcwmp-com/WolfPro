@@ -315,6 +315,9 @@ extern cvar_t  *sv_gameskill;
 // TTimo - autodl
 extern cvar_t *sv_dl_maxRate;
 
+extern cvar_t	*sv_serverIP;
+extern cvar_t	*sv_serverCountry;
+
 
 //===========================================================
 

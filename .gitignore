@@ -2,6 +2,7 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=c,linux,windows,cmake,c++
 
 deps/*
+deps64/*
 src/.vs
 build/*
 docker/dockerfiles/build/*

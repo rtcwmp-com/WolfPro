@@ -1,8 +1,8 @@
 # - Find jansson
 set(JANSSON_NAMES libjansson.a jansson )
 find_path(JANSSON_INCLUDE_DIR jansson.h
+	${PROJECT_SOURCE_DIR}/deps/jansson/build-win/include
 	${PROJECT_SOURCE_DIR}/deps/jansson/build/include/
-	${PROJECT_SOURCE_DIR}/deps/jansson/build-win/include/
 	/usr/include
 	/usr/local/include
 	/sw/include
@@ -14,10 +14,6 @@ if(CMAKE_CROSSCOMPILING)
 find_library(JANSSON_LIBRARY
 	NAMES ${JANSSON_NAMES} libjansson
 	PATHS
-    ${PROJECT_SOURCE_DIR}/deps/bin
-    ${PROJECT_SOURCE_DIR}/deps/jansson/bin
-    ${PROJECT_SOURCE_DIR}/deps/jansson/build/lib/Release
-	${PROJECT_SOURCE_DIR}/deps/jansson/build/lib
 	${PROJECT_SOURCE_DIR}/deps/jansson/build-win/lib
 	/usr/lib64
 	/usr/lib

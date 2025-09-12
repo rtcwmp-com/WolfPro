@@ -236,8 +236,9 @@ set(COMPILE_FLAGS
     -D_CRT_SECURE_NO_WARNINGS
     --target=${TRIPLE_ARCH}-windows-msvc
     -fms-compatibility-version=19.11
-    /winsdkdir ../deps/xwin/sdk 
-    /vctoolsdir ../deps/xwin/crt)
+    /winsdkdir ${WINSDK_BASE} 
+    /vctoolsdir ${MSVC_BASE})
+
 
 if(case_sensitive_filesystem)
   # Ensure all sub-configures use the top-level VFS overlay instead of generating their own.
