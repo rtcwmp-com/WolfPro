@@ -99,6 +99,8 @@ cvar_t  *cl_updatefiles;
 
 cvar_t* cl_demoPlayer;
 
+cvar_t *cl_guid;
+
 clientActive_t cl;
 clientConnection_t clc;
 clientStatic_t cls;
@@ -2781,6 +2783,8 @@ void CL_Init( void ) {
 	cl_motdString = Cvar_Get( "cl_motdString", "", CVAR_ROM );
 
 	cl_demoPlayer = Cvar_Get("cl_demoPlayer", "1", CVAR_ARCHIVE);
+
+	cl_guid = Cvar_Get("cl_guid", NO_GUID, CVAR_ROM | CVAR_USERINFO );
 
 
 	Cvar_Get( "cl_maxPing", "800", CVAR_ARCHIVE );

@@ -200,6 +200,7 @@ typedef struct client_s {
 	// buffer them into this queue, and hand them out to netchan as needed
 	netchan_buffer_t *netchan_start_queue;
 	netchan_buffer_t **netchan_end_queue;
+	char guid[GUID_LEN];
 } client_t;
 
 //=============================================================================
