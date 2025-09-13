@@ -79,6 +79,9 @@ cvar_t  *sv_gameskill;
 
 cvar_t  *sv_showAverageBPS;     // NERVE - SMF - net debugging
 
+cvar_t *sv_serverIP;
+cvar_t *sv_serverCountry;
+
 void SVC_GameCompleteStatus( netadr_t from );       // NERVE - SMF
 
 /*

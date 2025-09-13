@@ -312,7 +312,7 @@ void G_WriteSessionData( void ) {
 		}
 		if ( level.resetStats ) {
 			G_deleteStats( level.sortedClients[i] );
-			//if (g_currentRound.integer == 1 && g_gameStatslog.integer) G_read_round_jstats();
+			if (g_currentRound.integer == 1 && g_gameStatslog.integer) G_read_round_jstats();
 		}
 	}
 }

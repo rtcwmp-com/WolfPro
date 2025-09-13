@@ -640,6 +640,9 @@ void SetTeam( gentity_t *ent, char *s ) {
 	if (team != oldTeam) {
 		G_deleteStats(clientNum);
 	}
+
+	if (client->sess.sessionTeam == TEAM_BLUE || client->sess.sessionTeam == TEAM_RED)
+		G_read_round_jstats_reconnect(client); // if player reconnected read their stats back into the session
 }
 
 // DHM - Nerve
@@ -952,6 +955,9 @@ void G_Say( gentity_t *ent, gentity_t *target, int mode, const char *chatText ) 
 	default:
 	case SAY_ALL:
 		G_LogPrintf( "say: %s: %s\n", ent->client->pers.username, chatText );
+		if (g_gamestate.integer != GS_INTERMISSION) {
+			G_writeChatEvent(ent, chatText);
+		}
 		Com_sprintf( netname, sizeof( netname ), "%s%c%c: ", ent->client->pers.netname, Q_COLOR_ESCAPE, COLOR_WHITE );
 		Com_sprintf( username, sizeof( username ), "%s%c%c: ", ent->client->pers.username, Q_COLOR_ESCAPE, COLOR_WHITE );
 		color = COLOR_GREEN;

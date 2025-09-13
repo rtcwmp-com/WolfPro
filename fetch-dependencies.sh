@@ -76,20 +76,19 @@ rm $VER
 mv *jansson* jansson
 cd $JANSSON_DIR
 mkdir build
-mkdir build-win
-autoreconf -i
-CFLAGS="-m32" ./configure --prefix=${JANSSON_DIR}/build
-make -j
-make install
-
-autoreconf -i
-CFLAGS="-m32" ./configure --prefix=${JANSSON_DIR}/build-win --target=i686-w64-mingw32 --host=i686-w64-mingw32
-make -j
-make install
+cd build
+CFLAGS=-m32 CXXFLAGS=-m32 LDFLAGS=-m32 cmake .. -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY -DHAVE_GETTIMEOFDAY=0 -DHAVE_SCHED_YIELD=0 -DHAVE_SETLOCALE=0 -DJANSSON_BUILD_DOCS=OFF
+ninja
 cd $JANSSON_DIR
+
+mkdir build-win
 cd build-win
-gendef libjansson-4.dll
-i686-w64-mingw32-dlltool -d libjansson-4.def -l libjansson-4.lib
+cmake .. -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="${DEPS_ROOT}/../cmake/clang-cl-msvc.cmake" \
+         -DHOST_ARCH=x86 -DLLVM_NATIVE_TOOLCHAIN=/usr/ -DMSVC_BASE="${DEPS_ROOT}/xwin/crt" \
+		 -DWINSDK_BASE="${DEPS_ROOT}/xwin/sdk" -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
+		 -DHAVE_GETTIMEOFDAY=0 -DHAVE_SCHED_YIELD=0 -DHAVE_SETLOCALE=0 -DJANSSON_BUILD_DOCS=OFF \
+		 -DCMAKE_USER_MAKE_RULES_OVERRIDE="${DEPS_ROOT}/../cmake/CompilerOptions.cmake"
+ninja
 fi
 cd $DEPS_ROOT
 

@@ -1639,4 +1639,7 @@ qboolean Q_IsNumeric(const char* s);
 # define strtok_r strtok_s
 #endif
 
+#define GUID_LEN				33
+#define NO_GUID					"NO_GUID"
+
 #endif  // __Q_SHARED_H

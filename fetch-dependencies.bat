@@ -167,7 +167,7 @@ rem ***************************************************************************
 	cd "%ROOT_DEP_DIR%\jansson"
 	mkdir build
 	cd build
-	call cmake -G"%cmake_makefiles%" -A Win32 -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_BUILD_TYPE=Release ..
+	call cmake -G"%cmake_makefiles%" -A Win32 -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_BUILD_TYPE=Release -DJANSSON_STATIC_CRT=ON ..
 	call "%PF%\%VC_PATH%\Common7\IDE\devenv.exe" jansson.sln /Build Release
 	
 :harvest

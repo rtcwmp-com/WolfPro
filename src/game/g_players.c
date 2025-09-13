@@ -193,9 +193,9 @@ void pCmd_pauseHandle(gentity_t *ent, qboolean dPause) {
 		teamInfo[TEAM_BLUE].team_lock = qtrue;
 	}
 
-    // if (g_gameStatslog.integer) {
-    //     G_writeGeneralEvent (ent , ent, " ", (dPause) ? eventUnpause : eventPause);  // might want to distinguish between player and admin here?
-    // }
+    if (g_gameStatslog.integer) {
+        G_writeGeneralEvent (ent , ent, " ", (dPause) ? eventUnpause : eventPause);  // might want to distinguish between player and admin here?
+    }
 	return;
 }
 

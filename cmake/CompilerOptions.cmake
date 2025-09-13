@@ -1,0 +1,15 @@
+# log all *_INIT variables
+get_cmake_property(_varNames VARIABLES)
+list (REMOVE_DUPLICATES _varNames)
+list (SORT _varNames)
+foreach (_varName ${_varNames})
+    if (_varName MATCHES "_INIT$")
+        message(STATUS "${_varName}=${${_varName}}")
+        if(CMAKE_BUILD_TYPE MATCHES "Debug")
+            string(REPLACE "/MDd" "/MTd" ${_varName} "${${_varName}}")
+        else()
+            string(REPLACE "/MD" "/MT" ${_varName} "${${_varName}}")
+        endif()
+    endif()
+endforeach()
+

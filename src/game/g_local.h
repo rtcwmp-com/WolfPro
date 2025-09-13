@@ -79,6 +79,8 @@ If you have questions concerning this license or the applicable additional terms
 
 #define FL_NODRAW               0x01000000
 
+#define JSONGAMESTATVERSION "0.1.5"
+
 // movers are things like doors, plats, buttons, etc
 typedef enum {
 	MOVER_POS1,
@@ -542,6 +544,10 @@ typedef struct {
 	int spec_invite, specInvited, specLocked;
 	playerStats_t stats;
 	char* lastChatText;
+	char guid[GUID_LEN];		// Guid
+	int start_time;                 // player starts/begins game
+	int end_time;                   // player ends/leaves game
+
 } clientSession_t;
 
 //
@@ -759,6 +765,52 @@ struct gclient_s {
 #define MAX_SPAWN_VARS          64
 #define MAX_SPAWN_VARS_CHARS    2048
 
+typedef struct jsonStatInfo_s {
+   char  match_id[MAX_STRING_CHARS];
+   char  round_id[MAX_STRING_CHARS];
+   char  round_start[MAX_STRING_CHARS];
+   char  round_timelimit[MAX_STRING_CHARS];
+   char  gameStatslogFileName[256];
+   fileHandle_t gameStatslogFile; // for outputting events in a nice format (possibly temporary) - nihi
+} jsonStatInfo_t;
+
+typedef struct {
+	team_t sessionTeam;
+	char *guid;
+	char aliasColored[MAX_NETNAME];
+	char alias[MAX_NETNAME];
+	int start_time;
+	int damage_given;
+	int damage_received;
+	int deaths;
+	int kills;
+	int rounds;
+	int suicides;
+	int team_damage;
+	int team_kills;
+	int headshots;
+	int med_given;
+	int ammo_given;
+	int gibs;
+	int revives;
+	int acc_shots;
+	int acc_hits;
+	int efficiency;
+	int score;
+	int killPeak;
+	int knifeKills;
+	int obj_captured;
+	int obj_destroyed;
+	int obj_returned;
+	int obj_taken;
+	int obj_checkpoint;
+	int obj_killcarrier;
+	int obj_protectflag;
+	int dyn_planted;
+	int dyn_defused;
+	weapon_stat_t aWeaponStats[WS_MAX + 1];   // Weapon stats.  +1 to avoid invalid weapon check
+} jsonPlayerStats_t;
+
 typedef struct {
 	struct gclient_s    *clients;       // [maxclients]
 
@@ -916,6 +968,17 @@ typedef struct {
 
 	int sortedStats[MAX_CLIENTS];
 	qboolean resetStats;
+
+	int eventNum;  // event counter
+	jsonStatInfo_t jsonStatInfo;  // for stats match/round info
+	char* match_id; // for stats round matching...
+    char* round_id; //
+
+	int lastSSTime;
+
+	jsonPlayerStats_t playerStats[32];
+	jsonPlayerStats_t disconnectStats[12];
+	int disconnectCount;
 } level_locals_t;
 
 extern qboolean reloading;                  // loading up a savegame
@@ -1285,6 +1348,7 @@ void CountDown(void);
 void G_spawnPrintf(int print_type, int print_time, gentity_t *owner);
 void G_handlePause(qboolean dPause, int time);
 void G_loadMatchGame(void);
+char* GetLevelTime(void);
 
 // g_stats.c
 void G_matchClockDump( gentity_t *ent );  // temp addition for cg_autoaction issue
@@ -1446,9 +1510,17 @@ extern vmCvar_t	g_hitsounds;
 extern vmCvar_t g_allowEnemySpawnTimer;
 extern vmCvar_t g_spawnOffset; // random spawn offset for both teams, between 1 and cvar integer - 1
 
-extern vmCvar_t g_gameStatslog;
 extern vmCvar_t g_preciseTimeSet;	// RTCWPro precise timelimit set each round
 extern vmCvar_t	sv_hostname;
+
+extern vmCvar_t g_gameStatslog; 
+extern vmCvar_t g_statsDebug;
+extern vmCvar_t g_stats_curl_submit;
+extern vmCvar_t g_stats_curl_submit_URL;
+extern vmCvar_t g_stats_curl_submit_headers;
+extern vmCvar_t g_statsRetryCount;
+extern vmCvar_t g_statsRetryDelay;
+extern vmCvar_t g_apiquery_curl_URL;
 
 void    trap_Printf( const char *fmt );
 void    trap_Error( const char *fmt );
@@ -1663,6 +1735,8 @@ int     trap_GeneticParentsAndChildSelection( int numranks, float *ranks, int *p
 
 void    trap_SnapVector( float *v );
 void    trap_Cmd_ArgsFrom(int arg, char *buffer, int buffersize);
+int trap_RealTime( qtime_t *qtime );
+int     trap_submit_curlPost( char* jsonfile, char* matchid );
 
 typedef enum
 {
@@ -1733,6 +1807,24 @@ void G_TimeShiftAllClients(int time, gentity_t* skip);
 void G_UnTimeShiftAllClients(gentity_t* skip);
 
 void G_Hitsounds( gentity_t *target, gentity_t *attacker, int mod, qboolean headshot );
+
+// g_json.c
+int G_write_match_info( void );
+int G_read_round_jstats( void );
+int G_read_round_jstats_reconnect(gclient_t* client);
+void G_jstatsByTeam(qboolean wstats);
+void G_jstatsByPlayers(qboolean wstats, qboolean clientDisconnected, gclient_t *client);
+void G_writeGameInfo (int winner);
+void G_writeServerInfo (void);
+void G_writeDisconnectEvent (gentity_t* agent);
+//void G_writeDisconnectEvent (char* player);
+void G_writeObjectiveEvent (gentity_t* agent,int objType);
+void G_writeGameLogEnd(void);
+void G_writeGameEarlyExit(void);
+void G_writeClosingJson(void);
+void G_writeGeneralEvent (gentity_t* agent,gentity_t* other, char* weapon, int eventType);
+void G_writeChatEvent(gentity_t* agent, const char* chatText);
+char* LookupEventType(int eventyType);
 
 // Macros
 //
