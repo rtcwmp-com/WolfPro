@@ -530,6 +530,12 @@ void G_ExplodeMissile( gentity_t *ent ) {
 							hit->think = G_FreeEntity;
 							hit->nextthink = level.time + FRAMETIME;
 
+							if (g_gamestate.integer == GS_PLAYING)
+							{
+								G_writeObjectiveEvent(ent->parent, objDestroyed); // ent->parent = attacker
+								ent->parent->client->sess.stats.obj_destroyed++;
+							}
+
 							if ( ent->parent->client ) {
 								if ( ent->s.teamNum == ent->parent->client->sess.sessionTeam ) { // make sure player hasn't changed teams -- per atvi req
 									AddScore( ent->parent, hit->accuracy ); // set from map, see g_trigger

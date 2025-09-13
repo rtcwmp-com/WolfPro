@@ -1293,6 +1293,9 @@ const char* Q_itohex(uint64_t number, qbool uppercase, qbool prefix);
 
 extern int scr_recursiveUpdate;
 
+// stats_submit_curl.c
+int  submit_curlPost( char* jsonfile, char* matchid );
+
 
 #endif // _QCOMMON_H_
 

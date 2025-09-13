@@ -1887,6 +1887,8 @@ extern vmCvar_t cg_spawnTimer_set;
 extern vmCvar_t cg_autoAction;
 extern vmCvar_t cg_registeredPlayers;
 
+extern vmCvar_t cl_guid;
+
 //
 // cg_main.c
 //

@@ -316,9 +316,29 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 		obit = modNames[ meansOfDeath ];
 	}
 
-	G_LogPrintf( "Kill: %i %i %i: %s killed %s by %s\n",
-				 killer, self->s.number, meansOfDeath, killerName,
-				 self->client->pers.username, obit );
+	if (g_gamestate.integer == GS_PLAYING) // this is only on server side not needed during warmup
+	{
+		G_LogPrintf( "Kill: %i %i %i: %s killed %s by %s\n",
+					killer, self->s.number, meansOfDeath, killerName,
+					self->client->pers.username, obit );
+		
+		if (g_gameStatslog.integer) {
+			if (killer == self->s.number) {
+					G_writeGeneralEvent(self,self,obit,eventSuicide);
+			}
+			else if (OnSameTeam(attacker, self)) {
+				if ( attacker->client ) {
+					G_writeGeneralEvent(attacker,self,obit,eventTeamkill);
+				}
+			} else {
+				if ( attacker->client ) {
+					int weapID;
+					weapID = G_weapStatIndex_MOD( meansOfDeath );
+					G_writeGeneralEvent(attacker, self, va("%s", aWeaponInfo[weapID].pszName), eventKill);
+				}
+			}
+		}
+	}
 
 	// broadcast the death event to everyone
 	ent = G_TempEntity( self->r.currentOrigin, EV_OBITUARY );
@@ -407,9 +427,10 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 	}
 
 	if ( item ) {
-		launchvel[0] = crandom() * 20;
-		launchvel[1] = crandom() * 20;
-		launchvel[2] = 10 + random() * 10;
+		G_writeObjectiveEvent(self, objDropped  );
+		launchvel[0] = 0;
+		launchvel[1] = 0;
+		launchvel[2] = 40;
 
 		flag = LaunchItem( item,self->r.currentOrigin,launchvel,self->s.number );
 		flag->s.modelindex2 = self->s.otherEntityNum2; // JPW NERVE FIXME set player->otherentitynum2 with old modelindex2 from flag and restore here

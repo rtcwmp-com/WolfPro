@@ -572,27 +572,31 @@ void Svcmd_ResetMatch_f(qboolean fDoReset, qboolean fDoRestart) {
 	}
 
 	// fix stats for when map restarts occur
-	if (!fDoReset && fDoRestart  && g_gametype.integer == GT_WOLF_STOPWATCH) {
-		if (g_currentRound.integer == 1) {
-			/*
-			trap_GetConfigstring(CS_ROUNDINFO, cs, sizeof(cs));  // retrieve round/match info saved
-			buf = Info_ValueForKey(cs, "matchid");
-			*/
-			trap_Cvar_Set("g_swapteams", "1");  // horrible fix for the swapping of teams on mid-round 2 maprestarts
+	if (g_gamestate.integer == GS_PLAYING && g_gameStatslog.integer) {
+        G_writeGameEarlyExit();  // properly close current stats output
+        // fix stats for when map restarts occur
+        if (!fDoReset && fDoRestart  && g_gametype.integer == GT_WOLF_STOPWATCH) {
+            if (g_currentRound.integer == 1) {
+			    /*
+			    trap_GetConfigstring(CS_ROUNDINFO, cs, sizeof(cs));  // retrieve round/match info saved
+        		buf = Info_ValueForKey(cs, "matchid");
+        		*/
+                trap_Cvar_Set("g_swapteams", "1");  // horrible fix for the swapping of teams on mid-round 2 maprestarts
 
-			for ( i = 0; i < level.numPlayingClients; i++ ) {
-				gclient_t *cl = level.clients + level.sortedClients[i];
-				if ( cl->pers.connected != CON_CONNECTED) {
-					continue;
-				}
-				cl->sess.stats.rounds--; // don't count the half played game as a round...
+                for ( i = 0; i < level.numPlayingClients; i++ ) {
+                    gclient_t *cl = level.clients + level.sortedClients[i];
+                    if ( cl->pers.connected != CON_CONNECTED) {
+                        continue;
+                    }
+                    cl->sess.stats.rounds--; // don't count the half played game as a round...
 
-			}
-		}
-		else {
-			level.resetStats = qtrue;
-		}
-	}
+                }
+            }
+            else {
+                level.resetStats = qtrue;
+            }
+        }
+    }
 
 	if (fDoReset && g_gametype.integer == GT_WOLF_STOPWATCH) {
 		trap_Cvar_Set("g_currentRound", "0");
@@ -635,6 +639,10 @@ void Svcmd_SwapTeams_f() {
 		trap_Cvar_Set( "g_currentRound", "0" );
 		trap_Cvar_Set( "g_nextTimeLimit", "0" );
 	}
+
+	if (g_gamestate.integer == GS_PLAYING && g_gameStatslog.integer) {
+        G_writeGameEarlyExit();  // properly close current stats output
+    }
 
 	trap_Cvar_Set( "g_swapteams", "1" );
 	trap_SendConsoleCommand( EXEC_APPEND, va( "map_restart 0 %i\n", GS_WARMUP ) );

@@ -799,3 +799,7 @@ int trap_GeneticParentsAndChildSelection( int numranks, float *ranks, int *paren
 void trap_Cmd_ArgsFrom(int arg, char *buffer, int buffersize){
 	syscall(G_CMD_ARGSFROM, arg, buffer, buffersize);
 }
+
+int trap_submit_curlPost( char* jsonfile, char* matchid ) {
+	return syscall( G_SUBMIT_STATS_CURL, jsonfile, matchid );
+}
