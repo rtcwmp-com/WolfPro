@@ -171,8 +171,9 @@ rem ***************************************************************************
 	set JANSON_SRC=%cd%
 	mkdir build
 	cd build
-	call cmake -G"%cmake_makefiles%" -A x64 -DCMAKE_POLICY_VERSION_MINIMUM="3.5" -DCMAKE_BUILD_TYPE=Release -DJANSSON_BUILD_DOCS=OFF %JANSON_SRC%
-	call "%PF%\%VC_PATH%\Common7\IDE\devenv.exe" jansson.sln /Build Release
+	call cmake .. -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM="3.5" -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY -DHAVE_GETTIMEOFDAY=0 -DHAVE_SCHED_YIELD=0 -DHAVE_SETLOCALE=0 -DHAVE_SYNC_BUILTINS=0 -DJANSSON_BUILD_DOCS=OFF -DCMAKE_USER_MAKE_RULES_OVERRIDE="%ROOT_DEP_DIR%/../cmake/CompilerOptions.cmake"
+	
+	call ninja
 	
 :harvest
 	cd %ROOT_DEP_DIR%
@@ -183,6 +184,5 @@ rem ***************************************************************************
 	call powershell "Get-ChildItem """curl\bin\*.lib""" | copy-item -Destination """bin\""
 	call powershell "Get-ChildItem """libjpeg-turbo\build\*.dll""" | copy-item -Destination """bin\""
 	call powershell "Get-ChildItem """libjpeg-turbo\build\*.lib""" | copy-item -Destination """bin\""
-	call powershell "Get-ChildItem """jansson\build\lib\Release\*.lib""" | copy-item -Destination """bin\""
 	echo Copy the DLL files from deps/bin to your RtcwPro install location where wolfMP.exe is
 	pause

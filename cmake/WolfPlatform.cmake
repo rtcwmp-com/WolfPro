@@ -104,8 +104,14 @@ elseif(WIN32)
 			endif()
 
 			message(STATUS "Enabling AddressSanitizer for this configuration")
+			if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+			message(STATUS "Using clang ASAN for this configuration")
 			set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /fsanitize=address")
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fsanitize=address")
+			else()
+			set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /fsanitize=address")
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fsanitize=address")
+			endif()
 		endif()
 
 		# is using cl.exe the __FILE__ macro will not contain the full path to the file by default.

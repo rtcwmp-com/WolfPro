@@ -4,17 +4,12 @@ if(WOLF_64BITS)
 	set(DEPS deps64)
 	set(CURL_NAMES libcurl-x64 curl-x64)
 	message(${CURL_NAMES})
-else()
+endif()
+if(WOLF_32BITS)
 	set(DEPS deps)
+	set(CURL_NAMES curl)
 endif()
 
-if(WOLF_64BITS)
-	set(DEPS deps64)
-	set(CURL_NAMES libcurl-x64 curl-x64)
-	message(${CURL_NAMES})
-else()
-	set(DEPS deps)
-endif()
 
 
 
@@ -30,13 +25,12 @@ find_path(CURL_INCLUDE_DIR curl
 )
 find_library(CURL_LIBRARY
 	NAMES ${CURL_NAMES} libcurl
-	NAMES ${CURL_NAMES} libcurl
 	PATHS
     ${PROJECT_SOURCE_DIR}/${DEPS}/bin
     ${PROJECT_SOURCE_DIR}/${DEPS}/curl/bin
     ${PROJECT_SOURCE_DIR}/${DEPS}/curl/build
 	${PROJECT_SOURCE_DIR}/${DEPS}/curl/build-win
-    ${PROJECT_SOURCE_DIR}/deps/curl-win/curl/bin
+    ${PROJECT_SOURCE_DIR}/${DEPS}/curl-win/curl/bin
 	/usr/lib64
 	/usr/lib
 	/usr/local/lib64
@@ -47,8 +41,8 @@ find_library(CURL_LIBRARY
 )
 else()
 find_path(CURL_INCLUDE_DIR curl
-	${PROJECT_SOURCE_DIR}/deps/curl-win/curl/include/
-	${PROJECT_SOURCE_DIR}/deps/curl/include
+	${PROJECT_SOURCE_DIR}/${DEPS}/curl-win/curl/include/
+	${PROJECT_SOURCE_DIR}/${DEPS}/curl/include
 	/usr/include/i386-linux-gnu/
 	/usr/include
 	/usr/local/include
@@ -58,15 +52,14 @@ find_path(CURL_INCLUDE_DIR curl
 )
 find_library(CURL_LIBRARY
 	NAMES ${CURL_NAMES} libcurl
-	NAMES ${CURL_NAMES} libcurl
 	PATHS
     ${PROJECT_SOURCE_DIR}/${DEPS}/bin
     ${PROJECT_SOURCE_DIR}/${DEPS}/curl/bin
     ${PROJECT_SOURCE_DIR}/${DEPS}/curl/build/lib
 	${PROJECT_SOURCE_DIR}/${DEPS}/curl/build-win
 	/usr/lib/x86_64-linux-gnu
-	${PROJECT_SOURCE_DIR}/deps/curl-win/curl/bin
-	${PROJECT_SOURCE_DIR}/deps/curl/bin/
+	${PROJECT_SOURCE_DIR}/${DEPS}/curl-win/curl/bin
+	${PROJECT_SOURCE_DIR}/${DEPS}/curl/bin/
 	/usr/lib/i386-linux-gnu/
 	/usr/lib64
 	/usr/lib

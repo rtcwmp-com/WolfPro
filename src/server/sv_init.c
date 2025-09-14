@@ -764,13 +764,12 @@ static size_t getIP_response(void *ptr, size_t size, size_t nmemb, void *clientp
 
 void SV_GetIP(void) {
   CURL *curl;
-  CURLcode res;
-
+  
   curl = curl_easy_init();
   if(curl) {
     curl_easy_setopt(curl, CURLOPT_URL, "http://api.ipify.org");
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, getIP_response);
-    res = curl_easy_perform(curl);
+    curl_easy_perform(curl);
     curl_easy_cleanup(curl);
   }
 
@@ -790,13 +789,12 @@ static size_t getCountry_response(void *ptr, size_t size, size_t nmemb, void *st
 
 void SV_GetCountry(char* serverIP) {
   CURL *curl;
-  CURLcode res;
 
   curl = curl_easy_init();
   if(curl) {
     curl_easy_setopt(curl, CURLOPT_URL, va("http://ipinfo.io/%s/country",serverIP));
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, getCountry_response);
-    res = curl_easy_perform(curl);
+    curl_easy_perform(curl);
     curl_easy_cleanup(curl);
   }
 

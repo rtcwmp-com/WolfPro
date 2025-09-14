@@ -61,21 +61,6 @@ else()
 	endif()
 endif()
 
-# Figure out what build is it (cool eh?)
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-	message(STATUS "64 bits target architecture detected")
-	SET(WOLF_64BITS 1)
-	if(WIN32)
-		SET(WOLF_WIN64 1)
-	endif()
-elseif(NOT CMAKE_SIZEOF_VOID_P EQUAL 8 AND NOT CMAKE_SIZEOF_VOID_P EQUAL 4)
-	# NOTE: this should never happen, but just in case for an invalid toolchain...
-	message(FATAL_ERROR "Unknown target architecture detected. Pointer size: ${CMAKE_SIZEOF_VOID_P}")
-else()
-	message(STATUS "32 bits target architecture detected")
-	SET(WOLF_32BITS 1)
-endif()
-
 string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" system_name_lower)
 
 if(system_name_lower MATCHES "(i386)|(i686)|(x86)|(amd64)")
