@@ -10,6 +10,7 @@ static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMesse
     }
 }
 
+extern qbool crashing;
 void RHI_Shutdown(qboolean destroyWindow)
 {
     vkDeviceWaitIdle(vk.device);
@@ -22,14 +23,20 @@ void RHI_Shutdown(qboolean destroyWindow)
     }
     Pool_Clear(&vk.samplerPool);
 
+    //
+
     it = Pool_BeginIteration();
     while(Pool_Iterate(&vk.bufferPool, &it)){
         Buffer *buffer = (Buffer*)it.value;
         if(!buffer->desc.longLifetime || destroyWindow){
+            
             vmaDestroyBuffer(vk.allocator, buffer->buffer, buffer->allocation);
+            
             Pool_Remove(&vk.bufferPool, it.handle);
+             
         }
     }
+    
     Pool_ClearUnused(&vk.bufferPool);
 
 
@@ -42,7 +49,7 @@ void RHI_Shutdown(qboolean destroyWindow)
         }
     }
     Pool_ClearUnused(&vk.semaphorePool);
-
+    
     it = Pool_BeginIteration();
     while(Pool_Iterate(&vk.descriptorSetLayoutPool, &it)){
         DescriptorSetLayout *descSetLayout = (DescriptorSetLayout*)it.value;
@@ -62,7 +69,7 @@ void RHI_Shutdown(qboolean destroyWindow)
         }
     }
     Pool_ClearUnused(&vk.descriptorSetPool);
-
+    
     it = Pool_BeginIteration();
     while(Pool_Iterate(&vk.pipelinePool, &it)){
         Pipeline *pipeline = (Pipeline*)it.value;
@@ -101,6 +108,8 @@ void RHI_Shutdown(qboolean destroyWindow)
         }
     }
     Pool_ClearUnused(&vk.texturePool);
+
+    
     
     if(destroyWindow){
         //destroy private resources

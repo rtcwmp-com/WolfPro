@@ -233,6 +233,7 @@ Both client and server can use this, and it will
 do the apropriate things.
 =============
 */
+qbool crashing = qfalse;
 void QDECL Com_Error( int code, const char *fmt, ... ) {
 	va_list argptr;
 	static int lastErrorTime;
@@ -289,6 +290,7 @@ void QDECL Com_Error( int code, const char *fmt, ... ) {
 
 	if ( code == ERR_SERVERDISCONNECT ) {
 		CL_Disconnect( qtrue );
+		crashing = qtrue;
 		CL_FlushMemory();
 		com_errorEntered = qfalse;
 		longjmp( abortframe, -1 );

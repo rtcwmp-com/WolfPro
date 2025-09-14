@@ -11,7 +11,7 @@ void Pool_Clear(memoryPool* pool) {
 
 void Pool_ClearUnused(memoryPool *pool){
 	uint32_t nextFree = 0;
-	for(int i = pool->itemCount; i > 0; i--){
+	for(int i = pool->itemCount - 1; i > 0; i--){
 		if(!pool->lookupData[i].inUse){
 			pool->lookupData[i].nextFreeIndex = nextFree;
 			nextFree = i;
@@ -125,7 +125,7 @@ PoolIterator Pool_BeginIteration(){
 }
 
 qboolean Pool_Iterate(memoryPool *pool, PoolIterator *it){
-	for(it->index++; it->index < pool->itemCount + 1; it->index++){
+	for(it->index++; it->index < pool->itemCount; it->index++){
 		if(pool->lookupData[it->index].inUse){
 			uint32_t itemLocation = it->index * pool->typeSize;
 			it->value = pool->poolData + itemLocation;
