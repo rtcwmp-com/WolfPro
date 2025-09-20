@@ -921,10 +921,16 @@ const void *RB_StretchPic( const void *data ) {
 	tess.indexes[ numIndexes + 4 ] = numVerts + 0;
 	tess.indexes[ numIndexes + 5 ] = numVerts + 1;
 
-	*(int *)tess.vertexColors[ numVerts ] =
-		*(int *)tess.vertexColors[ numVerts + 1 ] =
-			*(int *)tess.vertexColors[ numVerts + 2 ] =
-				*(int *)tess.vertexColors[ numVerts + 3 ] = *(int *)backEnd.color2D;
+	{
+		uint8_t color[4];
+
+		Vector4Copy(backEnd.color2D, color);
+
+		Vector4Copy(color, tess.vertexColors[numVerts]);
+		Vector4Copy(color, tess.vertexColors[numVerts + 1]);
+		Vector4Copy(color, tess.vertexColors[numVerts + 2]);
+		Vector4Copy(color, tess.vertexColors[numVerts + 3]);
+	}
 
 	tess.xyz[ numVerts ][0] = cmd->x;
 	tess.xyz[ numVerts ][1] = cmd->y;
@@ -999,10 +1005,16 @@ const void *RB_RotatedPic( const void *data ) {
 	tess.indexes[ numIndexes + 4 ] = numVerts + 0;
 	tess.indexes[ numIndexes + 5 ] = numVerts + 1;
 
-	*(int *)tess.vertexColors[ numVerts ] =
-		*(int *)tess.vertexColors[ numVerts + 1 ] =
-			*(int *)tess.vertexColors[ numVerts + 2 ] =
-				*(int *)tess.vertexColors[ numVerts + 3 ] = *(int *)backEnd.color2D;
+	{
+	uint8_t color[4];
+
+	Vector4Copy(backEnd.color2D, color);
+
+	Vector4Copy(color, tess.vertexColors[numVerts]);
+	Vector4Copy(color, tess.vertexColors[numVerts + 1]);
+	Vector4Copy(color, tess.vertexColors[numVerts + 2]);
+	Vector4Copy(color, tess.vertexColors[numVerts + 3]);
+	}
 
 	angle = cmd->angle * pi2;
 	tess.xyz[ numVerts ][0] = cmd->x + ( cos( angle ) * cmd->w );
@@ -1079,16 +1091,19 @@ const void *RB_StretchPicGradient( const void *data ) {
 	tess.indexes[ numIndexes + 4 ] = numVerts + 0;
 	tess.indexes[ numIndexes + 5 ] = numVerts + 1;
 
-//	*(int *)tess.vertexColors[ numVerts ] =
-//		*(int *)tess.vertexColors[ numVerts + 1 ] =
-//		*(int *)tess.vertexColors[ numVerts + 2 ] =
-//		*(int *)tess.vertexColors[ numVerts + 3 ] = *(int *)backEnd.color2D;
+	{
+		uint8_t color[4];
+ 
+		Vector4Copy(backEnd.color2D, color);
+ 
+		Vector4Copy(color, tess.vertexColors[ numVerts ]);
+		Vector4Copy(color, tess.vertexColors[ numVerts + 1]);
+		
+		Vector4Copy(cmd->gradientColor,  color);
 
-	*(int *)tess.vertexColors[ numVerts ] =
-		*(int *)tess.vertexColors[ numVerts + 1 ] = *(int *)backEnd.color2D;
-
-	*(int *)tess.vertexColors[ numVerts + 2 ] =
-		*(int *)tess.vertexColors[ numVerts + 3 ] = *(int *)cmd->gradientColor;
+		Vector4Copy(color, tess.vertexColors[ numVerts + 2]);
+		Vector4Copy(color, tess.vertexColors[ numVerts + 3 ]);
+	}
 
 	tess.xyz[ numVerts ][0] = cmd->x;
 	tess.xyz[ numVerts ][1] = cmd->y;

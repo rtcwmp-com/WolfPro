@@ -17,9 +17,14 @@ endif()
 #todo add debug macro in debug build
 if(WIN32)
 	set(CMAKE_C_FLAGS_DEBUG "/DEBUG /Zi")
-	set(CMAKE_C_FLAGS_RELEASE "/Zi")
+	set(CMAKE_C_FLAGS_RELEASE "/Zi /DEBUG")
+	set(CLANGRT "C:/Program Files/LLVM/lib/clang/19/lib/windows")
+	if(ENABLE_ASAN)
+	set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /DEBUG /OPT:REF /OPT:ICF /O0 -g /LIBPATH:${CLANGRT} /EHsc")
+	else()
 	set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE} /DEBUG /OPT:REF /OPT:ICF")
-	set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} /DEBUG /OPT:REF /OPT:ICF")
+	endif()
+	set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} /DEBUG /OPT:REF /OPT:ICF ")
 	add_executable(${wolfmp_target} WIN32 ${COMMON_SRC} ${CLIENT_SRC})
 	if(CMAKE_BUILD_TYPE MATCHES "Debug")
 			set_property(TARGET ${wolfmp_target} PROPERTY
@@ -52,6 +57,9 @@ else()
 	os_libraries
 	${CURL_LIBRARIES}
 	)
+endif()
+if(ENABLE_ASAN)
+target_link_options(${wolfmp_target} PRIVATE /wholearchive:clang_rt.asan-x86_64.lib)
 endif()
 
 target_include_directories(${wolfmp_target} PRIVATE ${CURL_INCLUDE_DIR})

@@ -2286,7 +2286,7 @@ VkAttachmentLoadOp GetVkAttachmentLoadOp(RHI_LoadOp load)
 
 VkImageLayout GetVkImageLayout(RHI_ResourceState state)
 {
-    assert(__popcnt(state) == 1); //TODO
+    assert(popcnt(state) == 1); //TODO
 
     typedef struct {
         RHI_ResourceState state;

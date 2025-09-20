@@ -164,8 +164,32 @@ If you have questions concerning this license or the applicable additional terms
 
 #endif
 
+#if defined(_WIN64) || defined(__WIN64__)
+
+#undef idx64
+#define idx64 1
+#define CPUSTRING   "win-x64"
+#ifdef NDEBUG
+#define CPUSTRING   "win-x64-debug"
+#endif
+#endif
+
 #define Com_Memset memset
 #define Com_Memcpy memcpy
+
+typedef union {
+	float f;
+	int i;
+	unsigned int ui;
+} floatint_t;
+
+
+static inline int  FloatAsInt( float f ) {
+	floatint_t fl;
+	fl.f = f;
+	return fl.i;
+}
+#define PASSFLOAT(x) FloatAsInt(x)
 
 #define PAD(base, alignment)	(((base)+(alignment)-1) & ~((alignment)-1))
 #define PADLEN(base, alignment)	(PAD((base), (alignment)) - (base))

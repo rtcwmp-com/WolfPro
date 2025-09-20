@@ -10,6 +10,9 @@ if(WIN32 AND NOT CMAKE_CROSSCOMPILE)
 		os_libraries
 		${CURL_LIBRARIES}
 	)
+	if(ENABLE_ASAN)
+	target_link_options(wolfded PRIVATE /wholearchive:clang_rt.asan-x86_64.lib)
+	endif()
 	target_include_directories(wolfded PRIVATE ${CURL_INCLUDE_DIR})
 elseif(UNIX)
 	add_executable(wolfded ${COMMON_SRC} ${SERVER_SRC})

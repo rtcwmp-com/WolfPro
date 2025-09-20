@@ -25,7 +25,7 @@ char* GetStringTimestamp(int seconds){
 
 static const float TIMELINE_RADIUS = 8.0f;
 static const float delta = 3.0f;
-static const float TIMELINE_HEIGHT = TIMELINE_RADIUS * 2.0f + delta * 2;
+static const float TIMELINE_HEIGHT = 8.0f * 2.0f + 3.0f * 2;
 
 float prev_times[64];
 int prev_time_index;

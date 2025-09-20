@@ -84,6 +84,16 @@ qbool Sys_IsDebugging(void);
 #endif
 					
 
+inline uint32_t popcnt(uint32_t v){
+#if defined(_MSC_VER)
+    return __popcnt(v);
+#elif defined(__GNUC__) || defined(__clang__)
+    return __builtin_popcount(v);
+#else
+	#error "compiler not supported"
+#endif
+}
+
 //============================================================================
 #define CLIENT_WINDOW_TITLE "Wolfenstein"
 #define GAME_PROTOCOL_VERSION 60
@@ -379,11 +389,6 @@ VIRTUAL MACHINE
 */
 
 
-typedef union {
-	float f;
-	int i;
-	unsigned int ui;
-} floatint_t;
 
 static inline float iptrtof(intptr_t x)
 {
@@ -392,14 +397,12 @@ static inline float iptrtof(intptr_t x)
 	return fi.f;
 }
 
-static inline int  FloatAsInt( float f ) {
-	floatint_t fl;
-	fl.f = f;
-	return fl.i;
-}
 
 #define	VMF(x)	iptrtof(args[x])
 #define VMA( x ) ( (void *) args[x] )
+
+
+
 
 typedef struct vm_s vm_t;
 

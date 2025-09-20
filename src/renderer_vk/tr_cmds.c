@@ -135,10 +135,8 @@ void *R_GetCommandBuffer( int bytes ) {
 		return NULL;
 	}
 	cmdList = &backEndData->commands;
-	//bytes = PAD(bytes, sizeof(void *));
 
 	// always leave room for the end of list command
-	//if ( cmdList->used + bytes + sizeof(int) + PAD( sizeof( swapBuffersCommand_t ), sizeof(void *) ) > MAX_RENDER_COMMANDS ) {
 	if ( cmdList->used + bytes + sizeof(int) > MAX_RENDER_COMMANDS ) {
 		if ( bytes > MAX_RENDER_COMMANDS - sizeof( int ) ) {
 			ri.Error( ERR_FATAL, "R_GetCommandBuffer: bad size %i", bytes );

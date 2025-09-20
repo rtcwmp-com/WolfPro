@@ -105,9 +105,9 @@ typedef struct
 	int ofs;
 	fieldtype_t type;
 	int flags;
-} field_t;
+} g_field_t;
 
-field_t fields[] = {
+g_field_t fields[] = {
 	{"classname",    FOFS( classname ),    F_LSTRING},
 	{"origin",       FOFS( s.origin ),     F_VECTOR},
 	{"model",        FOFS( model ),        F_LSTRING},
@@ -790,7 +790,7 @@ in a gentity
 ===============
 */
 void G_ParseField( const char *key, const char *value, gentity_t *ent ) {
-	field_t *f;
+	g_field_t *f;
 	byte    *b;
 	float v;
 	vec3_t vec;

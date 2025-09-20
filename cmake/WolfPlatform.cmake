@@ -106,7 +106,7 @@ elseif(WIN32)
 			message(STATUS "Enabling AddressSanitizer for this configuration")
 			if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 			message(STATUS "Using clang ASAN for this configuration")
-			set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /fsanitize=address")
+			set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /fsanitize=address /Oy- -g")
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fsanitize=address")
 			else()
 			set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /fsanitize=address")
@@ -119,8 +119,10 @@ elseif(WIN32)
 		target_compile_options(shared_libraries INTERFACE /FC)
 
 	
-			set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /EHsc /O2")
-			set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /EHa /W3")
+			set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}  /O2")
+			set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}  /W3")
+			set(CMAKE_C_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}  /Oy- /O2")
+			set(CMAKE_C_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}  /Oy- /W3")
 
 			set(CompilerFlags
 				CMAKE_CXX_FLAGS

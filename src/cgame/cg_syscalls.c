@@ -42,11 +42,6 @@ void dllEntry(intptr_t( QDECL  *syscallptr )(intptr_t arg,... ) ) {
 #pragma export off
 #endif
 
-int PASSFLOAT( float x ) {
-	float floatTemp;
-	floatTemp = x;
-	return *(int *)&floatTemp;
-}
 
 void    trap_Print( const char *fmt ) {
 	syscall( CG_PRINT, fmt );

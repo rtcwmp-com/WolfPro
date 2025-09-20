@@ -1030,7 +1030,7 @@ void AddHistory(renderPassHistory *history, uint32_t currentHash, uint32_t previ
 	history->writeIndex = (history->writeIndex + 1) % n;
 	
 	uint32_t startIndex = (history->writeIndex - history->count + n) % n;
-	uint32_t samples[n];
+	uint32_t samples[64];
 	for(int i = 0; i < history->count; i++){
 		samples[i] = history->durationUs[(startIndex + i) % n];
 	}
