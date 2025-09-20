@@ -164,7 +164,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #endif
 
-#if defined(_WIN64) || defined(__WIN64__)
+#if defined(_M_X64) || defined(_M_AMD64)
 
 #undef idx64
 #define idx64 1
@@ -190,11 +190,6 @@ static inline int  FloatAsInt( float f ) {
 	return fl.i;
 }
 #define PASSFLOAT(x) FloatAsInt(x)
-
-#define PAD(base, alignment)	(((base)+(alignment)-1) & ~((alignment)-1))
-#define PADLEN(base, alignment)	(PAD((base), (alignment)) - (base))
-
-#define PADP(base, alignment)	((void *) PAD((intptr_t) (base), (alignment)))
 
 //======================= MAC OS X SERVER DEFINES =====================
 

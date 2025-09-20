@@ -2726,7 +2726,7 @@ static void FS_AddGameDirectory( const char *path, const char *dir ) {
 // jpw
 	}
 
-	qsort( sorted, numfiles, sizeof(char*), paksort );
+	qsort( sorted, numfiles, sizeof(sorted[0]), paksort );
 
 	for ( i = 0 ; i < numfiles ; i++ ) {
 		if ( Q_strncmp( sorted[i],"sp_",3 ) ) { // JPW NERVE -- exclude sp_*

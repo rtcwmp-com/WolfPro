@@ -131,11 +131,10 @@ void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, byte *color, flo
 
 	// constant color all the way around
 	// should this be identity and let the shader specify from entity?
-	*(intptr_t*)&tess.vertexColors[ndx] =
-		*(intptr_t*)&tess.vertexColors[ndx + 1] =
-		*(intptr_t*)&tess.vertexColors[ndx + 2] =
-		*(intptr_t*)&tess.vertexColors[ndx + 3] =
-		*(intptr_t*)color;
+	*( uint32_t * ) &tess.vertexColors[ndx + 0] = *( uint32_t * )color;
+	*( uint32_t * ) &tess.vertexColors[ndx + 1] = *( uint32_t * )color;
+	*( uint32_t * ) &tess.vertexColors[ndx + 2] = *( uint32_t * )color;
+	*( uint32_t * ) &tess.vertexColors[ndx + 3] = *( uint32_t * )color;
 
 
 	tess.numVertexes += 4;
@@ -225,7 +224,7 @@ void RB_SurfacePolychain( srfPoly_t *p ) {
 		VectorCopy( p->verts[i].xyz, tess.xyz[numv] );
 		tess.texCoords[numv][0][0] = p->verts[i].st[0];
 		tess.texCoords[numv][0][1] = p->verts[i].st[1];
-		*(intptr_t *)&tess.vertexColors[numv] = *(intptr_t*)p->verts[ i ].modulate;
+		*(uint32_t *)&tess.vertexColors[numv] = *(uint32_t *)p->verts[ i ].modulate;
 
 		numv++;
 	}
@@ -1047,7 +1046,7 @@ void RB_SurfaceFace( srfSurfaceFace_t *surf ) {
 		tess.texCoords[ndx][0][1] = v[4];
 		tess.texCoords[ndx][1][0] = v[5];
 		tess.texCoords[ndx][1][1] = v[6];
-		*(intptr_t * ) &tess.vertexColors[ndx] = *(intptr_t * ) &v[7];
+		*(uint32_t*)&tess.vertexColors[ndx] = *(uint32_t*)&v[7];
 		tess.vertexDlightBits[ndx] = dlightBits;
 	}
 

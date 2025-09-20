@@ -921,16 +921,10 @@ const void *RB_StretchPic( const void *data ) {
 	tess.indexes[ numIndexes + 4 ] = numVerts + 0;
 	tess.indexes[ numIndexes + 5 ] = numVerts + 1;
 
-	{
-		uint8_t color[4];
-
-		Vector4Copy(backEnd.color2D, color);
-
-		Vector4Copy(color, tess.vertexColors[numVerts]);
-		Vector4Copy(color, tess.vertexColors[numVerts + 1]);
-		Vector4Copy(color, tess.vertexColors[numVerts + 2]);
-		Vector4Copy(color, tess.vertexColors[numVerts + 3]);
-	}
+	*(uint32_t *)tess.vertexColors[ numVerts + 0 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 1 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 2 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 3 ] = *(uint32_t *)backEnd.color2D;
 
 	tess.xyz[ numVerts ][0] = cmd->x;
 	tess.xyz[ numVerts ][1] = cmd->y;
@@ -1005,16 +999,10 @@ const void *RB_RotatedPic( const void *data ) {
 	tess.indexes[ numIndexes + 4 ] = numVerts + 0;
 	tess.indexes[ numIndexes + 5 ] = numVerts + 1;
 
-	{
-	uint8_t color[4];
-
-	Vector4Copy(backEnd.color2D, color);
-
-	Vector4Copy(color, tess.vertexColors[numVerts]);
-	Vector4Copy(color, tess.vertexColors[numVerts + 1]);
-	Vector4Copy(color, tess.vertexColors[numVerts + 2]);
-	Vector4Copy(color, tess.vertexColors[numVerts + 3]);
-	}
+	*(uint32_t *)tess.vertexColors[ numVerts + 0 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 1 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 2 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 3 ] = *(uint32_t *)backEnd.color2D;
 
 	angle = cmd->angle * pi2;
 	tess.xyz[ numVerts ][0] = cmd->x + ( cos( angle ) * cmd->w );
@@ -1091,19 +1079,11 @@ const void *RB_StretchPicGradient( const void *data ) {
 	tess.indexes[ numIndexes + 4 ] = numVerts + 0;
 	tess.indexes[ numIndexes + 5 ] = numVerts + 1;
 
-	{
-		uint8_t color[4];
- 
-		Vector4Copy(backEnd.color2D, color);
- 
-		Vector4Copy(color, tess.vertexColors[ numVerts ]);
-		Vector4Copy(color, tess.vertexColors[ numVerts + 1]);
-		
-		Vector4Copy(cmd->gradientColor,  color);
+	*(uint32_t *)tess.vertexColors[ numVerts + 0 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 1 ] = *(uint32_t *)backEnd.color2D;
 
-		Vector4Copy(color, tess.vertexColors[ numVerts + 2]);
-		Vector4Copy(color, tess.vertexColors[ numVerts + 3 ]);
-	}
+	*(uint32_t *)tess.vertexColors[ numVerts + 2 ] = *(uint32_t *)cmd->gradientColor;
+	*(uint32_t *)tess.vertexColors[ numVerts + 3 ] = *(uint32_t *)cmd->gradientColor;
 
 	tess.xyz[ numVerts ][0] = cmd->x;
 	tess.xyz[ numVerts ][1] = cmd->y;
@@ -1320,7 +1300,6 @@ void RB_ExecuteRenderCommands( const void *data ) {
 	}
 
 	while ( 1 ) {
-		//data = PADP(data, sizeof(void *));
 		switch ( *(const int *)data ) {
 		case RC_SET_COLOR:
 			data = RB_SetColor( data );

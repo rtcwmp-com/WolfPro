@@ -349,7 +349,7 @@ intptr_t SV_GameSystemCalls(intptr_t* args ) {
 		FS_FCloseFile( args[1] );
 		return 0;
 	case G_FS_GETFILELIST:
-		return FS_GetFileList((const char*)VMA( 1 ), (const char*)VMA( 2 ), (char*)VMA( 3 ), args[4] );
+		return FS_GetFileList(VMA( 1 ), VMA( 2 ), (char*)VMA( 3 ), args[4] );
 
 	case G_LOCATE_GAME_DATA:
 		SV_LocateGameData( VMA( 1 ), args[2], args[3], VMA( 4 ), args[5] );

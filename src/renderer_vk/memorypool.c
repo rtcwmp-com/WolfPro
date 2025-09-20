@@ -137,12 +137,12 @@ void* Pool_Get(memoryPool *pool, uint64_t handle){
 }
 
 PoolIterator Pool_BeginIteration(void){
-	return (PoolIterator) { -1, NULL, 0 };
+	return (PoolIterator) { 0, NULL, 0 };
 }
 
 qboolean Pool_Iterate(memoryPool *pool, PoolIterator *it){
-	for(it->index++; it->index < pool->itemCount; it->index++){
-		assert(it->index >= 0 && it->index <= pool->itemCount);
+	for(it->index++; it->index < pool->itemCount + 1; it->index++){
+		assert(it->index >= 1 && it->index <= pool->itemCount);
 
 		if(pool->lookupData[it->index].inUse){
 			uint32_t itemLocation = it->index * pool->typeSize;

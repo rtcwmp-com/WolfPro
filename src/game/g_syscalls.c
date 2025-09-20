@@ -31,7 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 // this file is only included when building a dll
 // g_syscalls.asm is included instead when building a qvm
 
-static intptr_t ( QDECL * syscall )(intptr_t arg, ... ) = (intptr_t( QDECL * )(intptr_t, ... ) ) - 1;
+static intptr_t ( QDECL * syscall )(intptr_t arg, ... ) = (intptr_t( QDECL * )(intptr_t, ... )) -1;
 
 #if defined( __MACOS__ )
 #pragma export on

@@ -671,16 +671,10 @@ const void *RB_StretchPic( const void *data ) {
 	tess.indexes[ numIndexes + 4 ] = numVerts + 0;
 	tess.indexes[ numIndexes + 5 ] = numVerts + 1;
 
-	{
-		uint8_t color[4];
-
-		Vector4Copy(backEnd.color2D, color);
-
-		Vector4Copy(color, tess.vertexColors[numVerts]);
-		Vector4Copy(color, tess.vertexColors[numVerts + 1]);
-		Vector4Copy(color, tess.vertexColors[numVerts + 2]);
-		Vector4Copy(color, tess.vertexColors[numVerts + 3]);
-	}
+	*(uint32_t *)tess.vertexColors[ numVerts + 0 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 1 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 2 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 3 ] = *(uint32_t *)backEnd.color2D;
 
 	tess.xyz[ numVerts ][0] = cmd->x;
 	tess.xyz[ numVerts ][1] = cmd->y;
@@ -755,16 +749,10 @@ const void *RB_RotatedPic( const void *data ) {
 	tess.indexes[ numIndexes + 4 ] = numVerts + 0;
 	tess.indexes[ numIndexes + 5 ] = numVerts + 1;
 
-	{
-	uint8_t color[4];
-
-	Vector4Copy(backEnd.color2D, color);
-
-	Vector4Copy(color, tess.vertexColors[numVerts]);
-	Vector4Copy(color, tess.vertexColors[numVerts + 1]);
-	Vector4Copy(color, tess.vertexColors[numVerts + 2]);
-	Vector4Copy(color, tess.vertexColors[numVerts + 3]);
-	}
+	*(uint32_t *)tess.vertexColors[ numVerts + 0 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 1 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 2 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 3 ] = *(uint32_t *)backEnd.color2D;
 
 	angle = cmd->angle * pi2;
 	tess.xyz[ numVerts ][0] = cmd->x + ( cos( angle ) * cmd->w );
@@ -841,19 +829,11 @@ const void *RB_StretchPicGradient( const void *data ) {
 	tess.indexes[ numIndexes + 4 ] = numVerts + 0;
 	tess.indexes[ numIndexes + 5 ] = numVerts + 1;
 
-	{
-		uint8_t color[4];
- 
-		Vector4Copy(backEnd.color2D, color);
- 
-		Vector4Copy(color, tess.vertexColors[ numVerts ]);
-		Vector4Copy(color, tess.vertexColors[ numVerts + 1]);
-		
-		Vector4Copy(cmd->gradientColor,  color);
+	*(uint32_t *)tess.vertexColors[ numVerts + 0 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 1 ] = *(uint32_t *)backEnd.color2D;
 
-		Vector4Copy(color, tess.vertexColors[ numVerts + 2]);
-		Vector4Copy(color, tess.vertexColors[ numVerts + 3 ]);
-	}
+	*(uint32_t *)tess.vertexColors[ numVerts + 2 ] = *(uint32_t *)cmd->gradientColor;
+	*(uint32_t *)tess.vertexColors[ numVerts + 3 ] = *(uint32_t *)cmd->gradientColor;
 
 
 	tess.xyz[ numVerts ][0] = cmd->x;
@@ -1020,7 +1000,9 @@ int __cdecl CompareSamples(void const *ptrA, void const *ptrB){
 }
 
 void AddHistory(renderPassHistory *history, uint32_t currentHash, uint32_t previousHash, uint32_t currentDuration){
-	const uint32_t n = ARRAY_LEN(history->durationUs);
+	enum {
+		n = ARRAY_LEN(history->durationUs)
+	};
 	if(currentHash != previousHash){
 		history->count = 1;
 	}else{
@@ -1030,7 +1012,7 @@ void AddHistory(renderPassHistory *history, uint32_t currentHash, uint32_t previ
 	history->writeIndex = (history->writeIndex + 1) % n;
 	
 	uint32_t startIndex = (history->writeIndex - history->count + n) % n;
-	uint32_t samples[64];
+	uint32_t samples[n];
 	for(int i = 0; i < history->count; i++){
 		samples[i] = history->durationUs[(startIndex + i) % n];
 	}
@@ -1046,7 +1028,6 @@ RB_EndFrame
 */
 
 void DrawGUI_ShaderTrace(void){
-
 	static bool breakdownActive = false;
 	ToggleBooleanWithShortcut((qbool*)&breakdownActive, ImGuiKey_T, ImGUI_ShortcutOptions_Global);
 	GUI_AddMainMenuItem(ImGUI_MainMenu_Perf, "Shader Trace", "Ctrl+Shift+T", (qbool*)&breakdownActive, qtrue);
@@ -1254,15 +1235,16 @@ void RB_ExecuteRenderCommands( const void *data ) {
 
 
 	while ( 1 ) {
-		//data = PADP(data, sizeof(void *));
 		switch ( *(const int *)data ) {
 		case RC_SET_COLOR:
 			data = RB_SetColor( data );
 			break;
 		case RC_STRETCH_PIC:
+			#if defined(_DEBUG)
 			if (!begun) {
 				__debugbreak();
 			}
+			#endif
 			data = RB_StretchPic( data );
 			break;
 		case RC_ROTATED_PIC:
@@ -1275,9 +1257,11 @@ void RB_ExecuteRenderCommands( const void *data ) {
 			data = RB_DrawSurfs( data );
 			break;
 		case RC_BEGIN_FRAME:
+			#if defined(_DEBUG)
 			if (begun) {
 				__debugbreak();
 			}
+			#endif
 			begun = qtrue;
 			data = RB_BeginFrame( data );
 			//wait for swap chain acquire

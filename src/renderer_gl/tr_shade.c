@@ -689,7 +689,7 @@ static void RB_FogPass( void ) {
 	fog = tr.world->fogs + tess.fogNum;
 
 	for ( i = 0; i < tess.numVertexes; i++ ) {
-		*( intptr_t * )&tess.svars.colors[i] = fog->colorInt;
+		*( unsigned int * )&tess.svars.colors[i] = fog->colorInt;
 	}
 
 	RB_CalcFogTexCoords( ( float * ) tess.svars.texcoords[0] );
@@ -775,7 +775,7 @@ static void ComputeColors( shaderStage_t *pStage ) {
 		fog = tr.world->fogs + tess.fogNum;
 
 		for ( i = 0; i < tess.numVertexes; i++ ) {
-			*( intptr_t * )&tess.svars.colors[i] = fog->colorInt;
+			*( unsigned int * )&tess.svars.colors[i] = fog->colorInt;
 		}
 	}
 	break;

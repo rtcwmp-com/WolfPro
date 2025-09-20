@@ -1924,7 +1924,6 @@ static void FixRenderCommandList( int newShader ) {
 		const void *curCmd = cmdList->cmds;
 
 		while ( 1 ) {
-			//curCmd = PADP(curCmd, sizeof(void *));
 			switch ( *(const int *)curCmd ) {
 			case RC_SET_COLOR:
 			{

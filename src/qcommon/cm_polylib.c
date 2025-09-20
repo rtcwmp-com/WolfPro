@@ -274,7 +274,7 @@ winding_t* CopyWinding(winding_t* w) {
 	winding_t* c;
 
 	c = AllocWinding(w->numpoints);
-	size = (intptr_t) & (w->p[w->numpoints]) - (intptr_t)w;
+	size = (intptr_t)offsetof(winding_t, p[w->numpoints]);
 	Com_Memcpy(c, w, size);
 	return c;
 }

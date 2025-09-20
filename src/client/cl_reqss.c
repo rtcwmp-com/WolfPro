@@ -60,11 +60,10 @@ void CL_GenerateSS(char* address, char* hookid, char* hooktoken, char* waittime,
 	char* clientName, cleanName[16];
 	char* guid;
 	unsigned int n;
-	SS_info_t* SS_info = (SS_info_t*)malloc(sizeof(SS_info_t));
+	
 
 	if (clc.demoplaying || cls.state == CA_CINEMATIC || cls.state < CA_ACTIVE)
 	{
-		free(SS_info);
 		return;
 	}
 
@@ -73,6 +72,8 @@ void CL_GenerateSS(char* address, char* hookid, char* hooktoken, char* waittime,
 	{
 		return;
 	}
+
+	SS_info_t* SS_info = (SS_info_t*)malloc(sizeof(SS_info_t));
 
 	clientName = Cvar_VariableString("name");
 	CL_CleanName(clientName, cleanName, 16, qfalse);
