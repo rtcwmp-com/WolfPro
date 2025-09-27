@@ -40,26 +40,27 @@ find_library(CURL_LIBRARY
 	DOC "CURL library"
 )
 else()
+if(UNIX)
 find_path(CURL_INCLUDE_DIR curl
-	${PROJECT_SOURCE_DIR}/${DEPS}/curl-win/curl/include/
-	${PROJECT_SOURCE_DIR}/${DEPS}/curl/include
-	/usr/include/i386-linux-gnu/
+	/usr/include/x86_64-linux-gnu
 	/usr/include
 	/usr/local/include
 	/sw/include
 	/opt/local/include
 	DOC "The directory where curlver.h resides"
 )
+else()
+find_path(CURL_INCLUDE_DIR curl
+	${PROJECT_SOURCE_DIR}/${DEPS}/curl-win/curl/include/
+	${PROJECT_SOURCE_DIR}/${DEPS}/curl/include
+	DOC "The directory where curlver.h resides"
+)
+endif()
+if(UNIX)
 find_library(CURL_LIBRARY
 	NAMES ${CURL_NAMES} libcurl
 	PATHS
-    ${PROJECT_SOURCE_DIR}/${DEPS}/bin
-    ${PROJECT_SOURCE_DIR}/${DEPS}/curl/bin
-    ${PROJECT_SOURCE_DIR}/${DEPS}/curl/build/lib
-	${PROJECT_SOURCE_DIR}/${DEPS}/curl/build-win
 	/usr/lib/x86_64-linux-gnu
-	${PROJECT_SOURCE_DIR}/${DEPS}/curl-win/curl/bin
-	${PROJECT_SOURCE_DIR}/${DEPS}/curl/bin/
 	/usr/lib/i386-linux-gnu/
 	/usr/lib64
 	/usr/lib
@@ -69,6 +70,19 @@ find_library(CURL_LIBRARY
 	/opt/local/lib
 	DOC "CURL library"
 )
+else()
+find_library(CURL_LIBRARY
+	NAMES ${CURL_NAMES} libcurl
+	PATHS
+    ${PROJECT_SOURCE_DIR}/${DEPS}/bin
+    ${PROJECT_SOURCE_DIR}/${DEPS}/curl/bin
+    ${PROJECT_SOURCE_DIR}/${DEPS}/curl/build/lib
+	${PROJECT_SOURCE_DIR}/${DEPS}/curl/build-win
+	${PROJECT_SOURCE_DIR}/${DEPS}/curl-win/curl/bin
+	${PROJECT_SOURCE_DIR}/${DEPS}/curl/bin/
+	DOC "CURL library"
+)
+endif()
 endif()
 # Determine curl version
 if(CURL_INCLUDE_DIR AND EXISTS "${CURL_INCLUDE_DIR}/curlver.h")

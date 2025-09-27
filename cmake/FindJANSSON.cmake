@@ -21,7 +21,22 @@ find_library(JANSSON_LIBRARY
 	NAMES ${JANSSON_NAMES} libjansson
 	PATHS
 	${PROJECT_SOURCE_DIR}/${DEPS}/jansson/build-win/lib
-	
+	/usr/lib64
+	/usr/lib
+	/usr/local/lib64
+	/usr/local/lib
+	/sw/lib
+	/opt/local/lib
+	DOC "jansson library"
+)
+else()
+if(UNIX)
+find_library(JANSSON_LIBRARY
+	NAMES ${JANSSON_NAMES} libjansson
+	PATHS
+    ${PROJECT_SOURCE_DIR}/${DEPS}/jansson/bin
+	${PROJECT_SOURCE_DIR}/${DEPS}/jansson/build/lib
+	${PROJECT_SOURCE_DIR}/${DEPS}/jansson/build/lib/Release
 	/usr/lib64
 	/usr/lib
 	/usr/local/lib64
@@ -38,14 +53,9 @@ find_library(JANSSON_LIBRARY
 	${PROJECT_SOURCE_DIR}/${DEPS}/jansson/build/lib
 	${PROJECT_SOURCE_DIR}/${DEPS}/jansson/build-win/lib
 	${PROJECT_SOURCE_DIR}/${DEPS}/jansson/build/lib/Release
-	/usr/lib64
-	/usr/lib
-	/usr/local/lib64
-	/usr/local/lib
-	/sw/lib
-	/opt/local/lib
 	DOC "jansson library"
 )
+endif()
 endif()
 # Determine curl version
 if(JANSSON_INCLUDE_DIR AND EXISTS "${JANSSON_INCLUDE_DIR}/jansson.h")

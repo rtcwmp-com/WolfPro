@@ -76,20 +76,9 @@ rm $VER
 mv *jansson* jansson
 cd $JANSSON_DIR
 mkdir build
-mkdir build-win
-autoreconf -i
-./configure --prefix=${JANSSON_DIR}/build
-make -j
-make install
-
-autoreconf -i
-./configure --prefix=${JANSSON_DIR}/build-win --target=x86_64-w64-mingw32 --host=x86_64-w64-mingw32
-make -j
-make install
-cd $JANSSON_DIR
-cd build-win
-gendef libjansson-4.dll
-i686-w64-mingw32-dlltool -d libjansson-4.def -l libjansson-4.lib
+cd build
+cmake .. -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM="3.5" -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY  -DJANSSON_BUILD_DOCS=OFF"
+ninja
 fi
 cd $DEPS_ROOT
 
