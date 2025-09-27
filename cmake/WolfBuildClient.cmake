@@ -81,7 +81,7 @@ endif()
 
 target_compile_definitions(${wolfmp_target} PRIVATE WOLF_CLIENT=1)
 if(MSVC)
-	target_link_options(${wolfmp_target} PRIVATE /DEBUG)
+	target_link_options(${wolfmp_target} PRIVATE /DEBUG /STACK:8388608 )
 endif()
 
 if(MSVC AND NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/wolfmp.vcxproj.user)

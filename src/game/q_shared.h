@@ -120,6 +120,7 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 
 
+
 // this is the define for determining if we have an asm version of a C function
 #if ( defined _M_IX86 || defined __i386__ ) && !defined __sun__  && !defined __LCC__
 #define id386   1
@@ -172,8 +173,9 @@ If you have questions concerning this license or the applicable additional terms
 
 #undef idx64
 #define idx64 1
+#ifndef NDEBUG
 #define CPUSTRING   "win-x64"
-#ifdef NDEBUG
+#else
 #define CPUSTRING   "win-x64-debug"
 #endif
 #endif

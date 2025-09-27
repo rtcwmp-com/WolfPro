@@ -1183,6 +1183,12 @@ WinMain
 ==================
 */
 int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow ) {
+#if defined(_DEBUG)
+	ULONG_PTR low, high;
+	GetCurrentThreadStackLimits(&low, &high);
+	assert((high - low) >> 20 >= 8); //set stack size to 8MB or more
+#endif
+
 	char cwd[MAX_OSPATH];
 	int startTime, endTime;
 
