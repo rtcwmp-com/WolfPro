@@ -24,6 +24,12 @@ docker run -it \
 ${argv[0]}:${argv[1]} \
 make all
 
+echo "Manually copy the windows mod DLLs into ${RTCW_SRC}/build64/wolfpro"
+read -p "Press return" dummy
+
+make -f $RTCW_SRC/src/makefile build-pk3
+
 mv $RTCW_SRC/build64/wolfpro/wolfpro_bin.pk3 $RTCW_SRC/build64/wolfpro/wolfpro_bin-$(date +%Y%m%d).pk3
 
+read -p "Press return" dummy
 bash build-server64.sh ${argv[0]} ${argv[1]}
