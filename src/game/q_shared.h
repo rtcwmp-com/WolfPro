@@ -106,6 +106,7 @@ If you have questions concerning this license or the applicable additional terms
 #include <ctype.h>
 #include <limits.h>
 #include <stdint.h>
+#include <stddef.h>
 
 #endif
 
