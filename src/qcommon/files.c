@@ -40,6 +40,9 @@ If you have questions concerning this license or the applicable additional terms
 #include "qcommon.h"
 #include "unzip.h"
 #include <errno.h>
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 
 /*
 =============================================================================
@@ -4028,6 +4031,16 @@ qbool FS_IsZipFile(fileHandle_t f)
 
 	return fsh[f].zipFile;
 }
+
+#ifdef _WIN32
+#include <io.h>
+#define W_OK 2
+#define R_OK 4
+#define F_OK 0
+#define access(x,y) _access(x,y)
+#else
+#include <unistd.h>
+#endif
 
 void FS_ExtractFromPak(char *osPath, char* fileNameWithExt){
 	if ( access( osPath, R_OK ) == 0 ) {
