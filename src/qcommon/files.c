@@ -2599,6 +2599,7 @@ FS_Path_f
 */
 void FS_Path_f( void ) {
 	searchpath_t    *s;
+	searchpath_t* p;
 	int i;
 
 	Com_Printf( "Current search path:\n" );
@@ -2608,8 +2609,23 @@ void FS_Path_f( void ) {
 			if ( fs_numServerPaks ) {
 				if ( !FS_PakIsPure( s->pack ) ) {
 					Com_Printf( "    not on the pure list\n" );
+					// unload the pak
+					if (s->pack) {
+						unzClose(s->pack->handle);
+						Z_Free(s->pack->buildBuffer);
+						Z_Free(s->pack);
+					}
+
+					if (s->dir) {
+						Z_Free(s->dir);
+					}
+
+					p->next = s->next;
+					Z_Free(s);
+					s = p;
 				} else {
 					Com_Printf( "    on the pure list\n" );
+					p = s;
 				}
 			}
 		} else {
@@ -3880,7 +3896,7 @@ see show_bug.cgi?id=478
 =================
 */
 qboolean FS_ConditionalRestart( int checksumFeed ) {
-	if ( fs_gamedirvar->modified || checksumFeed != fs_checksumFeed ) {
+	if ( fs_gamedirvar->modified || checksumFeed != fs_checksumFeed || fs_numServerPaks ) {
 		FS_Restart( checksumFeed );
 		return qtrue;
 	}
@@ -4010,4 +4026,28 @@ qbool FS_IsZipFile(fileHandle_t f)
 	}
 
 	return fsh[f].zipFile;
+}
+
+void FS_ExtractFromPak(char *osPath, char* fileNameWithExt){
+	if ( access( osPath, R_OK ) == 0 ) {
+		Com_DPrintf( "Removing existing  %s : %s\n", fileNameWithExt, osPath );
+		if ( remove( osPath ) == -1 ) {
+			Com_Error( ERR_FATAL, "failed to remove outdated '%s' file:\n\"%s\"\n", osPath, strerror( errno ) );
+		}
+	}
+
+	fileHandle_t fileHandle;
+	int fileLen = FS_FOpenFileRead(fileNameWithExt, &fileHandle, qtrue);
+	if (fileLen < 1) {
+		Com_Error( ERR_FATAL, "failed to find '%s' in paks\n", fileNameWithExt);
+	}
+
+	byte* buffer = Hunk_AllocateTempMemory(fileLen);
+	FS_Read(buffer, fileLen, fileHandle);
+	FS_WriteFile(fileNameWithExt,buffer,fileLen);
+	Hunk_FreeTempMemory(buffer);
+	
+	if ( access( osPath, R_OK ) != 0 ) {
+		Com_Error( ERR_FATAL, "failed to extract '%s' file:\n\"%s\"\n", osPath, strerror( errno ) );
+	}
 }

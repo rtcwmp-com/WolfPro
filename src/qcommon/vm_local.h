@@ -168,6 +168,7 @@ struct vm_s {
 	int callLevel;                  // for debug indenting
 	int breakFunction;              // increment breakCount on function entry to this
 	int breakCount;
+	vmType_t vmType;
 };
 
 

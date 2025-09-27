@@ -579,6 +579,7 @@ char* Sys_GetDLLName( const char *name ) {
 	return va( "%s_mp_x86.dll", name );
 }
 
+
 // fqpath param added 2/15/02 by T.Ray - Sys_LoadDll is only called in vm.c at this time
 // fqpath will be empty if dll not loaded, otherwise will hold fully qualified path of dll module loaded
 // fqpath buffersize must be at least MAX_QPATH+1 bytes long
@@ -586,35 +587,19 @@ void * QDECL Sys_LoadDll( const char *name, char *fqpath, intptr_t( QDECL **entr
 						  intptr_t ( QDECL *systemcalls )( intptr_t, ... ) ) {
 	HINSTANCE libHandle;
 	void ( QDECL * dllEntry )( intptr_t ( QDECL *syscallptr )( intptr_t, ... ) );
-	char    *basepath;
-	char    *gamedir;
-	char    *fn;
+
+	char    *basepath = Cvar_VariableString("fs_basepath");
+	char    *gamedir = Cvar_VariableString("fs_game");
+	
 	char filename[MAX_QPATH];
+	Q_strncpyz(filename, Sys_GetDLLName(name), sizeof(filename));
+
+	char* fn = FS_BuildOSPath(basepath, gamedir, filename);
 
 	*fqpath = 0 ;       // added 2/15/02 by T.Ray
-
-	Q_strncpyz( filename, Sys_GetDLLName( name ), sizeof( filename ) );
-
-	basepath = Cvar_VariableString( "fs_basepath" );
-	gamedir = Cvar_VariableString( "fs_game" );
-
-	// try gamepath first
-	fn = FS_BuildOSPath( basepath, gamedir, filename );
-
-	// TTimo - this is only relevant for full client
-	// if a full client runs a dedicated server, it's not affected by this
-#if !defined( DEDICATED )
-	// NERVE - SMF - extract dlls from pak file for security
-	// we have to handle the game dll a little differently
-	// TTimo - passing the exact path to check against
-	//   (compatibility with other OSes loading procedure)
-	if ( cl_connectedToPureServer && Q_strncmp( name, "qagame", 6 ) ) {
-		if ( !FS_CL_ExtractFromPakFile( fn, gamedir, filename, NULL ) ) {
-			Com_Error( ERR_DROP, "Game code(%s) failed Pure Server check", filename );
-		}
-	}
+#if !defined(DEDICATED)
+	FS_ExtractFromPak(fn, filename);
 #endif
-
 	libHandle = LoadLibrary( fn );
 
 	if ( !libHandle ) {
@@ -638,7 +623,7 @@ void * QDECL Sys_LoadDll( const char *name, char *fqpath, intptr_t( QDECL **entr
 	dllEntry = ( void ( QDECL * )(intptr_t( QDECL * )(intptr_t, ... ) ) )GetProcAddress( libHandle, "dllEntry" );
 	*entryPoint = (intptr_t( QDECL * )(intptr_t,... ) )GetProcAddress( libHandle, "vmMain" );
 	if ( !*entryPoint || !dllEntry ) {
-		FreeLibrary( libHandle );
+		//FreeLibrary( libHandle );
 		return NULL;
 	}
 	dllEntry( systemcalls );

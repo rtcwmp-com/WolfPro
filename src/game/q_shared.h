@@ -110,9 +110,13 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 
 #ifdef _WIN32
-
-//#pragma intrinsic( memset, memcpy )
-
+#include <io.h>
+#define W_OK 2
+#define R_OK 4
+#define F_OK 0
+#define access(x,y) _access(x,y)
+#else
+#include <unistd.h>
 #endif
 
 

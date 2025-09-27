@@ -42,6 +42,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "../mssdk/include/dinput.h"
 #include "../mssdk/include/dsound.h"
 #else
+#define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
 #include <dsound.h>
 #endif  ///// (SA) DOOMSOUND

@@ -430,8 +430,15 @@ typedef enum {
 	TRAP_TESTPRINTFLOAT
 } sharedTraps_t;
 
+typedef enum {
+	VM_UI,
+	VM_CGAME,
+	VM_QAGAME,
+	VM_COUNT
+} vmType_t;
+
 void    VM_Init( void );
-vm_t    *VM_Create( const char *module, intptr_t( *systemCalls )(intptr_t* ),
+vm_t    *VM_Create( vmType_t vm, intptr_t( *systemCalls )(intptr_t* ),
 					vmInterpret_t interpret );
 // module should be bare: "cgame", not "cgame.dll" or "vm/cgame.qvm"
 
@@ -735,6 +742,8 @@ int     FS_Seek( fileHandle_t f, long offset, int origin );
 
 qbool	FS_IsZipFile(fileHandle_t f);
 // tells us whether we opened a zip file
+
+void FS_ExtractFromPak(char *osPath, char* fileNameWithExt);
 
 qboolean FS_FilenameCompare( const char *s1, const char *s2 );
 

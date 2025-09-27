@@ -144,15 +144,15 @@ vm_t *VM_Restart( vm_t *vm ) {
 
 	// DLL's can't be restarted in place
 	if ( vm->dllHandle ) {
-		char name[MAX_QPATH];
 		intptr_t ( *systemCall )(intptr_t *parms );
 
 		systemCall = vm->systemCall;
-		Q_strncpyz( name, vm->name, sizeof( name ) );
+
+		vmType_t currentType = vm->vmType;
 
 		VM_Free( vm );
 
-		vm = VM_Create( name, systemCall, VMI_NATIVE );
+		vm = VM_Create( currentType, systemCall, VMI_NATIVE );
 		return vm;
 	}
 
@@ -215,13 +215,27 @@ it will attempt to load as a system dll
 
 #define STACK_SIZE  0x20000
 
-vm_t *VM_Create( const char *module, intptr_t ( *systemCalls )(intptr_t*),
+static void *libraryHandles[MAX_VM];
+typedef intptr_t( QDECL *vmCall_t )(intptr_t,... );
+vmCall_t entryPoints[MAX_VM];
+static char previousFsGame[MAX_QPATH];
+#if !defined(DEDICATED)
+extern int cl_connectedToPureServer;
+#else
+int cl_connectedToPureServer = 0;
+#endif
+
+const char moduleNames[VM_COUNT][16] = {
+	"ui",
+	"cgame",
+	"qagame"
+};
+
+vm_t *VM_Create( vmType_t vmType, intptr_t ( *systemCalls )(intptr_t*),
 				 vmInterpret_t interpret ) {
 	vm_t        *vm;
-	vmHeader_t  *header;
-	int dataLength;
 	int i, remaining;
-	char filename[MAX_QPATH];
+	const char *module = moduleNames[vmType];
 
 	Q_assert(interpret == VMI_NATIVE);
 
@@ -255,8 +269,37 @@ vm_t *VM_Create( const char *module, intptr_t ( *systemCalls )(intptr_t*),
 	Q_strncpyz( vm->name, module, sizeof( vm->name ) );
 	vm->systemCall = systemCalls;
 
-	// try to load as a system dll
+#if 1
+	if(Q_stricmp(Cvar_VariableString("fs_game"), previousFsGame)){
+		//if we switch mods unload everything from the previous
+		for(int l = VM_UI; l < VM_COUNT; l++){
+			if(libraryHandles[l]){
+				Sys_UnloadDll(libraryHandles[vmType]);
+			}
+		}
+		memset(&libraryHandles, 0, sizeof(libraryHandles));
+		memset(&entryPoints, 0, sizeof(entryPoints));
+		Cvar_VariableStringBuffer("fs_game", previousFsGame, sizeof(previousFsGame));
+	}
+	
+
+	if(!libraryHandles[vmType] || cl_connectedToPureServer){
+		if(libraryHandles[vmType] && cl_connectedToPureServer){
+			//lazily unload the dll to avoid the Windows 11 FreeLibrary stack corruption bug (9/2025 Win 11 26100.6584)
+			Sys_UnloadDll(libraryHandles[vmType]);
+		}
+		vm->dllHandle = Sys_LoadDll( module, vm->fqpath, &vm->entryPoint, VM_DllSyscall );
+		libraryHandles[vmType] = vm->dllHandle;
+		entryPoints[vmType] = vm->entryPoint;
+	}else{
+		vm->dllHandle = libraryHandles[vmType];
+		vm->entryPoint = entryPoints[vmType];
+	}
+#else
 	vm->dllHandle = Sys_LoadDll( module, vm->fqpath, &vm->entryPoint, VM_DllSyscall );
+#endif
+	// try to load as a system dll
+	
 	if ( !vm->dllHandle ) {
 		Com_Error(ERR_FATAL, "Failed to load dll: %s\n", module );
 	}
@@ -270,20 +313,11 @@ VM_Free
 ==============
 */
 void VM_Free( vm_t *vm ) {
-
+#if 1
+#else
 	if ( vm->dllHandle ) {
 		Sys_UnloadDll( vm->dllHandle );
 		Com_Memset( vm, 0, sizeof( *vm ) );
-	}
-#if 0   // now automatically freed by hunk
-	if ( vm->codeBase ) {
-		Z_Free( vm->codeBase );
-	}
-	if ( vm->dataBase ) {
-		Z_Free( vm->dataBase );
-	}
-	if ( vm->instructionPointers ) {
-		Z_Free( vm->instructionPointers );
 	}
 #endif
 	Com_Memset( vm, 0, sizeof( *vm ) );
@@ -369,7 +403,7 @@ intptr_t QDECL VM_Call( vm_t *vm, intptr_t callnum, ... ) {
 	vm_t    *oldVM;
 	int r;
 	int i;
-	intptr_t args[16];
+	intptr_t args[12];
 	va_list ap;
 
 	if ( !vm ) {
@@ -393,8 +427,7 @@ intptr_t QDECL VM_Call( vm_t *vm, intptr_t callnum, ... ) {
 
 	r = vm->entryPoint( callnum,  args[0],  args[1],  args[2], args[3],
 						args[4],  args[5],  args[6], args[7],
-						args[8],  args[9], args[10], args[11],
-						args[12], args[13], args[14], args[15] );
+						args[8],  args[9], args[10], args[11]);
 
 
 
