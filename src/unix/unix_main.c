@@ -659,7 +659,7 @@ char* Sys_GetDLLName( const char *name ) {
 #if defined __i386__
 	return va( "%s.mp.i386.so", name );
 #elif defined idx64
-	return va( "%s.mp.x64.so", name );
+	return va( "%s.mp.x86_64.so", name );
 #elif defined __powerpc__
 	return va( "%s.mp.ppc.so", name );
 #elif defined __axp__
