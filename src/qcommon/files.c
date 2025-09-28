@@ -1923,7 +1923,8 @@ static pack_t *FS_LoadZipFile( char *zipfile, const char *basename ) {
 
 	buildBuffer = Z_Malloc( ( gi.number_entry * sizeof( fileInPack_t ) ) + len );
 	namePtr = ( (char *) buildBuffer ) + gi.number_entry * sizeof( fileInPack_t );
-	fs_headerLongs = Z_Malloc( gi.number_entry * sizeof( int ) );
+	fs_headerLongs = Z_Malloc( (gi.number_entry + 1) * sizeof( int ) );
+	fs_headerLongs[ fs_numHeaderLongs++ ] = LittleLong( fs_checksumFeed );
 
 	// get the hash table size from the number of files in the zip
 	// because lots of custom pk3 files have less than 32 or 64 files
@@ -1974,12 +1975,9 @@ static pack_t *FS_LoadZipFile( char *zipfile, const char *basename ) {
 		unzGoToNextFile( uf );
 	}
 
-	pack->checksum = Com_BlockChecksum( fs_headerLongs, 4 * fs_numHeaderLongs );
-	pack->pure_checksum = Com_BlockChecksumKey( fs_headerLongs, 4 * fs_numHeaderLongs, LittleLong( fs_checksumFeed ) );
-	// TTimo: DO_LIGHT_DEDICATED
-	// curious about the size of those
-	//Com_DPrintf("Com_BlockChecksumKey: %s %u\n", pack->pakBasename, 4 * fs_numHeaderLongs);
-	// cumulated for light dedicated: 21558 bytes
+	pack->checksum = Com_BlockChecksum(&fs_headerLongs[1], sizeof(*fs_headerLongs) * (fs_numHeaderLongs - 1));
+	pack->pure_checksum = Com_BlockChecksum(fs_headerLongs, sizeof(*fs_headerLongs) * fs_numHeaderLongs);
+
 	pack->checksum = LittleLong( pack->checksum );
 	pack->pure_checksum = LittleLong( pack->pure_checksum );
 
@@ -2614,6 +2612,7 @@ void FS_Path_f( void ) {
 				if ( !FS_PakIsPure( s->pack ) ) {
 					Com_Printf( "    not on the pure list\n" );
 					// unload the pak
+					/*
 					if (s->pack) {
 						unzClose(s->pack->handle);
 						Z_Free(s->pack->buildBuffer);
@@ -2627,6 +2626,7 @@ void FS_Path_f( void ) {
 					p->next = s->next;
 					Z_Free(s);
 					s = p;
+					*/
 				} else {
 					Com_Printf( "    on the pure list\n" );
 					p = s;
@@ -3900,7 +3900,8 @@ see show_bug.cgi?id=478
 =================
 */
 qboolean FS_ConditionalRestart( int checksumFeed ) {
-	if ( fs_gamedirvar->modified || checksumFeed != fs_checksumFeed || fs_numServerPaks ) {
+	//if ( fs_gamedirvar->modified || checksumFeed != fs_checksumFeed || fs_numServerPaks ) {
+	if (fs_gamedirvar->modified || checksumFeed != fs_checksumFeed ) {
 		FS_Restart( checksumFeed );
 		return qtrue;
 	}

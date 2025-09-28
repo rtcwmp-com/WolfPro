@@ -14,7 +14,7 @@ dependencies64:
 
 binaries-linux:
 	mkdir -p ../build
-	cd ../build && CC=clang CFLAGS=-m32 CXXFLAGS=-m32 LDFLAGS=-m32 cmake -G Ninja -DCMAKE_LIBRARY_PATH=/usr/lib/i386-linux-gnu -DCMAKE_PREFIX_PATH=/usr/lib/i386-linux-gnu/cmake/ -DBUILD_CLIENT=OFF -DBUILD_SERVER=OFF -DBUILD_CLIENT_MOD=OFF  .. && ninja
+	cd ../build && CC=clang CFLAGS=-m32 CXXFLAGS=-m32 LDFLAGS=-m32 cmake -G Ninja -DCMAKE_LIBRARY_PATH=/usr/lib/i386-linux-gnu -DCMAKE_PREFIX_PATH=/usr/lib/i386-linux-gnu/cmake/ -DBUILD_CLIENT=OFF -DBUILD_SERVER=OFF -DBUILD_SERVER_MOD=OFF -DBUILD_MOD_PK3=OFF .. && ninja
 	cd ../build && rm -rf CMakeCache.txt  CMakeFiles build.ninja cmake_install.cmake  librenderer.a
 
 binaries-linux64:
