@@ -40,7 +40,7 @@ If you have questions concerning this license or the applicable additional terms
 // second version that must match between game and cgame
 
 #define GAME_VERSION        "RTCW-MP"
-#define GAMEVERSION "main"
+#define GAMEVERSION "wolfpro"
 
 #define DEFAULT_GRAVITY     800
 #define FORCE_LIMBO_HEALTH  -150 // JPW NERVE
@@ -651,6 +651,10 @@ typedef struct ammotable_s {
 
 extern ammotable_t ammoTable[];     // defined in bg_misc.c
 extern int weapAlts[];  // defined in bg_misc.c
+int BG_MaxAmmoForWeapon(weapon_t weaponNum);
+int BG_GrenadesForClass(int cls);
+
+#define GetAmmoTableData( ammoIndex ) ( (ammotable_t*)( &ammoTable[ammoIndex] ) )
 
 
 //----(SA)
