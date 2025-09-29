@@ -102,7 +102,7 @@ rem ***************************************************************************
 
 	if not exist "curl" (
 		echo curl...
-		call powershell "Invoke-WebRequest -Uri https://curl.se/windows/latest.cgi?p=win32-mingw.zip -Out curl.zip"
+		call powershell "Invoke-WebRequest -Uri https://curl.se/windows/dl-8.15.0_1/curl-8.15.0_1-win32-mingw.zip -Out curl.zip"
 		call powershell "Expand-Archive -Path curl.zip -DestinationPath curl"
 		call powershell "Get-ChildItem """curl\*\*""" | move-item -Destination """curl\""
 		call powershell "rm curl.zip"
