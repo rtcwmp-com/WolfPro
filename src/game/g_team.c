@@ -1476,7 +1476,7 @@ void checkpoint_spawntouch( gentity_t *self, gentity_t *other, trace_t *trace ) 
 	qboolean playsound = qtrue;
 	qboolean firsttime = qfalse;
 
-	if ( self->count == other->client->sess.sessionTeam ) {
+	if ( self->count == other->client->sess.sessionTeam || other->client->ps.pm_type == PM_DEAD ) {
 		return;
 	}
 
