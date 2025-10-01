@@ -1522,6 +1522,8 @@ extern vmCvar_t g_statsRetryCount;
 extern vmCvar_t g_statsRetryDelay;
 extern vmCvar_t g_apiquery_curl_URL;
 
+extern vmCvar_t g_allowDeadBodyFlagGrab;
+
 void    trap_Printf( const char *fmt );
 void    trap_Error( const char *fmt );
 int     trap_Milliseconds( void );

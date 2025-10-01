@@ -3399,7 +3399,7 @@ weapon_t BG_GrenadeTypeForTeam(team_t team) {
 
 
 // Return true/false if the player "needs" the ammo
-qboolean BG_AddMagicAmmo(playerState_t* ps, int teamNum) {
+qboolean BG_AddMagicAmmo(const playerState_t* ps, int teamNum) {
 	int i, weapon;
 	int needsAmmo = qfalse;
 	int maxammo;
@@ -3407,48 +3407,20 @@ qboolean BG_AddMagicAmmo(playerState_t* ps, int teamNum) {
 
 	// Gordon: handle grenades first
 	i = BG_GrenadesForClass(ps->stats[STAT_PLAYER_CLASS]);
-
-	//Com_Printf("Grenades for class -> %5d\n", i);
-
 	weapon = BG_GrenadeTypeForTeam(teamNum);
-
 	clip = BG_FindClipForWeapon(weapon);
 
-	if (ps->ammoclip[clip] < i) {
-
-		//Com_Printf("Grenade added -> %5d\n", 1);
-
-		//ps->ammoclip[clip] += numOfClips;
-
+	if (ps->ammoclip[clip] < i) {		
 		needsAmmo = qtrue;
-
 		COM_BitSet(ps->weapons, weapon);
-
-		//if (ps->ammoclip[clip] > i) {
-		//	ps->ammoclip[clip] = i;
-		//}
 	}
 
 	if (COM_BitCheck(ps->weapons, WP_MEDIC_SYRINGE)) {
 		i = 10;
-
 		clip = BG_FindClipForWeapon(WP_MEDIC_SYRINGE);
 
 		if (ps->ammoclip[clip] < i) {
-
-			//if (!numOfClips) {
-			//	return qtrue;
-			//}
-
-			//Com_Printf("Syringe added -> %5d\n", ps->ammoclip[clip]);
-
-			//ps->ammoclip[clip] += numOfClips;
-
 			needsAmmo = qtrue;
-
-			//if (ps->ammoclip[clip] > i) {
-			//	ps->ammoclip[clip] = i;
-			//}
 		}
 	}
 
@@ -3456,67 +3428,31 @@ qboolean BG_AddMagicAmmo(playerState_t* ps, int teamNum) {
 	for (i = 0; reloadableWeapons[i] >= 0; i++) {
 		weapon = reloadableWeapons[i];
 		if (COM_BitCheck(ps->weapons, weapon)) {
+
 			maxammo = BG_MaxAmmoForWeapon(weapon);
-			//Com_Printf("MAX: %i\n", maxammo);
 
 			// Handle weapons that just use clip, and not ammo
 			if (weapon == WP_FLAMETHROWER) {
 				clip = BG_FindAmmoForWeapon(weapon);
 				if (ps->ammoclip[clip] < maxammo) {
-
-					// early out
-					//if (!numOfClips) {
-					//	return qtrue;
-					//}
-
-					//Com_Printf("Flame added -> %5d\n", ps->ammoclip[clip]);
-
 					needsAmmo = qtrue;
-					//ps->ammoclip[clip] = maxammo;
 				}
 			}
 			else if (weapon == WP_PANZERFAUST) {
 				clip = BG_FindAmmoForWeapon(weapon);
 				if (ps->ammo[clip] < maxammo) {
-
-					// early out
-					//if (!numOfClips) {
-					//	return qtrue;
-					//}
-
-					//Com_Printf("Panzer added -> %5d\n", ps->ammoclip[clip]);
 					needsAmmo = qtrue;
-
-					//ps->ammoclip[clip] += numOfClips;
-					//if (ps->ammoclip[clip] >= maxammo) {
-					//	ps->ammoclip[clip] = maxammo;
-					//}
 				}
 			}
 			else {
 				clip = BG_FindAmmoForWeapon(weapon);
 				if (ps->ammo[clip] < maxammo) {
-
-					// early out
-					//if (!numOfClips) {
-					//	return qtrue;
-					//}
-
-					//Com_Printf("SMG/Pistol added -> %5d\n", ps->ammoclip[clip]);
-
 					needsAmmo = qtrue;
-
-					//weapNumOfClips = numOfClips;
-
-					// add and limit check
-					//ps->ammo[clip] += weapNumOfClips * GetAmmoTableData(weapon)->maxclip;
-					//if (ps->ammo[clip] > maxammo) {
-					//	ps->ammo[clip] = maxammo;
-					//}
 				}
 			}
 		}
 	}
+	
 	return needsAmmo;
 }
 
@@ -3530,7 +3466,7 @@ Returns false if the item should not be picked up.
 This needs to be the same for client side prediction and server use.
 ================
 */
-qboolean    BG_CanItemBeGrabbed( const entityState_t *ent, const playerState_t *ps ) {
+qboolean BG_CanItemBeGrabbed( const entityState_t *ent, const playerState_t *ps ) {
 	gitem_t *item;
 	int ammoweap,weapbank;     // JPW NERVE
 
@@ -3545,7 +3481,7 @@ qboolean    BG_CanItemBeGrabbed( const entityState_t *ent, const playerState_t *
 	case IT_WEAPON:
 // JPW NERVE -- medics & engineers can only pick up same weapon type
 		if ( item->giTag == WP_AMMO ) { // magic ammo for any two-handed weapon
-			return BG_AddMagicAmmo((playerState_t*)ps, ps->persistant[PERS_TEAM]); // RtcwPro - check to see if player needs the ammo (ET Port)
+			return BG_AddMagicAmmo( ps, ps->persistant[PERS_TEAM] ); // RtcwPro - check to see if player needs the ammo (ET Port)
 		}
 		if ( ( ps->stats[STAT_PLAYER_CLASS] == PC_MEDIC ) || ( ps->stats[STAT_PLAYER_CLASS] == PC_ENGINEER ) ) {
 			if ( !COM_BitCheck( ps->weapons, item->giTag ) ) {
