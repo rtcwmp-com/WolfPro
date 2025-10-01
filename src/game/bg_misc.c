@@ -81,7 +81,7 @@ int weapBanksMultiPlayer[MAX_WEAP_BANKS_MP][MAX_WEAPS_IN_BANK_MP] = {
 // jpw
 
 int reloadableWeapons[] = {
-	WP_MP40, WP_THOMPSON, WP_STEN, WP_MAUSER, WP_GARAND, WP_PANZERFAUST, WP_FLAMETHROWER, WP_COLT, WP_LUGER, -1 // BG_AddMagicAmmo leave -1 at the end so we can stop the loop
+	WP_MP40, WP_THOMPSON, WP_STEN, WP_MAUSER, WP_GARAND, WP_PANZERFAUST, WP_FLAMETHROWER, WP_COLT, WP_LUGER // BG_AddMagicAmmo
 };
 
 // [0] = maxammo		-	max player ammo carrying capacity.
@@ -3425,7 +3425,7 @@ qboolean BG_AddMagicAmmo(const playerState_t* ps, int teamNum) {
 	}
 
 	// Gordon: now other weapons
-	for (i = 0; reloadableWeapons[i] >= 0; i++) {
+	for( i = 0; i < ARRAY_LEN(reloadableWeapons); i++ ) {
 		weapon = reloadableWeapons[i];
 		if (COM_BitCheck(ps->weapons, weapon)) {
 
@@ -3452,7 +3452,7 @@ qboolean BG_AddMagicAmmo(const playerState_t* ps, int teamNum) {
 			}
 		}
 	}
-	
+
 	return needsAmmo;
 }
 
