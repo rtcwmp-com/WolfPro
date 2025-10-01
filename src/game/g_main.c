@@ -202,7 +202,7 @@ vmCvar_t g_statsRetryCount;
 vmCvar_t g_statsRetryDelay;
 vmCvar_t g_apiquery_curl_URL;
 
-vmCvar_t g_allowDeadBodyFlagGrab;
+vmCvar_t g_disableDeadBodyFlagGrab;
 
 cvarTable_t gameCvarTable[] = {
 	// don't override the cheat state set by the system
@@ -374,7 +374,7 @@ cvarTable_t gameCvarTable[] = {
 	{ &g_statsRetryDelay, "g_statsRetryDelay", "2", CVAR_ARCHIVE, 0, qfalse  }, // delay in seconds to retry sending stats if first attempt fails
 	{ &g_apiquery_curl_URL, "g_apiquery_curl_URL", "https://rtcwproapi.donkanator.com/serverquery", CVAR_ARCHIVE, 0, qfalse  },
 
-	{ &g_allowDeadBodyFlagGrab, "g_allowDeadBodyFlagGrab", "0", CVAR_ARCHIVE, qtrue, qfalse }
+	{ &g_disableDeadBodyFlagGrab, "g_disableDeadBodyFlagGrab", "1", CVAR_ARCHIVE, qtrue, qfalse }
 
 
 };
