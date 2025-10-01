@@ -1475,7 +1475,7 @@ void checkpoint_spawntouch( gentity_t *self, gentity_t *other, trace_t *trace ) 
 	gentity_t   *ent = NULL;
 	qboolean playsound = qtrue;
 	qboolean firsttime = qfalse;
-	qboolean disableDeadBodyFlagGrab = ( other->client->ps.pm_type == PM_DEAD && g_disableDeadBodyFlagGrab->integer );
+	qboolean disableDeadBodyFlagGrab = ( other->client->ps.pm_type == PM_DEAD && g_disableDeadBodyFlagGrab.integer );
 
 	if ( self->count == other->client->sess.sessionTeam || disableDeadBodyFlagGrab ) {
 		return;
