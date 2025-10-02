@@ -1426,6 +1426,8 @@ qboolean    BG_PlayerSeesItem( playerState_t *ps, entityState_t *item, int atTim
 
 //----(SA)	removed PM_ammoNeeded 11/27/00
 void PM_ClipVelocity( vec3_t in, vec3_t normal, vec3_t out, float overbounce );
+// needed to call from player_die()
+void PM_WeaponUseAmmo( int wp, int amount );
 
 #define ARENAS_PER_TIER     4
 #define MAX_ARENAS          64
