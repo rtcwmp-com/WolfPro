@@ -993,7 +993,7 @@ typedef struct renderPassHistory {
 static renderPassHistory s_history[MAX_RENDERPASSES];
 static renderPassHistory s_fullFrameHistory;
 
-int __cdecl CompareSamples(void const *ptrA, void const *ptrB){
+int QDECL CompareSamples(void const *ptrA, void const *ptrB){
 	const int *a = (const int*)ptrA;
 	const int *b = (const int*)ptrB;
 	return *a - *b;

@@ -5,6 +5,8 @@ deps/*
 deps64/*
 src/.vs
 build/*
+build64/*
+docker/dockerfiles/build64/*
 docker/dockerfiles/build/*
 CMakeSettings.json
 

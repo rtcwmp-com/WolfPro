@@ -8,6 +8,7 @@
 #  JPEG_LIBRARY, where to find the libjpeg-turbo library.
 if(WOLF_64BITS)
 	set(DEPS deps64)
+	set(JPEG_NAMES libjpeg.a)
 else()
 	set(DEPS deps)
 endif()

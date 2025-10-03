@@ -1362,7 +1362,7 @@ int qsort_signum(int64_t x)
 }
 
 
-int __cdecl CompareDrawSurfs(void const *ptrA, void const *ptrB){
+int QDECL CompareDrawSurfs(void const *ptrA, void const *ptrB){
 	const drawSurf_t *a = (const drawSurf_t*)ptrA;
 	const drawSurf_t *b = (const drawSurf_t*)ptrB;
 

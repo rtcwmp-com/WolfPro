@@ -94,6 +94,17 @@ inline uint32_t popcnt(uint32_t v){
 #endif
 }
 
+#define QDECL
+
+//======================= WIN32 DEFINES =================================
+
+#ifdef WIN32
+
+#undef QDECL
+#define QDECL   __cdecl
+
+#endif
+
 //============================================================================
 #define CLIENT_WINDOW_TITLE "Wolfenstein"
 #define GAME_PROTOCOL_VERSION 60
