@@ -25,7 +25,11 @@ target_include_directories(vk_vma_alloc PRIVATE ${Vulkan_INCLUDE_DIR})
 
 target_link_libraries(renderer_vk renderer_vk_libraries renderer_libraries vk_vma_alloc)
 target_include_directories(renderer_vk PRIVATE src/renderer_vk)
+if(WIN32)
 LIST(APPEND WOLF_COMPILE_DEF "VK_USE_PLATFORM_WIN32_KHR")
+else()
+LIST(APPEND WOLF_COMPILE_DEF "VK_USE_PLATFORM_XLIB_KHR")
+endif()
 message(STATUS "Renderer Compile defs: " ${WOLF_COMPILE_DEF})
 set_target_properties(renderer_vk PROPERTIES
 	COMPILE_DEFINITIONS "${WOLF_COMPILE_DEF}"
