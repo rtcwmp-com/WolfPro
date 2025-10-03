@@ -183,21 +183,25 @@ FILE(GLOB RENDERER_CIMGUI_FILES
 set(CLIENT_SRC_VK ${CLIENT_SRC})
 set(CLIENT_SRC_GL ${CLIENT_SRC})
 if(WIN32)
-LIST(APPEND CLIENT_SRC_GL
-	"src/win32/win_glimp.c"
-	"src/win32/win_qgl.c"
-	"src/win32/win_gamma.c"
-)
+	LIST(APPEND CLIENT_SRC_GL
+		"src/win32/win_glimp.c"
+		"src/win32/win_qgl.c"
+		"src/win32/win_gamma.c"
+	)
+	LIST(APPEND CLIENT_SRC_VK
+		"src/win32/win_vkimp.c"
+	)
 else()
-LIST(APPEND CLIENT_SRC_GL
-	"src/unix/sdl_glimp.c"
-	"src/unix/linux_qgl.c"
-)
+	LIST(APPEND CLIENT_SRC_GL
+		"src/unix/sdl_glimp.c"
+		"src/unix/linux_qgl.c"
+	)
+	LIST(APPEND CLIENT_SRC_VK
+		"src/unix/sdl_vkimp.c"
+	)
 endif()
 
-LIST(APPEND CLIENT_SRC_VK
-	"src/win32/win_vkimp.c"
-)
+
 
 message(STATUS ${CLIENT_SRC_GL})
 LIST(REMOVE_ITEM CLIENT_SRC_GL
