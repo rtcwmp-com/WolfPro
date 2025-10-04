@@ -10,10 +10,17 @@ if(WIN32 AND NOT CMAKE_CROSSCOMPILE)
 		os_libraries
 		${CURL_LIBRARIES}
 	)
+	if(ENABLE_ASAN)
+	target_link_options(wolfded PRIVATE /wholearchive:clang_rt.asan-x86_64.lib /STACK:8388608)
+	endif()
+	target_link_options(wolfded PRIVATE /STACK:8388608)
 	target_include_directories(wolfded PRIVATE ${CURL_INCLUDE_DIR})
 elseif(UNIX)
 	add_executable(wolfded ${COMMON_SRC} ${SERVER_SRC})
-	target_link_options(wolfded PRIVATE "LINKER:-melf_i386")
+	if(WOLF_64BITS)
+	else()
+		target_link_options(wolfded PRIVATE "LINKER:-melf_i386")
+	endif()
 	target_link_libraries(wolfded
 		server_libraries
 		engine_libraries
@@ -23,18 +30,22 @@ elseif(UNIX)
 	target_include_directories(wolfded PRIVATE ${CURL_INCLUDE_DIR})
 endif()
 
-
+if(WOLF_64BITS)
+	set(WOLFDED_COMPILE_DEF "DEDICATED;USE_ICON;BOTLIB")
+else()
+	set(WOLFDED_COMPILE_DEF "DEDICATED;USE_ICON;BOTLIB;__i386__")
+endif()
 
 if(UNIX)
 	set_target_properties(wolfded
-		PROPERTIES COMPILE_DEFINITIONS "DEDICATED;BOTLIB;DLL_ONLY;__i386__"
+		PROPERTIES COMPILE_DEFINITIONS "${WOLFDED_COMPILE_DEF}"
 		RUNTIME_OUTPUT_DIRECTORY ""
 		RUNTIME_OUTPUT_DIRECTORY_DEBUG ""
 		RUNTIME_OUTPUT_DIRECTORY_RELEASE ""
 	)
 elseif(WIN32 AND NOT CMAKE_CROSSCOMPILE)
 	set_target_properties(wolfded
-		PROPERTIES COMPILE_DEFINITIONS "DEDICATED;BOTLIB"
+		PROPERTIES COMPILE_DEFINITIONS "${WOLFDED_COMPILE_DEF}"
 		RUNTIME_OUTPUT_DIRECTORY ""
 		RUNTIME_OUTPUT_DIRECTORY_DEBUG ""
 		RUNTIME_OUTPUT_DIRECTORY_RELEASE ""

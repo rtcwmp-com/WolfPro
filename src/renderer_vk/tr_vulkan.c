@@ -183,7 +183,7 @@ static qbool IsExtensionAvailable(const char* name, int itemCount, const VkExten
     return qfalse;
 }
 
-static void BuildLayerAndExtensionLists()
+static void BuildLayerAndExtensionLists(void)
 {
     const char* neededLayers[MAX_LAYERS];
     const char* wantedLayers[MAX_LAYERS];
@@ -196,16 +196,33 @@ static void BuildLayerAndExtensionLists()
     vk.extensionCount = 0;
     vk.layerCount = 0;
 
+#if defined(__linux__)
+    unsigned int requiredCount = 0;
+    Sys_Vulkan_GetRequiredExtensions(NULL, &requiredCount);
+    char **requiredExtensions = malloc(sizeof(char*) * requiredCount);
+    if(!Sys_Vulkan_GetRequiredExtensions(requiredExtensions, &requiredCount)){
+        ri.Error(ERR_FATAL, "Required Vulkan layer was not found\n");
+    }
+
+    for(int i = 0; i < requiredCount; i++){
+        Com_Printf("%d: %s\n", i, requiredExtensions[i]);
+    }
+#endif
 
     if(UseValidationLayer())
     {
         wantedLayers[wantedLayerCount++] = "VK_LAYER_KHRONOS_validation"; // full validation
         //wantedExtensions[wantedExtensionCount++] = "VK_EXT_validation_features"; // update to non-deprecated
     }
-    neededExtensions[neededExtensionCount++] = "VK_KHR_surface"; // swap chain
 #if defined(_WIN32)
+    neededExtensions[neededExtensionCount++] = "VK_KHR_surface"; // swap chain
     neededExtensions[neededExtensionCount++] = "VK_KHR_win32_surface"; // Windows swap chain
+#else
+    for(int i = 0; i < requiredCount; i++){
+        neededExtensions[neededExtensionCount++] = requiredExtensions[i];
+    }
 #endif
+
     wantedExtensions[wantedExtensionCount++] = "VK_EXT_debug_utils"; // naming resources
 
     uint32_t layerCount;
@@ -579,7 +596,7 @@ static void CreateAllocator(void)
     VmaVulkanFunctions vkFuncs;
     VK(vmaImportVulkanFunctionsFromVolk(&allocatorInfo, &vkFuncs));
     allocatorInfo.pVulkanFunctions = &vkFuncs;
-    
+
     VK(vmaCreateAllocator(&allocatorInfo, &vk.allocator));
 }
 
@@ -803,7 +820,7 @@ static void CreateSwapChain(void)
     VkSwapchainCreateInfoKHR createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     createInfo.surface = vk.surface;
-    createInfo.minImageCount = RHI_FRAMES_IN_FLIGHT;
+    createInfo.minImageCount = caps.minImageCount;
     createInfo.imageFormat = selectedFormat.format;
     createInfo.imageColorSpace = selectedFormat.colorSpace;
     createInfo.imageExtent.width = w;
@@ -2286,7 +2303,7 @@ VkAttachmentLoadOp GetVkAttachmentLoadOp(RHI_LoadOp load)
 
 VkImageLayout GetVkImageLayout(RHI_ResourceState state)
 {
-    assert(__popcnt(state) == 1); //TODO
+    assert(popcnt(state) == 1); //TODO
 
     typedef struct {
         RHI_ResourceState state;

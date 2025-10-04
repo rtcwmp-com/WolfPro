@@ -55,9 +55,9 @@ Sys_LowPhysicalMemory()
 */
 
 qboolean Sys_LowPhysicalMemory() {
-	MEMORYSTATUS stat;
-	GlobalMemoryStatus( &stat );
-	return ( stat.dwTotalPhys <= MEM_THRESHOLD ) ? qtrue : qfalse;
+	MEMORYSTATUSEX stat;
+	GlobalMemoryStatusEx( &stat );
+	return ( stat.ullTotalPhys <= MEM_THRESHOLD ) ? qtrue : qfalse;
 }
 
 /*
@@ -337,7 +337,6 @@ char **Sys_ListFiles( const char *directory, const char *extension, char *filter
 	char        **listCopy;
 	char        *list[MAX_FOUND_FILES];
 	struct _finddata_t findinfo;
-	int findhandle;
 	int flag;
 	int i;
 
@@ -379,7 +378,7 @@ char **Sys_ListFiles( const char *directory, const char *extension, char *filter
 	// search
 	nfiles = 0;
 
-	findhandle = _findfirst( search, &findinfo );
+	const intptr_t findhandle = _findfirst(search, &findinfo);
 	if ( findhandle == -1 ) {
 		*numfiles = 0;
 		return NULL;
@@ -574,45 +573,33 @@ extern int cl_connectedToPureServer;
 #endif
 
 char* Sys_GetDLLName( const char *name ) {
+#ifdef idx64
+	return va( "%s_mp_x64.dll", name );
+#endif
 	return va( "%s_mp_x86.dll", name );
 }
+
 
 // fqpath param added 2/15/02 by T.Ray - Sys_LoadDll is only called in vm.c at this time
 // fqpath will be empty if dll not loaded, otherwise will hold fully qualified path of dll module loaded
 // fqpath buffersize must be at least MAX_QPATH+1 bytes long
-void * QDECL Sys_LoadDll( const char *name, char *fqpath, int( QDECL **entryPoint ) ( int, ... ),
-						  int ( QDECL *systemcalls )( int, ... ) ) {
+void * QDECL Sys_LoadDll( const char *name, char *fqpath, intptr_t( QDECL **entryPoint ) ( intptr_t, ... ),
+						  intptr_t ( QDECL *systemcalls )( intptr_t, ... ) ) {
 	HINSTANCE libHandle;
-	void ( QDECL * dllEntry )( int ( QDECL *syscallptr )( int, ... ) );
-	char    *basepath;
-	char    *gamedir;
-	char    *fn;
+	void ( QDECL * dllEntry )( intptr_t ( QDECL *syscallptr )( intptr_t, ... ) );
+
+	char    *basepath = Cvar_VariableString("fs_basepath");
+	char    *gamedir = Cvar_VariableString("fs_game");
+	
 	char filename[MAX_QPATH];
+	Q_strncpyz(filename, Sys_GetDLLName(name), sizeof(filename));
+
+	char* fn = FS_BuildOSPath(basepath, gamedir, filename);
 
 	*fqpath = 0 ;       // added 2/15/02 by T.Ray
-
-	Q_strncpyz( filename, Sys_GetDLLName( name ), sizeof( filename ) );
-
-	basepath = Cvar_VariableString( "fs_basepath" );
-	gamedir = Cvar_VariableString( "fs_game" );
-
-	// try gamepath first
-	fn = FS_BuildOSPath( basepath, gamedir, filename );
-
-	// TTimo - this is only relevant for full client
-	// if a full client runs a dedicated server, it's not affected by this
-#if !defined( DEDICATED )
-	// NERVE - SMF - extract dlls from pak file for security
-	// we have to handle the game dll a little differently
-	// TTimo - passing the exact path to check against
-	//   (compatibility with other OSes loading procedure)
-	if ( cl_connectedToPureServer && Q_strncmp( name, "qagame", 6 ) ) {
-		if ( !FS_CL_ExtractFromPakFile( fn, gamedir, filename, NULL ) ) {
-			Com_Error( ERR_DROP, "Game code(%s) failed Pure Server check", filename );
-		}
-	}
+#if !defined(DEDICATED)
+	FS_ExtractFromPak(fn, filename);
 #endif
-
 	libHandle = LoadLibrary( fn );
 
 	if ( !libHandle ) {
@@ -633,10 +620,10 @@ void * QDECL Sys_LoadDll( const char *name, char *fqpath, int( QDECL **entryPoin
 		}
 	} else {Q_strncpyz( fqpath, fn, MAX_QPATH ) ;       // added 2/15/02 by T.Ray
 	}
-	dllEntry = ( void ( QDECL * )( int ( QDECL * )( int, ... ) ) )GetProcAddress( libHandle, "dllEntry" );
-	*entryPoint = ( int ( QDECL * )( int,... ) )GetProcAddress( libHandle, "vmMain" );
+	dllEntry = ( void ( QDECL * )(intptr_t( QDECL * )(intptr_t, ... ) ) )GetProcAddress( libHandle, "dllEntry" );
+	*entryPoint = (intptr_t( QDECL * )(intptr_t,... ) )GetProcAddress( libHandle, "vmMain" );
 	if ( !*entryPoint || !dllEntry ) {
-		FreeLibrary( libHandle );
+		//FreeLibrary( libHandle );
 		return NULL;
 	}
 	dllEntry( systemcalls );
@@ -1144,10 +1131,6 @@ void Sys_Init( void ) {
 
 	Cvar_Set( "arch", "winnt" );
 
-	// save out a couple things in rom cvars for the renderer to access
-	Cvar_Get( "win_hinstance", va( "%i", (int)g_wv.hInstance ), CVAR_ROM );
-	Cvar_Get( "win_wndproc", va( "%i", (int)MainWndProc ), CVAR_ROM );
-
 	Cvar_Set( "username", Sys_GetCurrentUser() );
 
 	IN_Init();      // FIXME: not in dedicated?
@@ -1163,7 +1146,7 @@ void SetThreadName(void){
 	HINSTANCE libHandle = LoadLibrary("kernel32.dll");
 
 	if(libHandle != NULL){
-		pfn_SetThreadDescription pfnSetThreadDescription = GetProcAddress(libHandle, "SetThreadDescription");
+		pfn_SetThreadDescription pfnSetThreadDescription = (pfn_SetThreadDescription)GetProcAddress(libHandle, "SetThreadDescription");
 
 		if(pfnSetThreadDescription != NULL){
 			pfnSetThreadDescription(GetCurrentThread(), L"Main");
@@ -1180,7 +1163,7 @@ void SetDpiAware(void){
 	HINSTANCE libHandle = LoadLibrary("user32.dll");
 
 	if(libHandle != NULL){
-		pfn_SetProcessDpiAwarenessContext pfnDpiAware = GetProcAddress(libHandle, "SetProcessDpiAwarenessContext");
+		pfn_SetProcessDpiAwarenessContext pfnDpiAware = (pfn_SetProcessDpiAwarenessContext)GetProcAddress(libHandle, "SetProcessDpiAwarenessContext");
 
 		if(pfnDpiAware == NULL){
 			SetProcessDPIAware();
@@ -1200,6 +1183,12 @@ WinMain
 ==================
 */
 int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow ) {
+#if defined(_DEBUG)
+	ULONG_PTR low, high;
+	GetCurrentThreadStackLimits(&low, &high);
+	assert((high - low) >> 20 >= 8); //set stack size to 8MB or more
+#endif
+
 	char cwd[MAX_OSPATH];
 	int startTime, endTime;
 

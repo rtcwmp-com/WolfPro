@@ -2,10 +2,10 @@
 
 CMAKEMINGW=$(cat <<EOF
 set(CMAKE_SYSTEM_NAME Windows)
-set(CMAKE_SYSTEM_PROCESSOR X86)
-set(CMAKE_C_COMPILER /usr/bin/i686-w64-mingw32-gcc)
-set(CMAKE_CXX_COMPILER /usr/bin/i686-w64-mingw32-g++)
-set(CMAKE_RC_COMPILER /usr/bin/i686-w64-mingw32-windres)
+set(CMAKE_SYSTEM_PROCESSOR X64)
+set(CMAKE_C_COMPILER /usr/bin/x86_64-w64-mingw32-gcc)
+set(CMAKE_CXX_COMPILER /usr/bin/x86_64-w64-mingw32-g++)
+set(CMAKE_RC_COMPILER /usr/bin/x86_64-w64-mingw32-windres)
 set(CMAKE_SHARED_LINKER_FLAGS "-static -static-libgcc -static-libstdc++")
 EOF
 )
@@ -30,18 +30,38 @@ EOF
 )
 
 
-mkdir -p deps
-cd deps
+mkdir -p deps64
+cd deps64
 DEPS_ROOT=`pwd`
+
+OPENSSL_DIR=`pwd`/openssl
+if [ ! -d "$OPENSSL_DIR" ]; then
+VER=$(curl --silent -qI https://github.com/openssl/openssl/releases/latest | awk -F '/' '/^location/ {print  substr($NF, 1, length($NF)-1)}');
+wget https://api.github.com/repos/openssl/openssl/tarball/$VER
+tar xvfz $VER
+rm $VER
+mv openssl* openssl
+cd $OPENSSL_DIR
+mkdir build
+./Configure --prefix=${OPENSSL_DIR}/build '-Wl,-rpath,$(LIBRPATH)' no-tests no-docs 
+make -j
+make install
+fi
+cd $DEPS_ROOT
 
 CURL_DIR=`pwd`/curl
 if [ ! -d "$CURL_DIR" ]; then
-CURL_NAME="curl-linux-i686-glibc"
-CURL_VER="8.16.0"
-wget https://github.com/stunnel/static-curl/releases/download/${CURL_VER}/${CURL_NAME}-${CURL_VER}.tar.xz 
-tar xvf ${CURL_NAME}-${CURL_VER}.tar.xz
-rm ${CURL_NAME}-${CURL_VER}.tar.xz
+VER=$(curl --silent -qI https://github.com/curl/curl/releases/latest | awk -F '/' '/^location/ {print  substr($NF, 1, length($NF)-1)}');
+wget https://api.github.com/repos/curl/curl/tarball/$VER
+tar xvfz $VER
+rm $VER
 mv curl-curl* curl
+cd $CURL_DIR
+mkdir build
+autoreconf -fi
+PKG_CONFIG="pkg-config --static" ./configure --disable-shared --enable-static --without-libpsl --without-zlib --with-openssl=${OPENSSL_DIR}/build --prefix=${CURL_DIR}/build
+make -j LDFLAGS="-static -all-static"
+make install
 fi
 cd $DEPS_ROOT
 
@@ -56,20 +76,9 @@ rm $VER
 mv *jansson* jansson
 cd $JANSSON_DIR
 mkdir build
-mkdir build-win
-autoreconf -i
-CFLAGS="-m32" ./configure --prefix=${JANSSON_DIR}/build
-make -j
-make install
-
-autoreconf -i
-CFLAGS="-m32" ./configure --prefix=${JANSSON_DIR}/build-win --target=i686-w64-mingw32 --host=i686-w64-mingw32
-make -j
-make install
-cd $JANSSON_DIR
-cd build-win
-gendef libjansson-4.dll
-i686-w64-mingw32-dlltool -d libjansson-4.def -l libjansson-4.lib
+cd build
+cmake .. -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM="3.5" -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY  -DJANSSON_BUILD_DOCS=OFF
+ninja
 fi
 cd $DEPS_ROOT
 
@@ -83,9 +92,7 @@ mv *libunwind* libunwind
 cd $LIBUNWIND_DIR
 mkdir build
 autoreconf -i
-export CC="gcc -m32"
-export CXX="g++ -m32"
-./configure --host=i686-pc-linux-gnu --prefix=${LIBUNWIND_DIR}/build --disable-documentation --disable-tests
+./configure --prefix=${LIBUNWIND_DIR}/build --disable-documentation --disable-tests
 make -j
 make install
 fi
@@ -102,7 +109,7 @@ cd $LIBSDL_DIR
 mkdir build
 mkdir build-win
 ./autogen.sh
-./configure --build=i686-pc-linux-gnu "CFLAGS=-m32" "CXXFLAGS=-m32" "LDFLAGS=-m32" --prefix=${LIBSDL_DIR}/build 
+./configure --prefix=${LIBSDL_DIR}/build 
 make -j
 make install
 fi
@@ -119,7 +126,7 @@ cd $LIBJPEG_DIR
 mkdir build
 mkdir build-win
 cd build
-CFLAGS=-m32 CXXFLAGS=-m32 LDFLAGS=-m32  cmake -G"Unix Makefiles" ..
+cmake -G"Unix Makefiles" ..
 make -j
 cp ../*.h .
 
@@ -129,7 +136,7 @@ cmake -G"Unix Makefiles" -DCMAKE_TOOLCHAIN_FILE=./toolchain.cmake  -DCMAKE_INSTA
 LDFLAGS="-static -static-libgcc -static-libstdc++" make -j
 cp ../*.h .
 gendef libjpeg-62.dll
-i686-w64-mingw32-dlltool -d libjpeg-62.def -l libjpeg-62.lib
+x86_64-w64-mingw32-dlltool -d libjpeg-62.def -l libjpeg-62.lib
 fi
 cd $DEPS_ROOT
 
@@ -144,9 +151,9 @@ mv *xwin* xwin
 
 cd $XWIN_DIR
 while : ; do
-	./xwin --arch x86 --accept-license download
-	./xwin --arch x86 --accept-license unpack
-	./xwin --arch x86 --accept-license splat --output .
+	./xwin --arch x86_64 --accept-license download
+	./xwin --arch x86_64 --accept-license unpack
+	./xwin --arch x86_64 --accept-license splat --output .
 	ret=$?
 	[[ $ret -ne 0 ]] || break
 done
@@ -175,14 +182,14 @@ if [ ! -d "$CURLWIN_DIR" ]; then
 #            sh -c ./_ci-linux-debian.sh
 mkdir curl-win
 cd curl-win
-wget https://curl.se/windows/latest.cgi?p=win32-mingw.zip
-mv *win32-mingw.zip curl.zip
+wget https://curl.se/windows/latest.cgi?p=win64-mingw.zip
+mv *win64-mingw.zip curl.zip
 unzip curl.zip
 rm curl.zip
-mv curl*win32-mingw curl
+mv curl*win64-mingw curl
 cd curl/bin
-gendef libcurl.dll
-i686-w64-mingw32-dlltool -d libcurl.def -l libcurl.lib
+gendef libcurl-x64.dll
+i686-w64-mingw32-dlltool -d libcurl-x64.def -l libcurl-x64.lib
 fi
 
 

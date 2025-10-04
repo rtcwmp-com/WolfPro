@@ -205,19 +205,17 @@ static void CG_TransitionSnapshot( void ) {
 
 	if ( !cg.snap ) {
 		CG_Error( "CG_TransitionSnapshot: NULL cg.snap" );
+		return;
 	}
 	if ( !cg.nextSnap ) {
 		CG_Error( "CG_TransitionSnapshot: NULL cg.nextSnap" );
+		return;
 	}
 
 	// execute any server string commands before transitioning entities
 	CG_ExecuteNewServerCommands( cg.nextSnap->serverCommandSequence );
 
 	// if we had a map_restart, set everthing with initial
-
-	if ( !( cg.snap ) || !( cg.nextSnap ) ) {
-		return;
-	}
 
 	// clear the currentValid flag for all entities in the existing snapshot
 	for ( i = 0 ; i < cg.snap->numEntities ; i++ ) {

@@ -8,7 +8,6 @@
 #define MAX_IMGUI_VERTS (1<<16)
 #define MAX_IMGUI_INDICES (MAX_IMGUI_VERTS * 3)
 
-_Static_assert(sizeof(ImDrawIdx) == 4, "sizeof(ImDrawIdx) must be 4");
 
 rhiPipeline ImGUIpipeline;
 rhiBuffer imGUIvertexBuffers[RHI_FRAMES_IN_FLIGHT];
@@ -28,6 +27,7 @@ typedef struct pixelPC {
 #pragma pack(pop)
 
 void RB_ImGUI_Init(void){
+    assert(sizeof(ImDrawIdx) == 4);
     ImGuiIO* io = igGetIO();
     io->DisplaySize.x = glConfig.vidWidth;
     io->DisplaySize.y = glConfig.vidHeight;
