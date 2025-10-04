@@ -196,6 +196,7 @@ static void BuildLayerAndExtensionLists(void)
     vk.extensionCount = 0;
     vk.layerCount = 0;
 
+#if defined(__linux__)
     unsigned int requiredCount = 0;
     Sys_Vulkan_GetRequiredExtensions(NULL, &requiredCount);
     char **requiredExtensions = malloc(sizeof(char*) * requiredCount);
@@ -206,7 +207,7 @@ static void BuildLayerAndExtensionLists(void)
     for(int i = 0; i < requiredCount; i++){
         Com_Printf("%d: %s\n", i, requiredExtensions[i]);
     }
-
+#endif
 
     if(UseValidationLayer())
     {

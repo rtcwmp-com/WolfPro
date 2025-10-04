@@ -94,15 +94,13 @@ qbool Sys_IsDebugging(void);
 	#error "compiler not supported"
 #endif
 
-#define QDECL
-
 //======================= WIN32 DEFINES =================================
 
 #ifdef WIN32
-
 #undef QDECL
 #define QDECL   __cdecl
-
+#else
+#define QDECL
 #endif
 
 //============================================================================
