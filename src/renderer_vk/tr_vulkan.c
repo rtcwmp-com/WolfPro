@@ -820,7 +820,7 @@ static void CreateSwapChain(void)
     VkSwapchainCreateInfoKHR createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     createInfo.surface = vk.surface;
-    createInfo.minImageCount = RHI_FRAMES_IN_FLIGHT;
+    createInfo.minImageCount = caps.minImageCount;
     createInfo.imageFormat = selectedFormat.format;
     createInfo.imageColorSpace = selectedFormat.colorSpace;
     createInfo.imageExtent.width = w;
