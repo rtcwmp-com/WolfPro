@@ -229,9 +229,11 @@ typedef struct Vulkan
 	// core
 	// 
 	int layerCount;
-	int extensionCount;
+	int instanceExtensionCount;
+	int deviceExtensionCount;
 	const char* layers[MAX_LAYERS];
-	const char* extensions[MAX_LAYERS];
+	const char* instanceExtensions[MAX_LAYERS];
+	const char* deviceExtensions[MAX_LAYERS];
 
 	VkInstance instance;
 	VkSurfaceKHR surface;
@@ -298,6 +300,7 @@ typedef struct Vulkan
 	{
 		qbool EXT_validation_features;
 		qbool EXT_debug_utils;
+		qbool EXT_NV_low_latency2;
 		VkDebugUtilsMessengerEXT debugMessenger; // EXT_debug_utils
 	} ext;
 

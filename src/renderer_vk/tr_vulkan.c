@@ -182,17 +182,93 @@ static qbool IsExtensionAvailable(const char* name, int itemCount, const VkExten
     return qfalse;
 }
 
-static void BuildLayerAndExtensionLists(void)
+typedef struct extension_s {
+    const char *layer;
+    const char *extension;
+} extension_t;
+
+static void BuildDeviceExtensionList(void)
 {
+#define ADD_WANT_DEV_EXT(layer, extension) wantedDeviceExtensions[wantedDeviceExtensionCount++] = (extension_t){layer, extension}
+#define ADD_NEED_DEV_EXT(layer, extension) neededDeviceExtensions[neededDeviceExtensionCount++] = (extension_t){layer, extension}
+    
+    extension_t neededDeviceExtensions[MAX_EXTENSIONS];
+    extension_t wantedDeviceExtensions[MAX_EXTENSIONS];
+    int neededDeviceExtensionCount = 0;
+    int wantedDeviceExtensionCount = 0;
+    vk.deviceExtensionCount = 0;
+
+    ADD_NEED_DEV_EXT(NULL, "VK_KHR_swapchain");
+    ADD_WANT_DEV_EXT(NULL, VK_NV_LOW_LATENCY_2_EXTENSION_NAME);
+    ADD_WANT_DEV_EXT(NULL, VK_KHR_PRESENT_ID_EXTENSION_NAME);
+
+    uint32_t tempCount, extCount;
+    VK(vkEnumerateDeviceExtensionProperties(vk.physicalDevice, NULL, &tempCount, NULL));
+    extCount = tempCount;
+    for(int l = 0; l < vk.layerCount; ++l)
+    {
+        VK(vkEnumerateDeviceExtensionProperties(vk.physicalDevice, vk.layers[l], &tempCount, NULL));
+        extCount += tempCount;
+    }
+    
+    {
+        VkExtensionProperties *ext = (VkExtensionProperties*)ri.Hunk_AllocateTempMemory(extCount * sizeof(VkExtensionProperties));
+        VK(vkEnumerateDeviceExtensionProperties(vk.physicalDevice, NULL, &tempCount, NULL));
+        VK(vkEnumerateDeviceExtensionProperties(vk.physicalDevice, NULL, &tempCount, ext));
+        uint32_t startOffset = tempCount;
+        for(int l = 0; l < vk.layerCount; ++l)
+        {
+            VK(vkEnumerateDeviceExtensionProperties(vk.physicalDevice, vk.layers[l], &tempCount, NULL));
+            VK(vkEnumerateDeviceExtensionProperties(vk.physicalDevice, vk.layers[l], &tempCount, ext + startOffset));
+            startOffset += tempCount;
+        }
+        for(int n = 0; n < neededDeviceExtensionCount; ++n)
+        {
+            const char* name = neededDeviceExtensions[n].extension;
+            if(!IsExtensionAvailable(name, extCount, ext))
+            {
+                ri.Error(ERR_FATAL, "Required Vulkan extension '%s' was not found\n", name);
+            }
+            vk.deviceExtensions[vk.deviceExtensionCount++] = name;
+        }
+        for(int w = 0; w < wantedDeviceExtensionCount; ++w)
+        {
+            const char* name = wantedDeviceExtensions[w].extension;
+            if(!IsExtensionAvailable(name, extCount, ext))
+            {
+                ri.Printf(PRINT_WARNING, "Desired Vulkan extension '%s' was not found, dropped from list\n", name);
+            }
+            else
+            {
+                vk.deviceExtensions[vk.deviceExtensionCount++] = name;
+            }
+        }
+
+        vk.ext.EXT_NV_low_latency2 = IsExtensionAvailable(VK_NV_LOW_LATENCY_2_EXTENSION_NAME, extCount, ext);
+        ri.Hunk_FreeTempMemory(ext);
+    }
+
+#undef ADD_NEED_DEV_EXT
+#undef ADD_WANT_DEV_EXT
+
+}
+
+static void BuildLayerAndInstanceExtensionLists(void)
+{
+
+
+    #define ADD_NEED_INST_EXT(layer, extension) neededInstanceExtensions[neededInstanceExtensionCount++] = (extension_t){layer, extension}
+    #define ADD_WANT_INST_EXT(layer, extension) wantedInstanceExtensions[wantedInstanceExtensionCount++] = (extension_t){layer, extension}
+    
     const char* neededLayers[MAX_LAYERS];
     const char* wantedLayers[MAX_LAYERS];
-    const char* neededExtensions[MAX_EXTENSIONS];
-    const char* wantedExtensions[MAX_EXTENSIONS];
+    extension_t neededInstanceExtensions[MAX_EXTENSIONS];
+    extension_t wantedInstanceExtensions[MAX_EXTENSIONS];
     int neededLayerCount = 0;
     int wantedLayerCount = 0;
-    int neededExtensionCount = 0;
-    int wantedExtensionCount = 0;
-    vk.extensionCount = 0;
+    int neededInstanceExtensionCount = 0;
+    int wantedInstanceExtensionCount = 0;
+    vk.instanceExtensionCount = 0;
     vk.layerCount = 0;
 
 #if defined(__linux__)
@@ -211,18 +287,17 @@ static void BuildLayerAndExtensionLists(void)
     if(UseValidationLayer())
     {
         wantedLayers[wantedLayerCount++] = "VK_LAYER_KHRONOS_validation"; // full validation
-        //wantedExtensions[wantedExtensionCount++] = "VK_EXT_validation_features"; // update to non-deprecated
     }
 #if defined(_WIN32)
-    neededExtensions[neededExtensionCount++] = "VK_KHR_surface"; // swap chain
-    neededExtensions[neededExtensionCount++] = "VK_KHR_win32_surface"; // Windows swap chain
+    ADD_NEED_INST_EXT(NULL, "VK_KHR_surface"); // swap chain
+    ADD_NEED_INST_EXT(NULL, "VK_KHR_win32_surface"); // Windows swap chain
 #else
     for(int i = 0; i < requiredCount; i++){
-        neededExtensions[neededExtensionCount++] = requiredExtensions[i];
+        ADD_NEED_INST_EXT(NULL, requiredExtensions[i]);
     }
 #endif
 
-    wantedExtensions[wantedExtensionCount++] = "VK_EXT_debug_utils"; // naming resources
+    ADD_WANT_INST_EXT("VK_LAYER_KHRONOS_validation", "VK_EXT_debug_utils"); // naming resources
 
     uint32_t layerCount;
     VK(vkEnumerateInstanceLayerProperties(&layerCount, NULL));
@@ -275,25 +350,25 @@ static void BuildLayerAndExtensionLists(void)
             VK(vkEnumerateInstanceExtensionProperties(vk.layers[l], &tempCount, ext + startOffset));
             startOffset += tempCount;
         }
-        for(int n = 0; n < neededExtensionCount; ++n)
+        for(int n = 0; n < neededInstanceExtensionCount; ++n)
         {
-            const char* name = neededExtensions[n];
+            const char* name = neededInstanceExtensions[n].extension;
             if(!IsExtensionAvailable(name, extCount, ext))
             {
                 ri.Error(ERR_FATAL, "Required Vulkan extension '%s' was not found\n", name);
             }
-            vk.extensions[vk.extensionCount++] = name;
+            vk.instanceExtensions[vk.instanceExtensionCount++] = name;
         }
-        for(int w = 0; w < wantedExtensionCount; ++w)
+        for(int w = 0; w < wantedInstanceExtensionCount; ++w)
         {
-            const char* name = wantedExtensions[w];
+            const char* name = wantedInstanceExtensions[w].extension;
             if(!IsExtensionAvailable(name, extCount, ext))
             {
                 ri.Printf(PRINT_WARNING, "Desired Vulkan extension '%s' was not found, dropped from list\n", name);
             }
             else
             {
-                vk.extensions[vk.extensionCount++] = name;
+                vk.instanceExtensions[vk.instanceExtensionCount++] = name;
             }
         }
 
@@ -301,6 +376,9 @@ static void BuildLayerAndExtensionLists(void)
         vk.ext.EXT_debug_utils = IsExtensionAvailable("VK_EXT_debug_utils", extCount, ext);
         ri.Hunk_FreeTempMemory(ext);
     }
+
+    #undef ADD_NEED_INST_EXT
+    #undef ADD_WANT_INST_EXT
 }
 
 
@@ -331,9 +409,9 @@ void CreateInstance()
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     createInfo.pApplicationInfo = &appInfo;
     createInfo.pNext = &messengerCreateInfo;
-    if (vk.extensionCount > 0) {
-        createInfo.enabledExtensionCount = vk.extensionCount;
-        createInfo.ppEnabledExtensionNames = vk.extensions;
+    if (vk.instanceExtensionCount > 0) {
+        createInfo.enabledExtensionCount = vk.instanceExtensionCount;
+        createInfo.ppEnabledExtensionNames = vk.instanceExtensions;
     }
     
     if (vk.layerCount > 0) {
@@ -535,11 +613,6 @@ static void CreateDevice(void)
         ++queueCount;
     }
 
-    const char* extensions[] =
-    {
-        "VK_KHR_swapchain"
-    };
-
     VkPhysicalDeviceVulkan12Features vk12f = {};
     vk12f.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
     vk12f.hostQueryReset = VK_TRUE;
@@ -572,8 +645,8 @@ static void CreateDevice(void)
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     createInfo.pQueueCreateInfos = queueCreateInfo;
     createInfo.queueCreateInfoCount = queueCount;
-    createInfo.ppEnabledExtensionNames = extensions;
-    createInfo.enabledExtensionCount = ARRAY_LEN(extensions);
+    createInfo.ppEnabledExtensionNames = vk.deviceExtensions;
+    createInfo.enabledExtensionCount = vk.deviceExtensionCount;
     createInfo.pEnabledFeatures = NULL;
     createInfo.pNext = &features2;
 
@@ -2580,10 +2653,11 @@ void RHI_Init( void ) {
     
     VK(volkInitialize());
     vk.instance = VK_NULL_HANDLE;
-    BuildLayerAndExtensionLists();
+    BuildLayerAndInstanceExtensionLists();
     CreateInstance();
     vk.surface = (VkSurfaceKHR)Sys_Vulkan_Init(vk.instance);
     PickPhysicalDevice();
+    BuildDeviceExtensionList();
     CreateDevice();
     CreateAllocator();
     CreateSwapChain();
