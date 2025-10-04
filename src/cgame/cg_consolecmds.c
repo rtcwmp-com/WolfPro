@@ -554,7 +554,7 @@ static void CG_TimerShare_f (void) {
 	}
 
 	secondsThen = (timeLimit - spawnTimerSet) / 1000;
-	trap_SendConsoleCommand(va("cmd say_team ^3Enemy spawn in ^1%02d^3s, every ^1%02d^3s\n", (period + (seconds - secondsThen) % period), period));
+	trap_SendConsoleCommand(va("cmd say_teamnl ^3Enemy spawns in ^1%02d^3s, every ^1%02d^3s\n", (period + (seconds - secondsThen) % period), period));
 
 }
 
