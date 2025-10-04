@@ -19,7 +19,13 @@ if(UNIX)
 	FILE(GLOB SDL_SRC
 		"src/unix/sdl_*.c"
 	)
+	LIST(REMOVE_ITEM SDL_SRC
+		"${CMAKE_CURRENT_SOURCE_DIR}/src/unix/sdl_glimp.c"
+		"${CMAKE_CURRENT_SOURCE_DIR}/src/unix/sdl_vkimp.c"
+		)
 endif()
+
+
 
 LIST(REMOVE_ITEM COMMON_SRC ${COMMON_SRC_REMOVE})
 
@@ -31,8 +37,6 @@ if(UNIX)
 	LIST(APPEND COMMON_SRC "src/unix/linux_common.c")
 	LIST(APPEND COMMON_SRC "src/unix/linux_signals.c")
 	LIST(APPEND COMMON_SRC "src/unix/linux_threads.c")
-	LIST(APPEND CLIENT_SRC ${SDL_SRC})
-	LIST(APPEND CLIENT_SRC "src/unix/linux_qgl.c")
 elseif(WIN32)
 	LIST(APPEND COMMON_SRC "src/win32/win_syscon.c")
 	LIST(APPEND COMMON_SRC "src/win32/win_shared.c")
@@ -80,6 +84,41 @@ LIST(APPEND CLIENT_SRC ${CLIENT_COMMON_SRC})
 
 
 LIST(APPEND CLIENT_SRC ${QCOMMON})
+
+set(CLIENT_SRC_VK ${CLIENT_SRC})
+set(CLIENT_SRC_GL ${CLIENT_SRC})
+if(WIN32)
+	LIST(APPEND CLIENT_SRC_GL
+		"src/win32/win_glimp.c"
+		"src/win32/win_qgl.c"
+		"src/win32/win_gamma.c"
+		
+	)
+	
+	LIST(APPEND CLIENT_SRC_VK
+		"src/win32/win_vkimp.c"
+	)
+else()
+	LIST(APPEND CLIENT_SRC_GL
+		"src/unix/sdl_glimp.c"
+		"src/unix/linux_qgl.c"
+		 ${SDL_SRC}
+	)
+	LIST(APPEND CLIENT_SRC_VK
+		"src/unix/sdl_vkimp.c"
+		 ${SDL_SRC}
+	)
+endif()
+
+
+
+message(STATUS ${CLIENT_SRC_GL})
+LIST(REMOVE_ITEM CLIENT_SRC_GL
+	"${CMAKE_CURRENT_SOURCE_DIR}/src/client/cl_imgui.c"
+	"${CMAKE_CURRENT_SOURCE_DIR}/src/client/cl_imgui_helpers.c"
+)
+
+message(STATUS ${CLIENT_SRC_GL})
 
 # These files are shared with the CGAME from the UI library
 FILE(GLOB UI_SHARED
@@ -180,33 +219,3 @@ FILE(GLOB RENDERER_CIMGUI_FILES
 
 )
 
-set(CLIENT_SRC_VK ${CLIENT_SRC})
-set(CLIENT_SRC_GL ${CLIENT_SRC})
-if(WIN32)
-	LIST(APPEND CLIENT_SRC_GL
-		"src/win32/win_glimp.c"
-		"src/win32/win_qgl.c"
-		"src/win32/win_gamma.c"
-	)
-	LIST(APPEND CLIENT_SRC_VK
-		"src/win32/win_vkimp.c"
-	)
-else()
-	LIST(APPEND CLIENT_SRC_GL
-		"src/unix/sdl_glimp.c"
-		"src/unix/linux_qgl.c"
-	)
-	LIST(APPEND CLIENT_SRC_VK
-		"src/unix/sdl_vkimp.c"
-	)
-endif()
-
-
-
-message(STATUS ${CLIENT_SRC_GL})
-LIST(REMOVE_ITEM CLIENT_SRC_GL
-	"${CMAKE_CURRENT_SOURCE_DIR}/src/client/cl_imgui.c"
-	"${CMAKE_CURRENT_SOURCE_DIR}/src/client/cl_imgui_helpers.c"
-)
-
-message(STATUS ${CLIENT_SRC_GL})

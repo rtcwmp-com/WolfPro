@@ -42,6 +42,7 @@ along with RtcwPro. If not, see <https://www.gnu.org/licenses/>.
 
 #include "unix_glw.h"
 
+#include "../renderer_vk/volk.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
 #include <SDL2/SDL_vulkan.h>
@@ -210,136 +211,6 @@ typedef enum
 	RSERR_UNKNOWN
 } rserr_t;
 
-/*
-** GLW_StartDriverAndSetMode
-*/
-// bk001204 - prototype needed
-int GLW_SetMode( const char *drivername, int mode, qboolean fullscreen );
-static qboolean GLW_StartDriverAndSetMode( const char *drivername,
-										   int mode,
-										   qboolean fullscreen ) {
-	rserr_t err;
-	err = GLW_SetMode( drivername, mode, fullscreen );
-
-	switch ( err )
-	{
-	case RSERR_INVALID_FULLSCREEN:
-		ri.Printf( PRINT_ALL, "...WARNING: fullscreen unavailable in this mode\n" );
-		return qfalse;
-	case RSERR_INVALID_MODE:
-		ri.Printf( PRINT_ALL, "...WARNING: could not set the given mode (%d)\n", mode );
-		return qfalse;
-	default:
-		break;
-	}
-	return qtrue;
-}
-
-/*
-** GLW_SetMode
-*/
-int GLW_SetMode( const char *drivername, int mode, qboolean fullscreen ) {
-
-	const char*   glstring; // bk001130 - from cvs1.17 (mkv)
-
-	ri.Printf( PRINT_ALL, "Initializing Vulkan display\n" );
-
-	ri.Printf( PRINT_ALL, "...setting mode %d:", mode );
-
-	if ( !R_GetModeInfo( &glConfig.vidWidth, &glConfig.vidHeight, &glConfig.windowAspect, mode) ) {
-		ri.Printf( PRINT_ALL, " invalid mode\n" );
-		return RSERR_INVALID_MODE;
-	}
-	ri.Printf( PRINT_ALL, " %d %d\n", glConfig.vidWidth, glConfig.vidHeight );
-
-	return RSERR_OK;
-}
-
-
-/*
-** GLimp_Init
-**
-** This routine is responsible for initializing the OS specific portions
-** of OpenGL.
-*/
-void GLimp_Init( void ) {
-	qbool attemptedlibGL = qfalse;
-	qbool success = qfalse;
-	qbool attempted3Dfx = qfalse;
-
-	if (glimp.window != NULL)
-		return;
-
-	//Cvar_RegisterArray(glimp_cvars, MODULE_CLIENT);
-
-	static qbool firstInit = qtrue;
-	if (firstInit) {
-		//Cmd_RegisterArray(glimp_cmds, MODULE_CLIENT);
-		firstInit = qfalse;
-	}
-
-	sdl_CreateMonitorList();
-	sdl_UpdateMonitorIndexFromCvar();
-	sdl_PrintMonitorList();
-
-	SDL_Rect deskropRect;
-	sdl_GetSafeDesktopRect(&deskropRect);
-	R_ConfigureVideoMode(deskropRect.w, deskropRect.h);
-
-	Uint32 windowFlags = SDL_WINDOW_VULKAN | SDL_WINDOW_SHOWN;
-	if (glInfo.winFullscreen) {
-		if (glInfo.vidFullscreen)
-			windowFlags |= SDL_WINDOW_FULLSCREEN;
-		else
-			windowFlags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-	}
-
-
-	// load and initialize the specific OpenGL driver
-	//
-	if ( !SDL_Vulkan_LoadLibrary( NULL ) ) {
-
-	}else{
-		SDL_GetError();
-			ri.Error( ERR_FATAL, "GLimp_Init() - could not load Vulkan subsystem\n" );
-	}
-
-	glimp.window = SDL_CreateWindow(WINDOW_CLASS_NAME, deskropRect.x, deskropRect.y, glConfig.vidWidth, glConfig.vidHeight, windowFlags);
-	if (glimp.window == NULL)
-		ri.Error(ERR_FATAL, "SDL_CreateWindow failed: %s\n", SDL_GetError());
-
-	glimp.glContext = SDL_GL_CreateContext(glimp.window);
-	if (glimp.glContext == NULL)
-		ri.Error(ERR_FATAL, "SDL_GL_CreateContext failed: %s\n", SDL_GetError());
-	glConfig.colorBits = 32;
-	glConfig.depthBits = 24;
-	glConfig.stencilBits = 8;
-
-	if (SDL_GL_MakeCurrent(glimp.window, glimp.glContext) < 0)
-		ri.Error(ERR_FATAL, "SDL_GL_MakeCurrent failed: %s\n", SDL_GetError());
-
-
-	// This values force the UI to disable driver selection
-	glConfig.driverType = GLDRV_ICD;
-	glConfig.hardwareType = GLHW_GENERIC;
-
-	// get our config strings
-	Q_strncpyz( glConfig.vendor_string, (char*)qglGetString( GL_VENDOR ), sizeof( glConfig.vendor_string ) );
-	Q_strncpyz( glConfig.renderer_string, (char*)qglGetString( GL_RENDERER ), sizeof( glConfig.renderer_string ) );
-	if ( *glConfig.renderer_string && glConfig.renderer_string[strlen( glConfig.renderer_string ) - 1] == '\n' ) {
-		glConfig.renderer_string[strlen( glConfig.renderer_string ) - 1] = 0;
-	}
-	Q_strncpyz( glConfig.version_string, (char*)qglGetString( GL_VERSION ), sizeof( glConfig.version_string ) );
-	Q_strncpyz( glConfig.extensions_string, (char*)qglGetString( GL_EXTENSIONS ), sizeof( glConfig.extensions_string ) );
-	// TTimo - safe check
-	if ( strlen( (char*)qglGetString( GL_EXTENSIONS ) ) >= sizeof( glConfig.extensions_string ) ) {
-		Com_Printf( S_COLOR_YELLOW "WARNNING: GL extensions string too long (%d), truncated to %d\n", strlen( (char*)qglGetString( GL_EXTENSIONS ) ), sizeof( glConfig.extensions_string ) );
-	}
-
-	// initialize extensions
-	GLW_InitExtensions();
-	return;
-}
 
 
 /*
@@ -353,7 +224,6 @@ void GLimp_Init( void ) {
 */
 void GLimp_Shutdown( void ) {
 	if (glimp.glContext != NULL) {
-		SDL_GL_DeleteContext(glimp.glContext);
 		glimp.glContext = NULL;
 	}
 
@@ -361,14 +231,8 @@ void GLimp_Shutdown( void ) {
 		SDL_DestroyWindow(glimp.window);
 		glimp.window = NULL;
 	}
-
-	SDL_GL_UnloadLibrary();
-
-
-	QGL_Shutdown();
-	memset( &glConfig, 0, sizeof( glConfig ) );
-	memset( &glState, 0, sizeof( glState ) );
 }
+
 
 /*****************************************************************************/
 /*
@@ -390,15 +254,8 @@ void GLimp_LogComment( char *comment ) {
 
 
 // @TODO: use it somewhere like before??? :p
-static qbool VKW_SetMode()
+static qbool VKW_SetMode(void)
 {
-	WIN_InitMonitorList();
-	WIN_UpdateMonitorIndexFromCvar();
-
-	const RECT monRect = g_wv.monitorRects[g_wv.monitor];
-	const int desktopWidth = (int)(monRect.right - monRect.left);
-	const int desktopHeight = (int)(monRect.bottom - monRect.top);
-	re.ConfigureVideoMode( desktopWidth, desktopHeight );
 
 	sdl_CreateMonitorList();
 	sdl_UpdateMonitorIndexFromCvar();
@@ -406,54 +263,61 @@ static qbool VKW_SetMode()
 
 	SDL_Rect deskropRect;
 	sdl_GetSafeDesktopRect(&deskropRect);
-	R_ConfigureVideoMode(deskropRect.w, deskropRect.h);
+	RE_ConfigureVideoMode(deskropRect.w, deskropRect.h);
 
 	Uint32 windowFlags = SDL_WINDOW_VULKAN | SDL_WINDOW_SHOWN;
 	if (glInfo.winFullscreen) {
-		if (glInfo.vidFullscreen)
-			windowFlags |= SDL_WINDOW_FULLSCREEN;
-		else
 			windowFlags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 	}
 
 
 	// load and initialize the specific OpenGL driver
 	//
-	if ( !SDL_Vulkan_LoadLibrary( NULL ) ) {
-
-	}else{
-		SDL_GetError();
-			ri.Error( ERR_FATAL, "SDL_Vulkan_LoadLibrary() - could not load Vulkan subsystem\n" );
-	}
+	// if ( !SDL_Vulkan_LoadLibrary( NULL ) ) {
+	// 	volkInitializeCustom(SDL_Vulkan_GetVkGetInstanceProcAddr());
+	// }else{
+	// 	SDL_GetError();
+	// 	ri.Error( ERR_FATAL, "SDL_Vulkan_LoadLibrary() - could not load Vulkan subsystem\n" );
+	// }
 
 	glimp.window = SDL_CreateWindow(WINDOW_CLASS_NAME, deskropRect.x, deskropRect.y, glConfig.vidWidth, glConfig.vidHeight, windowFlags);
-
+	if(!SDL_Vulkan_GetVkGetInstanceProcAddr()){
+		return qfalse;
+	}
 	return qtrue;
 }
 
 
 uint64_t Sys_Vulkan_Init( void* vkInstance )
 {
-	if(!VKW_SetMode())
-	{
-	    Com_Error(ERR_FATAL, "VKW_SetMode failed\n");
-	}
+	
 
 	VkSurfaceKHR surface;
 
-	SDL_Vulkan_CreateSurface(glimp.window, (VkInstance)*vkInstance, &surface);
+	if(!SDL_Vulkan_CreateSurface(glimp.window, (VkInstance)vkInstance, &surface)){
+		Com_Printf("failed to create surface, SDL Error: %s, %x", SDL_GetError(), vkInstance);
+	}
 
 	return (uint64_t)surface;
 }
 
 void Sys_Vulkan_Shutdown(void)
 {
-	if ( g_wv.hWnd ) {
+	if (glimp.window != NULL) {
 		ri.Printf( PRINT_ALL, "...destroying window\n" );
-		ShowWindow( g_wv.hWnd, SW_HIDE );
-		DestroyWindow( g_wv.hWnd );
-		g_wv.hWnd = NULL;
-		vkw_state.pixelFormatSet = qfalse;
+		SDL_DestroyWindow(glimp.window);
+		glimp.window = NULL;
 	}
 
+}
+
+qboolean Sys_Vulkan_GetRequiredExtensions(char **pNames, int *pCount){
+	if(glimp.window == NULL){
+		if(!VKW_SetMode())
+		{
+			Com_Error(ERR_FATAL, "VKW_SetMode failed\n");
+		}
+	}
+	
+	return (qboolean)SDL_Vulkan_GetInstanceExtensions(glimp.window, pCount, pNames);
 }

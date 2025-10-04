@@ -35,6 +35,25 @@ backEndState_t backEnd;
 int totalPipelines = 0;
 
 
+static void RHI_SubmitGraphicsDesc_Signal(rhiSubmitGraphicsDesc *graphicsDesc, rhiSemaphore semaphore, uint64_t semaphoreValue){
+    assert(graphicsDesc->signalSemaphoreCount < ARRAY_LEN(graphicsDesc->signalSemaphores));
+    int newIndex = graphicsDesc->signalSemaphoreCount++;
+    graphicsDesc->signalSemaphores[newIndex] = semaphore;
+    graphicsDesc->signalSemaphoreValues[newIndex] = semaphoreValue;
+}
+
+static void RHI_SubmitGraphicsDesc_Wait(rhiSubmitGraphicsDesc *graphicsDesc, rhiSemaphore semaphore){
+    assert(graphicsDesc->waitSemaphoreCount < ARRAY_LEN(graphicsDesc->waitSemaphores));
+    int newIndex = graphicsDesc->waitSemaphoreCount++;
+    graphicsDesc->waitSemaphores[newIndex] = semaphore;
+}
+
+static void RHI_SubmitGraphicsDesc_Wait_Timeline(rhiSubmitGraphicsDesc *graphicsDesc, rhiSemaphore semaphore, uint64_t timelineValue){
+    assert(graphicsDesc->waitSemaphoreCount < ARRAY_LEN(graphicsDesc->waitSemaphores));
+    int newIndex = graphicsDesc->waitSemaphoreCount++;
+    graphicsDesc->waitSemaphores[newIndex] = semaphore;
+	graphicsDesc->waitSemaphoreValues[newIndex] = timelineValue;
+}
 
 
 
@@ -1242,7 +1261,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 		case RC_STRETCH_PIC:
 			#if defined(_DEBUG)
 			if (!begun) {
-				__debugbreak();
+				Sys_DebugBreak();
 			}
 			#endif
 			data = RB_StretchPic( data );
@@ -1259,7 +1278,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 		case RC_BEGIN_FRAME:
 			#if defined(_DEBUG)
 			if (begun) {
-				__debugbreak();
+				Sys_DebugBreak();
 			}
 			#endif
 			begun = qtrue;

@@ -183,7 +183,7 @@ static qbool IsExtensionAvailable(const char* name, int itemCount, const VkExten
     return qfalse;
 }
 
-static void BuildLayerAndExtensionLists()
+static void BuildLayerAndExtensionLists(void)
 {
     const char* neededLayers[MAX_LAYERS];
     const char* wantedLayers[MAX_LAYERS];
@@ -196,16 +196,32 @@ static void BuildLayerAndExtensionLists()
     vk.extensionCount = 0;
     vk.layerCount = 0;
 
+    unsigned int requiredCount = 0;
+    Sys_Vulkan_GetRequiredExtensions(NULL, &requiredCount);
+    char **requiredExtensions = malloc(sizeof(char*) * requiredCount);
+    if(!Sys_Vulkan_GetRequiredExtensions(requiredExtensions, &requiredCount)){
+        ri.Error(ERR_FATAL, "Required Vulkan layer was not found\n");
+    }
+
+    for(int i = 0; i < requiredCount; i++){
+        Com_Printf("%d: %s\n", i, requiredExtensions[i]);
+    }
+
 
     if(UseValidationLayer())
     {
         wantedLayers[wantedLayerCount++] = "VK_LAYER_KHRONOS_validation"; // full validation
         //wantedExtensions[wantedExtensionCount++] = "VK_EXT_validation_features"; // update to non-deprecated
     }
-    neededExtensions[neededExtensionCount++] = "VK_KHR_surface"; // swap chain
 #if defined(_WIN32)
+    neededExtensions[neededExtensionCount++] = "VK_KHR_surface"; // swap chain
     neededExtensions[neededExtensionCount++] = "VK_KHR_win32_surface"; // Windows swap chain
+#else
+    for(int i = 0; i < requiredCount; i++){
+        neededExtensions[neededExtensionCount++] = requiredExtensions[i];
+    }
 #endif
+
     wantedExtensions[wantedExtensionCount++] = "VK_EXT_debug_utils"; // naming resources
 
     uint32_t layerCount;
@@ -579,7 +595,7 @@ static void CreateAllocator(void)
     VmaVulkanFunctions vkFuncs;
     VK(vmaImportVulkanFunctionsFromVolk(&allocatorInfo, &vkFuncs));
     allocatorInfo.pVulkanFunctions = &vkFuncs;
-    
+
     VK(vmaCreateAllocator(&allocatorInfo, &vk.allocator));
 }
 

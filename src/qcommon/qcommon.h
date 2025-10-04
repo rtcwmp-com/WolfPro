@@ -46,9 +46,12 @@ qbool Sys_IsDebugging(void);
 
 #ifdef _MSC_VER
 	#define Sys_DebugBreak __debugbreak
-	
+#elif defined(__GNUC__) 
+	#define Sys_DebugBreak __builtin_trap
+#elif defined(__clang__)
+	#define Sys_DebugBreak __builtin_debugtrap
 #else
-	void Sys_DebugBreak(void);
+	#error "Debugbreak is not supported"
 #endif
 
 #ifdef _DEBUG
@@ -82,17 +85,14 @@ qbool Sys_IsDebugging(void);
 			Sys_Crash(Message, __FILE__, __LINE__, __FUNCTION__); \
 	} while (false)
 #endif
-					
-
-inline uint32_t popcnt(uint32_t v){
+		
 #if defined(_MSC_VER)
-    return __popcnt(v);
+    #define popcnt(v) (uint32_t)__popcnt((uint32_t)v)
 #elif defined(__GNUC__) || defined(__clang__)
-    return __builtin_popcount(v);
+    #define popcnt(v) (uint32_t)__builtin_popcount((uint32_t)v)
 #else
 	#error "compiler not supported"
 #endif
-}
 
 #define QDECL
 
@@ -1216,12 +1216,11 @@ int StatHuff_WriteSymbol(int symbol, byte* buffer, int bitIndex); // returns the
 // dll checksuming stuff, centralizing OS-dependent parts
 // *_SHIFT is the shifting we applied to the reference string
 
-#if defined( _WIN32 )
-
-
 #define SYS_DLLNAME_QAGAME_SHIFT 6
 #define SYS_DLLNAME_CGAME_SHIFT 2
 #define SYS_DLLNAME_UI_SHIFT 5
+
+#if defined( _WIN32 )
 
 #if id386
 	// qagame_mp_x86.dll
@@ -1240,19 +1239,21 @@ int StatHuff_WriteSymbol(int symbol, byte* buffer, int bitIndex); // returns the
 #endif
 
 #elif defined( __linux__ )
-
-// qagame.mp.i386.so
-#define SYS_DLLNAME_QAGAME_SHIFT 6
-#define SYS_DLLNAME_QAGAME "wgmgsk4sv4o9><4yu"
-
-// cgame.mp.i386.so
-#define SYS_DLLNAME_CGAME_SHIFT 2
-#define SYS_DLLNAME_CGAME "eicog0or0k5:80uq"
-
-// ui.mp.i386.so
-#define SYS_DLLNAME_UI_SHIFT 5
-#define SYS_DLLNAME_UI "zn3ru3n8=;3xt"
-
+#if id386
+	// qagame.mp.i386.so
+	#define SYS_DLLNAME_QAGAME "wgmgsk4sv4o9><4yu"
+	// cgame.mp.i386.so
+	#define SYS_DLLNAME_CGAME "eicog0or0k5:80uq"
+	// ui.mp.i386.so
+	#define SYS_DLLNAME_UI "zn3ru3n8=;3xt"
+#elif idx64
+	// qagame.mp.x86_64.so
+	#define SYS_DLLNAME_QAGAME "wgmgsk4sv4~><e<:4yu"
+	// cgame.mp.x86_64.so
+	#define SYS_DLLNAME_CGAME "eicog0or0z:8a860uq"
+	// ui.mp.x86_64.so
+	#define SYS_DLLNAME_UI "zn3ru3}=;d;93xt"
+#endif
 #elif defined( __MACOS__ )
 
 #if 1 //DAJ

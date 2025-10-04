@@ -692,12 +692,12 @@ void CL_ImGUI_CharEvent(int key);
 void CL_ImGUI_MouseEvent(int dx, int dy, int time);
 void CL_ImGUI_Frame(void);
 #else
-inline void CL_ImGUI_Init(void) {}
-inline void CL_ImGUI_Shutdown(void) {}
-inline qboolean CL_ImGUI_KeyEvent(int k, qboolean down, const char* cmd) { return qfalse;}
-inline void CL_ImGUI_CharEvent(int key) {}
-inline void CL_ImGUI_MouseEvent(int dx, int dy, int time) {}
-inline void CL_ImGUI_Frame(void) {}
+static void CL_ImGUI_Init(void) {}
+static void CL_ImGUI_Shutdown(void) {}
+static qboolean CL_ImGUI_KeyEvent(int k, qboolean down, const char* cmd) { return qfalse;}
+static void CL_ImGUI_CharEvent(int key) {}
+static void CL_ImGUI_MouseEvent(int dx, int dy, int time) {}
+static void CL_ImGUI_Frame(void) {}
 
 #endif //NO RTCW_VULKAN
 #define KEYCATCH_IMGUI          0x0010
