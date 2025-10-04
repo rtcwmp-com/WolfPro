@@ -139,10 +139,9 @@ void Check(VkResult result, const char* function)
 
 static VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
 {
-    PFN_vkCreateDebugUtilsMessengerEXT func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-    if(func != NULL)
+    if(vkCreateDebugUtilsMessengerEXT)
     {
-        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+        return vkCreateDebugUtilsMessengerEXT(instance, pCreateInfo, pAllocator, pDebugMessenger);
     }
 
     return VK_ERROR_EXTENSION_NOT_PRESENT;
@@ -602,13 +601,7 @@ static void CreateAllocator(void)
 
 void SetObjectName(VkObjectType type, uint64_t object, const char* name)
 {
-    if(name == NULL)
-    {
-        return;
-    }
-
-    PFN_vkSetDebugUtilsObjectNameEXT pfnSetDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetDeviceProcAddr(vk.device, "vkSetDebugUtilsObjectNameEXT");
-    if(pfnSetDebugUtilsObjectNameEXT == NULL)
+    if(name == NULL || vkSetDebugUtilsObjectNameEXT == NULL)
     {
         return;
     }
@@ -619,7 +612,7 @@ void SetObjectName(VkObjectType type, uint64_t object, const char* name)
     nameInfo.objectHandle = object;
     nameInfo.objectType = type;
     nameInfo.pNext = NULL;
-    if(pfnSetDebugUtilsObjectNameEXT(vk.device, &nameInfo) != VK_SUCCESS)
+    if(vkSetDebugUtilsObjectNameEXT(vk.device, &nameInfo) != VK_SUCCESS)
     {
         ri.Printf(PRINT_DEVELOPER, "vkSetDebugUtilsObjectNameEXT failed\n");
     }
