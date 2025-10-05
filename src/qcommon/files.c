@@ -4047,7 +4047,7 @@ void FS_ExtractFromPak(char *osPath, char* fileNameWithExt){
 	if ( access( osPath, R_OK ) == 0 ) {
 		Com_DPrintf( "Removing existing  %s : %s\n", fileNameWithExt, osPath );
 		if ( remove( osPath ) == -1 ) {
-			Com_Error( ERR_FATAL, "failed to remove outdated '%s' file:\n\"%s\"\n", osPath, strerror( errno ) );
+			Com_Printf("failed to remove outdated '%s' file:\n\"%s\"\n", osPath, strerror( errno ) );
 		}
 	}
 
