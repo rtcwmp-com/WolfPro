@@ -1619,6 +1619,11 @@ void ClientEndFrame( gentity_t *ent ) {
 	// apply all the damage taken this frame
 	P_DamageFeedback( ent );
 
+	// ET Legacy port
+	// increases stats[STAT_MAX_HEALTH] based on # of medics in game
+	// AddMedicTeamBonus() now adds medic team bonus and stores in ps.stats[STAT_MAX_HEALTH].
+	AddMedicTeamBonus(ent->client);
+
 	// add the EF_CONNECTION flag if we haven't gotten commands recently
 	if ( level.time - ent->client->lastCmdTime > 1000 ) {
 		ent->s.eFlags |= EF_CONNECTION;

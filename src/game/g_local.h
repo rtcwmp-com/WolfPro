@@ -1253,6 +1253,7 @@ void ClientUserinfoChanged( int clientNum );
 void ClientDisconnect( int clientNum );
 void ClientBegin( int clientNum );
 void ClientCommand( int clientNum );
+void AddMedicTeamBonus(gclient_t* client);
 
 //
 // g_active.c
