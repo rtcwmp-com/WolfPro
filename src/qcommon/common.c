@@ -2914,7 +2914,7 @@ void Com_Frame( void ) {
 			timeBeforeEvents = Sys_Milliseconds();
 		}
 		#ifndef DEDICATED
-		RE_SetLatencyMarker(INPUT_SAMPLE);
+		RE_BeforeInputSampling();
 		#endif
 		Com_EventLoop();
 		Cbuf_Execute();

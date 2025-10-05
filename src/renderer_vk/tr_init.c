@@ -1117,7 +1117,7 @@ refexport_t *GetRefAPI( int apiVersion, refimport_t *rimp ) {
 	re.GetEntityToken   = R_GetEntityToken;
 	re.ConfigureVideoMode = RE_ConfigureVideoMode;
 	re.ComputeCursorPosition = R_ComputeCursorPosition;
-	re.IsFrameSleepEnabled = RHI_IsFrameSleepEnabled;
+	re.IsFrameSleepEnabled = RE_IsFrameSleepEnabled;
 
 	return &re;
 }

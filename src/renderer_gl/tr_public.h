@@ -193,4 +193,8 @@ typedef struct {
 // returned.
 refexport_t*GetRefAPI( int apiVersion, refimport_t *rimp );
 
+void RE_BeforeInputSampling(void);
+void RE_BeforeCGameFrame(void);
+void RE_AfterCGameFrame(void);
+qboolean RE_IsFrameSleepEnabled(void);
 #endif  // __TR_PUBLIC_H

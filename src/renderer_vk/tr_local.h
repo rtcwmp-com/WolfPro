@@ -1861,7 +1861,6 @@ void	RE_ConfigureVideoMode( int desktopWidth, int desktopHeight );	// writes to 
 
 void RHI_BeginFrame();
 void RHI_EndFrame();
-qboolean RHI_IsFrameSleepEnabled(void);
 
 #pragma pack(push, 1)
 typedef struct pixelShaderPushConstants {

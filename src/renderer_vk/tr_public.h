@@ -209,13 +209,9 @@ void RE_DrawMainMenuBarInfo(void);
 void RE_GUI_Image(qhandle_t handle, float x, float y);
 void RE_GUI_Image_Ex(qhandle_t handle, float x, float y, float s1, float t1, float s2, float t2);
 
-typedef enum {
-    SIM_START,
-    TRIGGER_FLASH,
-    SIM_END,
-    INPUT_SAMPLE
-} LatencyMarker_t;
-
-void RE_SetLatencyMarker(LatencyMarker_t type);
+void RE_BeforeInputSampling(void);
+void RE_BeforeCGameFrame(void);
+void RE_AfterCGameFrame(void);
+qboolean RE_IsFrameSleepEnabled(void);
 
 #endif  // __TR_PUBLIC_H

@@ -63,10 +63,6 @@ VM_Init
 ==============
 */
 void VM_Init( void ) {
-	Cvar_Get( "vm_cgame", "0", CVAR_ARCHIVE );
-	Cvar_Get( "vm_game",  "0", CVAR_ARCHIVE );
-	Cvar_Get( "vm_ui",    "0", CVAR_ARCHIVE );
-
 	Cmd_AddCommand( "vminfo", VM_VmInfo_f );
 
 	Com_Memset( vmTable, 0, sizeof( vmTable ) );

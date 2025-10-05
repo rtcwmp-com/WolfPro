@@ -2688,37 +2688,45 @@ VkSampleCountFlagBits GetVkSampleCount(uint32_t samples){
     }
 }
 
-VkLatencyMarkerNV GetVkLatencyMarkerNV(LatencyMarker_t type){
-    switch(type){
-        case SIM_START:
-            return VK_LATENCY_MARKER_SIMULATION_START_NV;
-        case SIM_END:
-            return VK_LATENCY_MARKER_SIMULATION_END_NV;
-        case TRIGGER_FLASH:
-            return VK_LATENCY_MARKER_TRIGGER_FLASH_NV;
-        case INPUT_SAMPLE:
-            return VK_LATENCY_MARKER_INPUT_SAMPLE_NV;
-        default:
-            assert(!!"Invalid marker type");
+void SetLatencyMarker(VkLatencyMarkerNV marker){
+    if(vk.nvLowLatency){
+        VkSetLatencyMarkerInfoNV info = {};
+        info.sType = VK_STRUCTURE_TYPE_SET_LATENCY_MARKER_INFO_NV;
+        info.marker = marker;
+        info.presentID = vk.presentId;
+        vkSetLatencyMarkerNV(vk.device, vk.swapChain, &info);
     }
 }
 
-
-
-void RE_SetLatencyMarker(LatencyMarker_t type){
-    VkSetLatencyMarkerInfoNV info = {};
-    info.sType = VK_STRUCTURE_TYPE_SET_LATENCY_MARKER_INFO_NV;
-    info.marker = GetVkLatencyMarkerNV(type);
-    info.presentID = vk.presentId;
-    vkSetLatencyMarkerNV(vk.device, vk.swapChain, &info);
+void RE_BeforeInputSampling(void){
+    SetLatencyMarker(VK_LATENCY_MARKER_INPUT_SAMPLE_NV);
 }
 
-void SetLatencyMarker(VkLatencyMarkerNV marker){
-    VkSetLatencyMarkerInfoNV info = {};
-    info.sType = VK_STRUCTURE_TYPE_SET_LATENCY_MARKER_INFO_NV;
-    info.marker = marker;
-    info.presentID = vk.presentId;
-    vkSetLatencyMarkerNV(vk.device, vk.swapChain, &info);
+void RE_BeforeCGameFrame(void){
+    SetLatencyMarker(VK_LATENCY_MARKER_SIMULATION_START_NV);
+}
+
+void RE_AfterCGameFrame(void){
+    SetLatencyMarker(VK_LATENCY_MARKER_SIMULATION_END_NV);
+}
+
+#include "../client/client.h"
+qboolean RE_IsFrameSleepEnabled(void){
+    //if(vk.nvLowLatency && cgvm){
+    if(vk.nvLowLatency){
+        return qfalse;
+    }
+    switch(vk.presentMode){
+        case VK_PRESENT_MODE_MAILBOX_KHR:
+        case VK_PRESENT_MODE_IMMEDIATE_KHR:
+            return qtrue;
+        case VK_PRESENT_MODE_FIFO_KHR:
+        case VK_PRESENT_MODE_FIFO_RELAXED_KHR:
+            return qfalse;
+        default:
+            assert(!"Unknown presentMode");
+            return qfalse;
+    }
 }
 
 

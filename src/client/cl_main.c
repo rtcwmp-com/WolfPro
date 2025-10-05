@@ -4554,5 +4554,5 @@ void CL_OpenURL( const char *url ) {
 }
 
 qboolean CL_IsFrameSleepEnabled(void){
-	return re.IsFrameSleepEnabled();
+	return RE_IsFrameSleepEnabled();
 }

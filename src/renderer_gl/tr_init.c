@@ -1300,9 +1300,7 @@ void RE_EndRegistration( void ) {
 	}
 }
 
-qboolean RE_IsFrameSleepEnabled(void){
-	return qtrue;
-}
+
 
 
 /*
@@ -1410,3 +1408,8 @@ void R_ConfigureVideoMode( int desktopWidth, int desktopHeight )
 	glInfo.winWidth = r_customwidth->integer;
 	glInfo.winHeight = r_customheight->integer;
 }
+
+void RE_BeforeInputSampling(void) {}
+void RE_BeforeCGameFrame(void) {}
+void RE_AfterCGameFrame(void) {}
+qboolean RE_IsFrameSleepEnabled(void){ return qtrue; }

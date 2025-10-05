@@ -1240,10 +1240,9 @@ CL_CGameRendering
 =====================
 */
 void CL_CGameRendering( stereoFrame_t stereo ) {
-	RE_SetLatencyMarker(SIM_START);
+	RE_BeforeCGameFrame();
 	VM_Call( cgvm, CG_DRAW_ACTIVE_FRAME, cl.serverTime, stereo, clc.demoplaying );
-	RE_SetLatencyMarker(TRIGGER_FLASH);
-	RE_SetLatencyMarker(SIM_END);
+	RE_AfterCGameFrame();
 }
 
 
