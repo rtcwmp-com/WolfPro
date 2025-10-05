@@ -354,6 +354,16 @@ void SCR_Init( void ) {
 
 //=======================================================
 
+void CL_UIRefresh(void){
+	if(!cgvm){
+		RE_BeforeCGameFrame();
+	}
+	VM_Call( uivm, UI_REFRESH, cls.realtime );
+	if(!cgvm){
+		RE_AfterCGameFrame();
+	}
+}
+
 /*
 ==================
 SCR_DrawScreenField
@@ -399,7 +409,7 @@ void SCR_DrawScreenField( stereoFrame_t stereoFrame ) {
 		case CA_CONNECTED:
 			// connecting clients will only show the connection dialog
 			// refresh to update the time
-			VM_Call( uivm, UI_REFRESH, cls.realtime );
+			CL_UIRefresh();
 			VM_Call( uivm, UI_DRAW_CONNECT_SCREEN, qfalse );
 			break;
 //			// Ridah, if the cgame is valid, fall through to there
@@ -416,7 +426,7 @@ void SCR_DrawScreenField( stereoFrame_t stereoFrame ) {
 			// also draw the connection information, so it doesn't
 			// flash away too briefly on local or lan games
 			//if (!com_sv_running->value || Cvar_VariableIntegerValue("sv_cheats"))	// Ridah, don't draw useless text if not in dev mode
-			VM_Call( uivm, UI_REFRESH, cls.realtime );
+			CL_UIRefresh();
 			VM_Call( uivm, UI_DRAW_CONNECT_SCREEN, qtrue );
 			break;
 		case CA_ACTIVE:
@@ -428,7 +438,7 @@ void SCR_DrawScreenField( stereoFrame_t stereoFrame ) {
 
 	// the menu draws next
 	if ( cls.keyCatchers & KEYCATCH_UI && uivm ) {
-		VM_Call( uivm, UI_REFRESH, cls.realtime );
+		CL_UIRefresh();
 	}
 
 	// console draws next

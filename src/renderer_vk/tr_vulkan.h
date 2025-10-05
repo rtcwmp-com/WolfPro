@@ -327,6 +327,8 @@ typedef struct Vulkan
 
 	qboolean nvLowLatency;
 	uint64_t presentId;
+	rhiSemaphore nvLowLatencySemaphore;
+	uint64_t nvLowLatencySemaphoreValue;
 	
 } Vulkan;
 

@@ -882,7 +882,7 @@ static void CreateSwapChain(void)
     vk.presentMode = selectedPresentMode;
 
 
-
+    //@TODO: check for reflex cvar
     if(vk.ext.EXT_NV_low_latency2 && vk.ext.EXT_KHR_get_surface_capabilities2){
         VkSurfaceCapabilities2KHR info = {};
         info.sType = VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_KHR;
@@ -954,6 +954,18 @@ static void CreateSwapChain(void)
     }
 
     VK(vkCreateSwapchainKHR(vk.device, &createInfo, NULL, &vk.swapChain));
+
+    if(vk.nvLowLatency){
+        VkLatencySleepModeInfoNV sleepInfo = {};
+        sleepInfo.sType = VK_STRUCTURE_TYPE_LATENCY_SLEEP_MODE_INFO_NV;
+        sleepInfo.lowLatencyMode = VK_TRUE; //@TODO: use cvar
+        sleepInfo.lowLatencyBoost = VK_FALSE;
+        cvar_t *com_maxfps = ri.Cvar_Get("com_maxfps", "125", CVAR_ARCHIVE);
+        sleepInfo.minimumIntervalUs = 1000000 / com_maxfps->integer;
+        vkSetLatencySleepModeNV(vk.device, vk.swapChain, &sleepInfo);
+
+        vk.nvLowLatencySemaphore = RHI_CreateTimelineSemaphore(qtrue);
+    }
 
     uint32_t imageCount;
     VK(vkGetSwapchainImagesKHR(vk.device, vk.swapChain, &imageCount, NULL));
@@ -2699,6 +2711,17 @@ void SetLatencyMarker(VkLatencyMarkerNV marker){
 }
 
 void RE_BeforeInputSampling(void){
+    vk.nvLowLatencySemaphoreValue++;
+
+    VkLatencySleepInfoNV sleepInfo = {};
+    sleepInfo.sType = VK_STRUCTURE_TYPE_LATENCY_SLEEP_INFO_NV;
+    sleepInfo.signalSemaphore = GET_SEMAPHORE(vk.nvLowLatencySemaphore)->semaphore;
+    sleepInfo.value = vk.nvLowLatencySemaphoreValue;
+
+    vkLatencySleepNV(vk.device, vk.swapChain, &sleepInfo);
+    RHI_WaitOnSemaphore(vk.nvLowLatencySemaphore, vk.nvLowLatencySemaphoreValue);
+
+
     SetLatencyMarker(VK_LATENCY_MARKER_INPUT_SAMPLE_NV);
 }
 
@@ -2710,9 +2733,7 @@ void RE_AfterCGameFrame(void){
     SetLatencyMarker(VK_LATENCY_MARKER_SIMULATION_END_NV);
 }
 
-#include "../client/client.h"
 qboolean RE_IsFrameSleepEnabled(void){
-    //if(vk.nvLowLatency && cgvm){
     if(vk.nvLowLatency){
         return qfalse;
     }
