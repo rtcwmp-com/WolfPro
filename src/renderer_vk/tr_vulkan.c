@@ -298,6 +298,7 @@ static void BuildLayerAndInstanceExtensionLists(void)
 #endif
 
     ADD_WANT_INST_EXT("VK_LAYER_KHRONOS_validation", "VK_EXT_debug_utils"); // naming resources
+    ADD_WANT_INST_EXT(NULL, VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
 
     uint32_t layerCount;
     VK(vkEnumerateInstanceLayerProperties(&layerCount, NULL));
@@ -374,6 +375,7 @@ static void BuildLayerAndInstanceExtensionLists(void)
 
         vk.ext.EXT_validation_features = IsExtensionAvailable("VK_EXT_validation_features", extCount, ext);
         vk.ext.EXT_debug_utils = IsExtensionAvailable("VK_EXT_debug_utils", extCount, ext);
+        vk.ext.EXT_KHR_get_surface_capabilities2 = IsExtensionAvailable(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME, extCount, ext);
         ri.Hunk_FreeTempMemory(ext);
     }
 
@@ -382,7 +384,7 @@ static void BuildLayerAndInstanceExtensionLists(void)
 }
 
 
-void CreateInstance()
+void CreateInstance(void)
 {
     ri.Printf( PRINT_ALL, "Vulkan Create Instance\n" );
 
@@ -880,6 +882,38 @@ static void CreateSwapChain(void)
     vk.presentMode = selectedPresentMode;
 
 
+
+    if(vk.ext.EXT_NV_low_latency2 && vk.ext.EXT_KHR_get_surface_capabilities2){
+        VkSurfaceCapabilities2KHR info = {};
+        info.sType = VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_KHR;
+        info.surfaceCapabilities;
+        VkLatencySurfaceCapabilitiesNV nv = {};
+        nv.sType = VK_STRUCTURE_TYPE_LATENCY_SURFACE_CAPABILITIES_NV;
+        info.pNext = &nv;
+
+        VkPhysicalDeviceSurfaceInfo2KHR surfInfo = {};
+        surfInfo.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR;
+        surfInfo.surface = vk.surface;
+
+        vkGetPhysicalDeviceSurfaceCapabilities2KHR(vk.physicalDevice, &surfInfo, &info);
+
+        VkPresentModeKHR *presentModes = (VkPresentModeKHR*)ri.Hunk_AllocateTempMemory(nv.presentModeCount * sizeof(VkPresentModeKHR));
+        nv.pPresentModes = presentModes;
+        vkGetPhysicalDeviceSurfaceCapabilities2KHR(vk.physicalDevice, &surfInfo, &info);
+
+        for(int i = 0; i < nv.presentModeCount; i++){
+            if(presentModes[i] == vk.presentMode){
+                vk.nvLowLatency = qtrue;
+                break;
+            }
+        }
+        ri.Hunk_FreeTempMemory(presentModes);
+
+    }
+
+    
+
+
     // @NOTE: VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT is the only image usage flag
     // that is guaranteed to be available
     const uint32_t queueFamilyIndices[] = { vk.queues.graphicsFamily, vk.queues.presentFamily };
@@ -910,6 +944,13 @@ static void CreateSwapChain(void)
         createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
         createInfo.queueFamilyIndexCount = 0;
         createInfo.pQueueFamilyIndices = NULL;
+    }
+
+    VkSwapchainLatencyCreateInfoNV info = {};
+    if(vk.nvLowLatency){
+        info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_LATENCY_CREATE_INFO_NV;
+        info.latencyModeEnable = VK_TRUE;
+        createInfo.pNext = &info;
     }
 
     VK(vkCreateSwapchainKHR(vk.device, &createInfo, NULL, &vk.swapChain));
@@ -1393,6 +1434,23 @@ void RHI_EndFrame(void) {
     const int64_t us = currentTime - previousTime;
     previousTime = currentTime;
     rhie.presentToPresentUS = us;
+
+    VkGetLatencyMarkerInfoNV report = {};
+    report.sType = VK_STRUCTURE_TYPE_GET_LATENCY_MARKER_INFO_NV;
+    vkGetLatencyTimingsNV(vk.device, vk.swapChain, &report);
+    if(report.timingCount > 0){
+        
+        VkLatencyTimingsFrameReportNV *timings = (VkLatencyTimingsFrameReportNV*)ri.Hunk_AllocateTempMemory(report.timingCount * sizeof(VkLatencyTimingsFrameReportNV));
+        report.pTimings = timings;
+        vkGetLatencyTimingsNV(vk.device, vk.swapChain, &report);
+        
+        VkLatencyTimingsFrameReportNV timing = timings[report.timingCount - 1];
+        rhie.inputToRenderDoneUS = (uint32_t)(timing.gpuRenderEndTimeUs - timing.inputSampleTimeUs);
+
+        ri.Hunk_FreeTempMemory(timings);
+    }
+
+    vk.presentId++;
 
 }
 
@@ -2054,7 +2112,7 @@ VkCullModeFlags GetVkCullModeFlags(cullType_t cullType)
 //     vk.generatedImageAllocation = allocation;
 // }
 
-static void CreateDescriptorPool(){
+static void CreateDescriptorPool(void){
     const VkDescriptorPoolSize poolSizes[] =
 	{
         { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, MAX_IMAGEDESCRIPTORS * 2 },
@@ -2447,7 +2505,7 @@ VkBufferUsageFlags GetVkBufferUsageFlags(RHI_ResourceState state)
 #include "shaders/mipmap_x_cs.h"
 #include "shaders/mipmap_y_cs.h"
 
-static void CreateUploadManager(){
+static void CreateUploadManager(void){
     vk.uploadBufferSize = 64 << 20;
 
     rhiBufferDesc textureStagingBufferDesc = {};
@@ -2628,6 +2686,39 @@ VkSampleCountFlagBits GetVkSampleCount(uint32_t samples){
         default:
             return VK_SAMPLE_COUNT_1_BIT;
     }
+}
+
+VkLatencyMarkerNV GetVkLatencyMarkerNV(LatencyMarker_t type){
+    switch(type){
+        case SIM_START:
+            return VK_LATENCY_MARKER_SIMULATION_START_NV;
+        case SIM_END:
+            return VK_LATENCY_MARKER_SIMULATION_END_NV;
+        case TRIGGER_FLASH:
+            return VK_LATENCY_MARKER_TRIGGER_FLASH_NV;
+        case INPUT_SAMPLE:
+            return VK_LATENCY_MARKER_INPUT_SAMPLE_NV;
+        default:
+            assert(!!"Invalid marker type");
+    }
+}
+
+
+
+void RE_SetLatencyMarker(LatencyMarker_t type){
+    VkSetLatencyMarkerInfoNV info = {};
+    info.sType = VK_STRUCTURE_TYPE_SET_LATENCY_MARKER_INFO_NV;
+    info.marker = GetVkLatencyMarkerNV(type);
+    info.presentID = vk.presentId;
+    vkSetLatencyMarkerNV(vk.device, vk.swapChain, &info);
+}
+
+void SetLatencyMarker(VkLatencyMarkerNV marker){
+    VkSetLatencyMarkerInfoNV info = {};
+    info.sType = VK_STRUCTURE_TYPE_SET_LATENCY_MARKER_INFO_NV;
+    info.marker = marker;
+    info.presentID = vk.presentId;
+    vkSetLatencyMarkerNV(vk.device, vk.swapChain, &info);
 }
 
 

@@ -301,6 +301,7 @@ typedef struct Vulkan
 		qbool EXT_validation_features;
 		qbool EXT_debug_utils;
 		qbool EXT_NV_low_latency2;
+		qbool EXT_KHR_get_surface_capabilities2;
 		VkDebugUtilsMessengerEXT debugMessenger; // EXT_debug_utils
 	} ext;
 
@@ -323,6 +324,9 @@ typedef struct Vulkan
 	rhiCommandBuffer screenshotCmdBuffer;
 
 	VkPresentModeKHR presentMode;
+
+	qboolean nvLowLatency;
+	uint64_t presentId;
 	
 } Vulkan;
 
@@ -351,5 +355,6 @@ VkBlendFactor GetDestinationColorBlendFactor(unsigned int bits);
 VkFormat GetVkFormatFromVertexFormat(RHI_VertexFormat format, uint32_t elementCount);
 VkSampleCountFlagBits GetVkSampleCount(uint32_t samples);
 void RecreateSwapchain(void);
+void SetLatencyMarker(VkLatencyMarkerNV marker);
 
 #endif

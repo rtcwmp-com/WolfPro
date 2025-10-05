@@ -922,8 +922,16 @@ void RHI_SubmitGraphics(const rhiSubmitGraphicsDesc *graphicsDesc)
     submitInfo.pSignalSemaphores    = signal;
     submitInfo.pWaitDstStageMask    = flags;
 
+    VkLatencySubmissionPresentIdNV nv = {};
+    if(vk.nvLowLatency){
+        nv.sType = VK_STRUCTURE_TYPE_LATENCY_SUBMISSION_PRESENT_ID_NV;
+        nv.presentID = vk.presentId;
+        timelineInfo.pNext = &nv;
+    }
 
+    SetLatencyMarker(VK_LATENCY_MARKER_RENDERSUBMIT_START_NV);
     VK(vkQueueSubmit(vk.queues.present, 1, &submitInfo, VK_NULL_HANDLE)); 
+    SetLatencyMarker(VK_LATENCY_MARKER_RENDERSUBMIT_END_NV);
 }
 
 
@@ -945,7 +953,9 @@ void RHI_SubmitPresent(rhiSemaphore waitSemaphore, uint32_t swapChainImageIndex)
     assert(semaphore->signaled == qtrue);
     semaphore->signaled = qfalse;
 
+    SetLatencyMarker(VK_LATENCY_MARKER_PRESENT_START_NV);
     const VkResult r = vkQueuePresentKHR(vk.queues.present, &presentInfo);  
+    SetLatencyMarker(VK_LATENCY_MARKER_PRESENT_END_NV);
     if(r == VK_ERROR_OUT_OF_DATE_KHR){
         RecreateSwapchain();
     }else if(r != VK_SUCCESS && r != VK_SUBOPTIMAL_KHR){

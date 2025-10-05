@@ -1912,6 +1912,7 @@ typedef struct RHIExport
 	uint32_t presentToPresentUS;
 	float monitorFrameDurationMS;
 	float targetFrameDurationMS;
+	uint32_t inputToRenderDoneUS;
 } RHIExport;
 
 extern RHIExport rhie;

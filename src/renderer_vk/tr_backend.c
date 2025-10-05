@@ -1166,6 +1166,8 @@ void DrawGUI_Performance(void){
 			igText("Frame delta: %d", us);
 			igText(" min: %d\n max: %d", minValue, maxValue);
 			durationIndex = (durationIndex + 1) % n;
+
+			igText("Input to Render: %.1f ms", rhie.inputToRenderDoneUS/1000.0f);
 			
 			igText("FPS: %d", (int)(1000000 / (us)));
 			ImVec2 graphSize = {1000, 500};

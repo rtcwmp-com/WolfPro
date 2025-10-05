@@ -33,6 +33,10 @@ If you have questions concerning this license or the applicable additional terms
 #include <setjmp.h>
 #include "threads.h"
 
+#ifndef DEDICATED
+#include "../renderer_common/tr_public.h"
+#endif
+
 #define MAX_NUM_ARGVS   50
 
 #define MIN_DEDICATED_COMHUNKMEGS 1
@@ -2909,6 +2913,9 @@ void Com_Frame( void ) {
 		if ( com_speeds->integer ) {
 			timeBeforeEvents = Sys_Milliseconds();
 		}
+		#ifndef DEDICATED
+		RE_SetLatencyMarker(INPUT_SAMPLE);
+		#endif
 		Com_EventLoop();
 		Cbuf_Execute();
 
