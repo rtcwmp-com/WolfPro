@@ -200,7 +200,6 @@ static void BuildDeviceExtensionList(void)
 
     ADD_NEED_DEV_EXT(NULL, "VK_KHR_swapchain");
     ADD_WANT_DEV_EXT(NULL, VK_NV_LOW_LATENCY_2_EXTENSION_NAME);
-    ADD_WANT_DEV_EXT(NULL, VK_KHR_PRESENT_ID_EXTENSION_NAME);
 
     uint32_t tempCount, extCount;
     VK(vkEnumerateDeviceExtensionProperties(vk.physicalDevice, NULL, &tempCount, NULL));
@@ -245,6 +244,7 @@ static void BuildDeviceExtensionList(void)
         }
 
         vk.ext.EXT_NV_low_latency2 = IsExtensionAvailable(VK_NV_LOW_LATENCY_2_EXTENSION_NAME, extCount, ext);
+
         ri.Hunk_FreeTempMemory(ext);
     }
 
