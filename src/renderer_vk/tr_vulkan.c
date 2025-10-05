@@ -959,7 +959,7 @@ static void CreateSwapChain(void)
         VkLatencySleepModeInfoNV sleepInfo = {};
         sleepInfo.sType = VK_STRUCTURE_TYPE_LATENCY_SLEEP_MODE_INFO_NV;
         sleepInfo.lowLatencyMode = VK_TRUE; //@TODO: use cvar
-        sleepInfo.lowLatencyBoost = VK_FALSE;
+        sleepInfo.lowLatencyBoost = VK_TRUE;
         cvar_t *com_maxfps = ri.Cvar_Get("com_maxfps", "125", CVAR_ARCHIVE);
         sleepInfo.minimumIntervalUs = 1000000 / com_maxfps->integer;
         vkSetLatencySleepModeNV(vk.device, vk.swapChain, &sleepInfo);
@@ -2711,18 +2711,20 @@ void SetLatencyMarker(VkLatencyMarkerNV marker){
 }
 
 void RE_BeforeInputSampling(void){
-    vk.nvLowLatencySemaphoreValue++;
+    if (vk.nvLowLatency) {
+        vk.nvLowLatencySemaphoreValue++;
 
-    VkLatencySleepInfoNV sleepInfo = {};
-    sleepInfo.sType = VK_STRUCTURE_TYPE_LATENCY_SLEEP_INFO_NV;
-    sleepInfo.signalSemaphore = GET_SEMAPHORE(vk.nvLowLatencySemaphore)->semaphore;
-    sleepInfo.value = vk.nvLowLatencySemaphoreValue;
+        VkLatencySleepInfoNV sleepInfo = {};
+        sleepInfo.sType = VK_STRUCTURE_TYPE_LATENCY_SLEEP_INFO_NV;
+        sleepInfo.signalSemaphore = GET_SEMAPHORE(vk.nvLowLatencySemaphore)->semaphore;
+        sleepInfo.value = vk.nvLowLatencySemaphoreValue;
 
-    vkLatencySleepNV(vk.device, vk.swapChain, &sleepInfo);
-    RHI_WaitOnSemaphore(vk.nvLowLatencySemaphore, vk.nvLowLatencySemaphoreValue);
+        vkLatencySleepNV(vk.device, vk.swapChain, &sleepInfo);
+        RHI_WaitOnSemaphore(vk.nvLowLatencySemaphore, vk.nvLowLatencySemaphoreValue);
+        SetLatencyMarker(VK_LATENCY_MARKER_INPUT_SAMPLE_NV);
+    }
 
-
-    SetLatencyMarker(VK_LATENCY_MARKER_INPUT_SAMPLE_NV);
+    
 }
 
 void RE_BeforeCGameFrame(void){
