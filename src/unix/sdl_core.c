@@ -68,3 +68,8 @@ qbool sdl_Init()
 
 	return qtrue;
 }
+
+qbool Sys_IsMinimized()
+{
+	return (glimp.window != NULL) && (SDL_GetWindowFlags(glimp.window) & SDL_WINDOW_MINIMIZED) != 0;
+}

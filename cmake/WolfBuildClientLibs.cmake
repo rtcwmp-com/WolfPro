@@ -25,7 +25,11 @@ target_include_directories(vk_vma_alloc PRIVATE ${Vulkan_INCLUDE_DIR})
 
 target_link_libraries(renderer_vk renderer_vk_libraries renderer_libraries vk_vma_alloc)
 target_include_directories(renderer_vk PRIVATE src/renderer_vk)
+if(WIN32)
 LIST(APPEND WOLF_COMPILE_DEF "VK_USE_PLATFORM_WIN32_KHR")
+else()
+LIST(APPEND WOLF_COMPILE_DEF "VK_USE_PLATFORM_XLIB_KHR")
+endif()
 message(STATUS "Renderer Compile defs: " ${WOLF_COMPILE_DEF})
 set_target_properties(renderer_vk PROPERTIES
 	COMPILE_DEFINITIONS "${WOLF_COMPILE_DEF}"
@@ -34,6 +38,7 @@ set_target_properties(renderer_vk PROPERTIES
 	RUNTIME_OUTPUT_DIRECTORY_RELEASE "${WOLF_OUTPUT_DIR}"
 )
 set_target_properties(vk_vma_alloc PROPERTIES
+	CXX_STANDARD 17
 	COMPILE_DEFINITIONS "${WOLF_COMPILE_DEF}"
 	RUNTIME_OUTPUT_DIRECTORY "${WOLF_OUTPUT_DIR}"
 	RUNTIME_OUTPUT_DIRECTORY_DEBUG "${WOLF_OUTPUT_DIR}"
@@ -64,5 +69,7 @@ if(JPEGTURBO_FOUND)
 	set(CMAKE_REQUIRED_LIBRARIES ${JPEG_LIBRARY})
 	# FIXME: function is checked, but HAVE_JPEG_MEM_SRC is empty. Why?
 	check_function_exists("jpeg_mem_src" HAVE_JPEG_MEM_SRC)
+	message(STATUS "JPEG Include dir: " ${JPEG_INCLUDE_DIR})
+	message(STATUS "JPEG library: " ${JPEG_LIBRARY})
 endif()
 

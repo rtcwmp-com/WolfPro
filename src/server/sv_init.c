@@ -589,7 +589,7 @@ void SV_SpawnServer( char *server, qboolean killBots ) {
 			}
 
 			// connect the client again
-			denied = VM_ExplicitArgPtr( gvm, VM_Call( gvm, GAME_CLIENT_CONNECT, i, qfalse, isBot ) );   // firstTime = qfalse
+			denied = (char*)VM_ExplicitArgPtr( gvm, VM_Call( gvm, GAME_CLIENT_CONNECT, i, qfalse, isBot ) );   // firstTime = qfalse
 			if ( denied ) {
 				// this generally shouldn't happen, because the client
 				// was connected before the level change
@@ -764,13 +764,12 @@ static size_t getIP_response(void *ptr, size_t size, size_t nmemb, void *clientp
 
 void SV_GetIP(void) {
   CURL *curl;
-  CURLcode res;
-
+  
   curl = curl_easy_init();
   if(curl) {
     curl_easy_setopt(curl, CURLOPT_URL, "http://api.ipify.org");
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, getIP_response);
-    res = curl_easy_perform(curl);
+    curl_easy_perform(curl);
     curl_easy_cleanup(curl);
   }
 
@@ -790,13 +789,12 @@ static size_t getCountry_response(void *ptr, size_t size, size_t nmemb, void *st
 
 void SV_GetCountry(char* serverIP) {
   CURL *curl;
-  CURLcode res;
 
   curl = curl_easy_init();
   if(curl) {
     curl_easy_setopt(curl, CURLOPT_URL, va("http://ipinfo.io/%s/country",serverIP));
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, getCountry_response);
-    res = curl_easy_perform(curl);
+    curl_easy_perform(curl);
     curl_easy_cleanup(curl);
   }
 

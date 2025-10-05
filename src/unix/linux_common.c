@@ -41,13 +41,6 @@ If you have questions concerning this license or the applicable additional terms
 #include <string.h>
 #include "linux_local.h"
 
-void Com_Memcpy( void* dest, const void* src, const size_t count ) {
-	memcpy( dest, src, count );
-}
-
-void Com_Memset( void* dest, const int val, const size_t count ) {
-	memset( dest, val, count );
-}
 
 qbool Sys_IsDebugging(void){
 	return qfalse;

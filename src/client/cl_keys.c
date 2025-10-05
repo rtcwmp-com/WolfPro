@@ -188,8 +188,10 @@ keyname_t keynames[] =
 	{NULL,0}
 };
 
+#if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Winvalid-source-encoding"
+#endif
 
 keyname_t keynames_d[] =    //deutsch
 {
@@ -685,8 +687,9 @@ keyname_t keynames_i[] =  //Italian
 
 	{NULL,0}
 };
-
+#if defined(__clang__)
 #pragma clang diagnostic pop
+#endif
 
 /*
 =============================================================================

@@ -49,8 +49,6 @@ cvar_t      *r_fullscreen;
 
 #define VID_NUM_MODES ( sizeof( vid_modes ) / sizeof( vid_modes[0] ) )
 
-LONG WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
-
 
 /*
 ==================
@@ -285,7 +283,7 @@ MainWndProc
 main window procedure
 ====================
 */
-LONG WINAPI MainWndProc(
+LRESULT CALLBACK MainWndProc(
 	HWND hWnd,
 	UINT uMsg,
 	WPARAM wParam,
@@ -391,7 +389,7 @@ LONG WINAPI MainWndProc(
 			r.right  = 1;
 			r.bottom = 1;
 
-			style = GetWindowLong( hWnd, GWL_STYLE );
+			style = GetWindowLongPtr( hWnd, GWL_STYLE );
 			AdjustWindowRect( &r, style, FALSE );
 
 			Cvar_SetValue( "vid_xpos", xPos + r.left );

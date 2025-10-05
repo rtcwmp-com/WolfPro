@@ -9,9 +9,7 @@
 cmake_minimum_required(VERSION 3.10.3 FATAL_ERROR)
 
 set(CMAKE_ASM_NASM_OBJECT_FORMAT elf)
-set(CMAKE_ASM_FLAGS "-m32 -DELF -x assembler-with-cpp")
-set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
-project(RTCW-MP C CXX ASM_NASM ASM)
+
 if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.21")
     cmake_policy(SET CMP0121 NEW)
 endif()
@@ -34,6 +32,8 @@ set(MODNAME "wolfpro" CACHE STRING "Default mod name")
 #-----------------------------------------------------------------
 # Options
 #-----------------------------------------------------------------
+
+#option(WOLF_64BITS "Build the 64 bit versions of everything" ON)
 
 option(BUILD_SERVER				"Build the dedicated server executable"							ON)
 option(BUILD_CLIENT				"Build the client executable"									ON)
@@ -59,6 +59,27 @@ set(INSTALL_DEFAULT_BASEDIR "" CACHE STRING "")
 # Setup
 #-----------------------------------------------------------------
 
+if(WOLF_64BITS)
+else()
+#set(CMAKE_ASM_FLAGS "-m32 -DELF -x assembler-with-cpp")
+endif()
+set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
+
+project(RTCW-MP C CXX ASM_NASM ASM)
+
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	message(STATUS "64 bits target architecture detected")
+	SET(WOLF_64BITS 1)
+	if(WIN32)
+		SET(WOLF_WIN64 1)
+	endif()
+elseif(NOT CMAKE_SIZEOF_VOID_P EQUAL 8 AND NOT CMAKE_SIZEOF_VOID_P EQUAL 4)
+	# NOTE: this should never happen, but just in case for an invalid toolchain...
+	message(FATAL_ERROR "Unknown target architecture detected. Pointer size: ${CMAKE_SIZEOF_VOID_P}")
+else()
+	message(STATUS "32 bits target architecture detected")
+	SET(WOLF_32BITS 1)
+endif()
 
 # Group the VisualStudio projects
 set(CMAKE_TARGETS_FOLDER CMake)

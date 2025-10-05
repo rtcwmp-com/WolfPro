@@ -61,27 +61,11 @@ else()
 	endif()
 endif()
 
-# Figure out what build is it (cool eh?)
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-	message(STATUS "64 bits target architecture detected")
-	SET(WOLF_64BITS 1)
-	if(WIN32)
-		SET(WOLF_WIN64 1)
-	endif()
-elseif(NOT CMAKE_SIZEOF_VOID_P EQUAL 8 AND NOT CMAKE_SIZEOF_VOID_P EQUAL 4)
-	# NOTE: this should never happen, but just in case for an invalid toolchain...
-	message(FATAL_ERROR "Unknown target architecture detected. Pointer size: ${CMAKE_SIZEOF_VOID_P}")
-else()
-	message(STATUS "32 bits target architecture detected")
-	SET(WOLF_32BITS 1)
-endif()
-
 string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" system_name_lower)
 
 if(system_name_lower MATCHES "(i386)|(i686)|(x86)|(amd64)")
 	message(STATUS "x86 architecture detected")
 	set(WOLF_X86 1)
-	set(WOLF_32BITS 1)
 elseif(system_name_lower MATCHES "(arm)|(aarch64)")
 	message(STATUS "ARM architecture detected")
 	set(WOLF_ARM 1)
@@ -153,6 +137,7 @@ if(CURL_FOUND)
 endif()
 
 add_library(cimgui STATIC ${RENDERER_CIMGUI_FILES})
+set_property(TARGET cimgui PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_include_directories(cimgui PRIVATE src/cimgui)
 
 set_target_properties(cimgui PROPERTIES

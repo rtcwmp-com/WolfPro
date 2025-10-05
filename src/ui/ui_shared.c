@@ -4268,14 +4268,13 @@ void Item_OwnerDraw_Paint( itemDef_t *item ) {
 
 
 void Item_Paint( itemDef_t *item ) {
+	if ( item == NULL ) {
+		return;
+	}
 	vec4_t red;
 	menuDef_t *parent = (menuDef_t*)item->parent;
 	red[0] = red[3] = 1;
 	red[1] = red[2] = 0;
-
-	if ( item == NULL ) {
-		return;
-	}
 
 	// NERVE - SMF
 	if ( DC->textFont ) {
