@@ -648,6 +648,7 @@ void CG_InitConsoleCommands( void ) {
 	trap_AddCommand( "kill" );
 	trap_AddCommand( "say" );
 	trap_AddCommand( "say_team" );
+	trap_AddCommand( "say_teamnl" );
 	trap_AddCommand( "say_limbo" );           // NERVE - SMF
 	trap_AddCommand( "tell" );
 //	trap_AddCommand ("vsay");
