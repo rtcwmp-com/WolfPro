@@ -359,7 +359,7 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 		VectorScale( launchvel, 160, launchvel );
 		VectorCopy( self->r.currentOrigin, launchspot );
 		launchspot[2] += 40;
-		fire_grenade( self, launchspot, launchvel, self->s.weapon );
+		fire_grenade( self, launchspot, launchvel, self->s.weapon )->damage = 0; // nobo fix from RtcwPub
 		PM_WeaponUseAmmo( self->s.weapon, ammoTable[self->s.weapon].uses );
 
 	}
