@@ -983,6 +983,7 @@ void G_Say( gentity_t *ent, gentity_t *target, int mode, const char *chatText ) 
 	case SAY_TEAMNL:
 		G_LogPrintf("sayteamnl: %s: %s\n", ent->client->pers.username, chatText);
 		Com_sprintf( username, sizeof( username ), "(%s%c%c): ", ent->client->pers.username, Q_COLOR_ESCAPE, COLOR_WHITE );
+		Com_sprintf( netname, sizeof( netname ), "(%s%c%c): ", ent->client->pers.netname, Q_COLOR_ESCAPE, COLOR_WHITE);
 		color = COLOR_CYAN;
 		break;
 	case SAY_TELL:
