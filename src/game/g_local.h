@@ -1253,6 +1253,7 @@ void ClientUserinfoChanged( int clientNum );
 void ClientDisconnect( int clientNum );
 void ClientBegin( int clientNum );
 void ClientCommand( int clientNum );
+void AddMedicTeamBonus(gclient_t* client);
 
 //
 // g_active.c
@@ -1521,6 +1522,8 @@ extern vmCvar_t g_stats_curl_submit_headers;
 extern vmCvar_t g_statsRetryCount;
 extern vmCvar_t g_statsRetryDelay;
 extern vmCvar_t g_apiquery_curl_URL;
+
+extern vmCvar_t g_disableDeadBodyFlagGrab;
 
 void    trap_Printf( const char *fmt );
 void    trap_Error( const char *fmt );

@@ -40,7 +40,7 @@ If you have questions concerning this license or the applicable additional terms
 // second version that must match between game and cgame
 
 #define GAME_VERSION        "RTCW-MP"
-#define GAMEVERSION "main"
+#define GAMEVERSION "wolfpro"
 
 #define DEFAULT_GRAVITY     800
 #define FORCE_LIMBO_HEALTH  -150 // JPW NERVE
@@ -651,6 +651,10 @@ typedef struct ammotable_s {
 
 extern ammotable_t ammoTable[];     // defined in bg_misc.c
 extern int weapAlts[];  // defined in bg_misc.c
+int BG_MaxAmmoForWeapon(weapon_t weaponNum);
+int BG_GrenadesForClass(int cls);
+
+#define GetAmmoTableData( ammoIndex ) ( (ammotable_t*)( &ammoTable[ammoIndex] ) )
 
 
 //----(SA)
@@ -1426,6 +1430,8 @@ qboolean    BG_PlayerSeesItem( playerState_t *ps, entityState_t *item, int atTim
 
 //----(SA)	removed PM_ammoNeeded 11/27/00
 void PM_ClipVelocity( vec3_t in, vec3_t normal, vec3_t out, float overbounce );
+// needed to call from player_die()
+void PM_WeaponUseAmmo( int wp, int amount );
 
 #define ARENAS_PER_TIER     4
 #define MAX_ARENAS          64

@@ -360,6 +360,7 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 		VectorCopy( self->r.currentOrigin, launchspot );
 		launchspot[2] += 40;
 		fire_grenade( self, launchspot, launchvel, self->s.weapon );
+		PM_WeaponUseAmmo( self->s.weapon, ammoTable[self->s.weapon].uses );
 
 	}
 

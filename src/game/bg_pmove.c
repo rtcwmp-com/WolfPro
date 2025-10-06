@@ -2528,6 +2528,7 @@ static void PM_Weapon( void ) {
 					pm->ps->grenadeTimeLeft = 100;
 					PM_AddEvent( EV_FIRE_WEAPON );
 					pm->ps->weaponTime = 1600;
+					PM_WeaponUseAmmo( pm->ps->weapon, ammoTable[pm->ps->weapon].uses );
 					return;
 				}
 			}

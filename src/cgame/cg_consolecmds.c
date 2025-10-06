@@ -530,6 +530,34 @@ void CG_vstrUp_f(void) {
 	else { CG_Printf("[cgnotify]^3Usage: ^7+vstr [down_vstr] [up_vstr]\n"); }
 }
 
+static void CG_TimerShare_f (void) {
+	int secondsThen;
+	int spawnTimerSet = cg.time - cgs.levelStartTime;
+	int timeLimit     = cgs.timelimit * 60.f * 1000.f;
+	int seconds       = (timeLimit - spawnTimerSet) / 1000;
+	int period        = (cgs.clientinfo[cg.snap->ps.clientNum].team == TEAM_RED ? cg_bluelimbotime.integer : cg_redlimbotime.integer) / 1000;
+
+	if (cgs.gamestate != GS_PLAYING) {
+		CG_Printf("You may only use this command during the match.\n");
+		return;
+	}
+
+	if (cg.snap->ps.pm_type == PM_INTERMISSION || cgs.clientinfo[cg.clientNum].team == TEAM_SPECTATOR || period == 0) {
+		return;
+	}
+
+	if (cg_spawnTimer_set.integer == -1) {
+		trap_Cvar_Set("cg_spawnTimer_period", "30"); // just set a default value - cg_draw will use cg_red/bluelimbotime
+		trap_Cvar_Set("cg_spawnTimer_set", va("%i", spawnTimerSet));
+	} else {
+		spawnTimerSet = cg_spawnTimer_set.integer;
+	}
+
+	secondsThen = (timeLimit - spawnTimerSet) / 1000;
+	trap_SendConsoleCommand(va("cmd say_teamnl ^3Enemy spawns in ^1%02d^3s, every ^1%02d^3s\n", (period + (seconds - secondsThen) % period), period));
+
+}
+
 typedef struct {
 	char    *cmd;
 	void ( *function )( void );
@@ -591,7 +619,9 @@ static consoleCommand_t commands[] = {
 	{ "forcetapout", CG_ForceTapOut_f }, 
 
 	{ "+vstr", CG_vstrDown_f },
-	{ "-vstr", CG_vstrUp_f }
+	{ "-vstr", CG_vstrUp_f },
+
+	{ "timerShare", CG_TimerShare_f }
 };
 
 
@@ -648,6 +678,7 @@ void CG_InitConsoleCommands( void ) {
 	trap_AddCommand( "kill" );
 	trap_AddCommand( "say" );
 	trap_AddCommand( "say_team" );
+	trap_AddCommand( "say_teamnl" );
 	trap_AddCommand( "say_limbo" );           // NERVE - SMF
 	trap_AddCommand( "tell" );
 //	trap_AddCommand ("vsay");

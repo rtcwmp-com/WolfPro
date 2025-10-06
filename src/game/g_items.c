@@ -339,9 +339,10 @@ void Add_Ammo( gentity_t *ent, int weapon, int count, qboolean fillClip ) {
 
 	} else {                                        // using clips
 		totalcount = ent->client->ps.ammo[ammoweap] + ent->client->ps.ammoclip[BG_FindClipForWeapon( weapon )];
-		if ( totalcount > ammoTable[ammoweap].maxammo ) {
+		// RtcwPro - let the user keep adding ammo from guns they pickup
+		/*if ( totalcount > ammoTable[ammoweap].maxammo ) {
 			ent->client->ps.ammo[ammoweap] = ammoTable[ammoweap].maxammo - ent->client->ps.ammoclip[BG_FindClipForWeapon( weapon )];
-		}
+		}*/
 
 	}
 
@@ -406,21 +407,8 @@ int Pickup_Weapon( gentity_t *ent, gentity_t *other ) {
 		}
 
 		// everybody likes grenades -- abuse weapon var as grenade type and i as max # grenades class can carry
-		switch ( other->client->ps.stats[STAT_PLAYER_CLASS] ) {
-		case PC_LT: // redundant but added for completeness/flexibility
-		case PC_MEDIC:
-			i = 1;
-			break;
-		case PC_SOLDIER:
-			i = 4;
-			break;
-		case PC_ENGINEER:
-			i = 8;
-			break;
-		default:
-			i = 1;
-			break;
-		}
+		i = BG_GrenadesForClass( other->client->ps.stats[STAT_PLAYER_CLASS] );
+
 		if ( other->client->sess.sessionTeam == TEAM_RED ) {
 			weapon = WP_GRENADE_LAUNCHER;
 		} else {
@@ -452,8 +440,18 @@ int Pickup_Weapon( gentity_t *ent, gentity_t *other ) {
 					other->client->ps.ammoclip[BG_FindAmmoForWeapon( WP_FLAMETHROWER )] = ammoTable[weapon].maxclip;
 				} else {
 					other->client->ps.ammo[BG_FindAmmoForWeapon( weapon )] += ammoTable[weapon].maxclip;
-					if ( other->client->ps.ammo[BG_FindAmmoForWeapon( weapon )] > ammoTable[weapon].maxclip * 3 ) {
-						other->client->ps.ammo[BG_FindAmmoForWeapon( weapon )] = ammoTable[weapon].maxclip * 3;
+
+					// When soldier spawns with panzer the weapon is not loaded right away
+					// when player picks up an ammo pack total ammo was set to 5 on line 475
+					// then resetting it to 3 from line 486 because it thinks player has too much ammo
+					// if this happens just set the value to 4 just like the player spawned
+					if (weapon == WP_PANZERFAUST && other->client->ps.ammo[BG_FindAmmoForWeapon(weapon)] == 5)
+						other->client->ps.ammo[BG_FindAmmoForWeapon(weapon)] = 4;
+					else
+					{
+						if (other->client->ps.ammo[BG_FindAmmoForWeapon(weapon)] > ammoTable[weapon].maxclip * 3) {
+							other->client->ps.ammo[BG_FindAmmoForWeapon(weapon)] = ammoTable[weapon].maxclip * 3;
+						}
 					}
 				}
 				return RESPAWN_SP;
