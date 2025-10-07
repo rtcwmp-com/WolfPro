@@ -265,6 +265,7 @@ vm_t *VM_Create( vmType_t vmType, intptr_t ( *systemCalls )(intptr_t*),
 	}
 
 	vm = &vmTable[i];
+	vm->vmType = vmType;
 
 	Q_strncpyz( vm->name, module, sizeof( vm->name ) );
 	vm->systemCall = systemCalls;
