@@ -1395,13 +1395,6 @@ void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs, int firstLitSurf 
 		return;
 	}
 
-	// if we overflowed MAX_DRAWSURFS, the drawsurfs
-	// wrapped around in the buffer and we will be missing
-	// the first surfaces, not the last ones
-	if ( numDrawSurfs > MAX_DRAWSURFS ) {
-		numDrawSurfs = MAX_DRAWSURFS;
-	}
-
 	// sort the drawsurfs by sort type, then orientation, then shader
 	qsort(drawSurfs,numDrawSurfs, sizeof( drawSurf_t ), CompareDrawSurfs );
 
@@ -1680,7 +1673,15 @@ void R_RenderView( viewParms_t *parms ) {
 
 	R_GenerateDrawSurfs();
 
-	R_SortDrawSurfs( tr.refdef.drawSurfs + firstDrawSurf, tr.refdef.numDrawSurfs - firstDrawSurf, firstLitSurf );
+	// if we overflowed MAX_DRAWSURFS, the drawsurfs
+	// wrapped around in the buffer and we will be missing
+	// the first surfaces, not the last ones
+	int numDrawSurfs;
+	if ( numDrawSurfs > MAX_DRAWSURFS ) {
+		numDrawSurfs = MAX_DRAWSURFS;
+	}
+
+	R_SortDrawSurfs( tr.refdef.drawSurfs + firstDrawSurf, numDrawSurfs - firstDrawSurf, firstLitSurf );
 
 	// draw main system development information (surface outlines, etc)
 	R_FogOff();
