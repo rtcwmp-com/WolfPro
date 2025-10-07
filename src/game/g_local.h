@@ -405,6 +405,9 @@ struct gentity_s {
 	int voiceChatSquelch;                   // DHM - Nerve
 	int voiceChatPreviousTime;              // DHM - Nerve
 	int lastBurnedFrameNumber;              // JPW - Nerve   : to fix FT instant-kill exploit
+
+	// RTCWPro - allowteams - ET port
+	int allowteams;
 };
 
 // Ridah
@@ -521,6 +524,10 @@ typedef struct playerStats_s {
 	int dyn_defused;
 	weapon_stat_t aWeaponStats[WS_MAX + 1];   // Weapon stats.  +1 to avoid invalid weapon check
 } playerStats_t;
+
+// RTCWPro - allowteams - ET port
+#define ALLOW_AXIS_TEAM         1
+#define ALLOW_ALLIED_TEAM       2
 
 // client data that stays across multiple levels or tournament restarts
 // this is achieved by writing all the data to cvar strings at game shutdown
@@ -1083,6 +1090,8 @@ void G_SetAngle( gentity_t *ent, vec3_t angle );
 qboolean infront( gentity_t *self, gentity_t *other );
 
 void G_ProcessTagConnect( gentity_t *ent );
+
+qboolean G_AllowTeamsAllowed(gentity_t* ent, gentity_t* activator); // RTCWPro - allowteams ET - port
 
 //
 // g_combat.c
