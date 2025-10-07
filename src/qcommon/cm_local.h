@@ -182,7 +182,7 @@ typedef struct leafList_s {
 	int count;
 	int maxcount;
 	qboolean overflowed;
-	int     *list;
+	int    *list;
 	vec3_t bounds[2];
 	int lastLeaf;           // for overflows where each leaf can't be stored individually
 	void ( *storeLeafs )( struct leafList_s *ll, int nodenum );

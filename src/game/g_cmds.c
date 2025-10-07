@@ -640,6 +640,9 @@ void SetTeam( gentity_t *ent, char *s ) {
 	if (team != oldTeam) {
 		G_deleteStats(clientNum);
 	}
+
+	if (client->sess.sessionTeam == TEAM_BLUE || client->sess.sessionTeam == TEAM_RED)
+		G_read_round_jstats_reconnect(client); // if player reconnected read their stats back into the session
 }
 
 // DHM - Nerve
@@ -887,6 +890,7 @@ G_Say
 #define SAY_TEAM    1
 #define SAY_TELL    2
 #define SAY_LIMBO   3           // NERVE - SMF
+#define SAY_TEAMNL	4			// OSPx
 
 void G_SayTo( gentity_t *ent, gentity_t *other, int mode, int color, const char *netname, const char *username, const char *message, qboolean localize ) { // removed static so it would link
 	if ( !other ) {
@@ -898,7 +902,7 @@ void G_SayTo( gentity_t *ent, gentity_t *other, int mode, int color, const char 
 	if ( !other->client ) {
 		return;
 	}
-	if ( mode == SAY_TEAM  && !OnSameTeam( ent, other ) ) {
+	if ( ( mode == SAY_TEAM  || mode == SAY_TEAMNL ) && !OnSameTeam( ent, other ) ) {
 		return;
 	}
 	// no chatting to players in tournements
@@ -952,6 +956,9 @@ void G_Say( gentity_t *ent, gentity_t *target, int mode, const char *chatText ) 
 	default:
 	case SAY_ALL:
 		G_LogPrintf( "say: %s: %s\n", ent->client->pers.username, chatText );
+		if (g_gamestate.integer != GS_INTERMISSION) {
+			G_writeChatEvent(ent, chatText);
+		}
 		Com_sprintf( netname, sizeof( netname ), "%s%c%c: ", ent->client->pers.netname, Q_COLOR_ESCAPE, COLOR_WHITE );
 		Com_sprintf( username, sizeof( username ), "%s%c%c: ", ent->client->pers.username, Q_COLOR_ESCAPE, COLOR_WHITE );
 		color = COLOR_GREEN;
@@ -970,6 +977,13 @@ void G_Say( gentity_t *ent, gentity_t *target, int mode, const char *chatText ) 
 			Com_sprintf( username, sizeof( username ), "(%s%c%c): ",
 						 ent->client->pers.username, Q_COLOR_ESCAPE, COLOR_WHITE );
 		}
+		color = COLOR_CYAN;
+		break;
+	// Team chat with no location..
+	case SAY_TEAMNL:
+		G_LogPrintf("sayteamnl: %s: %s\n", ent->client->pers.username, chatText);
+		Com_sprintf( username, sizeof( username ), "(%s%c%c): ", ent->client->pers.username, Q_COLOR_ESCAPE, COLOR_WHITE );
+		Com_sprintf( netname, sizeof( netname ), "(%s%c%c): ", ent->client->pers.netname, Q_COLOR_ESCAPE, COLOR_WHITE);
 		color = COLOR_CYAN;
 		break;
 	case SAY_TELL:
@@ -2260,6 +2274,11 @@ void ClientCommand( int clientNum ) {
 	}
 	if ( Q_stricmp( cmd, "say_team" ) == 0 ) {
 		Cmd_Say_f( ent, SAY_TEAM, qfalse );
+		return;
+	}
+	// Team chat with no location..
+	if ( Q_stricmp( cmd, "say_teamnl" ) == 0 ) {
+		Cmd_Say_f( ent, SAY_TEAMNL, qfalse );
 		return;
 	}
 	// NERVE - SMF

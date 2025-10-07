@@ -1172,7 +1172,7 @@ void BG_AnimParseAnimScript( animModelInfo_t *modelInfo, animScriptData_t *scrip
 
 				// copy the weapon defines over to the enemy_weapon defines
 				memcpy( &defineStr[ANIM_COND_ENEMY_WEAPON][0], &defineStr[ANIM_COND_WEAPON][0], sizeof( animStringItem_t ) * MAX_ANIM_DEFINES );
-				memcpy( &defineBits[ANIM_COND_ENEMY_WEAPON][0], &defineBits[ANIM_COND_WEAPON][0], sizeof( defineBits[ANIM_COND_ENEMY_WEAPON][0] ) * MAX_ANIM_DEFINES );
+				memcpy( &defineBits[ANIM_COND_ENEMY_WEAPON][0], &defineBits[ANIM_COND_WEAPON][0], sizeof( int ) * 2 * MAX_ANIM_DEFINES );
 				numDefines[ANIM_COND_ENEMY_WEAPON] = numDefines[ANIM_COND_WEAPON];
 
 			}
@@ -1865,8 +1865,9 @@ BG_GetConditionValue
 int BG_GetConditionValue( int client, int condition, qboolean checkConversion ) {
 	int value, i;
 
-	// TTimo gcc: assignment makes integer from pointer without a cast
-	value = (int)globalScriptData->clientConditions[client][condition];
+	
+	value = globalScriptData->clientConditions[client][condition][0]; //this used to return the address of [0]
+	
 
 	if ( checkConversion ) {
 		// we may need to convert to a value
@@ -1883,7 +1884,7 @@ int BG_GetConditionValue( int client, int condition, qboolean checkConversion ) 
 			//BG_AnimParseError( "BG_GetConditionValue: internal error" );
 		}
 	}
-
+		
 	return value;
 }
 

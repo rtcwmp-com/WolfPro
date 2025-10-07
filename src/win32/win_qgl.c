@@ -2935,8 +2935,10 @@ qboolean QGL_Init( const char *dllname ) {
 		return qfalse;
 	}
 	ri.Printf( PRINT_ALL, "succeeded\n" );
+#if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wincompatible-function-pointer-types"
+#endif
 
 	qglAccum                     = dllAccum = GPA( "glAccum" );
 	qglAlphaFunc                 = dllAlphaFunc = GPA( "glAlphaFunc" );
@@ -3296,7 +3298,9 @@ qboolean QGL_Init( const char *dllname ) {
 	qwglSetPixelFormat           = GPA( "wglSetPixelFormat" );
 	qwglSwapBuffers              = GPA( "wglSwapBuffers" );
 
+#if defined(__clang__)
 #pragma clang diagnostic pop
+#endif
 
 	qwglSwapIntervalEXT = 0;
 	qglActiveTextureARB = 0;

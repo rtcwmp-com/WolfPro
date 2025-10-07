@@ -921,10 +921,10 @@ const void *RB_StretchPic( const void *data ) {
 	tess.indexes[ numIndexes + 4 ] = numVerts + 0;
 	tess.indexes[ numIndexes + 5 ] = numVerts + 1;
 
-	*(int *)tess.vertexColors[ numVerts ] =
-		*(int *)tess.vertexColors[ numVerts + 1 ] =
-			*(int *)tess.vertexColors[ numVerts + 2 ] =
-				*(int *)tess.vertexColors[ numVerts + 3 ] = *(int *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 0 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 1 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 2 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 3 ] = *(uint32_t *)backEnd.color2D;
 
 	tess.xyz[ numVerts ][0] = cmd->x;
 	tess.xyz[ numVerts ][1] = cmd->y;
@@ -999,10 +999,10 @@ const void *RB_RotatedPic( const void *data ) {
 	tess.indexes[ numIndexes + 4 ] = numVerts + 0;
 	tess.indexes[ numIndexes + 5 ] = numVerts + 1;
 
-	*(int *)tess.vertexColors[ numVerts ] =
-		*(int *)tess.vertexColors[ numVerts + 1 ] =
-			*(int *)tess.vertexColors[ numVerts + 2 ] =
-				*(int *)tess.vertexColors[ numVerts + 3 ] = *(int *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 0 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 1 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 2 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 3 ] = *(uint32_t *)backEnd.color2D;
 
 	angle = cmd->angle * pi2;
 	tess.xyz[ numVerts ][0] = cmd->x + ( cos( angle ) * cmd->w );
@@ -1079,16 +1079,11 @@ const void *RB_StretchPicGradient( const void *data ) {
 	tess.indexes[ numIndexes + 4 ] = numVerts + 0;
 	tess.indexes[ numIndexes + 5 ] = numVerts + 1;
 
-//	*(int *)tess.vertexColors[ numVerts ] =
-//		*(int *)tess.vertexColors[ numVerts + 1 ] =
-//		*(int *)tess.vertexColors[ numVerts + 2 ] =
-//		*(int *)tess.vertexColors[ numVerts + 3 ] = *(int *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 0 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 1 ] = *(uint32_t *)backEnd.color2D;
 
-	*(int *)tess.vertexColors[ numVerts ] =
-		*(int *)tess.vertexColors[ numVerts + 1 ] = *(int *)backEnd.color2D;
-
-	*(int *)tess.vertexColors[ numVerts + 2 ] =
-		*(int *)tess.vertexColors[ numVerts + 3 ] = *(int *)cmd->gradientColor;
+	*(uint32_t *)tess.vertexColors[ numVerts + 2 ] = *(uint32_t *)cmd->gradientColor;
+	*(uint32_t *)tess.vertexColors[ numVerts + 3 ] = *(uint32_t *)cmd->gradientColor;
 
 	tess.xyz[ numVerts ][0] = cmd->x;
 	tess.xyz[ numVerts ][1] = cmd->y;

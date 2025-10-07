@@ -18,6 +18,7 @@
 // returns the surface handle
 uint64_t Sys_Vulkan_Init(void* vkInstance);
 void Sys_Vulkan_Shutdown(void);
+qboolean Sys_Vulkan_GetRequiredExtensions(char **pNames, int *pCount);
 
 typedef uint64_t rhiHandle;
 
@@ -380,25 +381,6 @@ typedef struct rhiComputePipelineDesc {
 	uint32_t pushConstantsBytes;
 } rhiComputePipelineDesc;
 
-inline void RHI_SubmitGraphicsDesc_Signal(rhiSubmitGraphicsDesc *graphicsDesc, rhiSemaphore semaphore, uint64_t semaphoreValue){
-    assert(graphicsDesc->signalSemaphoreCount < ARRAY_LEN(graphicsDesc->signalSemaphores));
-    int newIndex = graphicsDesc->signalSemaphoreCount++;
-    graphicsDesc->signalSemaphores[newIndex] = semaphore;
-    graphicsDesc->signalSemaphoreValues[newIndex] = semaphoreValue;
-}
-
-inline void RHI_SubmitGraphicsDesc_Wait(rhiSubmitGraphicsDesc *graphicsDesc, rhiSemaphore semaphore){
-    assert(graphicsDesc->waitSemaphoreCount < ARRAY_LEN(graphicsDesc->waitSemaphores));
-    int newIndex = graphicsDesc->waitSemaphoreCount++;
-    graphicsDesc->waitSemaphores[newIndex] = semaphore;
-}
-
-inline void RHI_SubmitGraphicsDesc_Wait_Timeline(rhiSubmitGraphicsDesc *graphicsDesc, rhiSemaphore semaphore, uint64_t timelineValue){
-    assert(graphicsDesc->waitSemaphoreCount < ARRAY_LEN(graphicsDesc->waitSemaphores));
-    int newIndex = graphicsDesc->waitSemaphoreCount++;
-    graphicsDesc->waitSemaphores[newIndex] = semaphore;
-	graphicsDesc->waitSemaphoreValues[newIndex] = timelineValue;
-}
 
 
 void RHI_Init( void );

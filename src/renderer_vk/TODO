@@ -21,6 +21,7 @@ shader inspector
 
 fog
 
+use highest MSAA available for the hardware
 
 remove r_measureoverdraw
 remove r_ignoreglerrors r_drawBuffer and stereo

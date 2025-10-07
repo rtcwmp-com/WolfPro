@@ -188,10 +188,21 @@ vmCvar_t g_hitsounds;			// Hitsounds - Requires soundpack
 vmCvar_t g_allowEnemySpawnTimer;
 vmCvar_t g_spawnOffset;
 
-vmCvar_t g_gameStatslog; // temp cvar for event logging
 vmCvar_t g_preciseTimeSet;
 vmCvar_t sv_hostname;	// So it's more accesible
 
+
+// stats
+vmCvar_t g_stats_curl_submit;
+vmCvar_t g_stats_curl_submit_URL;
+vmCvar_t g_stats_curl_submit_headers;
+vmCvar_t g_gameStatslog; // temp cvar for event logging
+vmCvar_t g_statsDebug; // write in logfile to debug crashes
+vmCvar_t g_statsRetryCount;
+vmCvar_t g_statsRetryDelay;
+vmCvar_t g_apiquery_curl_URL;
+
+vmCvar_t g_disableDeadBodyFlagGrab;
 
 cvarTable_t gameCvarTable[] = {
 	// don't override the cheat state set by the system
@@ -352,7 +363,20 @@ cvarTable_t gameCvarTable[] = {
 
 	{ &g_gameStatslog, "g_gameStatslog", "16", CVAR_ARCHIVE, 0, qfalse  }, // default to 16 so the server saves JSON stats
 	{ &g_preciseTimeSet, "g_preciseTimeSet", "0", CVAR_WOLFINFO, 0, qfalse  },
-	{ &sv_hostname, "sv_hostname", "", CVAR_SERVERINFO, 0, qfalse }
+	{ &sv_hostname, "sv_hostname", "", CVAR_SERVERINFO, 0, qfalse }, 
+
+	//stats
+	{ &g_statsDebug, "g_statsDebug", "0", CVAR_ARCHIVE, 0, qfalse  },
+	{ &g_stats_curl_submit, "g_stats_curl_submit", "0", CVAR_ARCHIVE, 0, qfalse  },
+    { &g_stats_curl_submit_URL, "g_stats_curl_submit_URL", "https://rtcwproapi.donkanator.com/submit", CVAR_ARCHIVE, 0, qfalse  },
+    { &g_stats_curl_submit_headers, "g_stats_curl_submit_headers", "0", CVAR_ARCHIVE, 0, qfalse  }, // not used at the moment, headers are currently hardcoded
+	{ &g_statsRetryCount, "g_statsRetryCount", "3", CVAR_ARCHIVE, 0, qfalse  }, // number of attempts to send stats if first attempt fails
+	{ &g_statsRetryDelay, "g_statsRetryDelay", "2", CVAR_ARCHIVE, 0, qfalse  }, // delay in seconds to retry sending stats if first attempt fails
+	{ &g_apiquery_curl_URL, "g_apiquery_curl_URL", "https://rtcwproapi.donkanator.com/serverquery", CVAR_ARCHIVE, 0, qfalse  },
+
+	{ &g_disableDeadBodyFlagGrab, "g_disableDeadBodyFlagGrab", "1", CVAR_ARCHIVE, qtrue, qfalse }
+
+
 };
 
 // bk001129 - made static to avoid aliasing
@@ -384,7 +408,7 @@ This must be the very first function compiled into the .q3vm file
 #if defined( __MACOS__ )
 #pragma export on
 #endif
-int vmMain( int command, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6 ) {
+intptr_t vmMain(intptr_t command, intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6 ) {
 #if defined( __MACOS__ )
 #pragma export off
 #endif
@@ -396,7 +420,7 @@ int vmMain( int command, int arg0, int arg1, int arg2, int arg3, int arg4, int a
 		G_ShutdownGame( arg0 );
 		return 0;
 	case GAME_CLIENT_CONNECT:
-		return (int)ClientConnect( arg0, arg1, arg2 );
+		return (intptr_t)ClientConnect( arg0, arg1, arg2 );
 	case GAME_CLIENT_THINK:
 		ClientThink( arg0 );
 		return 0;
@@ -1228,8 +1252,82 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 			G_LogPrintf( "------------------------------------------------------------\n" );
 			G_LogPrintf( "InitGame: %s\n", serverinfo );
 		}
+        if (g_gameStatslog.integer && (g_gamestate.integer == GS_PLAYING)) { // definitely needs improving but here for testing purposes
+                char newGamestatFile[256];
+                char mapName[64];
+                char buf2[64];
+                int retval;
+                qtime_t ct;
+                trap_RealTime(&ct);
+                trap_Cvar_VariableStringBuffer( "mapname", mapName, sizeof(mapName) );
+                char *buf;
+                time_t unixTime = time(NULL);  // come back and make globally available
+                //char cs[MAX_STRING_CHARS];
+
+				// reset disconnect stats for each half round
+				memset(level.disconnectStats, 0, sizeof(level.disconnectStats));
+				level.disconnectCount = 0;
+
+                // we want to save some information for the match and round
+                if (g_currentRound.integer == 1) {
+
+					retval = G_read_round_jstats(); // load stats from round 1
+
+                    Q_strncpyz(level.jsonStatInfo.round_id,"2",sizeof(level.jsonStatInfo.round_id) );
+                    if (retval == 0) {
+                        buf=va("%ld", unixTime);
+                        trap_Cvar_Set( "stats_matchid", buf);
+
+                    }
+                    else {
+                        trap_Cvar_VariableStringBuffer("stats_matchid",buf2,sizeof(buf2));
+                        buf = va("%s",buf2);
+                    }
+					//buf = va("%s",level.match_id);
+
+					Q_strncpyz(level.jsonStatInfo.match_id,buf,sizeof(level.jsonStatInfo.match_id) );
+                }
+                else {
+                    	for ( i = 0; i < level.numConnectedClients; i++ ) {
+                            G_deleteStats( level.sortedClients[i] );
+                        }
+
+
+
+                     buf=va("%ld", unixTime);
+                     trap_Cvar_Set( "stats_matchid", buf);
+                     //level.match_id = va("%s",buf);
+                     Q_strncpyz(level.jsonStatInfo.round_id,"1",sizeof(level.jsonStatInfo.round_id) );
+                     Q_strncpyz(level.jsonStatInfo.match_id,buf,sizeof(level.jsonStatInfo.match_id) );
+                }
+
+                G_write_match_info();
+
+
+                Com_sprintf( newGamestatFile, sizeof( newGamestatFile ), "stats/%d_%d_%d/gameStats_match_%s_round_%d_%s.json", ct.tm_mday, ct.tm_mon+1, 1900+ct.tm_year, buf,g_currentRound.integer+1,mapName);
+                trap_FS_FOpenFile( va("stats/%d_%d_%d/gameStats_match_%s_round_%d_%s.json", ct.tm_mday, ct.tm_mon+1, 1900+ct.tm_year, buf,g_currentRound.integer+1,mapName), &level.jsonStatInfo.gameStatslogFile, FS_WRITE );
+                if ( !level.jsonStatInfo.gameStatslogFile ) {
+                    G_Printf( "WARNING: Couldn't open gameStatlogfile: %s\n", newGamestatFile );
+                } else {
+
+                    char hpath[256];
+                    char game[60];
+                    trap_Cvar_VariableStringBuffer( "fs_homepath", hpath, sizeof( hpath ) );
+                    trap_Cvar_VariableStringBuffer( "fs_game", game, sizeof( game ) );
+
+                    Com_sprintf( level.jsonStatInfo.gameStatslogFileName, sizeof( level.jsonStatInfo.gameStatslogFileName ), "%s/%s/stats/%d_%d_%d/gameStats_match_%s_round_%d_%s.json", hpath, game,ct.tm_mday, ct.tm_mon+1, 1900+ct.tm_year, buf,g_currentRound.integer+1,mapName);
+
+                    G_writeServerInfo();
+
+
+                }
+
+            }
+
 	} else {
-		G_Printf( "Not logging to disk.\n" );
+		if ( trap_Cvar_VariableIntegerValue( "g_gametype" ) != GT_SINGLE_PLAYER ) {
+			G_Printf( "Not logging to disk.\n" );
+		}
 	}
 
 	G_InitWorldSession();

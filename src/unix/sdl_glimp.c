@@ -451,7 +451,7 @@ void GLimp_Init( void ) {
 
 	SDL_Rect deskropRect;
 	sdl_GetSafeDesktopRect(&deskropRect);
-	RE_ConfigureVideoMode(deskropRect.w, deskropRect.h);
+	R_ConfigureVideoMode(deskropRect.w, deskropRect.h);
 
 	Uint32 windowFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
 	if (glInfo.winFullscreen) {

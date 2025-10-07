@@ -771,22 +771,7 @@ static int GetConfigString( int index, char *buf, int size ) {
 	return qtrue;
 }
 
-/*
-====================
-FloatAsInt
-====================
-*/
-static int FloatAsInt( float f ) {
-	int temp;
 
-	*(float *)&temp = f;
-
-	return temp;
-}
-
-void *VM_ArgPtr( int intValue );
-#define VMA( x ) VM_ArgPtr( args[x] )
-#define VMF( x )  ( (float *)args )[x]
 
 /*
 ====================
@@ -795,7 +780,7 @@ CL_UISystemCalls
 The ui module is making a system call
 ====================
 */
-int CL_UISystemCalls( int *args ) {
+intptr_t CL_UISystemCalls( intptr_t *args ) {
 	switch ( args[0] ) {
 	case UI_ERROR:
 		Com_Error( ERR_DROP, "%s", VMA( 1 ) );
@@ -809,7 +794,7 @@ int CL_UISystemCalls( int *args ) {
 		return Sys_Milliseconds();
 
 	case UI_CVAR_REGISTER:
-		Cvar_Register( VMA( 1 ), VMA( 2 ), VMA( 3 ), args[4] );
+		Cvar_Register( (vmCvar_t*)VMA( 1 ), VMA( 2 ), VMA( 3 ), args[4] );
 		return 0;
 
 	case UI_CVAR_UPDATE:
@@ -1078,13 +1063,13 @@ int CL_UISystemCalls( int *args ) {
 		return 0;
 
 	case UI_MEMSET:
-		return (int)memset( VMA( 1 ), args[2], args[3] );
+		return (intptr_t)memset( VMA( 1 ), args[2], args[3] );
 
 	case UI_MEMCPY:
-		return (int)memcpy( VMA( 1 ), VMA( 2 ), args[3] );
+		return (intptr_t)memcpy( VMA( 1 ), VMA( 2 ), args[3] );
 
 	case UI_STRNCPY:
-		return (int)strncpy( VMA( 1 ), VMA( 2 ), args[3] );
+		return (intptr_t)strncpy( VMA( 1 ), VMA( 2 ), args[3] );
 
 	case UI_SIN:
 		return FloatAsInt( sin( VMF( 1 ) ) );
@@ -1206,7 +1191,7 @@ CL_InitUI
 void CL_InitUI( void ) {
 	int v;
 
-	uivm = VM_Create( "ui", CL_UISystemCalls, VMI_NATIVE );
+	uivm = VM_Create( VM_UI, CL_UISystemCalls, VMI_NATIVE );
 	if ( !uivm ) {
 		Com_Error( ERR_FATAL, "VM_Create on UI failed" );
 	}

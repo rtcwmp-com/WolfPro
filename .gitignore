@@ -2,8 +2,11 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=c,linux,windows,cmake,c++
 
 deps/*
+deps64/*
 src/.vs
 build/*
+build64/*
+docker/dockerfiles/build64/*
 docker/dockerfiles/build/*
 CMakeSettings.json
 

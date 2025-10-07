@@ -260,6 +260,7 @@ void SV_DirectConnect( netadr_t from ) {
 	int startIndex;
 	char        *denied;
 	int count;
+	char guid[GUID_LEN] = {'\0'};
 
 	Com_DPrintf( "SVC_DirectConnect ()\n" );
 
@@ -434,6 +435,10 @@ gotnewcl:
 	// init the netchan queue
 	newcl->netchan_end_queue = &newcl->netchan_start_queue;
 
+	// Save guid so game code can get it.
+	Q_strncpyz(newcl->guid, guid, sizeof(newcl->guid));
+	Info_SetValueForKey(userinfo, "cl_guid", guid);
+
 	// save the userinfo
 	Q_strncpyz( newcl->userinfo, userinfo, sizeof( newcl->userinfo ) );
 
@@ -441,7 +446,7 @@ gotnewcl:
 	denied = (char *)VM_Call( gvm, GAME_CLIENT_CONNECT, clientNum, qtrue, qfalse ); // firstTime = qtrue
 	if ( denied ) {
 		// we can't just use VM_ArgPtr, because that is only valid inside a VM_Call
-		denied = VM_ExplicitArgPtr( gvm, (int)denied );
+		denied = (char*)VM_ExplicitArgPtr( gvm, (intptr_t)denied );
 
 		NET_OutOfBandPrint( NS_SERVER, from, "print\n%s\n", denied );
 		Com_DPrintf( "Game rejected a connection: %s.\n", denied );

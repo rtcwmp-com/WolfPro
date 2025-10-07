@@ -188,7 +188,7 @@ elseif(HOST_ARCH STREQUAL "i686" OR HOST_ARCH STREQUAL "x86")
   set(WINSDK_ARCH "x86")
 elseif(HOST_ARCH STREQUAL "x86_64" OR HOST_ARCH STREQUAL "x64")
   set(TRIPLE_ARCH "x86_64")
-  set(WINSDK_ARCH "x64")
+  set(WINSDK_ARCH "x86_64")
 else()
   message(SEND_ERROR "Unknown host architecture ${HOST_ARCH}. Must be aarch64 (or arm64), armv7 (or arm), i686 (or x86), or x86_64 (or x64).")
 endif()
@@ -230,14 +230,26 @@ list(APPEND _CTF_NATIVE_DEFAULT "-DCMAKE_CXX_COMPILER=${LLVM_NATIVE_TOOLCHAIN}/b
 set(CROSS_TOOLCHAIN_FLAGS_NATIVE "${_CTF_NATIVE_DEFAULT}" CACHE STRING "")
 
 # We need to enable C++ exception
-set(COMPILE_FLAGS
-    /EHs
-    -DWIN32
-    -D_CRT_SECURE_NO_WARNINGS
-    --target=${TRIPLE_ARCH}-windows-msvc
-    -fms-compatibility-version=19.11
-    /winsdkdir ../deps/xwin/sdk 
-    /vctoolsdir ../deps/xwin/crt)
+
+if(WOLF_64BITS)
+		set(COMPILE_FLAGS
+        /EHs
+        -DWIN32
+        -D_CRT_SECURE_NO_WARNINGS
+        --target=${TRIPLE_ARCH}-windows-msvc
+        -fms-compatibility-version=19.11
+        /winsdkdir ../deps64/xwin/sdk 
+        /vctoolsdir ../deps64/xwin/crt)
+	else()
+		set(COMPILE_FLAGS
+        /EHs
+        -DWIN32
+        -D_CRT_SECURE_NO_WARNINGS
+        --target=${TRIPLE_ARCH}-windows-msvc
+        -fms-compatibility-version=19.11
+        /winsdkdir ../deps/xwin/sdk 
+        /vctoolsdir ../deps/xwin/crt)
+	endif()
 
 if(case_sensitive_filesystem)
   # Ensure all sub-configures use the top-level VFS overlay instead of generating their own.

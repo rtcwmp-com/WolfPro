@@ -514,13 +514,7 @@ void CL_ShutdownCGame( void ) {
 	cgvm = NULL;
 }
 
-static int  FloatAsInt( float f ) {
-	int temp;
 
-	*(float *)&temp = f;
-
-	return temp;
-}
 
 static qbool CL_CG_GetValue(char* value, int valueSize, const char* key)
 {
@@ -598,9 +592,8 @@ CL_CgameSystemCalls
 The cgame module is making a system call
 ====================
 */
-#define VMA( x ) VM_ArgPtr( args[x] )
-#define VMF( x )  ( (float *)args )[x]
-int CL_CgameSystemCalls( int *args ) {
+
+intptr_t CL_CgameSystemCalls(intptr_t *args ) {
 	switch ( args[0] ) {
 	case CG_PRINT:
 		Com_Printf( "%s", VMA( 1 ) );
@@ -844,11 +837,11 @@ int CL_CgameSystemCalls( int *args ) {
 
 
 	case CG_MEMSET:
-		return (int)memset( VMA( 1 ), args[2], args[3] );
+		return (intptr_t)memset( VMA( 1 ), args[2], args[3] );
 	case CG_MEMCPY:
-		return (int)memcpy( VMA( 1 ), VMA( 2 ), args[3] );
+		return (intptr_t)memcpy( VMA( 1 ), VMA( 2 ), args[3] );
 	case CG_STRNCPY:
-		return (int)strncpy( VMA( 1 ), VMA( 2 ), args[3] );
+		return (intptr_t)strncpy( VMA( 1 ), VMA( 2 ), args[3] );
 	case CG_SIN:
 		return FloatAsInt( sin( VMF( 1 ) ) );
 	case CG_COS:
@@ -1185,7 +1178,7 @@ void CL_InitCGame( void ) {
 	Com_sprintf( cl.mapname, sizeof( cl.mapname ), "maps/%s.bsp", mapname );
 
 	// load the dll
-	cgvm = VM_Create( "cgame", CL_CgameSystemCalls, VMI_NATIVE );
+	cgvm = VM_Create( VM_CGAME, CL_CgameSystemCalls, VMI_NATIVE );
 	if ( !cgvm ) {
 		Com_Error( ERR_DROP, "VM_Create on cgame failed" );
 	}
@@ -1248,7 +1241,6 @@ CL_CGameRendering
 */
 void CL_CGameRendering( stereoFrame_t stereo ) {
 	VM_Call( cgvm, CG_DRAW_ACTIVE_FRAME, cl.serverTime, stereo, clc.demoplaying );
-	VM_Debug( 0 );
 }
 
 
