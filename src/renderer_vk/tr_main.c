@@ -1676,7 +1676,7 @@ void R_RenderView( viewParms_t *parms ) {
 	// if we overflowed MAX_DRAWSURFS, the drawsurfs
 	// wrapped around in the buffer and we will be missing
 	// the first surfaces, not the last ones
-	int numDrawSurfs;
+	int numDrawSurfs = tr.refdef.numDrawSurfs;
 	if ( numDrawSurfs > MAX_DRAWSURFS ) {
 		numDrawSurfs = MAX_DRAWSURFS;
 	}
