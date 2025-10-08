@@ -39,6 +39,10 @@ If you have questions concerning this license or the applicable additional terms
 #include "../game/q_shared.h"
 #include "qcommon.h"
 #include "unzip.h"
+#include <errno.h>
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 
 /*
 =============================================================================
@@ -552,6 +556,7 @@ void FS_CopyFile( char *fromOSPath, char *toOSPath ) {
 	fclose( f );
 
 	if ( FS_CreatePath( toOSPath ) ) {
+		free(buf);
 		return;
 	}
 
@@ -1918,7 +1923,8 @@ static pack_t *FS_LoadZipFile( char *zipfile, const char *basename ) {
 
 	buildBuffer = Z_Malloc( ( gi.number_entry * sizeof( fileInPack_t ) ) + len );
 	namePtr = ( (char *) buildBuffer ) + gi.number_entry * sizeof( fileInPack_t );
-	fs_headerLongs = Z_Malloc( gi.number_entry * sizeof( int ) );
+	fs_headerLongs = Z_Malloc( (gi.number_entry + 1) * sizeof( int ) );
+	fs_headerLongs[ fs_numHeaderLongs++ ] = LittleLong( fs_checksumFeed );
 
 	// get the hash table size from the number of files in the zip
 	// because lots of custom pk3 files have less than 32 or 64 files
@@ -1969,12 +1975,9 @@ static pack_t *FS_LoadZipFile( char *zipfile, const char *basename ) {
 		unzGoToNextFile( uf );
 	}
 
-	pack->checksum = Com_BlockChecksum( fs_headerLongs, 4 * fs_numHeaderLongs );
-	pack->pure_checksum = Com_BlockChecksumKey( fs_headerLongs, 4 * fs_numHeaderLongs, LittleLong( fs_checksumFeed ) );
-	// TTimo: DO_LIGHT_DEDICATED
-	// curious about the size of those
-	//Com_DPrintf("Com_BlockChecksumKey: %s %u\n", pack->pakBasename, 4 * fs_numHeaderLongs);
-	// cumulated for light dedicated: 21558 bytes
+	pack->checksum = Com_BlockChecksum(&fs_headerLongs[1], sizeof(*fs_headerLongs) * (fs_numHeaderLongs - 1));
+	pack->pure_checksum = Com_BlockChecksum(fs_headerLongs, sizeof(*fs_headerLongs) * fs_numHeaderLongs);
+
 	pack->checksum = LittleLong( pack->checksum );
 	pack->pure_checksum = LittleLong( pack->pure_checksum );
 
@@ -2598,6 +2601,7 @@ FS_Path_f
 */
 void FS_Path_f( void ) {
 	searchpath_t    *s;
+	searchpath_t* p;
 	int i;
 
 	Com_Printf( "Current search path:\n" );
@@ -2607,8 +2611,25 @@ void FS_Path_f( void ) {
 			if ( fs_numServerPaks ) {
 				if ( !FS_PakIsPure( s->pack ) ) {
 					Com_Printf( "    not on the pure list\n" );
+					// unload the pak
+					/*
+					if (s->pack) {
+						unzClose(s->pack->handle);
+						Z_Free(s->pack->buildBuffer);
+						Z_Free(s->pack);
+					}
+
+					if (s->dir) {
+						Z_Free(s->dir);
+					}
+
+					p->next = s->next;
+					Z_Free(s);
+					s = p;
+					*/
 				} else {
 					Com_Printf( "    on the pure list\n" );
+					p = s;
 				}
 			}
 		} else {
@@ -2725,7 +2746,7 @@ static void FS_AddGameDirectory( const char *path, const char *dir ) {
 // jpw
 	}
 
-	qsort( sorted, numfiles, 4, paksort );
+	qsort( sorted, numfiles, sizeof(sorted[0]), paksort );
 
 	for ( i = 0 ; i < numfiles ; i++ ) {
 		if ( Q_strncmp( sorted[i],"sp_",3 ) ) { // JPW NERVE -- exclude sp_*
@@ -3879,7 +3900,8 @@ see show_bug.cgi?id=478
 =================
 */
 qboolean FS_ConditionalRestart( int checksumFeed ) {
-	if ( fs_gamedirvar->modified || checksumFeed != fs_checksumFeed ) {
+	//if ( fs_gamedirvar->modified || checksumFeed != fs_checksumFeed || fs_numServerPaks ) {
+	if (fs_gamedirvar->modified || checksumFeed != fs_checksumFeed ) {
 		FS_Restart( checksumFeed );
 		return qtrue;
 	}
@@ -4009,4 +4031,38 @@ qbool FS_IsZipFile(fileHandle_t f)
 	}
 
 	return fsh[f].zipFile;
+}
+
+#ifdef _WIN32
+#include <io.h>
+#define W_OK 2
+#define R_OK 4
+#define F_OK 0
+#define access(x,y) _access(x,y)
+#else
+#include <unistd.h>
+#endif
+
+void FS_ExtractFromPak(char *osPath, char* fileNameWithExt){
+	if ( access( osPath, R_OK ) == 0 ) {
+		Com_DPrintf( "Removing existing  %s : %s\n", fileNameWithExt, osPath );
+		if ( remove( osPath ) == -1 ) {
+			Com_Printf("failed to remove outdated '%s' file:\n\"%s\"\n", osPath, strerror( errno ) );
+		}
+	}
+
+	fileHandle_t fileHandle;
+	int fileLen = FS_FOpenFileRead(fileNameWithExt, &fileHandle, qtrue);
+	if (fileLen < 1) {
+		Com_Error( ERR_FATAL, "failed to find '%s' in paks\n", fileNameWithExt);
+	}
+
+	byte* buffer = Hunk_AllocateTempMemory(fileLen);
+	FS_Read(buffer, fileLen, fileHandle);
+	FS_WriteFile(fileNameWithExt,buffer,fileLen);
+	Hunk_FreeTempMemory(buffer);
+	
+	if ( access( osPath, R_OK ) != 0 ) {
+		Com_Error( ERR_FATAL, "failed to extract '%s' file:\n\"%s\"\n", osPath, strerror( errno ) );
+	}
 }

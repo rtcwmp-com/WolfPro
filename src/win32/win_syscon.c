@@ -169,7 +169,7 @@ static LONG WINAPI ConWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 		if ( ( HWND ) lParam == s_wcd.hwndBuffer ) {
 			SetBkColor( ( HDC ) wParam, RGB( 86, 117, 100 ) );
 			SetTextColor( ( HDC ) wParam, RGB( 0xff, 0xff, 0xff ) );
-			return ( long ) s_wcd.hbrEditBackground;
+			return (INT_PTR) s_wcd.hbrEditBackground;
 		} else if ( ( HWND ) lParam == s_wcd.hwndErrorBox )   {
 			if ( s_timePolarity & 1 ) {
 				SetBkColor( ( HDC ) wParam, RGB( 0x80, 0x80, 0x80 ) );
@@ -179,7 +179,7 @@ static LONG WINAPI ConWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 				SetBkColor( ( HDC ) wParam, RGB( 0x80, 0x80, 0x80 ) );
 				SetTextColor( ( HDC ) wParam, RGB( 0x00, 0x0, 0x00 ) );
 			}
-			return ( long ) s_wcd.hbrErrorBackground;
+			return (INT_PTR) s_wcd.hbrErrorBackground;
 		}
 		break;
 
@@ -280,7 +280,7 @@ void Sys_CreateConsole( void ) {
 	wc.hInstance     = g_wv.hInstance;
 	wc.hIcon         = LoadIcon( g_wv.hInstance, MAKEINTRESOURCE( IDI_ICON1 ) );
 	wc.hCursor       = LoadCursor( NULL,IDC_ARROW );
-	wc.hbrBackground = (void *)COLOR_WINDOW;
+	wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
 	wc.lpszMenuName  = 0;
 	wc.lpszClassName = DEDCLASS;
 
@@ -385,7 +385,7 @@ void Sys_CreateConsole( void ) {
 									 g_wv.hInstance, NULL );
 	SendMessage( s_wcd.hwndBuffer, WM_SETFONT, ( WPARAM ) s_wcd.hfBufferFont, 0 );
 
-	s_wcd.SysInputLineWndProc = ( WNDPROC ) SetWindowLong( s_wcd.hwndInputLine, GWL_WNDPROC, ( long ) InputLineWndProc );
+	s_wcd.SysInputLineWndProc = ( WNDPROC ) SetWindowLongPtr( s_wcd.hwndInputLine, GWLP_WNDPROC, (LONG_PTR) InputLineWndProc );
 	SendMessage( s_wcd.hwndInputLine, WM_SETFONT, ( WPARAM ) s_wcd.hfBufferFont, 0 );
 
 	ShowWindow( s_wcd.hWnd, SW_SHOWDEFAULT );

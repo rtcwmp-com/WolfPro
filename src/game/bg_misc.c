@@ -47,11 +47,15 @@ extern vmCvar_t g_gametype;
 // jpw
 
 // NOTE: weapons that share ammo (ex. colt/thompson) need to share max ammo, but not necessarily uses or max clip
-#define MAX_AMMO_45     300
-#define MAX_AMMO_9MM    300
+#define MAX_AMMO_45     32		// RtcwPro - modified for AddMagicAmmo
+#define MAX_AMMO_9MM    32		// RtcwPro - modified for AddMagicAmmo
+#define MAX_AMMO_MP40	96		// RtcwPro - modified for AddMagicAmmo
+#define MAX_AMMO_STEN	96		// RtcwPro - modified for AddMagicAmmo
+#define MAX_AMMO_THOM	90		// RtcwPro - modified for AddMagicAmmo
+#define MAX_AMMO_PANZ   3		// RtcwPro - modified for AddMagicAmmo
 #define MAX_AMMO_VENOM  1000
-#define MAX_AMMO_MAUSER 50
-#define MAX_AMMO_GARAND 1000
+#define MAX_AMMO_MAUSER 30		// RtcwPro - modified for AddMagicAmmo
+#define MAX_AMMO_GARAND 30		// RtcwPro - modified for AddMagicAmmo
 #define MAX_AMMO_FG42   500
 #define MAX_AMMO_BAR    500
 
@@ -75,6 +79,10 @@ int weapBanksMultiPlayer[MAX_WEAP_BANKS_MP][MAX_WEAPS_IN_BANK_MP] = {
 	{WP_DYNAMITE,           WP_MEDKIT,              WP_AMMO,    0,          0,          0,              0,          0           }
 };
 // jpw
+
+int reloadableWeapons[] = {
+	WP_MP40, WP_THOMPSON, WP_STEN, WP_MAUSER, WP_GARAND, WP_PANZERFAUST, WP_FLAMETHROWER, WP_COLT, WP_LUGER // BG_AddMagicAmmo
+};
 
 // [0] = maxammo		-	max player ammo carrying capacity.
 // [1] = uses			-	how many 'rounds' it takes/costs to fire one cycle.
@@ -105,11 +113,11 @@ ammotable_t ammoTable[] = {
 	{   999,            0,      999,    0,      50,             200,    0,      0,      MOD_KNIFE               },  //	WP_KNIFE				// 1
 
 	{   MAX_AMMO_9MM,   1,      8,      1500,   DELAY_PISTOL,   400,    0,      0,      MOD_LUGER               },  //	WP_LUGER				// 2	// NOTE: also 32 round 'snail' magazine
-	{   MAX_AMMO_9MM,   1,      32,     2600,   DELAY_LOW,      100,    0,      0,      MOD_MP40                },  //	WP_MP40					// 3
+	{   MAX_AMMO_MP40,	1,		32,		2600,	DELAY_LOW,		100,	0,		0,		MOD_MP40				},	//	WP_MP40					// 3
 	{   MAX_AMMO_MAUSER,1,      10,     2500,   DELAY_HIGH,     1200,   0,      0,      MOD_MAUSER              },  //	WP_MAUSER				// 4	// NOTE: authentic clips are 5/10/25 rounds
 	{   MAX_AMMO_FG42,  1,      20,     2000,   DELAY_LOW,      200,    0,      0,      MOD_FG42                },  //	WP_FG42					// 5
 	{   15,             1,      15,     1000,   DELAY_THROW,    1600,   0,      0,      MOD_GRENADE_LAUNCHER    },  //	WP_GRENADE_LAUNCHER		// 6
-	{   5,              1,      1,      1000,   750,           2000,   0,      0,      MOD_PANZERFAUST         },   //	WP_PANZERFAUST			// 7	// DHM - Nerve :: updated delay so prediction is correct
+	{   MAX_AMMO_PANZ,  1,      1,      1000,   750,           2000,   0,      0,      MOD_PANZERFAUST         },   //	WP_PANZERFAUST			// 7	// DHM - Nerve :: updated delay so prediction is correct
 //	{	MAX_AMMO_VENOM,	1,		500,	3000,	750,			30,		5000,	200,	MOD_VENOM				},	//	WP_VENOM				// -
 	{   MAX_AMMO_VENOM, 1,      500,    3000,   750,            45,     5000,   200,    MOD_VENOM               },  //	WP_VENOM				// 8	// JPW NOTE: changed next_shot 50->45 to genlock firing to every server frame (fire rate shouldn't be framerate dependent now)
 	{   200,            1,      200,    1000,   DELAY_LOW,      50,     0,      0,      MOD_FLAMETHROWER        },  //	WP_FLAMETHROWER			// 9 // JPW NOTE: changed maxclip for MP 500->150
@@ -118,7 +126,7 @@ ammotable_t ammoTable[] = {
 
 	{   999,            0,      999,    0,      50,             200,    0,      0,      MOD_KNIFE2              },  //	WP_KNIFE2				// 12
 	{   MAX_AMMO_45,    1,      8,      1500,   DELAY_PISTOL,   400,    0,      0,      MOD_COLT                },  //	WP_COLT					// 13
-	{   MAX_AMMO_45,    1,      30,     2400,   DELAY_LOW,      120,    0,      0,      MOD_THOMPSON            },  //	WP_THOMPSON				// 14	// NOTE: also 50 round drum magazine
+	{   MAX_AMMO_THOM,	1,		30,		2400,	DELAY_LOW,		120,	0,		0,		MOD_THOMPSON			},	//	WP_THOMPSON				// 14	// NOTE: also 50 round drum magazine
 	{   MAX_AMMO_GARAND,1,      5,      2500,   DELAY_HIGH,     1200,   0,      0,      MOD_GARAND              },  //	WP_GARAND				// 15	// NOTE: always 5 round clips
 	{   MAX_AMMO_BAR,   1,      20,     2000,   DELAY_LOW,      200,    0,      0,      MOD_BAR                 },  //	WP_BAR					// 16
 	{   15,             1,      15,     1000,   DELAY_THROW,    1600,   0,      0,      MOD_GRENADE_PINEAPPLE   },  //	WP_GRENADE_PINEAPPLE	// 17
@@ -132,7 +140,7 @@ ammotable_t ammoTable[] = {
 
 	{   MAX_AMMO_FG42,  1,      20,     2000,   DELAY_LOW,      200,    0,      0,      MOD_FG42SCOPE           },  //	WP_FG42SCOPE			// 23
 	{   MAX_AMMO_BAR,   1,      20,     2000,   DELAY_LOW,      90,     0,      0,      MOD_BAR                 },  //	WP_BAR2					// 24
-	{   MAX_AMMO_9MM,   1,      32,     3100,   DELAY_LOW,      110,    700,    300,    MOD_STEN                },  //	WP_STEN					// 25
+	{   MAX_AMMO_STEN,  1,      32,     3100,   DELAY_LOW,      110,    700,    300,    MOD_STEN                },  //	WP_STEN					// 25
 	{   3,              1,      1,      1500,   50,             1000,   0,      0,      MOD_SYRINGE             },  //	WP_MEDIC_SYRINGE		// 26 // JPW NERVE
 	{   1,              0,      1,      3000,   50,             1000,   0,      0,      MOD_AMMO,               },  //	WP_AMMO					// 27 // JPW NERVE
 	{   1,              0,      1,      3000,   50,             1000,   0,      0,      MOD_ARTY,               },  //	WP_ARTY
@@ -3348,6 +3356,106 @@ qboolean    BG_PlayerTouchesItem( playerState_t *ps, entityState_t *item, int at
 }
 
 
+int BG_MaxAmmoForWeapon(weapon_t weaponNum) {
+	return(GetAmmoTableData(weaponNum)->maxammo);
+}
+
+/*
+=================================
+BG_AddMagicAmmo:
+	if numOfClips is 0, no ammo is added, it just return whether any ammo CAN be added;
+	otherwise return whether any ammo was ACTUALLY added.
+
+WARNING: when numOfClips is 0, DO NOT CHANGE ANYTHING under ps.
+=================================
+*/
+int BG_GrenadesForClass(int cls) {
+
+	//char currentVal[256];
+
+	switch (cls) {
+		case PC_MEDIC:
+			return 1; // g_medicNades;
+		case PC_SOLDIER:
+			return 4; // g_soldNades;
+		case PC_ENGINEER:
+			return 8; // g_engNades;
+		case PC_LT:
+			return 1; // g_ltNades;
+	}
+	return 1;
+}
+
+weapon_t BG_GrenadeTypeForTeam(team_t team) {
+	switch (team) {
+	case TEAM_RED:
+		return WP_GRENADE_LAUNCHER;
+	case TEAM_BLUE:
+		return WP_GRENADE_PINEAPPLE;
+	default:
+		return WP_NONE;
+	}
+}
+
+
+// Return true/false if the player "needs" the ammo
+qboolean BG_AddMagicAmmo(const playerState_t* ps, int teamNum) {
+	int i, weapon;
+	int needsAmmo = qfalse;
+	int maxammo;
+	int clip;
+
+	// Gordon: handle grenades first
+	i = BG_GrenadesForClass(ps->stats[STAT_PLAYER_CLASS]);
+	weapon = BG_GrenadeTypeForTeam(teamNum);
+	clip = BG_FindClipForWeapon(weapon);
+
+	if (ps->ammoclip[clip] < i) {		
+		needsAmmo = qtrue;
+		COM_BitSet(ps->weapons, weapon);
+	}
+
+	if (COM_BitCheck(ps->weapons, WP_MEDIC_SYRINGE)) {
+		i = 10;
+		clip = BG_FindClipForWeapon(WP_MEDIC_SYRINGE);
+
+		if (ps->ammoclip[clip] < i) {
+			needsAmmo = qtrue;
+		}
+	}
+
+	// Gordon: now other weapons
+	for( i = 0; i < ARRAY_LEN(reloadableWeapons); i++ ) {
+		weapon = reloadableWeapons[i];
+		if (COM_BitCheck(ps->weapons, weapon)) {
+
+			maxammo = BG_MaxAmmoForWeapon(weapon);
+
+			// Handle weapons that just use clip, and not ammo
+			if (weapon == WP_FLAMETHROWER) {
+				clip = BG_FindAmmoForWeapon(weapon);
+				if (ps->ammoclip[clip] < maxammo) {
+					needsAmmo = qtrue;
+				}
+			}
+			else if (weapon == WP_PANZERFAUST) {
+				clip = BG_FindAmmoForWeapon(weapon);
+				if (ps->ammo[clip] < maxammo) {
+					needsAmmo = qtrue;
+				}
+			}
+			else {
+				clip = BG_FindAmmoForWeapon(weapon);
+				if (ps->ammo[clip] < maxammo) {
+					needsAmmo = qtrue;
+				}
+			}
+		}
+	}
+
+	return needsAmmo;
+}
+
 
 #define AMMOFORWEAP BG_FindAmmoForWeapon( item->giTag )
 /*
@@ -3358,7 +3466,7 @@ Returns false if the item should not be picked up.
 This needs to be the same for client side prediction and server use.
 ================
 */
-qboolean    BG_CanItemBeGrabbed( const entityState_t *ent, const playerState_t *ps ) {
+qboolean BG_CanItemBeGrabbed( const entityState_t *ent, const playerState_t *ps ) {
 	gitem_t *item;
 	int ammoweap,weapbank;     // JPW NERVE
 
@@ -3373,7 +3481,7 @@ qboolean    BG_CanItemBeGrabbed( const entityState_t *ent, const playerState_t *
 	case IT_WEAPON:
 // JPW NERVE -- medics & engineers can only pick up same weapon type
 		if ( item->giTag == WP_AMMO ) { // magic ammo for any two-handed weapon
-			return qtrue;
+			return BG_AddMagicAmmo( ps, ps->persistant[PERS_TEAM] ); // RtcwPro - check to see if player needs the ammo (ET Port)
 		}
 		if ( ( ps->stats[STAT_PLAYER_CLASS] == PC_MEDIC ) || ( ps->stats[STAT_PLAYER_CLASS] == PC_ENGINEER ) ) {
 			if ( !COM_BitCheck( ps->weapons, item->giTag ) ) {

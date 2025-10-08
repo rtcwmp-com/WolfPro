@@ -13,7 +13,7 @@ static const ImWchar codepointRanges[] =
 };
 
 
-static void AddFont()
+static void AddFont(void)
 {
     ImGuiIO* io = igGetIO();
     int height = 13;
@@ -34,7 +34,8 @@ static void AddFont()
     //ImFontAtlas_AddFontFromMemoryTTF(io->Fonts, bahnschrift_ttf, sizeof(bahnschrift_ttf), height, NULL, codepointRanges);
 }
 
-static void ToggleGui_f()
+
+static void ToggleGui_f(void)
 {
 	const bool guiActive = Cvar_VariableIntegerValue("r_debugUI") != 0;
 	const char* const newValue = guiActive ? "0" : "1";
@@ -42,7 +43,7 @@ static void ToggleGui_f()
 	Cvar_Set("r_debugInput", newValue);
 }
 
-static void ToggleGuiInput_f()
+static void ToggleGuiInput_f(void)
 {
 	Cvar_Set("r_debugInput", Cvar_VariableIntegerValue("r_debugInput") ? "0" : "1");
 }
@@ -156,7 +157,7 @@ qboolean CL_ImGUI_KeyEvent(int key, qboolean down, const char* cmd) {
     
 }
 
-void CL_ImGUI_ButtonMapping(){
+void CL_ImGUI_ButtonMapping(void){
     memset(keyMap, 0xFF, sizeof(keyMap));
 	keyMap[K_CTRL] = ImGuiMod_Ctrl;
 	keyMap[K_ALT] = ImGuiMod_Alt;

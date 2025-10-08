@@ -273,7 +273,7 @@ void CG_DrawInformation( void ) {
 	static int callCount = 0;
 	float percentDone;
 
-	int expectedHunk;
+	int expectedHunk = 0;
 	char hunkBuf[MAX_QPATH];
 
 	vec4_t color;

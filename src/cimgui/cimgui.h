@@ -35,6 +35,8 @@
 
 #ifdef _MSC_VER
 typedef unsigned __int64 ImU64;
+// Visual Studio warnings
+#pragma warning (disable: 5287)     // operands are different enum types
 #else
 //typedef unsigned long long ImU64;
 #endif

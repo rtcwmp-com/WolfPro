@@ -2,7 +2,6 @@
 #define TR_VULKAN_H
 //#pragma once
 
-#include "volk.h"
 #include "tr_local.h"
 #include "volk.h"
 #define VMA_DYNAMIC_VULKAN_FUNCTIONS 0

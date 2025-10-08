@@ -1352,7 +1352,7 @@ void        GLimp_Init( void );
 void        GLimp_Shutdown( void );
 void        GLimp_EndFrame( void );
 
-qboolean GLimp_SpawnRenderThread( void ( *function )( void ) );
+
 void        *GLimp_RendererSleep( void );
 void        GLimp_FrontEndSleep( void );
 void        GLimp_WakeRenderer( void *data );
@@ -1421,7 +1421,6 @@ void RB_StageIteratorLightmappedMultitexture( void );
 
 void RB_AddQuadStamp( vec3_t origin, vec3_t left, vec3_t up, byte *color );
 void RB_AddQuadStampExt( vec3_t origin, vec3_t left, vec3_t up, byte *color, float s1, float t1, float s2, float t2 );
-void RB_AddQuadStampFadingCornersExt( vec3_t origin, vec3_t left, vec3_t up, byte *color, float s1, float t1, float s2, float t2 );
 
 void RB_ShowImages( void );
 

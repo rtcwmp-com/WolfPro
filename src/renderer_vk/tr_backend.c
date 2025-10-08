@@ -35,6 +35,25 @@ backEndState_t backEnd;
 int totalPipelines = 0;
 
 
+static void RHI_SubmitGraphicsDesc_Signal(rhiSubmitGraphicsDesc *graphicsDesc, rhiSemaphore semaphore, uint64_t semaphoreValue){
+    assert(graphicsDesc->signalSemaphoreCount < ARRAY_LEN(graphicsDesc->signalSemaphores));
+    int newIndex = graphicsDesc->signalSemaphoreCount++;
+    graphicsDesc->signalSemaphores[newIndex] = semaphore;
+    graphicsDesc->signalSemaphoreValues[newIndex] = semaphoreValue;
+}
+
+static void RHI_SubmitGraphicsDesc_Wait(rhiSubmitGraphicsDesc *graphicsDesc, rhiSemaphore semaphore){
+    assert(graphicsDesc->waitSemaphoreCount < ARRAY_LEN(graphicsDesc->waitSemaphores));
+    int newIndex = graphicsDesc->waitSemaphoreCount++;
+    graphicsDesc->waitSemaphores[newIndex] = semaphore;
+}
+
+static void RHI_SubmitGraphicsDesc_Wait_Timeline(rhiSubmitGraphicsDesc *graphicsDesc, rhiSemaphore semaphore, uint64_t timelineValue){
+    assert(graphicsDesc->waitSemaphoreCount < ARRAY_LEN(graphicsDesc->waitSemaphores));
+    int newIndex = graphicsDesc->waitSemaphoreCount++;
+    graphicsDesc->waitSemaphores[newIndex] = semaphore;
+	graphicsDesc->waitSemaphoreValues[newIndex] = timelineValue;
+}
 
 
 
@@ -671,10 +690,10 @@ const void *RB_StretchPic( const void *data ) {
 	tess.indexes[ numIndexes + 4 ] = numVerts + 0;
 	tess.indexes[ numIndexes + 5 ] = numVerts + 1;
 
-	*(int *)tess.vertexColors[ numVerts ] =
-		*(int *)tess.vertexColors[ numVerts + 1 ] =
-			*(int *)tess.vertexColors[ numVerts + 2 ] =
-				*(int *)tess.vertexColors[ numVerts + 3 ] = *(int *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 0 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 1 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 2 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 3 ] = *(uint32_t *)backEnd.color2D;
 
 	tess.xyz[ numVerts ][0] = cmd->x;
 	tess.xyz[ numVerts ][1] = cmd->y;
@@ -749,10 +768,10 @@ const void *RB_RotatedPic( const void *data ) {
 	tess.indexes[ numIndexes + 4 ] = numVerts + 0;
 	tess.indexes[ numIndexes + 5 ] = numVerts + 1;
 
-	*(int *)tess.vertexColors[ numVerts ] =
-		*(int *)tess.vertexColors[ numVerts + 1 ] =
-			*(int *)tess.vertexColors[ numVerts + 2 ] =
-				*(int *)tess.vertexColors[ numVerts + 3 ] = *(int *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 0 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 1 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 2 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 3 ] = *(uint32_t *)backEnd.color2D;
 
 	angle = cmd->angle * pi2;
 	tess.xyz[ numVerts ][0] = cmd->x + ( cos( angle ) * cmd->w );
@@ -829,16 +848,12 @@ const void *RB_StretchPicGradient( const void *data ) {
 	tess.indexes[ numIndexes + 4 ] = numVerts + 0;
 	tess.indexes[ numIndexes + 5 ] = numVerts + 1;
 
-//	*(int *)tess.vertexColors[ numVerts ] =
-//		*(int *)tess.vertexColors[ numVerts + 1 ] =
-//		*(int *)tess.vertexColors[ numVerts + 2 ] =
-//		*(int *)tess.vertexColors[ numVerts + 3 ] = *(int *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 0 ] = *(uint32_t *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 1 ] = *(uint32_t *)backEnd.color2D;
 
-	*(int *)tess.vertexColors[ numVerts ] =
-		*(int *)tess.vertexColors[ numVerts + 1 ] = *(int *)backEnd.color2D;
+	*(uint32_t *)tess.vertexColors[ numVerts + 2 ] = *(uint32_t *)cmd->gradientColor;
+	*(uint32_t *)tess.vertexColors[ numVerts + 3 ] = *(uint32_t *)cmd->gradientColor;
 
-	*(int *)tess.vertexColors[ numVerts + 2 ] =
-		*(int *)tess.vertexColors[ numVerts + 3 ] = *(int *)cmd->gradientColor;
 
 	tess.xyz[ numVerts ][0] = cmd->x;
 	tess.xyz[ numVerts ][1] = cmd->y;
@@ -997,14 +1012,16 @@ typedef struct renderPassHistory {
 static renderPassHistory s_history[MAX_RENDERPASSES];
 static renderPassHistory s_fullFrameHistory;
 
-int __cdecl CompareSamples(void const *ptrA, void const *ptrB){
+int QDECL CompareSamples(void const *ptrA, void const *ptrB){
 	const int *a = (const int*)ptrA;
 	const int *b = (const int*)ptrB;
 	return *a - *b;
 }
 
 void AddHistory(renderPassHistory *history, uint32_t currentHash, uint32_t previousHash, uint32_t currentDuration){
-	const uint32_t n = ARRAY_LEN(history->durationUs);
+	enum {
+		n = ARRAY_LEN(history->durationUs)
+	};
 	if(currentHash != previousHash){
 		history->count = 1;
 	}else{
@@ -1030,7 +1047,6 @@ RB_EndFrame
 */
 
 void DrawGUI_ShaderTrace(void){
-
 	static bool breakdownActive = false;
 	ToggleBooleanWithShortcut((qbool*)&breakdownActive, ImGuiKey_T, ImGUI_ShortcutOptions_Global);
 	GUI_AddMainMenuItem(ImGUI_MainMenu_Perf, "Shader Trace", "Ctrl+Shift+T", (qbool*)&breakdownActive, qtrue);
@@ -1243,9 +1259,11 @@ void RB_ExecuteRenderCommands( const void *data ) {
 			data = RB_SetColor( data );
 			break;
 		case RC_STRETCH_PIC:
+			#if defined(_DEBUG)
 			if (!begun) {
-				__debugbreak();
+				Sys_DebugBreak();
 			}
+			#endif
 			data = RB_StretchPic( data );
 			break;
 		case RC_ROTATED_PIC:
@@ -1258,6 +1276,11 @@ void RB_ExecuteRenderCommands( const void *data ) {
 			data = RB_DrawSurfs( data );
 			break;
 		case RC_BEGIN_FRAME:
+			#if defined(_DEBUG)
+			if (begun) {
+				Sys_DebugBreak();
+			}
+			#endif
 			begun = qtrue;
 			data = RB_BeginFrame( data );
 			//wait for swap chain acquire

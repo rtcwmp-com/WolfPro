@@ -405,6 +405,9 @@ struct gentity_s {
 	int voiceChatSquelch;                   // DHM - Nerve
 	int voiceChatPreviousTime;              // DHM - Nerve
 	int lastBurnedFrameNumber;              // JPW - Nerve   : to fix FT instant-kill exploit
+
+	// RTCWPro - allowteams - ET port
+	int allowteams;
 };
 
 // Ridah
@@ -522,6 +525,10 @@ typedef struct playerStats_s {
 	weapon_stat_t aWeaponStats[WS_MAX + 1];   // Weapon stats.  +1 to avoid invalid weapon check
 } playerStats_t;
 
+// RTCWPro - allowteams - ET port
+#define ALLOW_AXIS_TEAM         1
+#define ALLOW_ALLIED_TEAM       2
+
 // client data that stays across multiple levels or tournament restarts
 // this is achieved by writing all the data to cvar strings at game shutdown
 // time and reading them back at connection time.  Anything added here
@@ -601,6 +608,8 @@ typedef struct {
 
 	unsigned int autoaction;            // End-of-match auto-requests
 	unsigned int clientFlags;           // Client settings that need server involvement
+
+	int deathYaw;
 } clientPersistant_t;
 
 typedef struct {
@@ -1082,6 +1091,8 @@ qboolean infront( gentity_t *self, gentity_t *other );
 
 void G_ProcessTagConnect( gentity_t *ent );
 
+qboolean G_AllowTeamsAllowed(gentity_t* ent, gentity_t* activator); // RTCWPro - allowteams ET - port
+
 //
 // g_combat.c
 //
@@ -1251,6 +1262,7 @@ void ClientUserinfoChanged( int clientNum );
 void ClientDisconnect( int clientNum );
 void ClientBegin( int clientNum );
 void ClientCommand( int clientNum );
+void AddMedicTeamBonus(gclient_t* client);
 
 //
 // g_active.c
@@ -1383,7 +1395,7 @@ extern level_locals_t level;
 extern gentity_t g_entities[];          //DAJ was explicit set to MAX_ENTITIES
 extern gentity_t       *g_camEnt;
 
-#define FOFS( x ) ( (int)&( ( (gentity_t *)0 )->x ) )
+#define FOFS( x ) ( (size_t)&( ( (gentity_t *)0 )->x ) )
 
 extern vmCvar_t g_gametype;
 
@@ -1519,6 +1531,8 @@ extern vmCvar_t g_stats_curl_submit_headers;
 extern vmCvar_t g_statsRetryCount;
 extern vmCvar_t g_statsRetryDelay;
 extern vmCvar_t g_apiquery_curl_URL;
+
+extern vmCvar_t g_disableDeadBodyFlagGrab;
 
 void    trap_Printf( const char *fmt );
 void    trap_Error( const char *fmt );

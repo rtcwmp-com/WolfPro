@@ -233,3 +233,7 @@ void Sys_Vulkan_Shutdown(void)
 	}
 
 }
+
+qboolean Sys_Vulkan_GetRequiredExtensions(char** pNames, int* pCount) {
+	return qtrue;
+}

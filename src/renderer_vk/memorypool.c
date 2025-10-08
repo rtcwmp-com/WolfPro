@@ -11,7 +11,7 @@ void Pool_Clear(memoryPool* pool) {
 
 void Pool_ClearUnused(memoryPool *pool){
 	uint32_t nextFree = 0;
-	for(int i = pool->itemCount; i > 0; i--){
+	for(int i = pool->itemCount - 1; i > 0; i--){
 		if(!pool->lookupData[i].inUse){
 			pool->lookupData[i].nextFreeIndex = nextFree;
 			nextFree = i;
@@ -60,9 +60,11 @@ uint64_t Pool_Add(memoryPool *pool, void *rawItem){
 	if(freeSpot == 0){
 		ri.Error(ERR_FATAL, "(Pool_Add)Ran out of pool memory\n");	
 	}	
+	assert(pool->lookupData[freeSpot].inUse == qfalse);
 
 	uint8_t *poolLocation = pool->poolData + (freeSpot * pool->typeSize);
 	memcpy(poolLocation, rawItem, pool->typeSize);
+	
 	pool->lookupData[freeSpot].inUse = qtrue;
 	pool->firstFree = pool->lookupData[freeSpot].nextFreeIndex;
 	
@@ -86,8 +88,12 @@ static void HandleChecks(DecomposedHandle item, memoryPool* pool, const char* op
 		ri.Error(ERR_FATAL, "(%s)Wrong pool type\n", operation);
 	}
 
-	if(item.index >= pool->itemCount){
+	if(item.index > pool->itemCount){
 		ri.Error(ERR_FATAL, "(%s)Invalid index into pool\n", operation);
+	}
+
+	if(item.index == 0 ){
+		ri.Error(ERR_FATAL, "(%s)Pool index zero is reserved\n", operation);
 	}
 
 	if(item.generation < pool->lookupData[item.index].generation){
@@ -102,14 +108,24 @@ static void HandleChecks(DecomposedHandle item, memoryPool* pool, const char* op
 		ri.Error(ERR_FATAL, "(%s)Invalid handle index (not in use)\n", operation);
 	}
 }
-
+extern qbool crashing;
 void Pool_Remove(memoryPool *pool, uint64_t handle){
 	DecomposedHandle item = DecomposeHandle(handle);
 	HandleChecks(item, pool, "Pool_Remove");
-	pool->lookupData[item.index].nextFreeIndex = pool->firstFree;
-	pool->lookupData[item.index].inUse = 0;
-	pool->lookupData[item.index].generation++;
-	pool->firstFree = item.index;
+	if(0 && crashing){
+		pool->lookupData[item.index].inUse = 0;
+		if(pool->typeSize == 72){
+			Sys_DebugPrintf("Index %d\n", (int)item.index);
+		}
+		
+		//pool->lookupData[item.index].generation++;
+	
+	}else{
+		pool->lookupData[item.index].nextFreeIndex = pool->firstFree;
+		pool->lookupData[item.index].inUse = 0;
+		pool->lookupData[item.index].generation++;
+		pool->firstFree = item.index;
+	}
 }
 
 void* Pool_Get(memoryPool *pool, uint64_t handle){
@@ -120,16 +136,22 @@ void* Pool_Get(memoryPool *pool, uint64_t handle){
 	return pool->poolData+itemLocation;
 }
 
-PoolIterator Pool_BeginIteration(){
-	return (PoolIterator) { -1, NULL, 0 };
+PoolIterator Pool_BeginIteration(void){
+	return (PoolIterator) { 0, NULL, 0 };
 }
 
 qboolean Pool_Iterate(memoryPool *pool, PoolIterator *it){
 	for(it->index++; it->index < pool->itemCount + 1; it->index++){
+		assert(it->index >= 1 && it->index <= pool->itemCount);
+
 		if(pool->lookupData[it->index].inUse){
 			uint32_t itemLocation = it->index * pool->typeSize;
 			it->value = pool->poolData + itemLocation;
+			assert((uint8_t*)it->value > pool->poolData);
+			assert((uint8_t*)it->value <= pool->poolData + (pool->itemCount * pool->typeSize));
 			it->handle = ComposeHandle(it->index, pool->lookupData[it->index].generation, pool->poolType);
+			uint8_t* pool_item = (uint8_t*)Pool_Get(pool, it->handle);
+			assert(pool_item <= pool->poolData + (pool->itemCount * pool->typeSize) && pool_item  > pool->poolData);
 			return qtrue;
 		}
 	}

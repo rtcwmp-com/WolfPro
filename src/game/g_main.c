@@ -202,6 +202,8 @@ vmCvar_t g_statsRetryCount;
 vmCvar_t g_statsRetryDelay;
 vmCvar_t g_apiquery_curl_URL;
 
+vmCvar_t g_disableDeadBodyFlagGrab;
+
 cvarTable_t gameCvarTable[] = {
 	// don't override the cheat state set by the system
 	{ &g_cheats, "sv_cheats", "", 0, qfalse },
@@ -372,6 +374,8 @@ cvarTable_t gameCvarTable[] = {
 	{ &g_statsRetryDelay, "g_statsRetryDelay", "2", CVAR_ARCHIVE, 0, qfalse  }, // delay in seconds to retry sending stats if first attempt fails
 	{ &g_apiquery_curl_URL, "g_apiquery_curl_URL", "https://rtcwproapi.donkanator.com/serverquery", CVAR_ARCHIVE, 0, qfalse  },
 
+	{ &g_disableDeadBodyFlagGrab, "g_disableDeadBodyFlagGrab", "1", CVAR_ARCHIVE, qtrue, qfalse }
+
 
 };
 
@@ -404,7 +408,7 @@ This must be the very first function compiled into the .q3vm file
 #if defined( __MACOS__ )
 #pragma export on
 #endif
-int vmMain( int command, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6 ) {
+intptr_t vmMain(intptr_t command, intptr_t arg0, intptr_t arg1, intptr_t arg2, intptr_t arg3, intptr_t arg4, intptr_t arg5, intptr_t arg6 ) {
 #if defined( __MACOS__ )
 #pragma export off
 #endif
@@ -416,7 +420,7 @@ int vmMain( int command, int arg0, int arg1, int arg2, int arg3, int arg4, int a
 		G_ShutdownGame( arg0 );
 		return 0;
 	case GAME_CLIENT_CONNECT:
-		return (int)ClientConnect( arg0, arg1, arg2 );
+		return (intptr_t)ClientConnect( arg0, arg1, arg2 );
 	case GAME_CLIENT_THINK:
 		ClientThink( arg0 );
 		return 0;

@@ -10,6 +10,7 @@ static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMesse
     }
 }
 
+extern qbool crashing;
 void RHI_Shutdown(qboolean destroyWindow)
 {
     vkDeviceWaitIdle(vk.device);
@@ -22,14 +23,20 @@ void RHI_Shutdown(qboolean destroyWindow)
     }
     Pool_Clear(&vk.samplerPool);
 
+    //
+
     it = Pool_BeginIteration();
     while(Pool_Iterate(&vk.bufferPool, &it)){
         Buffer *buffer = (Buffer*)it.value;
         if(!buffer->desc.longLifetime || destroyWindow){
+            
             vmaDestroyBuffer(vk.allocator, buffer->buffer, buffer->allocation);
+            
             Pool_Remove(&vk.bufferPool, it.handle);
+             
         }
     }
+    
     Pool_ClearUnused(&vk.bufferPool);
 
 
@@ -42,7 +49,7 @@ void RHI_Shutdown(qboolean destroyWindow)
         }
     }
     Pool_ClearUnused(&vk.semaphorePool);
-
+    
     it = Pool_BeginIteration();
     while(Pool_Iterate(&vk.descriptorSetLayoutPool, &it)){
         DescriptorSetLayout *descSetLayout = (DescriptorSetLayout*)it.value;
@@ -62,7 +69,7 @@ void RHI_Shutdown(qboolean destroyWindow)
         }
     }
     Pool_ClearUnused(&vk.descriptorSetPool);
-
+    
     it = Pool_BeginIteration();
     while(Pool_Iterate(&vk.pipelinePool, &it)){
         Pipeline *pipeline = (Pipeline*)it.value;
@@ -101,6 +108,8 @@ void RHI_Shutdown(qboolean destroyWindow)
         }
     }
     Pool_ClearUnused(&vk.texturePool);
+
+    
     
     if(destroyWindow){
         //destroy private resources
@@ -186,7 +195,7 @@ rhiBuffer RHI_CreateBuffer(const rhiBufferDesc *desc)
     assert(desc->byteCount > 0);
     assert(desc->name);
     assert(desc->allowedStates != 0);
-    assert(__popcnt(desc->initialState) == 1);
+    assert(popcnt((uint32_t)desc->initialState) == 1);
     assert((desc->initialState & desc->allowedStates) != 0);
     VmaAllocationCreateInfo allocCreateInfo = {};
     allocCreateInfo.usage = GetVmaMemoryUsage(desc->memoryUsage); 
@@ -254,10 +263,10 @@ rhiTexture RHI_CreateTexture(const rhiTextureDesc *desc)
     assert(desc->height > 0);
     assert(desc->mipCount > 0);
     assert(desc->sampleCount > 0);
-    assert(__popcnt(desc->initialState) == 1);
+    assert(popcnt((uint32_t)desc->initialState) == 1);
     assert((desc->initialState & desc->allowedStates) != 0);
 
-    const qbool ownsImage = desc->nativeImage == VK_NULL_HANDLE;
+    const qbool ownsImage = (qbool)(desc->nativeImage == 0);
     
 
     VkImage image = VK_NULL_HANDLE;
@@ -880,6 +889,7 @@ void RHI_SubmitGraphics(const rhiSubmitGraphicsDesc *graphicsDesc)
 
     VkSemaphore wait[ARRAY_LEN(graphicsDesc->waitSemaphores)];
     VkSemaphore signal[ARRAY_LEN(graphicsDesc->signalSemaphores)];
+    VkPipelineStageFlags flags[ARRAY_LEN(graphicsDesc->waitSemaphores)];
 
     for(int i = 0; i < graphicsDesc->waitSemaphoreCount; i++){
         Semaphore *semaphore = GET_SEMAPHORE(graphicsDesc->waitSemaphores[i]);
@@ -889,6 +899,8 @@ void RHI_SubmitGraphics(const rhiSubmitGraphicsDesc *graphicsDesc)
             assert(semaphore->signaled == qtrue);
             semaphore->signaled = qfalse;
         }
+
+        flags[i] = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     }
 
     for(int i = 0; i < graphicsDesc->signalSemaphoreCount; i++){
@@ -898,7 +910,6 @@ void RHI_SubmitGraphics(const rhiSubmitGraphicsDesc *graphicsDesc)
             assert(semaphore->signaled == qfalse);
             semaphore->signaled = qtrue;
         }
-        
     }
 
     VkSubmitInfo submitInfo = {};
@@ -910,8 +921,7 @@ void RHI_SubmitGraphics(const rhiSubmitGraphicsDesc *graphicsDesc)
     submitInfo.pWaitSemaphores      = wait;
     submitInfo.signalSemaphoreCount = graphicsDesc->signalSemaphoreCount;
     submitInfo.pSignalSemaphores    = signal;
-    const VkPipelineStageFlags flags = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-    submitInfo.pWaitDstStageMask = &flags;
+    submitInfo.pWaitDstStageMask    = flags;
 
 
     VK(vkQueueSubmit(vk.queues.present, 1, &submitInfo, VK_NULL_HANDLE)); 

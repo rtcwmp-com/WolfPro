@@ -373,3 +373,7 @@ void IN_Frame( void ) {
 
 void IN_Activate( void ) {
 }
+
+void Sys_GetCursorPosition(int *x, int *y){
+	SDL_GetMouseState(x, y);
+}

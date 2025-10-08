@@ -1043,10 +1043,6 @@ static void setupQuad( long xOff, long yOff ) {
 	cin.oldysize = cinTable[currentHandle].ysize;
 	cin.oldxsize = cinTable[currentHandle].xsize;
 
-	numQuadCels  = ( cinTable[currentHandle].CIN_WIDTH * cinTable[currentHandle].CIN_HEIGHT ) / ( 16 );
-	numQuadCels += numQuadCels / 4 + numQuadCels / 16;
-	numQuadCels += 64;                            // for overflow
-
 	numQuadCels  = ( cinTable[currentHandle].xsize * cinTable[currentHandle].ysize ) / ( 16 );
 	numQuadCels += numQuadCels / 4;
 	numQuadCels += 64;                            // for overflow
@@ -1095,8 +1091,8 @@ static void readQuadInfo( byte *qData ) {
 	cinTable[currentHandle].VQ0 = cinTable[currentHandle].VQNormal;
 	cinTable[currentHandle].VQ1 = cinTable[currentHandle].VQBuffer;
 
-	cinTable[currentHandle].t[0] = ( 0 - (unsigned int)cin.linbuf ) + (unsigned int)cin.linbuf + cinTable[currentHandle].screenDelta;
-	cinTable[currentHandle].t[1] = ( 0 - ( (unsigned int)cin.linbuf + cinTable[currentHandle].screenDelta ) ) + (unsigned int)cin.linbuf;
+	cinTable[currentHandle].t[0] = cinTable[currentHandle].screenDelta;
+	cinTable[currentHandle].t[1] = -cinTable[currentHandle].screenDelta;
 
 	cinTable[currentHandle].drawX = cinTable[currentHandle].CIN_WIDTH;
 	cinTable[currentHandle].drawY = cinTable[currentHandle].CIN_HEIGHT;

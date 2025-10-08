@@ -746,6 +746,88 @@ void SetWolfSkin( gclient_t *client, char *model ) {
 	}
 }
 
+/*
+===========
+RTCWPro
+Checks and potentially sets STAT_MAX_HEALTH for both teams
+Source: ET
+===========
+*/
+int G_CountTeamMedics(team_t team, qboolean alivecheck)
+{
+	int numMedics = 0;
+	int i, j;
+
+	for (i = 0; i < level.numConnectedClients; i++)
+	{
+		j = level.sortedClients[i];
+
+		if (level.clients[j].sess.sessionTeam != team)
+		{
+			continue;
+		}
+
+		if (level.clients[j].sess.playerType != PC_MEDIC)
+		{
+			continue;
+		}
+
+		if (alivecheck)
+		{
+			if (g_entities[j].health <= 0)
+			{
+				continue;
+			}
+
+			if (level.clients[j].ps.pm_type == PM_DEAD || (level.clients[j].ps.pm_flags & PMF_LIMBO))
+			{
+				continue;
+			}
+		}
+
+		numMedics++;
+	}
+
+	return numMedics;
+}
+
+/*
+===========
+RTCWPro
+Sets health based on number of medics
+Source: ET Legacy
+===========
+*/
+void AddMedicTeamBonus(gclient_t* client)
+{
+	//if (!(client->sess.sessionTeam == TEAM_RED || client->sess.sessionTeam == TEAM_BLUE))
+	//	return;
+
+	//gclient_t* cl;
+	//int i, startHealth;
+
+	int numMedics = G_CountTeamMedics(client->sess.sessionTeam, qfalse);
+
+	// compute health mod
+	client->pers.maxHealth = 100 + 10 * numMedics;
+
+	if (client->pers.maxHealth > 125)
+	{
+		client->pers.maxHealth = 125;
+	}
+
+	if (client->sess.playerType == PC_MEDIC)
+	{
+		client->pers.maxHealth *= 1.12;
+
+		if (client->pers.maxHealth > 140)
+			client->pers.maxHealth = 140;
+	}
+
+	client->ps.stats[STAT_MAX_HEALTH] = client->pers.maxHealth;
+}
+
+
 void SetWolfSpawnWeapons( gclient_t *client ) {
 
 	int pc = client->sess.playerType;
@@ -1819,7 +1901,7 @@ void ClientSpawn( gentity_t *ent, qboolean revived ) {
 
 	if ( revived ) {
 		spawnPoint = ent;
-		VectorCopy( ent->s.origin, spawn_origin );
+		VectorCopy(ent->r.currentOrigin, spawn_origin); // Issue 24 fix document/revive bug
 		spawn_origin[2] += 9;   // spawns seem to be sunk into ground?
 		VectorCopy( ent->s.angles, spawn_angles );
 	} else
@@ -2025,7 +2107,17 @@ void ClientSpawn( gentity_t *ent, qboolean revived ) {
 	// the respawned flag will be cleared after the attack and jump keys come up
 	client->ps.pm_flags |= PMF_RESPAWNED;
 
-	SetClientViewAngle( ent, spawn_angles );
+	if(revived){
+		vec3_t newangle;
+		//restore the value for the client's view before death
+		newangle[YAW] = client->pers.deathYaw; 
+		newangle[PITCH] = 0;
+		newangle[ROLL] = 0;
+		SetClientViewAngle( ent, newangle );
+	}else{
+		SetClientViewAngle( ent, spawn_angles );
+	}
+	
 
 	if ( ent->client->sess.sessionTeam != TEAM_SPECTATOR ) {
 		//G_KillBox( ent );

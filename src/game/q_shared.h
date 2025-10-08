@@ -106,14 +106,12 @@ If you have questions concerning this license or the applicable additional terms
 #include <ctype.h>
 #include <limits.h>
 #include <stdint.h>
+#include <stddef.h>
 
 #endif
 
-#ifdef _WIN32
 
-//#pragma intrinsic( memset, memcpy )
 
-#endif
 
 
 // this is the define for determining if we have an asm version of a C function
@@ -142,12 +140,20 @@ If you have questions concerning this license or the applicable additional terms
 #define CPUSTRING   "win-x86"
 #elif defined _M_ALPHA
 #define CPUSTRING   "win-AXP"
+#elif defined __amd64__
+#define CPUSTRING   "win-x64"
+#undef idx64
+#define idx64 1
 #endif
 #else
 #ifdef _M_IX86
 #define CPUSTRING   "win-x86-debug"
 #elif defined _M_ALPHA
 #define CPUSTRING   "win-AXP-debug"
+#elif defined __amd64__
+#define CPUSTRING   "win-x64"
+#undef idx64
+#define idx64 1
 #endif
 #endif
 
@@ -155,6 +161,34 @@ If you have questions concerning this license or the applicable additional terms
 #define PATH_SEP '\\'
 
 #endif
+
+#if defined(_M_X64) || defined(_M_AMD64)
+
+#undef idx64
+#define idx64 1
+#ifndef NDEBUG
+#define CPUSTRING   "win-x64"
+#else
+#define CPUSTRING   "win-x64-debug"
+#endif
+#endif
+
+#define Com_Memset memset
+#define Com_Memcpy memcpy
+
+typedef union {
+	float f;
+	int i;
+	unsigned int ui;
+} floatint_t;
+
+
+static inline int  FloatAsInt( float f ) {
+	floatint_t fl;
+	fl.f = f;
+	return fl.i;
+}
+#define PASSFLOAT(x) FloatAsInt(x)
 
 //======================= MAC OS X SERVER DEFINES =====================
 
@@ -263,6 +297,10 @@ static inline float idSqrt( float x ) {
 #define CPUSTRING   "linux-i386"
 #elif defined __axp__
 #define CPUSTRING   "linux-alpha"
+#elif defined __amd64__
+#undef idx64
+#define idx64 1
+#define CPUSTRING "linux-amd64"
 #else
 #define CPUSTRING   "linux-other"
 #endif
@@ -428,8 +466,6 @@ void Snd_Memset( void* dest, const int val, const size_t count );
 #define Snd_Memset Com_Memset
 #endif
 
-void Com_Memset( void* dest, const int val, const size_t count );
-void Com_Memcpy( void* dest, const void* src, const size_t count );
 
 #define CIN_system  1
 #define CIN_loop    2

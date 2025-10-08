@@ -201,7 +201,7 @@ static void ComputeColors( shaderStage_t *pStage ) {
 		fog = tr.world->fogs + tess.fogNum;
 
 		for ( i = 0; i < tess.numVertexes; i++ ) {
-			*( int * )&tess.svars.colors[i] = fog->colorInt;
+			*( unsigned int * )&tess.svars.colors[i] = fog->colorInt;
 		}
 	}
 	break;

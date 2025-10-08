@@ -59,6 +59,7 @@ void* CL_HTTP_SSUpload(void* args) {
 	if (!fd)
 	{
 		Com_DPrintf("HTTP[fu]: cannot o/r\n");
+		free(SS_info);
 		return NULL;
 	}
 
@@ -96,6 +97,7 @@ void* CL_HTTP_SSUpload(void* args) {
 
 	fclose(fd);
 	remove(SS_info->filepath);
+	free(SS_info);
 	return NULL;
 }
 

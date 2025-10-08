@@ -46,9 +46,12 @@ qbool Sys_IsDebugging(void);
 
 #ifdef _MSC_VER
 	#define Sys_DebugBreak __debugbreak
-	
+#elif defined(__GNUC__) 
+	#define Sys_DebugBreak __builtin_trap
+#elif defined(__clang__)
+	#define Sys_DebugBreak __builtin_debugtrap
 #else
-	void Sys_DebugBreak(void);
+	#error "Debugbreak is not supported"
 #endif
 
 #ifdef _DEBUG
@@ -82,7 +85,23 @@ qbool Sys_IsDebugging(void);
 			Sys_Crash(Message, __FILE__, __LINE__, __FUNCTION__); \
 	} while (false)
 #endif
-					
+		
+#if defined(_MSC_VER)
+    #define popcnt(v) (uint32_t)__popcnt((uint32_t)v)
+#elif defined(__GNUC__) || defined(__clang__)
+    #define popcnt(v) (uint32_t)__builtin_popcount((uint32_t)v)
+#else
+	#error "compiler not supported"
+#endif
+
+//======================= WIN32 DEFINES =================================
+
+#ifdef WIN32
+#undef QDECL
+#define QDECL   __cdecl
+#else
+#define QDECL
+#endif
 
 //============================================================================
 #define CLIENT_WINDOW_TITLE "Wolfenstein"
@@ -378,6 +397,22 @@ VIRTUAL MACHINE
 ==============================================================
 */
 
+
+
+static inline float iptrtof(intptr_t x)
+{
+	floatint_t fi;
+	fi.i = (int) x;
+	return fi.f;
+}
+
+
+#define	VMF(x)	iptrtof(args[x])
+#define VMA( x ) ( (void *) args[x] )
+
+
+
+
 typedef struct vm_s vm_t;
 
 typedef enum {
@@ -404,8 +439,15 @@ typedef enum {
 	TRAP_TESTPRINTFLOAT
 } sharedTraps_t;
 
+typedef enum {
+	VM_UI,
+	VM_CGAME,
+	VM_QAGAME,
+	VM_COUNT
+} vmType_t;
+
 void    VM_Init( void );
-vm_t    *VM_Create( const char *module, int ( *systemCalls )( int * ),
+vm_t    *VM_Create( vmType_t vm, intptr_t( *systemCalls )(intptr_t* ),
 					vmInterpret_t interpret );
 // module should be bare: "cgame", not "cgame.dll" or "vm/cgame.qvm"
 
@@ -413,12 +455,12 @@ void    VM_Free( vm_t *vm );
 void    VM_Clear( void );
 vm_t    *VM_Restart( vm_t *vm );
 
-int QDECL VM_Call( vm_t *vm, int callNum, ... );
+intptr_t QDECL VM_Call( vm_t *vm, intptr_t callNum, ... );
 
 void    VM_Debug( int level );
 
-void    *VM_ArgPtr( int intValue );
-void    *VM_ExplicitArgPtr( vm_t *vm, int intValue );
+void* VM_ArgPtr( intptr_t intValue );
+void* VM_ExplicitArgPtr( vm_t *vm, intptr_t intValue );
 
 /*
 ==============================================================
@@ -710,6 +752,8 @@ int     FS_Seek( fileHandle_t f, long offset, int origin );
 qbool	FS_IsZipFile(fileHandle_t f);
 // tells us whether we opened a zip file
 
+void FS_ExtractFromPak(char *osPath, char* fileNameWithExt);
+
 qboolean FS_FilenameCompare( const char *s1, const char *s2 );
 
 const char *FS_GamePureChecksum( void );
@@ -812,7 +856,6 @@ void        Com_Quit_f( void );
 int         Com_EventLoop( void );
 int         Com_Milliseconds( void );   // will be journaled properly
 unsigned    Com_BlockChecksum( const void *buffer, int length );
-unsigned    Com_BlockChecksumKey( void *buffer, int length, int key );
 int         Com_HashKey( char *string, int maxlen );
 int         Com_Filter( char *filter, char *name, int casesensitive );
 int         Com_FilterPath( char *filter, char *name, int casesensitive );
@@ -1063,8 +1106,8 @@ void Sys_LeaveCriticalSection( void *ptr );
 // FIXME: wants win32 implementation
 char* Sys_GetDLLName( const char *name );
 // fqpath param added 2/15/02 by T.Ray - Sys_LoadDll is only called in vm.c at this time
-void    * QDECL Sys_LoadDll( const char *name, char *fqpath, int( QDECL * *entryPoint ) ( int, ... ),
-							 int ( QDECL * systemcalls )( int, ... ) );
+void    * QDECL Sys_LoadDll( const char *name, char *fqpath, intptr_t( QDECL * *entryPoint ) ( intptr_t, ... ),
+							 intptr_t ( QDECL * systemcalls )( intptr_t, ... ) );
 void    Sys_UnloadDll( void *dllHandle );
 
 void    Sys_UnloadGame( void );
@@ -1166,38 +1209,49 @@ int StatHuff_WriteSymbol(int symbol, byte* buffer, int bitIndex); // returns the
 #define CL_ENCODE_START     12
 #define CL_DECODE_START     4
 
+
 // TTimo
 // dll checksuming stuff, centralizing OS-dependent parts
 // *_SHIFT is the shifting we applied to the reference string
 
+#define SYS_DLLNAME_QAGAME_SHIFT 6
+#define SYS_DLLNAME_CGAME_SHIFT 2
+#define SYS_DLLNAME_UI_SHIFT 5
+
 #if defined( _WIN32 )
 
-// qagame_mp_x86.dll
-#define SYS_DLLNAME_QAGAME_SHIFT 6
-#define SYS_DLLNAME_QAGAME "wgmgskesve~><4jrr"
-
-// cgame_mp_x86.dll
-#define SYS_DLLNAME_CGAME_SHIFT 2
-#define SYS_DLLNAME_CGAME "eicogaoraz:80fnn"
-
-// ui_mp_x86.dll
-#define SYS_DLLNAME_UI_SHIFT 5
-#define SYS_DLLNAME_UI "zndrud}=;3iqq"
+#if id386
+	// qagame_mp_x86.dll
+	#define SYS_DLLNAME_QAGAME "wgmgskesve~><4jrr"
+	// cgame_mp_x86.dll
+	#define SYS_DLLNAME_CGAME "eicogaoraz:80fnn"
+	// ui_mp_x86.dll
+	#define SYS_DLLNAME_UI "zndrud}=;3iqq"
+#elif idx64
+	// qagame_mp_x64.dll
+	#define SYS_DLLNAME_QAGAME "wgmgskesve~<:4jrr"
+	// cgame_mp_x64.dll
+	#define SYS_DLLNAME_CGAME "eicogaoraz860fnn"
+	// ui_mp_x64.dll
+	#define SYS_DLLNAME_UI "zndrud};93iqq"
+#endif
 
 #elif defined( __linux__ )
-
-// qagame.mp.i386.so
-#define SYS_DLLNAME_QAGAME_SHIFT 6
-#define SYS_DLLNAME_QAGAME "wgmgsk4sv4o9><4yu"
-
-// cgame.mp.i386.so
-#define SYS_DLLNAME_CGAME_SHIFT 2
-#define SYS_DLLNAME_CGAME "eicog0or0k5:80uq"
-
-// ui.mp.i386.so
-#define SYS_DLLNAME_UI_SHIFT 5
-#define SYS_DLLNAME_UI "zn3ru3n8=;3xt"
-
+#if id386
+	// qagame.mp.i386.so
+	#define SYS_DLLNAME_QAGAME "wgmgsk4sv4o9><4yu"
+	// cgame.mp.i386.so
+	#define SYS_DLLNAME_CGAME "eicog0or0k5:80uq"
+	// ui.mp.i386.so
+	#define SYS_DLLNAME_UI "zn3ru3n8=;3xt"
+#elif idx64
+	// qagame.mp.x86_64.so
+	#define SYS_DLLNAME_QAGAME "wgmgsk4sv4~><e<:4yu"
+	// cgame.mp.x86_64.so
+	#define SYS_DLLNAME_CGAME "eicog0or0z:8a860uq"
+	// ui.mp.x86_64.so
+	#define SYS_DLLNAME_UI "zn3ru3}=;d;93xt"
+#endif
 #elif defined( __MACOS__ )
 
 #if 1 //DAJ

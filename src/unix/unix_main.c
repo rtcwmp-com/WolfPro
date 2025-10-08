@@ -653,58 +653,13 @@ fqpath buffersize must be at least MAX_QPATH+1 bytes long
 =================
 */
 
-/*
-=================
-Try_CopyDLLForMod
-little utility function for media-only mods
-tries to copy a reference DLL to the mod's fs_homepath
-return false if failed, or if we are not in a mod situation
-returns true if successful, *p_fn is set to the correct path
-this is used when we are loading a mod and realize we don't have the DLL in the standard path
-=================
-*/
-qboolean CopyDLLForMod( char **p_fn, const char* gamedir, const char *pwdpath, const char  *homepath, const char *basepath, const char *fname ) {
-	char *fn = *p_fn;
-
-	// this may be a media only mod, so next we need to search in the basegame
-	if ( strlen( gamedir ) && Q_stricmp( gamedir, BASEGAME ) ) {
-		// walk for a base file
-		// NOTE TTimo: we don't attempt to validate version-wise, it could be a problem
-		// (acceptable tradeoff I say, should not cause major issues)
-#ifndef NDEBUG
-		fn = FS_BuildOSPath( pwdpath, BASEGAME, fname );
-		if ( access( fn, R_OK ) == -1 ) {
-#endif
-		fn = FS_BuildOSPath( homepath, BASEGAME, fname );
-		if ( access( fn, R_OK ) == -1 ) {
-			fn = FS_BuildOSPath( basepath, BASEGAME, fname );
-			if ( access( fn, R_OK ) == -1 ) {
-				return qfalse; // this one is hopeless
-			}
-		}
-#ifndef NDEBUG
-	}
-#endif
-		// basefile found, we copy to homepath in all cases
-		// fortunately FS_BuildOSPath does a flip flop, we have 'from path' in fn and 'to path' in *p_fn
-		*p_fn = FS_BuildOSPath( homepath, gamedir, fname );
-		// copy to destination
-		FS_CopyFile( fn, *p_fn );
-		if ( access( *p_fn, R_OK ) == -1 ) { // could do with FS_CopyFile returning a boolean actually
-			Com_DPrintf( "Copy operation failed\n" );
-			return qfalse;
-		}
-		return qtrue;
-	} else
-	{
-		return qfalse;
-	}
-}
 
 // TTimo - Wolf MP specific, adding .mp. to shared objects
 char* Sys_GetDLLName( const char *name ) {
 #if defined __i386__
 	return va( "%s.mp.i386.so", name );
+#elif defined idx64
+	return va( "%s.mp.x86_64.so", name );
 #elif defined __powerpc__
 	return va( "%s.mp.ppc.so", name );
 #elif defined __axp__
@@ -717,10 +672,10 @@ char* Sys_GetDLLName( const char *name ) {
 }
 
 void *Sys_LoadDll( const char *name, char *fqpath,
-				   int( **entryPoint ) ( int, ... ),
-				   int ( *systemcalls )( int, ... ) ) {
+				   intptr_t( **entryPoint ) ( intptr_t, ... ),
+				   intptr_t ( *systemcalls )( intptr_t, ... ) ) {
 	void *libHandle;
-	void ( *dllEntry )( int ( *syscallptr )( int, ... ) );
+	void ( *dllEntry )( intptr_t ( *syscallptr )( intptr_t, ... ) );
 	char fname[MAX_OSPATH];
 	char  *pwdpath;
 	char  *homepath;
@@ -753,31 +708,9 @@ void *Sys_LoadDll( const char *name, char *fqpath,
 	// this is relevant to client only
 	// this code is in for full client hosting a game, but it's not affected by it
 #if !defined( DEDICATED )
-
-	if ( access( fn, R_OK ) == 0 ) {
-		Com_DPrintf( "Removing existing  %s .so: %s\n", name, fn );
-		if ( remove( fn ) == -1 ) {
-			Com_Error( ERR_FATAL, "failed to remove outdated '%s' file:\n\"%s\"\n", fn, strerror( errno ) );
-		}
-	}
-
-	fileHandle_t fileHandle;
-	int fileLen = FS_FOpenFileRead(fname, &fileHandle, qtrue);
-	if (fileLen < 1) {
-		Com_Error( ERR_FATAL, "failed to find '%s' in paks\n", fname);
-	}
-
-	byte* buffer = Hunk_AllocateTempMemory(fileLen);
-	FS_Read(buffer, fileLen, fileHandle);
-	FS_WriteFile(fname,buffer,fileLen);
-	Hunk_FreeTempMemory(buffer);
-	
-	if ( access( fn, R_OK ) != 0 ) {
-		Com_Error( ERR_FATAL, "failed to extract '%s' file:\n\"%s\"\n", fn, strerror( errno ) );
-	}
+	FS_ExtractFromPak(fn, fname);
 #endif
 
-	
 	
 	Com_Printf( "Sys_LoadDll(%s)... ", fn );
 	libHandle = dlopen( fn, Q_RTLD );
