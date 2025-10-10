@@ -1579,6 +1579,7 @@ typedef struct {
 	float timelimit;                        // NERVE - SMF - made this a float
 	int maxclients;
 	char mapname[MAX_QPATH];
+	char rawmapname[MAX_QPATH];             // RTCWPro - autoexec
 	char redTeam[MAX_QPATH];                // A team
 	char blueTeam[MAX_QPATH];               // B team
 
@@ -1916,6 +1917,8 @@ qboolean CG_GetWeaponTag( int clientNum, char *tagname, orientation_t * or );
 
 qboolean CG_CheckCenterView();
 void CG_printConsoleString( char *str );
+
+qboolean CG_execFile(char* filename); // RTCWPro - autoexec
 
 //
 // cg_view.c
