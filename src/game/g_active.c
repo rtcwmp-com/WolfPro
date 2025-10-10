@@ -1558,7 +1558,9 @@ void ClientEndFrame( gentity_t *ent ) {
 			if ( //i == PW_FIRE ||             // these aren't dependant on level.time
 				 i == PW_ELECTRIC ||
 				 i == PW_BREATHER ||
-				 i == PW_NOFATIGUE ) {
+				 i == PW_NOFATIGUE ||
+				 i == PW_CAPPEDOBJ // RtcwPro added for double objective map like radar
+				) {
 
 				continue;
 			}
