@@ -1809,4 +1809,7 @@ typedef struct weap_ws_convert_s {
 int BG_cleanName( const char *pszIn, char *pszOut, unsigned int dwMaxLength, qboolean fCRLF );
 extWeaponStats_t BG_WeapStatForWeapon( weapon_t iWeaponID );
 
+char* BG_GetTeam(int teamNum);
+char* BG_GetClass(int classNum);
+
 #endif

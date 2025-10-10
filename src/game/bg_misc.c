@@ -4406,3 +4406,43 @@ extWeaponStats_t BG_WeapStatForWeapon( weapon_t iWeaponID ) {
 
 	return WS_MAX;
 }
+
+/*
+===============
+RTCWPro
+BG_GetTeam
+===============
+*/
+char* BG_GetTeam(int teamNum) {
+
+	switch (teamNum) {
+	case TEAM_RED:
+		return "axis";
+	case TEAM_BLUE:
+		return "allies";
+	case TEAM_SPECTATOR:
+		return "spectator";
+	}
+	return "";
+}
+
+/*
+===============
+RTCWPro
+BG_GetClass
+===============
+*/
+char* BG_GetClass(int classNum) {
+
+	switch (classNum) {
+	case PC_SOLDIER:
+		return "s";
+	case PC_MEDIC:
+		return "m";
+	case PC_LT:
+		return "l";
+	case PC_ENGINEER:
+		return "e";
+	}
+	return "";
+}
