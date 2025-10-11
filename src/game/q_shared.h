@@ -125,21 +125,15 @@ If you have questions concerning this license or the applicable additional terms
 
 #define QDECL
 
-//======================= WIN32 DEFINES =================================
-
-#ifdef WIN32
-
-#define MAC_STATIC
-
-
 
 // ============================== Win32 ====================================
 
 #ifdef _WIN32
-
+#define MAC_STATIC
 #undef QDECL
 #define QDECL __cdecl
 #define Q_NEWLINE "\r\n"
+
 
 #if defined (_WIN32_WINNT)
 #if _WIN32_WINNT < 0x0501
@@ -306,10 +300,6 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 #endif
 
-
-#define PATH_SEP '\\'
-
-#endif
 
 #if defined(_M_X64) || defined(_M_AMD64)
 
