@@ -284,7 +284,7 @@ If you have questions concerning this license or the applicable additional terms
 #define CPUSTRING   "win-x86"
 #elif defined _M_ALPHA
 #define CPUSTRING   "win-AXP"
-#elif defined __amd64__
+#elif defined (__amd64__) || defined(_M_X64) || defined(_M_AMD64)
 #define CPUSTRING   "win-x64"
 #endif
 #else
