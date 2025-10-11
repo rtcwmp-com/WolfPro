@@ -125,21 +125,15 @@ If you have questions concerning this license or the applicable additional terms
 
 #define QDECL
 
-//======================= WIN32 DEFINES =================================
-
-#ifdef WIN32
-
-#define MAC_STATIC
-
-
 
 // ============================== Win32 ====================================
 
 #ifdef _WIN32
-
+#define MAC_STATIC
 #undef QDECL
 #define QDECL __cdecl
 #define Q_NEWLINE "\r\n"
+
 
 #if defined (_WIN32_WINNT)
 #if _WIN32_WINNT < 0x0501
@@ -261,17 +255,17 @@ If you have questions concerning this license or the applicable additional terms
 #define LittleShort(x) ShortSwap(x)
 #define LittleLong(x) LongSwap(x)
 #define LittleFloat(x) FloatSwap(&x)
-#define BigShort
-#define BigLong
-#define BigFloat
+#define BigShort(x) x
+#define BigLong(x) x
+#define BigFloat(x) x
 
 #elif defined( Q3_LITTLE_ENDIAN )
 
 #define CopyLittleShort(dest, src) Com_Memcpy(dest, src, 2)
 #define CopyLittleLong(dest, src) Com_Memcpy(dest, src, 4)
-#define LittleShort
-#define LittleLong
-#define LittleFloat
+#define LittleShort(x) x
+#define LittleLong(x) x
+#define LittleFloat(x) x
 #define BigShort(x) ShortSwap(x)
 #define BigLong(x) LongSwap(x)
 #define BigFloat(x) FloatSwap(&x)
@@ -284,41 +278,23 @@ If you have questions concerning this license or the applicable additional terms
 
 
 // buildstring will be incorporated into the version string
+#ifdef _WIN32
 #ifdef NDEBUG
 #ifdef _M_IX86
 #define CPUSTRING   "win-x86"
 #elif defined _M_ALPHA
 #define CPUSTRING   "win-AXP"
-#elif defined __amd64__
+#elif defined (__amd64__) || defined(_M_X64) || defined(_M_AMD64)
 #define CPUSTRING   "win-x64"
-#undef idx64
-#define idx64 1
 #endif
 #else
 #ifdef _M_IX86
 #define CPUSTRING   "win-x86-debug"
 #elif defined _M_ALPHA
 #define CPUSTRING   "win-AXP-debug"
-#elif defined __amd64__
-#define CPUSTRING   "win-x64"
-#undef idx64
-#define idx64 1
-#endif
-#endif
-
-
-#define PATH_SEP '\\'
-
-#endif
-
-#if defined(_M_X64) || defined(_M_AMD64)
-
-#undef idx64
-#define idx64 1
-#ifndef NDEBUG
-#define CPUSTRING   "win-x64"
-#else
+#elif defined (__amd64__) || defined(_M_X64) || defined(_M_AMD64)
 #define CPUSTRING   "win-x64-debug"
+#endif
 #endif
 #endif
 
