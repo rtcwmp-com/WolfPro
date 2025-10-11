@@ -131,8 +131,157 @@ If you have questions concerning this license or the applicable additional terms
 
 #define MAC_STATIC
 
+
+
+// ============================== Win32 ====================================
+
+#ifdef _WIN32
+
 #undef QDECL
-#define QDECL   __cdecl
+#define QDECL __cdecl
+#define Q_NEWLINE "\r\n"
+
+#if defined (_WIN32_WINNT)
+#if _WIN32_WINNT < 0x0501
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x0501
+#endif
+#else
+#define _WIN32_WINNT 0x0501
+#endif
+
+#if defined( _MSC_VER ) && _MSC_VER >= 1400 // MSVC++ 8.0 at least
+#define OS_STRING "win_msvc"
+#elif defined __MINGW32__
+#define OS_STRING "win_mingw"
+#elif defined __MINGW64__
+#define OS_STRING "win_mingw64"
+#else
+#error "Compiler not supported"
+#endif
+
+#define ID_INLINE __inline
+#define PATH_SEP '\\'
+#define PATH_SEP_FOREIGN '/'
+#define DLL_EXT ".dll"
+
+#if defined( _M_IX86 )
+#define ARCH_STRING "x86"
+#define Q3_LITTLE_ENDIAN
+#undef id386
+#define id386 1
+#ifndef __WORDSIZE
+#define __WORDSIZE 32
+#endif
+#endif
+
+#if defined( _M_AMD64 )
+#define ARCH_STRING "x86_64"
+#define Q3_LITTLE_ENDIAN
+#undef idx64
+#define idx64 1
+//#define UNICODE
+#ifndef __WORDSIZE
+#define __WORDSIZE 64
+#endif
+#endif
+
+#if defined( _M_ARM64 )
+#define ARCH_STRING "arm64"
+#define Q3_LITTLE_ENDIAN
+#undef arm64
+#define arm64 1
+#ifndef __WORDSIZE
+#define __WORDSIZE 64
+#endif
+#endif
+
+#else // !defined _WIN32
+
+// common unix platforms parameters
+
+#define Q_NEWLINE "\n"
+#define PATH_SEP '/'
+#define PATH_SEP_FOREIGN '\\'
+#define DLL_EXT ".so"
+
+#if defined (__i386__)
+#define ARCH_STRING "i386"
+#define Q3_LITTLE_ENDIAN
+#undef id386
+#define id386 1
+#endif // __i386__
+
+#if defined (__x86_64__) || defined (__amd64__)
+#define ARCH_STRING "x86_64"
+#define Q3_LITTLE_ENDIAN
+#undef idx64
+#define idx64 1
+#endif // __x86_64__ || __amd64__
+
+#if defined (__arm__)
+#define ARCH_STRING "arm"
+#define Q3_LITTLE_ENDIAN
+#undef arm32
+#define arm32 1
+#endif // __arm__
+
+#if defined (__aarch64__)
+#define ARCH_STRING "aarch64"
+#define Q3_LITTLE_ENDIAN
+#undef arm64
+#define arm64 1
+#endif // __arm64__
+
+#if defined (__PPC64__)
+#if defined (__LITTLE_ENDIAN__)
+#define ARCH_STRING "ppc64le"
+#define Q3_LITTLE_ENDIAN
+#else
+#define ARCH_STRING "ppc64"
+#define Q3_BIG_ENDIAN
+#endif // !__LITTLE_ENDIAN__
+#endif // __PPC64__
+
+#endif // !_WIN32
+
+//============================================================================
+
+
+// Endianess
+
+#if defined( Q3_BIG_ENDIAN ) && defined( Q3_LITTLE_ENDIAN )
+
+#error "Endianness defined as both big and little"
+
+#elif defined( Q3_BIG_ENDIAN )
+
+#define CopyLittleShort(dest, src) CopyShortSwap(dest, src)
+#define CopyLittleLong(dest, src) CopyLongSwap(dest, src)
+#define LittleShort(x) ShortSwap(x)
+#define LittleLong(x) LongSwap(x)
+#define LittleFloat(x) FloatSwap(&x)
+#define BigShort
+#define BigLong
+#define BigFloat
+
+#elif defined( Q3_LITTLE_ENDIAN )
+
+#define CopyLittleShort(dest, src) Com_Memcpy(dest, src, 2)
+#define CopyLittleLong(dest, src) Com_Memcpy(dest, src, 4)
+#define LittleShort
+#define LittleLong
+#define LittleFloat
+#define BigShort(x) ShortSwap(x)
+#define BigLong(x) LongSwap(x)
+#define BigFloat(x) FloatSwap(&x)
+
+#else
+
+#error "Endianness not defined"
+
+#endif
+
 
 // buildstring will be incorporated into the version string
 #ifdef NDEBUG
@@ -176,11 +325,14 @@ If you have questions concerning this license or the applicable additional terms
 #define Com_Memset memset
 #define Com_Memcpy memcpy
 
-typedef union {
+typedef union floatint_u
+{
+	int32_t i;
+	uint32_t ui;
 	float f;
-	int i;
-	unsigned int ui;
-} floatint_t;
+	byte b[4];
+}
+floatint_t;
 
 
 static inline int  FloatAsInt( float f ) {
@@ -881,16 +1033,11 @@ typedef struct
 
 //=============================================
 
-short   BigShort( short l );
-short   LittleShort( short l );
-int     BigLong( int l );
-int     LittleLong( int l );
-qint64  BigLong64( qint64 l );
-qint64  LittleLong64( qint64 l );
-float   BigFloat( float l );
-float   LittleFloat( float l );
+//endianness
+short ShortSwap( short l );
+int LongSwap( int l );
+float FloatSwap( const float *f );
 
-void    Swap_Init( void );
 char    * QDECL va( const char *format, ... );
 float   *tv( float x, float y, float z );
 
