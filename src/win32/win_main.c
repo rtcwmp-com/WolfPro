@@ -1165,15 +1165,11 @@ void SetDpiAware(void){
 	if(libHandle != NULL){
 		pfn_SetProcessDpiAwarenessContext pfnDpiAware = (pfn_SetProcessDpiAwarenessContext)GetProcAddress(libHandle, "SetProcessDpiAwarenessContext");
 
-		if(pfnDpiAware == NULL){
-			SetProcessDPIAware();
-		}else{
+		if(pfnDpiAware){
 			pfnDpiAware(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE);
 		}
 
 		FreeLibrary(libHandle);
-	}else{
-		SetProcessDPIAware();
 	}
 }
 /*
