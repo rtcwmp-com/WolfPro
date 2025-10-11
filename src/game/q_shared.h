@@ -325,22 +325,7 @@ If you have questions concerning this license or the applicable additional terms
 #define Com_Memset memset
 #define Com_Memcpy memcpy
 
-typedef union floatint_u
-{
-	int32_t i;
-	uint32_t ui;
-	float f;
-	byte b[4];
-}
-floatint_t;
 
-
-static inline int  FloatAsInt( float f ) {
-	floatint_t fl;
-	fl.f = f;
-	return fl.i;
-}
-#define PASSFLOAT(x) FloatAsInt(x)
 
 //======================= MAC OS X SERVER DEFINES =====================
 
@@ -473,6 +458,24 @@ typedef int qhandle_t;
 typedef int sfxHandle_t;
 typedef int fileHandle_t;
 typedef int clipHandle_t;
+
+typedef union floatint_u
+{
+	int32_t i;
+	uint32_t ui;
+	float f;
+	byte b[4];
+}
+floatint_t;
+
+
+static inline int  FloatAsInt(float f) {
+	floatint_t fl;
+	fl.f = f;
+	return fl.i;
+}
+#define PASSFLOAT(x) FloatAsInt(x)
+
 
 //#define	SND_NORMAL			0x000	// (default) Allow sound to be cut off only by the same sound on this channel
 #define     SND_OKTOCUT         0x001   // Allow sound to be cut off by any following sounds on this channel
