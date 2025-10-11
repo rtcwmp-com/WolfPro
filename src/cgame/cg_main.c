@@ -2562,6 +2562,13 @@ void CG_Init( int serverMessageNum, int serverCommandSequence, int clientNum ) {
 	// jpw
 	// -NERVE - SMF
 
+	// RTCWPro - autoexec
+	if (!cg.demoPlayback) {
+		if (!CG_execFile(va("autoexec_%s", cgs.rawmapname))) {
+			CG_execFile("autoexec_default");
+		}
+	}
+
 	CG_LoadExtensions();
 }
 
@@ -2596,4 +2603,24 @@ void CG_Shutdown( void ) {
 
 void CG_printConsoleString( char *str ) {
     CG_Printf( "%s", str ); // remove skipnotify  for CP
+}
+
+/*
+=================
+RTCWPro
+
+CG_execFile
+=================
+*/
+qboolean CG_execFile(char* filename) {
+	int handle;
+
+	handle = trap_PC_LoadSource(va("%s.cfg", filename));
+	trap_PC_FreeSource(handle);
+	if (!handle) {
+		// file not found
+		return qfalse;
+	}
+	trap_SendConsoleCommand(va("exec %s.cfg\n", filename));
+	return qtrue;
 }
