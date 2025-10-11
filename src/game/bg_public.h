@@ -1755,6 +1755,8 @@ typedef struct {
 extern const colorTable_t OSP_Colortable[];
 
 void BG_ParseColorCvar(char* cvarString, float* color, float alpha);
+void BG_setCrosshair(char *colString, float *col, float alpha, char *cvarName);
+
 
 
 typedef enum extWeaponStats_s

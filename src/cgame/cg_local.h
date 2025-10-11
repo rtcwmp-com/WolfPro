@@ -1013,6 +1013,9 @@ typedef struct {
 	char popinPrint[1024];
 	int popinPrintLines;
 	qboolean popinBlink;
+
+	vec4_t xhairColor;
+	vec4_t xhairColorAlt;
 } cg_t;
 
 #define NUM_FUNNEL_SPRITES  21
@@ -2638,6 +2641,10 @@ extern vmCvar_t cg_priorityTextY;
 
 extern vmCvar_t cg_muzzleFlash;
 extern vmCvar_t cg_crosshairPulse;
+extern vmCvar_t cg_crosshairAlpha;
+extern vmCvar_t cg_crosshairAlphaAlt;
+extern vmCvar_t cg_crosshairColor;
+extern vmCvar_t cg_crosshairColorAlt;
 extern vmCvar_t cg_tracers;
 
 // Get capabilities from the client
