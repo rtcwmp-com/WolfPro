@@ -600,6 +600,16 @@ typedef struct {
 	char headModelName[MAX_QPATH];
 	gender_t gender;                // from model
 	// -NERVE - SMF
+
+	int playerLimbo;				// player is in limbo
+	int refStatus;
+	int shoutStatus;
+	int playerAmmo;
+	int playerAmmoClip;
+	int playerWeapon;
+	int playerNades;
+	int latchedClass;
+
 } clientInfo_t;
 
 
@@ -1888,6 +1898,10 @@ extern vmCvar_t cg_autoAction;
 extern vmCvar_t cg_registeredPlayers;
 
 extern vmCvar_t cl_guid;
+
+extern vmCvar_t cg_teamOverlayX;
+extern vmCvar_t cg_teamOverlayY;
+extern vmCvar_t cg_teamOverlayMaxLocationWidth;
 
 //
 // cg_main.c

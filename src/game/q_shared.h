@@ -1828,4 +1828,6 @@ qboolean Q_IsNumeric(const char* s);
 #define GUID_LEN				33
 #define NO_GUID					"NO_GUID"
 
+#define Q_atoi(str) (int) strtol(str, NULL, 10)
+
 #endif  // __Q_SHARED_H

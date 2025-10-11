@@ -986,6 +986,9 @@ typedef struct {
 	jsonPlayerStats_t playerStats[32];
 	jsonPlayerStats_t disconnectStats[12];
 	int disconnectCount;
+
+	char tinfoAxis[1024];                       ///< sent as server command (limited to 1022 chars)
+	char tinfoAllies[1024];                     ///< sent as server command (limited to 1022 chars)
 } level_locals_t;
 
 extern qboolean reloading;                  // loading up a savegame
