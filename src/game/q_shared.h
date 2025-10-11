@@ -255,17 +255,17 @@ If you have questions concerning this license or the applicable additional terms
 #define LittleShort(x) ShortSwap(x)
 #define LittleLong(x) LongSwap(x)
 #define LittleFloat(x) FloatSwap(&x)
-#define BigShort
-#define BigLong
-#define BigFloat
+#define BigShort(x) x
+#define BigLong(x) x
+#define BigFloat(x) x
 
 #elif defined( Q3_LITTLE_ENDIAN )
 
 #define CopyLittleShort(dest, src) Com_Memcpy(dest, src, 2)
 #define CopyLittleLong(dest, src) Com_Memcpy(dest, src, 4)
-#define LittleShort
-#define LittleLong
-#define LittleFloat
+#define LittleShort(x) x
+#define LittleLong(x) x
+#define LittleFloat(x) x
 #define BigShort(x) ShortSwap(x)
 #define BigLong(x) LongSwap(x)
 #define BigFloat(x) FloatSwap(&x)
