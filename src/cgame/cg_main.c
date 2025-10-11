@@ -43,6 +43,12 @@ int forceModelModificationCount = -1;
 int autoReloadModificationCount = -1;
 int registeredPlayersModificationCount = -1;
 
+int cg_crosshairColorModificationCount = -1;
+int cg_crosshairAlphaModificationCount = -1;
+int cg_crosshairColorAltModificationCount = -1;
+int cg_crosshairAlphaAltModificationCount = -1;
+
+
 void CG_Init( int serverMessageNum, int serverCommandSequence, int clientNum );
 void CG_Shutdown( void );
 
@@ -357,6 +363,10 @@ vmCvar_t cg_autoAction;
 
 vmCvar_t cg_muzzleFlash;
 vmCvar_t cg_crosshairPulse;
+vmCvar_t cg_crosshairAlpha;
+vmCvar_t cg_crosshairAlphaAlt;
+vmCvar_t cg_crosshairColor;
+vmCvar_t cg_crosshairColorAlt;
 vmCvar_t cg_tracers;
 
 vmCvar_t cg_registeredPlayers;
@@ -617,6 +627,10 @@ cvarTable_t cvarTable[] = {
 	{ &cg_muzzleFlash, "cg_muzzleFlash", "1", CVAR_ARCHIVE },
 	{ &cg_tracers, "cg_tracers", "1", CVAR_ARCHIVE },
 	{ &cg_crosshairPulse, "cg_crosshairPulse", "1", CVAR_ARCHIVE },
+	{ &cg_crosshairAlpha, "cg_crosshairAlpha", "1.0", CVAR_ARCHIVE },
+	{ &cg_crosshairAlphaAlt, "cg_crosshairAlphaAlt", "1.0", CVAR_ARCHIVE },
+	{ &cg_crosshairColor, "cg_crosshairColor", "White", CVAR_ARCHIVE },
+	{ &cg_crosshairColorAlt, "cg_crosshairColorAlt", "White", CVAR_ARCHIVE },
 
 	{ &cg_registeredPlayers, "cg_registeredPlayers", "1", CVAR_ARCHIVE },
 
@@ -654,6 +668,9 @@ void CG_RegisterCvars( void ) {
 
 	trap_Cvar_Register( NULL, "model", DEFAULT_MODEL, CVAR_USERINFO | CVAR_ARCHIVE );
 	trap_Cvar_Register( NULL, "head", DEFAULT_HEAD, CVAR_USERINFO | CVAR_ARCHIVE );
+
+	BG_setCrosshair(cg_crosshairColor.string, cg.xhairColor, cg_crosshairAlpha.value, "cg_crosshairColor");
+	BG_setCrosshair(cg_crosshairColorAlt.string, cg.xhairColorAlt, cg_crosshairAlphaAlt.value, "cg_crosshairColorAlt");
 
 
 }
@@ -738,6 +755,21 @@ void CG_UpdateCvars( void ) {
 			cg.pmext.bAutoReload = qfalse;
 		}
 		autoReloadModificationCount = cg_autoReload.modificationCount;
+	}
+
+	if (cg_crosshairColorModificationCount != cg_crosshairColor.modificationCount ||
+		cg_crosshairAlphaModificationCount != cg_crosshairAlpha.modificationCount)
+	{
+		cg_crosshairColorModificationCount = cg_crosshairColor.modificationCount;
+		cg_crosshairAlphaModificationCount = cg_crosshairAlpha.modificationCount;
+		BG_setCrosshair(cg_crosshairColor.string, cg.xhairColor, cg_crosshairAlpha.value, "cg_crosshairColor");
+	}
+	if (cg_crosshairColorAltModificationCount != cg_crosshairColorAlt.modificationCount ||
+		cg_crosshairAlphaAltModificationCount != cg_crosshairAlphaAlt.modificationCount)
+	{
+		cg_crosshairColorAltModificationCount = cg_crosshairColor.modificationCount;
+		cg_crosshairAlphaAltModificationCount = cg_crosshairAlpha.modificationCount;
+		BG_setCrosshair(cg_crosshairColorAlt.string, cg.xhairColorAlt, cg_crosshairAlphaAlt.value, "cg_crosshairColorAlt");
 	}
 
 	if(registeredPlayersModificationCount != cg_registeredPlayers.modificationCount){
@@ -1392,8 +1424,8 @@ static void CG_RegisterGraphics( void ) {
 //----(SA)	end
 
 	for ( i = 0 ; i < NUM_CROSSHAIRS ; i++ ) {
-		cgs.media.crosshairShader[i] = trap_R_RegisterShader( va( "gfx/2d/crosshair%c", 'a' + i ) );
-		cg.crosshairShaderAlt[i] = trap_R_RegisterShader( va( "gfx/2d/crosshair%c_alt", 'a' + i ) );
+		cgs.media.crosshairShader[i] = trap_R_RegisterShader( va( "gfx/2d/crosshair%c_rtcwpro", 'a' + i ) );
+		cg.crosshairShaderAlt[i] = trap_R_RegisterShader( va( "gfx/2d/crosshair%c_alt_rtcwpro", 'a' + i ) );
 	}
 
 	cgs.media.backTileShader = trap_R_RegisterShader( "gfx/2d/backtile" );

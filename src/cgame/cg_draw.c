@@ -2141,7 +2141,7 @@ static void CG_DrawCrosshair( void ) {
 		CG_ColorForHealth( hcolor );
 		trap_R_SetColor( hcolor );
 	} else {
-		trap_R_SetColor( NULL );
+		trap_R_SetColor(cg.xhairColor);
 	}
 
 	if( cg_customCrosshair.integer ){
@@ -2178,6 +2178,11 @@ static void CG_DrawCrosshair( void ) {
 		x = cg_crosshairX.integer;
 		y = cg_crosshairY.integer;
 		CG_AdjustFrom640( &x, &y, &w, &h );
+
+		// RtcwPro
+		if (!cg_crosshairHealth.integer) {
+			trap_R_SetColor(cg.xhairColorAlt);
+		}
 
 		if ( cg.limboMenu ) { // JPW NERVE
 			trap_R_DrawStretchPic( x + 0.5 * ( cg.refdef.width - w ), y + 0.5 * ( cg.refdef.height - h ),
@@ -2417,7 +2422,7 @@ void CG_CheckForCursorHints( void ) {
 			}
 		}
 	}
-}
+}	
 
 
 void CG_DrawPlayerAmmo(float *color, int weapon, int playerAmmo, int playerAmmoClip, int playerNades) {
