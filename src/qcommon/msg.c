@@ -271,13 +271,9 @@ void MSG_WriteLong( msg_t *sb, int c ) {
 }
 
 void MSG_WriteFloat( msg_t *sb, float f ) {
-	union {
-		float f;
-		int l;
-	} dat;
-
+	floatint_t dat;
 	dat.f = f;
-	MSG_WriteBits( sb, dat.l, 32 );
+	MSG_WriteBits( sb, dat.i, 32 );
 }
 
 void MSG_WriteString( msg_t *sb, const char *s ) {
@@ -392,18 +388,14 @@ int MSG_ReadLong( msg_t *msg ) {
 }
 
 float MSG_ReadFloat( msg_t *msg ) {
-	union {
-		byte b[4];
-		float f;
-		int l;
-	} dat;
-
-	dat.l = MSG_ReadBits( msg, 32 );
+	floatint_t dat;
+	
+	dat.i = MSG_ReadBits( msg, 32 );
 	if ( msg->readcount > msg->cursize ) {
 		dat.f = -1;
-	}
-
-	return dat.f;
+	}	
+	
+	return dat.f;	
 }
 
 //

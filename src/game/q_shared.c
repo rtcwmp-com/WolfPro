@@ -209,36 +209,23 @@ void COM_BitClear( int array[], int bitNum ) {
 ============================================================================
 */
 
-// can't just use function pointers, or dll linkage can
-// mess up when qcommon is included in multiple places
-static short ( *_BigShort )( short l );
-static short ( *_LittleShort )( short l );
-static int ( *_BigLong )( int l );
-static int ( *_LittleLong )( int l );
-static qint64 ( *_BigLong64 )( qint64 l );
-static qint64 ( *_LittleLong64 )( qint64 l );
-static float ( *_BigFloat )( float l );
-static float ( *_LittleFloat )( float l );
+void CopyShortSwap(void* dest, void* src)
+{
+	byte* to = dest, * from = src;
 
-#if __MACOS__
-short   BigShort( short l ) {return l;}
-short   LittleShort( short l ) {return __lhbrx( &l, 0 );}
-int     BigLong( int l ) {return l;}
-int     LittleLong( int l ) {return __lwbrx( &l, 0 );}
-qint64  BigLong64( qint64 l ) {return _BigLong64( l );}
-qint64  LittleLong64( qint64 l ) {return _LittleLong64( l );}
-float   BigFloat( float l ) {return l;}
-float   LittleFloat( float l ) {return _LittleFloat( l );}
-#else
-short   BigShort( short l ) {return _BigShort( l );}
-short   LittleShort( short l ) {return _LittleShort( l );}
-int     BigLong( int l ) {return _BigLong( l );}
-int     LittleLong( int l ) {return _LittleLong( l );}
-qint64  BigLong64( qint64 l ) {return _BigLong64( l );}
-qint64  LittleLong64( qint64 l ) {return _LittleLong64( l );}
-float   BigFloat( float l ) {return _BigFloat( l );}
-float   LittleFloat( float l ) {return _LittleFloat( l );}
-#endif
+	to[0] = from[1];
+	to[1] = from[0];
+}
+
+void CopyLongSwap(void* dest, void* src)
+{
+	byte* to = dest, * from = src;
+
+	to[0] = from[3];
+	to[1] = from[2];
+	to[2] = from[1];
+	to[3] = from[0];
+}
 
 short   ShortSwap( short l ) {
 	byte b1,b2;
@@ -287,58 +274,18 @@ qint64 Long64NoSwap( qint64 ll ) {
 	return ll;
 }
 
-float FloatSwap( float f ) {
-	union
-	{
-		float f;
-		byte b[4];
-	} dat1, dat2;
+float FloatSwap(const float* f) {
+	floatint_t out;
 
+	out.f = *f;
+	out.i = LongSwap(out.i);
 
-	dat1.f = f;
-	dat2.b[0] = dat1.b[3];
-	dat2.b[1] = dat1.b[2];
-	dat2.b[2] = dat1.b[1];
-	dat2.b[3] = dat1.b[0];
-	return dat2.f;
+	return out.f;
 }
 
-float FloatNoSwap( float f ) {
-	return f;
+float FloatNoSwap( const float *f ) {
+	return *f;
 }
-
-/*
-================
-Swap_Init
-================
-*/
-void Swap_Init( void ) {
-	byte swaptest[2] = {1,0};
-
-// set the byte swapping variables in a portable manner
-	if ( *(short *)swaptest == 1 ) {
-		_BigShort = ShortSwap;
-		_LittleShort = ShortNoSwap;
-		_BigLong = LongSwap;
-		_LittleLong = LongNoSwap;
-		_BigLong64 = Long64Swap;
-		_LittleLong64 = Long64NoSwap;
-		_BigFloat = FloatSwap;
-		_LittleFloat = FloatNoSwap;
-	} else
-	{
-		_BigShort = ShortNoSwap;
-		_LittleShort = ShortSwap;
-		_BigLong = LongNoSwap;
-		_LittleLong = LongSwap;
-		_BigLong64 = Long64NoSwap;
-		_LittleLong64 = Long64Swap;
-		_BigFloat = FloatNoSwap;
-		_LittleFloat = FloatSwap;
-	}
-
-}
-
 
 /*
 ============================================================================
