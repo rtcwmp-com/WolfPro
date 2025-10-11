@@ -1109,7 +1109,7 @@ typedef enum {
 #define TEAM_LOCATION_UPDATE_TIME       1000
 
 // How many players on the overlay
-#define TEAM_MAXOVERLAY     8
+#define TEAM_MAXOVERLAY     10
 
 // means of death
 typedef enum {

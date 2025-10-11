@@ -363,6 +363,10 @@ vmCvar_t cg_registeredPlayers;
 
 vmCvar_t cl_guid;
 
+vmCvar_t cg_teamOverlayX;
+vmCvar_t cg_teamOverlayY;
+vmCvar_t cg_teamOverlayMaxLocationWidth;
+
 typedef struct {
 	vmCvar_t    *vmCvar;
 	char        *cvarName;
@@ -616,7 +620,12 @@ cvarTable_t cvarTable[] = {
 
 	{ &cg_registeredPlayers, "cg_registeredPlayers", "1", CVAR_ARCHIVE },
 
-	{ &cl_guid, "cl_guid", NO_GUID, CVAR_ROM | CVAR_TEMP }
+	{ &cl_guid, "cl_guid", NO_GUID, CVAR_ROM | CVAR_TEMP },
+
+	// team overlay
+	{ &cg_teamOverlayX, "cg_teamOverlayX", "640", CVAR_ARCHIVE },
+	{ &cg_teamOverlayY, "cg_teamOverlayY", "0", CVAR_ARCHIVE },
+	{ &cg_teamOverlayMaxLocationWidth, "cg_teamOverlayMaxLocationWidth", "20", CVAR_ARCHIVE }
 };
 int cvarTableSize = sizeof( cvarTable ) / sizeof( cvarTable[0] );
 
