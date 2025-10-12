@@ -2646,6 +2646,7 @@ extern vmCvar_t cg_crosshairAlphaAlt;
 extern vmCvar_t cg_crosshairColor;
 extern vmCvar_t cg_crosshairColorAlt;
 extern vmCvar_t cg_tracers;
+extern vmCvar_t ch_font;
 
 // Get capabilities from the client
 qbool trap_GetValue(char* value, int valueSize, const char* key);

@@ -369,6 +369,8 @@ vmCvar_t cg_crosshairColor;
 vmCvar_t cg_crosshairColorAlt;
 vmCvar_t cg_tracers;
 
+vmCvar_t ch_font;
+
 vmCvar_t cg_registeredPlayers;
 
 vmCvar_t cl_guid;
@@ -631,6 +633,8 @@ cvarTable_t cvarTable[] = {
 	{ &cg_crosshairAlphaAlt, "cg_crosshairAlphaAlt", "1.0", CVAR_ARCHIVE },
 	{ &cg_crosshairColor, "cg_crosshairColor", "White", CVAR_ARCHIVE },
 	{ &cg_crosshairColorAlt, "cg_crosshairColorAlt", "White", CVAR_ARCHIVE },
+
+	{ &ch_font, "ch_font", "0", CVAR_ARCHIVE | CVAR_LATCH },
 
 	{ &cg_registeredPlayers, "cg_registeredPlayers", "1", CVAR_ARCHIVE },
 
@@ -1316,6 +1320,21 @@ static void CG_RegisterGraphics( void ) {
 	cgs.media.hud5Shader = trap_R_RegisterShader( "jpwhud5" );
 // jpw
 	cgs.media.smokePuffShader = trap_R_RegisterShader( "smokePuff" );
+
+	// load a few needed things before we do any screen updates
+	if (ch_font.integer == 1) {
+		cgs.media.charsetShader = trap_R_RegisterShader("gfx/2d/hudchars_OSP1");
+		cgs.media.menucharsetShader = trap_R_RegisterShader("gfx/2d/hudchars_OSP1");
+	}
+	else if (ch_font.integer == 2) {
+		cgs.media.charsetShader = trap_R_RegisterShader("gfx/2d/hudchars_OSP2");
+		cgs.media.menucharsetShader = trap_R_RegisterShader("gfx/2d/hudchars_OSP2");
+		// Defaults to wolf.
+	}
+	else {
+		cgs.media.charsetShader = trap_R_RegisterShader("gfx/2d/hudchars");
+		cgs.media.menucharsetShader = trap_R_RegisterShader("gfx/2d/hudchars");
+	}
 
 	// Rafael - blood pool
 	//cgs.media.bloodPool = trap_R_RegisterShader ("bloodPool");
@@ -2490,10 +2509,7 @@ void CG_Init( int serverMessageNum, int serverCommandSequence, int clientNum ) {
 	cgs.processedSnapshotNum = serverMessageNum;
 	cgs.serverCommandSequence = serverCommandSequence;
 
-	// load a few needed things before we do any screen updates
-	cgs.media.charsetShader     = trap_R_RegisterShader( "gfx/2d/hudchars" ); //trap_R_RegisterShader( "gfx/2d/bigchars" );
-	// JOSEPH 4-17-00
-	cgs.media.menucharsetShader = trap_R_RegisterShader( "gfx/2d/hudchars" );
+
 	// END JOSEPH
 	cgs.media.whiteShader       = trap_R_RegisterShader( "white" );
 	cgs.media.charsetProp       = trap_R_RegisterShaderNoMip( "menu/art/font1_prop.tga" );
