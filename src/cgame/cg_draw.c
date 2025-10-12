@@ -647,6 +647,8 @@ static float CG_DrawTeamOverlay( float y ) {
 	clientInfo_t *ci;
 	// NERVE - SMF
 	char classType[2] = { 0, 0 };
+	char latchType[2] = { 0, 0 };
+	char lt[2]; // string for latch classtype
 	int val;
 	vec4_t deathcolor, damagecolor;      // JPW NERVE
 	float       *pcolor;
@@ -724,21 +726,26 @@ static float CG_DrawTeamOverlay( float y ) {
 	}
 #endif
 
-	if ( lwidth > TEAM_OVERLAY_MAXLOCATION_WIDTH ) {
-		lwidth = TEAM_OVERLAY_MAXLOCATION_WIDTH;
+	if ( lwidth > cg_teamOverlayMaxLocationWidth.integer ) {
+		lwidth = cg_teamOverlayMaxLocationWidth.integer;
 	}
 
 	if ( cg_drawTeamOverlay.integer > 1 ) {
-		w = ( pwidth + lwidth + 3 + 7 ) * TINYCHAR_WIDTH; // JPW NERVE was +4+7
+		w = ( pwidth + lwidth + 3 + 9 ) * TINYCHAR_WIDTH; // JPW NERVE was +4+7
 	} else {
 		w = ( pwidth + lwidth + 8 ) * TINYCHAR_WIDTH; // JPW NERVE was +4+7
 
 	}
-	x = 640 - w - 4; // JPW was -32
+	x = cg_teamOverlayX.integer - w - 4;
+	y = cg_teamOverlayY.integer;
+
 	h = plyrs * TINYCHAR_HEIGHT;
 
+	// RTCWPro
+	if (cg_teamOverlayY.integer == 0) {
 	// DHM - Nerve :: Set the max characters that can be printed before the left edge
-	maxCharsBeforeOverlay = ( x / TINYCHAR_WIDTH ) - 1;
+		maxCharsBeforeOverlay = (x / TINYCHAR_WIDTH) - 1;
+	}
 
 	if ( cg.snap->ps.persistant[PERS_TEAM] == TEAM_RED ) {
 		hcolor[0] = 0.5f; // was 0.38 instead of 0.5 JPW NERVE
@@ -762,6 +769,9 @@ static float CG_DrawTeamOverlay( float y ) {
 		ci = cgs.clientinfo + sortedTeamPlayers[i];
 		if ( ci->infoValid && ci->team == cg.snap->ps.persistant[PERS_TEAM] ) {
 
+			// RtcwPro - Add * in front or revivable players..
+			char *isRevivable = " ";
+
 			// NERVE - SMF
 			// determine class type
 			val = cg_entities[ ci->clientNum ].currentState.teamNum;
@@ -779,20 +789,29 @@ static float CG_DrawTeamOverlay( float y ) {
 
 			Com_sprintf( st, sizeof( st ), "%s", CG_TranslateString( classType ) );
 
-			xx = x + TINYCHAR_WIDTH;
+			// deteremine latched class type
+			val = ci->latchedClass;
 
-			hcolor[0] = hcolor[1] = 1.0;
-			hcolor[2] = 0.0;
-			hcolor[3] = cg_hudAlpha.value;
+			qboolean playerIsSpawning = (ci->powerups & (1 << PW_INVULNERABLE) && ci->health >= 100);
 
-			CG_DrawStringExt( xx, y,
-							  st, hcolor, qtrue, qfalse,
-							  TINYCHAR_WIDTH, TINYCHAR_HEIGHT, 1 );
+			if (playerIsSpawning)
+			{
+				latchType[0] = '\0';
+			}
+			else if (val == 0) {
+				latchType[0] = 'S';
+			}
+			else if (val == 1) {
+				latchType[0] = 'M';
+			}
+			else if (val == 2) {
+				latchType[0] = 'E';
+			}
+			else if (val == 3) {
+				latchType[0] = 'L';
+			}
 
-			hcolor[0] = hcolor[1] = hcolor[2] = 1.0;
-			hcolor[3] = cg_hudAlpha.value;
-
-			xx = x + 3 * TINYCHAR_WIDTH;
+			Com_sprintf(lt, sizeof(lt), "%s", CG_TranslateString(latchType));
 
 			// JPW NERVE
 			if ( ci->health > 80 ) {
@@ -801,11 +820,46 @@ static float CG_DrawTeamOverlay( float y ) {
 				pcolor = damagecolor;
 			} else {
 				pcolor = deathcolor;
+				//RtcwPro
+				if (ci->playerLimbo != 1) {
+					isRevivable = "*";
+				}
 			}
 			// jpw
 
-			CG_DrawStringExt( xx, y,
-							  ci->name, pcolor, qtrue, qfalse,
+			xx = x + 1; // * TINYCHAR_WIDTH;
+
+			// RTCWPro - display obj carriers
+			if (ci->powerups & ((1 << PW_REDFLAG) | (1 << PW_BLUEFLAG)))
+			{
+				CG_DrawPic(xx - 3, y - 3, 15, 15, cgs.media.exclamationIcon); 
+			}
+
+			hcolor[0] = hcolor[1] = 1.0;
+			hcolor[2] = 0.0;
+			hcolor[3] = cg_hudAlpha.value;
+
+			// RtcwPro put IsRevivable in front of class type
+
+			if (!Q_stricmp(st, lt) || playerIsSpawning)
+			{
+				CG_DrawStringExt(xx, y - 1, va("%s", isRevivable), damagecolor, qtrue, qfalse, BIGCHAR_WIDTH, BIGCHAR_HEIGHT, 1);
+				CG_DrawStringExt(xx + BIGCHAR_WIDTH, y, va("%s", st), damagecolor, qtrue, qfalse, TINYCHAR_WIDTH, TINYCHAR_HEIGHT, 5); // always draw class name and * yellow
+			}
+			else
+			{
+				//CG_DrawPic(xx + 16, y - 1, 9, 9, trap_R_RegisterShaderNoMip("icons/icon_arrow.tga"));
+				CG_DrawStringExt(xx, y - 1, va("%s", isRevivable), damagecolor, qtrue, qfalse, BIGCHAR_WIDTH, BIGCHAR_HEIGHT, 1);
+				CG_DrawStringExt(xx + BIGCHAR_WIDTH, y, va("%s%s%s", st, ">", lt), damagecolor, qtrue, qfalse, TINYCHAR_WIDTH, TINYCHAR_HEIGHT, 5); // always draw class name and * yellow
+			}
+
+
+			hcolor[0] = hcolor[1] = hcolor[2] = 1.0;
+			hcolor[3] = cg_hudAlpha.value;
+
+			xx = x + 5 * TINYCHAR_WIDTH;
+			
+			CG_DrawStringExt( xx + 1, y, ci->name, pcolor, qtrue, qfalse, // RtcwPro moved IsRevivable above
 							  TINYCHAR_WIDTH, TINYCHAR_HEIGHT, TEAM_OVERLAY_MAXNAME_WIDTH );
 
 			if ( lwidth ) {
@@ -819,20 +873,20 @@ static float CG_DrawTeamOverlay( float y ) {
 					len = lwidth;
 				}
 
-				xx = x + TINYCHAR_WIDTH * 5 + TINYCHAR_WIDTH * pwidth +
+				xx = x + 20 + TINYCHAR_WIDTH * 5 + TINYCHAR_WIDTH * pwidth +
 					 ( ( lwidth / 2 - len / 2 ) * TINYCHAR_WIDTH );
 				CG_DrawStringExt( xx, y,
 								  p, hcolor, qfalse, qfalse, TINYCHAR_WIDTH, TINYCHAR_HEIGHT,
-								  TEAM_OVERLAY_MAXLOCATION_WIDTH );
+								  len );
 			}
 
 
 			Com_sprintf( st, sizeof( st ), "%3i", ci->health ); // JPW NERVE pulled class stuff since it's at top now
 
 			if ( cg_drawTeamOverlay.integer > 1 ) {
-				xx = x + TINYCHAR_WIDTH * 6 + TINYCHAR_WIDTH * pwidth + TINYCHAR_WIDTH * lwidth;
+				xx = x + 20 + TINYCHAR_WIDTH * 6 + TINYCHAR_WIDTH * pwidth + TINYCHAR_WIDTH * lwidth;
 			} else {
-				xx = x + TINYCHAR_WIDTH * 4 + TINYCHAR_WIDTH * pwidth + TINYCHAR_WIDTH * lwidth;
+				xx = x + 20 + TINYCHAR_WIDTH * 4 + TINYCHAR_WIDTH * pwidth + TINYCHAR_WIDTH * lwidth;
 			}
 
 			CG_DrawStringExt( xx, y,
@@ -2087,7 +2141,7 @@ static void CG_DrawCrosshair( void ) {
 		CG_ColorForHealth( hcolor );
 		trap_R_SetColor( hcolor );
 	} else {
-		trap_R_SetColor( NULL );
+		trap_R_SetColor(cg.xhairColor);
 	}
 
 	if( cg_customCrosshair.integer ){
@@ -2124,6 +2178,11 @@ static void CG_DrawCrosshair( void ) {
 		x = cg_crosshairX.integer;
 		y = cg_crosshairY.integer;
 		CG_AdjustFrom640( &x, &y, &w, &h );
+
+		// RtcwPro
+		if (!cg_crosshairHealth.integer) {
+			trap_R_SetColor(cg.xhairColorAlt);
+		}
 
 		if ( cg.limboMenu ) { // JPW NERVE
 			trap_R_DrawStretchPic( x + 0.5 * ( cg.refdef.width - w ), y + 0.5 * ( cg.refdef.height - h ),
@@ -2363,8 +2422,24 @@ void CG_CheckForCursorHints( void ) {
 			}
 		}
 	}
-}
+}	
 
+
+void CG_DrawPlayerAmmo(float *color, int weapon, int playerAmmo, int playerAmmoClip, int playerNades) {
+	const char* s;
+	float w;
+
+	if (weapon == WP_GRENADE_PINEAPPLE || weapon == WP_GRENADE_LAUNCHER || weapon == WP_KNIFE || weapon == WP_KNIFE2 || weapon == WP_NONE) {
+		s = va("G:%i", playerNades);
+		w = CG_DrawStrlen(s) * TINYCHAR_WIDTH;
+		CG_DrawStringExt(320 - w / 2, 205, s, color, qfalse, qfalse, TINYCHAR_WIDTH, TINYCHAR_HEIGHT, 20);
+	}
+	else {
+		s = va("AMMO:%i-%i", playerAmmoClip + playerAmmo, playerNades);
+		w = CG_DrawStrlen(s) * TINYCHAR_WIDTH;
+		CG_DrawStringExt(320 - w / 2, 205, s, color, qfalse, qfalse, TINYCHAR_WIDTH, TINYCHAR_HEIGHT, 20);
+	}
+}
 
 /*
 =====================
@@ -2389,11 +2464,6 @@ static void CG_DrawCrosshairNames( void ) {
 		return;
 	}
 	if ( cg.renderingThirdPerson ) {
-		return;
-	}
-
-	// NERVE - SMF - we don't want to do this in warmup
-	if ( cgs.gamestate != GS_PLAYING && cgs.gametype == GT_WOLF_STOPWATCH ) {
 		return;
 	}
 
@@ -2445,9 +2515,9 @@ static void CG_DrawCrosshairNames( void ) {
 	CG_DrawSmallStringColor( 320 - w / 2, 170, s, color );
 
 	// draw the health bar
-	playerHealth = cg.identifyClientHealth;
+	playerHealth = cgs.clientinfo[cg.crosshairClientNum].health;
 
-	if ( cg.crosshairClientNum == cg.identifyClientNum ) {
+	if ( cg.crosshairClientNum >= 0 && playerHealth >= 0 ) {
 		barFrac = (float)playerHealth / 100;
 
 		if ( barFrac > 1.0 ) {
@@ -2463,6 +2533,13 @@ static void CG_DrawCrosshairNames( void ) {
 		CG_FilledBar( 320 - w / 2, 190, 110, 10, c, NULL, NULL, barFrac, 16 );
 	}
 	// -NERVE - SMF
+
+	// RtcwPro add player ammo if cg_drawCrosshairNames is 1
+	if (cg_drawCrosshairNames.integer == 1 && cgs.clientinfo[cg.snap->ps.clientNum].team != TEAM_SPECTATOR)
+	{
+		CG_DrawPlayerAmmo(color, cgs.clientinfo[cg.crosshairClientNum].playerWeapon, cgs.clientinfo[cg.crosshairClientNum].playerAmmo,
+			cgs.clientinfo[cg.crosshairClientNum].playerAmmoClip, cgs.clientinfo[cg.crosshairClientNum].playerNades);
+	}
 
 	trap_R_SetColor( NULL );
 }
@@ -3418,7 +3495,11 @@ void CG_DrawObjectiveIcons() {
 		fade = cg_hudAlpha.value;
 	}
 
-	CG_DrawSmallString( x,y,s,fade );
+	//CG_DrawSmallString( x,y,s,fade );
+	float color[4];
+	color[0] = color[1] = color[2] = 1.0;
+	color[3] = fade;
+	CG_DrawStringExt(x, y, s, color, qfalse, qtrue, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, 0);
 
 // jpw
 

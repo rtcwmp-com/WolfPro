@@ -415,12 +415,13 @@ void CG_DrawStringExt( int x, int y, const char *string, const float *setColor,
 		s = string;
 		xx = x;
 		cnt = 0;
+		float offset = max(min(charWidth, charHeight) / 16.0f, 1.0f);
 		while ( *s && cnt < maxChars ) {
 			if ( Q_IsColorString( s ) ) {
 				s += 2;
 				continue;
 			}
-			CG_DrawChar( xx + 3 / cgs.screenXScale, y + 3 / cgs.screenYScale, charWidth, charHeight, *s );
+			CG_DrawChar( xx + offset / cgs.screenXScale, y + offset / cgs.screenYScale, charWidth, charHeight, *s );
 			cnt++;
 			xx += charWidth;
 			s++;

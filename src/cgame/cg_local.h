@@ -600,6 +600,16 @@ typedef struct {
 	char headModelName[MAX_QPATH];
 	gender_t gender;                // from model
 	// -NERVE - SMF
+
+	int playerLimbo;				// player is in limbo
+	int refStatus;
+	int shoutStatus;
+	int playerAmmo;
+	int playerAmmoClip;
+	int playerWeapon;
+	int playerNades;
+	int latchedClass;
+
 } clientInfo_t;
 
 
@@ -1003,6 +1013,9 @@ typedef struct {
 	char popinPrint[1024];
 	int popinPrintLines;
 	qboolean popinBlink;
+
+	vec4_t xhairColor;
+	vec4_t xhairColorAlt;
 } cg_t;
 
 #define NUM_FUNNEL_SPRITES  21
@@ -1579,6 +1592,7 @@ typedef struct {
 	float timelimit;                        // NERVE - SMF - made this a float
 	int maxclients;
 	char mapname[MAX_QPATH];
+	char rawmapname[MAX_QPATH];             // RTCWPro - autoexec
 	char redTeam[MAX_QPATH];                // A team
 	char blueTeam[MAX_QPATH];               // B team
 
@@ -1889,6 +1903,10 @@ extern vmCvar_t cg_registeredPlayers;
 
 extern vmCvar_t cl_guid;
 
+extern vmCvar_t cg_teamOverlayX;
+extern vmCvar_t cg_teamOverlayY;
+extern vmCvar_t cg_teamOverlayMaxLocationWidth;
+
 //
 // cg_main.c
 //
@@ -1916,6 +1934,8 @@ qboolean CG_GetWeaponTag( int clientNum, char *tagname, orientation_t * or );
 
 qboolean CG_CheckCenterView();
 void CG_printConsoleString( char *str );
+
+qboolean CG_execFile(char* filename); // RTCWPro - autoexec
 
 //
 // cg_view.c
@@ -2621,6 +2641,10 @@ extern vmCvar_t cg_priorityTextY;
 
 extern vmCvar_t cg_muzzleFlash;
 extern vmCvar_t cg_crosshairPulse;
+extern vmCvar_t cg_crosshairAlpha;
+extern vmCvar_t cg_crosshairAlphaAlt;
+extern vmCvar_t cg_crosshairColor;
+extern vmCvar_t cg_crosshairColorAlt;
 extern vmCvar_t cg_tracers;
 
 // Get capabilities from the client

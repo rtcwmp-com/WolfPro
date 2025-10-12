@@ -122,6 +122,58 @@ static void CG_ParseTeamInfo( void ) {
 	}
 }
 
+#define TEAMINFOARGS 12 // number of arguments for CG_ParseTeamInfo
+
+
+static void CG_ParseNewTeamInfo( void ) {
+	int i;
+	int client;
+
+	if (!cg.demoPlayback) {
+		//Current rtcwpro tinfo
+
+		int teamInfoPlayers = Q_atoi(CG_Argv(1));
+
+		numSortedTeamPlayers = teamInfoPlayers;
+
+		if (teamInfoPlayers < 0 || teamInfoPlayers >= MAX_CLIENTS)
+		{
+			CG_Printf("CG_ParseTeamInfo: teamInfoPlayers out of range (%i)\n", teamInfoPlayers);
+			return;
+		}
+
+		for (i = 0; i < teamInfoPlayers; i++)
+		{
+			client = Q_atoi(CG_Argv(i * TEAMINFOARGS + 2));
+
+			if (client < 0 || client >= MAX_CLIENTS)
+			{
+				CG_Printf("CG_ParseTeamInfo: bad client number: %i\n", client);
+				return;
+			}
+
+			sortedTeamPlayers[i] = client;
+
+			cgs.clientinfo[client].location = Q_atoi(CG_Argv(i * TEAMINFOARGS + 3));
+			cgs.clientinfo[client].health = Q_atoi(CG_Argv(i * TEAMINFOARGS + 4));
+			cgs.clientinfo[client].powerups = Q_atoi(CG_Argv(i * TEAMINFOARGS + 5));
+
+			cg_entities[client].currentState.teamNum = Q_atoi(CG_Argv(i * TEAMINFOARGS + 6));
+
+			cgs.clientinfo[client].playerAmmo = Q_atoi(CG_Argv(i * TEAMINFOARGS + 7));
+			cgs.clientinfo[client].playerAmmoClip = Q_atoi(CG_Argv(i * TEAMINFOARGS + 8));
+			cgs.clientinfo[client].playerNades = Q_atoi(CG_Argv(i * TEAMINFOARGS + 9));
+			cgs.clientinfo[client].playerWeapon = Q_atoi(CG_Argv(i * TEAMINFOARGS + 10));
+			cgs.clientinfo[client].playerLimbo = Q_atoi(CG_Argv(i * TEAMINFOARGS + 11));
+			//player_ready_status[client].isReady = Q_atoi(CG_Argv(i * TEAMINFOARGS + 12));
+			cgs.clientinfo[client].latchedClass = Q_atoi(CG_Argv(i * TEAMINFOARGS + 13));
+
+		}
+
+		
+	}
+}
+
 
 /*
 ================
@@ -149,6 +201,7 @@ void CG_ParseServerinfo( void ) {
 	cgs.timelimit = atof( Info_ValueForKey( info, "timelimit" ) );
 	cgs.maxclients = atoi( Info_ValueForKey( info, "sv_maxclients" ) );
 	mapname = Info_ValueForKey( info, "mapname" );
+	Q_strncpyz(cgs.rawmapname, mapname, sizeof(cgs.rawmapname));				// RTCWPro - autoexec
 	Com_sprintf( cgs.mapname, sizeof( cgs.mapname ), "maps/%s.bsp", mapname );
 
 // JPW NERVE
@@ -1852,6 +1905,11 @@ static void CG_ServerCommand( void ) {
 
 	if ( !strcmp( cmd, "tinfo" ) ) {
 		CG_ParseTeamInfo();
+		return;
+	}
+
+	if ( !strcmp( cmd, "tinfo2" ) ) {
+		CG_ParseNewTeamInfo();
 		return;
 	}
 

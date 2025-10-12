@@ -1109,7 +1109,7 @@ typedef enum {
 #define TEAM_LOCATION_UPDATE_TIME       1000
 
 // How many players on the overlay
-#define TEAM_MAXOVERLAY     8
+#define TEAM_MAXOVERLAY     10
 
 // means of death
 typedef enum {
@@ -1755,6 +1755,8 @@ typedef struct {
 extern const colorTable_t OSP_Colortable[];
 
 void BG_ParseColorCvar(char* cvarString, float* color, float alpha);
+void BG_setCrosshair(char *colString, float *col, float alpha, char *cvarName);
+
 
 
 typedef enum extWeaponStats_s
@@ -1808,5 +1810,8 @@ typedef struct weap_ws_convert_s {
 
 int BG_cleanName( const char *pszIn, char *pszOut, unsigned int dwMaxLength, qboolean fCRLF );
 extWeaponStats_t BG_WeapStatForWeapon( weapon_t iWeaponID );
+
+char* BG_GetTeam(int teamNum);
+char* BG_GetClass(int classNum);
 
 #endif
