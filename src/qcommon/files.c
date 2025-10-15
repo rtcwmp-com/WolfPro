@@ -2749,7 +2749,8 @@ static void FS_AddGameDirectory( const char *path, const char *dir ) {
 	qsort( sorted, numfiles, sizeof(sorted[0]), paksort );
 
 	for ( i = 0 ; i < numfiles ; i++ ) {
-		if ( Q_strncmp( sorted[i],"sp_",3 ) ) { // JPW NERVE -- exclude sp_*
+		if ( Q_strncmp( sorted[i],"sp_",3 ) || // exclude sp_*
+			 Q_strncmp( sorted[i],"mp_pak6",7 ) ) { //  or mp_pak6 (rtcwpro main menu)
 // JPW NERVE KLUDGE: fix filenames broken in mp/sp/pak sort above
 
 			if ( !Q_strncmp( sorted[i],"zz_",3 ) ) {
