@@ -669,6 +669,10 @@ void SV_SpawnServer( char *server, qboolean killBots ) {
 	// send a heartbeat now so the master will get up to date info
 	SV_Heartbeat_f();
 
+	if (com_sv_running->integer) {
+		SV_SetCvarRestrictions();
+	}
+
 	Hunk_SetMark();
 
 	Cvar_Set( "sv_serverRestarting", "0" );
