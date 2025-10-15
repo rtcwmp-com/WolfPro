@@ -1806,4 +1806,6 @@ qboolean Q_IsNumeric(const char* s);
 
 #define Q_atoi(str) (int) strtol(str, NULL, 10)
 
+char* Q_StrReplace(char* haystack, char* needle, char* newp);
+
 #endif  // __Q_SHARED_H

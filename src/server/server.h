@@ -319,6 +319,8 @@ extern cvar_t *sv_dl_maxRate;
 extern cvar_t	*sv_serverIP;
 extern cvar_t	*sv_serverCountry;
 
+extern cvar_t* sv_GameConfig;
+
 
 //===========================================================
 

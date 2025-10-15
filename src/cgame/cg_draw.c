@@ -2899,6 +2899,11 @@ static void CG_DrawWarmup( void ) {
 	const char  *s, *s1, *s2, *configString = NULL;
 	const char* t;
 
+	const char* info = CG_ConfigString(CS_SERVERINFO);
+	char* configName = Info_ValueForKey(info, "sv_GameConfig");
+	if (configName != NULL) configString = va("^3%s Config Loaded", configName);
+
+
 	if (cgs.gamestate == GS_WARMUP && cgs.readyState != CREADY_NONE) {
 
 		if (cgs.currentRound) {

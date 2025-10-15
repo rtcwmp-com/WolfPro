@@ -876,6 +876,9 @@ intptr_t SV_GameSystemCalls(intptr_t* args ) {
 
 	case G_SUBMIT_STATS_CURL:
 		return submit_curlPost( (char *)VMA( 1 ), (char *)VMA( 2 ) );
+
+	case G_FS_FILE_EXIST:
+		return (int)FS_FileExists( VMA(1) );
 		
 	default:
 		Com_Error( ERR_DROP, "Bad game system trap: %i", args[0] );

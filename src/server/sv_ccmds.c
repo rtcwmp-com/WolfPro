@@ -883,7 +883,47 @@ void SV_GameCompleteStatus_f( void ) {
 	SV_MasterGameCompleteStatus();
 }
 
-//===========================================================
+
+/*
+=================
+SV_LoadGameConfig_f
+=================
+*/
+static void SV_LoadGameConfig_f( void ) {
+	char* path;
+	char* config;
+
+	// make sure server is running
+	if (!com_sv_running->integer) {
+		Com_Printf("Server is not running.\n");
+		return;
+	}
+
+	if (Cmd_Argc() < 2) {
+		Com_Printf("Usage: config <config-name>\n");
+		return;
+	}
+
+	config = Cmd_Args();
+	if (!(path = Cvar_VariableString("fs_game")) || !*path)
+		path = BASEGAME;
+
+	if (!Q_stricmp(config, "none")) {
+		Com_Printf("Disabling game config..\n", config);
+		Cvar_Set("sv_GameConfig", "none");
+		//SV_SetCvarRestrictions();
+		return;
+	}
+
+	if (FS_FileExists(va("configs/%s.config", config))) {
+		Com_Printf("Loading %s config..\n", config);
+		Cvar_Set("sv_GameConfig", config);
+		//SV_SetCvarRestrictions();
+	}
+	else {
+		Com_Printf("Could not find config named '%s'.\n", config);
+	}
+}
 
 /*
 ==================
@@ -921,6 +961,7 @@ void SV_AddOperatorCommands( void ) {
 	if ( com_dedicated->integer ) {
 		Cmd_AddCommand( "say", SV_ConSay_f );
 	}
+	Cmd_AddCommand("config", SV_LoadGameConfig_f);
 }
 
 /*
@@ -944,4 +985,5 @@ void SV_RemoveOperatorCommands( void ) {
 	Cmd_RemoveCommand( "say" );
 #endif
 }
+
 

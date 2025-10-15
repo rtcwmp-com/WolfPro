@@ -1543,6 +1543,7 @@ int     trap_Milliseconds( void );
 int     trap_Argc( void );
 void    trap_Argv( int n, char *buffer, int bufferLength );
 void    trap_Args( char *buffer, int bufferLength );
+int		trap_FS_FileExists(const char* filename);
 int     trap_FS_FOpenFile( const char *qpath, fileHandle_t *f, fsMode_t mode );
 void    trap_FS_Read( void *buffer, int len, fileHandle_t f );
 int     trap_FS_Write( const void *buffer, int len, fileHandle_t f );
@@ -1840,6 +1841,11 @@ void G_writeClosingJson(void);
 void G_writeGeneralEvent (gentity_t* agent,gentity_t* other, char* weapon, int eventType);
 void G_writeChatEvent(gentity_t* agent, const char* chatText);
 char* LookupEventType(int eventyType);
+
+// g_config.c
+void G_PrintConfigs(gentity_t* ent);
+qboolean G_isValidConfig(gentity_t* ent, const char* configname);
+qboolean G_ConfigSet(const char* configName);
 
 // Macros
 //
