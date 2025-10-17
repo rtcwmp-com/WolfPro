@@ -756,20 +756,6 @@ static const cvar_restrictions_l Cvar_Restriction_Flags[] = {
 	{ SVC_WITHOUTBITS, "!WBIT", "WITHOUT BITS" }
 };
 
-// Cvar restrictions
-typedef struct cvar_restrictions_s {
-	char* name;
-	unsigned int type;
-	char*   sVal1;
-	char*   sVal2;
-	float   fVal1;
-	float   fVal2;
-	int     iVal1;
-	int     iVal2;
-	struct cvar_restrictions_s* next;
-	struct cvar_restrictions_s* hashNext;
-	qboolean flagged;
-} cvar_rest_t;
 
 void CL_SetRestStatus(void);
 

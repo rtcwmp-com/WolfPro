@@ -237,33 +237,60 @@ void G_Script_ScriptLoad( void ) {
 	vmCvar_t mapname;
 	fileHandle_t f;
 	int len;
-
+	qboolean found = qfalse;
 	trap_Cvar_Register( &g_scriptDebug, "g_scriptDebug", "0", 0 );
 
 	level.scriptEntity = NULL;
 
 	trap_Cvar_VariableStringBuffer( "g_scriptName", filename, sizeof( filename ) );
-	if ( strlen( filename ) > 0 ) {
-		trap_Cvar_Register( &mapname, "g_scriptName", "", CVAR_ROM );
-	} else {
-		trap_Cvar_Register( &mapname, "mapname", "", CVAR_SERVERINFO | CVAR_ROM );
-	}
-	Q_strncpyz( filename, "maps/", sizeof( filename ) );
-	Q_strcat( filename, sizeof( filename ), mapname.string );
-	// DHM - Nerve :: Support capture mode by loading appropriate script
-	if ( ( g_gametype.integer == GT_WOLF_CP ) || ( g_gametype.integer == GT_WOLF_CPH ) ) { // JPW NERVE added capture & hold
-		Q_strcat( filename, sizeof( filename ), "_cp" );
-	}
-	// dhm - Nerve
-	Q_strcat( filename, sizeof( filename ), ".script" );
 
-	len = trap_FS_FOpenFile( filename, &f, FS_READ );
+	if (strlen(filename) > 0) {
+		trap_Cvar_Register(&mapname, "g_scriptName", "", CVAR_ROM);
+	}
+	else {
+		trap_Cvar_Register(&mapname, "mapname", "", CVAR_SERVERINFO | CVAR_ROM);
+	}
+
+
+	if (g_mapScriptDirectory.string[0]) {
+		Q_strncpyz(filename, g_mapScriptDirectory.string, sizeof(filename));
+		Q_strcat(filename, sizeof(filename), "/");
+		Q_strcat(filename, sizeof(filename), mapname.string);
+
+		if ((g_gametype.integer == GT_WOLF_CP) || (g_gametype.integer == GT_WOLF_CPH)) { // JPW NERVE added capture & hold
+			Q_strcat(filename, sizeof(filename), "_cp");
+		}
+
+		Q_strcat(filename, sizeof(filename), ".script");
+		len = trap_FS_FOpenFile(filename, &f, FS_READ);
+
+		if (len > 0) {
+			found = qtrue;
+		}
+	}
+
+	if (!found) {
+		Q_strncpyz(filename, "maps/", sizeof(filename));
+		Q_strcat(filename, sizeof(filename), mapname.string);
+
+		if ((g_gametype.integer == GT_WOLF_CP) || (g_gametype.integer == GT_WOLF_CPH)) { // JPW NERVE added capture & hold
+			Q_strcat(filename, sizeof(filename), "_cp");
+		}
+
+		Q_strcat(filename, sizeof(filename), ".script");
+		len = trap_FS_FOpenFile(filename, &f, FS_READ);
+	}
+
+	
+
 
 	// make sure we clear out the temporary scriptname
 	trap_Cvar_Set( "g_scriptName", "" );
 
 	if ( len < 0 ) {
 		return;
+	}else{
+		G_Printf("Loaded .script: %s\n", filename);
 	}
 
 	level.scriptEntity = G_Alloc( len + 1 );

@@ -270,12 +270,12 @@ vm_t *VM_Create( vmType_t vmType, intptr_t ( *systemCalls )(intptr_t*),
 	Q_strncpyz( vm->name, module, sizeof( vm->name ) );
 	vm->systemCall = systemCalls;
 
-#if 1
+#ifndef DEDICATED
 	if(Q_stricmp(Cvar_VariableString("fs_game"), previousFsGame)){
 		//if we switch mods unload everything from the previous
 		for(int l = VM_UI; l < VM_COUNT; l++){
 			if(libraryHandles[l]){
-				Sys_UnloadDll(libraryHandles[vmType]);
+				Sys_UnloadDll(libraryHandles[l]);
 			}
 		}
 		memset(&libraryHandles, 0, sizeof(libraryHandles));
@@ -314,7 +314,7 @@ VM_Free
 ==============
 */
 void VM_Free( vm_t *vm ) {
-#if 1
+#ifndef DEDICATED
 #else
 	if ( vm->dllHandle ) {
 		Sys_UnloadDll( vm->dllHandle );

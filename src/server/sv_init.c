@@ -669,6 +669,10 @@ void SV_SpawnServer( char *server, qboolean killBots ) {
 	// send a heartbeat now so the master will get up to date info
 	SV_Heartbeat_f();
 
+	if (com_sv_running->integer) {
+		SV_SetCvarRestrictions();
+	}
+
 	Hunk_SetMark();
 
 	Cvar_Set( "sv_serverRestarting", "0" );
@@ -930,6 +934,8 @@ void SV_Init( void ) {
 	sv_serverIP = Cvar_Get("sv_serverIP", "", CVAR_LATCH);
 	sv_serverCountry = Cvar_Get("sv_serverCountry", "", CVAR_SERVERINFO | CVAR_ROM);
 #endif
+
+	sv_GameConfig = Cvar_Get("sv_GameConfig", "", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_ROM); // | CVAR_LATCH );
 
 	// initialize bot cvars so they are listed and can be set before loading the botlib
 	SV_BotInitCvars();

@@ -1806,4 +1806,22 @@ qboolean Q_IsNumeric(const char* s);
 
 #define Q_atoi(str) (int) strtol(str, NULL, 10)
 
+char* Q_StrReplace(char* haystack, char* needle, char* newp);
+
+
+// Cvar restrictions
+typedef struct cvar_restrictions_s {
+	char* name;
+	unsigned int type;
+	char*   sVal1;
+	char*   sVal2;
+	float   fVal1;
+	float   fVal2;
+	int     iVal1;
+	int     iVal2;
+	struct cvar_restrictions_s* next;
+	struct cvar_restrictions_s* hashNext;
+	qboolean flagged;
+} cvar_rest_t;
+
 #endif  // __Q_SHARED_H

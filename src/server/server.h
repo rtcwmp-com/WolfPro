@@ -319,6 +319,8 @@ extern cvar_t *sv_dl_maxRate;
 extern cvar_t	*sv_serverIP;
 extern cvar_t	*sv_serverCountry;
 
+extern cvar_t* sv_GameConfig;
+
 
 //===========================================================
 
@@ -378,6 +380,7 @@ void SV_WriteDownloadToClient( client_t *cl, msg_t *msg );
 // sv_ccmds.c
 //
 void SV_Heartbeat_f( void );
+void SV_SetCvarRestrictions(void);
 
 //
 // sv_snapshot.c
