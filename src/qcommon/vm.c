@@ -275,7 +275,7 @@ vm_t *VM_Create( vmType_t vmType, intptr_t ( *systemCalls )(intptr_t*),
 		//if we switch mods unload everything from the previous
 		for(int l = VM_UI; l < VM_COUNT; l++){
 			if(libraryHandles[l]){
-				Sys_UnloadDll(libraryHandles[vmType]);
+				Sys_UnloadDll(libraryHandles[l]);
 			}
 		}
 		memset(&libraryHandles, 0, sizeof(libraryHandles));

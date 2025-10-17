@@ -1536,6 +1536,7 @@ extern vmCvar_t g_statsRetryDelay;
 extern vmCvar_t g_apiquery_curl_URL;
 
 extern vmCvar_t g_disableDeadBodyFlagGrab;
+extern vmCvar_t g_mapScriptDirectory;
 
 void    trap_Printf( const char *fmt );
 void    trap_Error( const char *fmt );

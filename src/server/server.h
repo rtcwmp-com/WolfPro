@@ -380,6 +380,7 @@ void SV_WriteDownloadToClient( client_t *cl, msg_t *msg );
 // sv_ccmds.c
 //
 void SV_Heartbeat_f( void );
+void SV_SetCvarRestrictions(void);
 
 //
 // sv_snapshot.c
