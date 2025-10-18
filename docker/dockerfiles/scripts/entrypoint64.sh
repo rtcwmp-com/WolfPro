@@ -53,40 +53,6 @@ declare -A default_maps=(
     [mp_rocket]="mp_pakmaps6"
 )
 
-run_mutations() {
-    map="${1}"; shift
-    map_mutated=0
-
-    # Run global mutations on this map
-    if [ -f "${SETTINGS_BASE}/map-mutations/global.sh" ]; then
-        bash "${SETTINGS_BASE}/map-mutations/global.sh" \
-            "${GAME_BASE}/tmp/maps/${map}.bsp" \
-            "${GAME_BASE}/tmp/maps/${map}.bsp.tmp"
-        if [ -f "${GAME_BASE}/tmp/maps/${map}.bsp.tmp" ]; then
-            map_mutated=1
-            echo "Global mutation happened on ${map}"
-            mv "${GAME_BASE}/tmp/maps/${map}.bsp.tmp" \
-                "${GAME_BASE}/tmp/maps/${map}.bsp"
-        fi
-    fi
-
-    # Check if a map mutations script exist for this map and execute it
-    if [ -f "${SETTINGS_BASE}/map-mutations/${map}.sh" ]; then
-        echo "Running mutations script on ${map}"
-        bash "${SETTINGS_BASE}/map-mutations/${map}.sh" \
-            "${GAME_BASE}/tmp/maps/${map}.bsp"
-        map_mutated=1
-    fi
-
-    if [ "${map_mutated}" == "1" ]; then
-        mkdir -p "${GAME_BASE}/wolfpro/maps"
-        mv "${GAME_BASE}/tmp/maps/${map}.bsp" \
-            "${GAME_BASE}/wolfpro/maps/${map}.bsp"
-    else
-        echo "No mutations were made to ${map}"
-    fi
-}
-
 # Iterate over all maps and download them if necessary
 export IFS=":"
 for map in $MAPS; do
@@ -110,30 +76,6 @@ for map in $MAPS; do
         mv "${GAME_BASE}/main/${map}.pk3.tmp" "${GAME_BASE}/main/${map}.pk3"
     fi
 
-    # This is the place we run mutations on the BSPs contained within maps.
-    rm -rf "${GAME_BASE}/wolfpro/maps/${map}.bsp"
-    mkdir -p "${GAME_BASE}/tmp/"
-    unzip "${GAME_BASE}/main/${map}.pk3" -d "${GAME_BASE}/tmp/"
-
-    run_mutations "${map}"
-
-    rm -rf "${GAME_BASE}/tmp/"
-done
-
-# We need to still run mutations on default maps if they exist.
-for map in "${!default_maps[@]}"; do
-    rm -rf "${GAME_BASE}/wolfpro/maps/${map}.bsp"
-
-    echo "Running mutations on default map ${map}"
-    mkdir -p "${GAME_BASE}/tmp/maps/"
-    unzip \
-        -j "main/${default_maps[$map]}.pk3" \
-        -d "${GAME_BASE}/tmp/maps/" \
-        "maps/${map}.bsp"
-
-    run_mutations "${map}"
-
-    rm -rf "${GAME_BASE}/tmp/"
 done
 
 # We need to cleanup mapscripts on every invokation as we don't know what is
@@ -143,10 +85,10 @@ for mapscript in "${GAME_BASE}/wolfpro/maps/"*.script; do
     rm -rf "${mapscript}"
 done
 
-for mapscript in "${SETTINGS_BASE}/mapscripts/"*.script; do
-    [ -f "${mapscript}" ] || break
-    cp "${mapscript}" "${GAME_BASE}/wolfpro/maps/"
-done
+# for mapscript in "${SETTINGS_BASE}/mapscripts/"*.script; do
+#     [ -f "${mapscript}" ] || break
+#     cp "${mapscript}" "${GAME_BASE}/wolfpro/maps/"
+# done
 
 # Only configs live within the config directory so we don't need to be careful
 # about just recreating this directory.
