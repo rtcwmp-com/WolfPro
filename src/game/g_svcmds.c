@@ -673,6 +673,69 @@ void G_Rename_f(void){
 
 }
 
+void G_OverrideSpawnTarget_f(void){
+	if (trap_Argc() < 4) {
+		Com_Printf("Usage: overrideobjtarget <index> <x y z>\n");
+		return;
+	}
+
+	char argvBuf[64];
+	trap_Argv(1, argvBuf, sizeof(argvBuf));
+	int index = atoi(argvBuf);
+
+	vec3_t loc = {};
+	trap_Argv(2, argvBuf, sizeof(argvBuf));
+	loc[0] = strtof(argvBuf, NULL);
+	trap_Argv(3, argvBuf, sizeof(argvBuf));
+	loc[1] = strtof(argvBuf, NULL);
+	trap_Argv(4, argvBuf, sizeof(argvBuf));
+	loc[2] = strtof(argvBuf, NULL);
+
+	VectorCopy(loc, level.spawntargets[index]);
+	level.spawnTargetOverride = qtrue;
+	
+}
+
+void G_RemoveSpawnPoint_f(void){
+	if (trap_Argc() < 3) {
+		Com_Printf("Usage: removespawnpoint <x y z>\n");
+		return;
+	}
+
+	char argvBuf[64];
+
+	vec3_t loc = {};
+	trap_Argv(1, argvBuf, sizeof(argvBuf));
+	loc[0] = strtof(argvBuf, NULL);
+	trap_Argv(2, argvBuf, sizeof(argvBuf));
+	loc[1] = strtof(argvBuf, NULL);
+	trap_Argv(3, argvBuf, sizeof(argvBuf));
+	loc[2] = strtof(argvBuf, NULL);
+
+	VectorCopy(loc, level.removedSpawns[level.numRemovedSpawns]);
+	level.numRemovedSpawns++;
+	
+}
+
+void G_RemoveEntity_f(void){
+	if (trap_Argc() < 1) {
+		Com_Printf("Usage: removeentity <entityname>\n");
+		return;
+	}
+
+	char argvBuf[64];
+
+	trap_Argv(1, argvBuf, sizeof(argvBuf));
+	Q_strncpyz(level.removedEntities[level.numRemovedEntities], argvBuf, sizeof(level.removedEntities[level.numRemovedEntities]));
+	level.numRemovedEntities++;
+	
+}
+
+void G_PrintSpawnTargets_f(void){
+	for(int i = 0; i < level.numspawntargets; i++){
+		G_Printf("Spawn[%d]: (%02f, %02f, %02f)\n", i, level.spawntargets[i][0], level.spawntargets[i][1], level.spawntargets[i][2] );
+	}
+}
 
 
 char    *ConcatArgs( int start );
@@ -748,6 +811,24 @@ qboolean    ConsoleCommand( void ) {
 
 	if (Q_stricmp(cmd, "rename") == 0) {
 		G_Rename_f();
+		return qtrue;
+	}
+
+	if (Q_stricmp(cmd, "overridespawntarget") == 0) {
+		G_OverrideSpawnTarget_f();
+		return qtrue;
+	}
+
+	if (Q_stricmp(cmd, "printspawntargets") == 0) {
+		G_PrintSpawnTargets_f();
+		return qtrue;
+	}
+	if (Q_stricmp(cmd, "removespawnpoint") == 0) {
+		G_RemoveSpawnPoint_f();
+		return qtrue;
+	}
+	if (Q_stricmp(cmd, "removeentity") == 0) {
+		G_RemoveEntity_f();
 		return qtrue;
 	}
 

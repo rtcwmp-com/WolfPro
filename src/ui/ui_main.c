@@ -3790,18 +3790,12 @@ void WM_GetSpawnPoints() {
 	// first index is for autopicking
 	Q_strncpyz( uiInfo.spawnPoints[0], trap_TranslateString( "Auto Pick" ), MAX_SPAWNDESC );
 
-	uiInfo.spawnCount = atoi( s ) + 1;
+	uiInfo.spawnCount = 5;
+	Q_strncpyz( uiInfo.spawnPoints[1], "Closest to Axis", MAX_SPAWNDESC );
+	Q_strncpyz( uiInfo.spawnPoints[2], "Closest to Allies", MAX_SPAWNDESC );
+	Q_strncpyz( uiInfo.spawnPoints[3], "Barracks", MAX_SPAWNDESC );
+	Q_strncpyz( uiInfo.spawnPoints[4], "Furthest from Enemy", MAX_SPAWNDESC );
 
-	for ( i = 1; i < uiInfo.spawnCount; i++ ) {
-		trap_GetConfigString( CS_MULTI_SPAWNTARGETS + i - 1, cs, sizeof( cs ) );
-
-		s = Info_ValueForKey( cs, "spawn_targ" );
-		if ( !s || !strlen( s ) ) {
-			return;
-		}
-
-		Q_strncpyz( uiInfo.spawnPoints[i], trap_TranslateString( s ), MAX_SPAWNDESC );
-	}
 }
 
 void WM_SetObjective( int objectiveIndex ) {
@@ -6009,7 +6003,26 @@ static void UI_FeederSelection( float feederID, int index ) {
 		uiInfo.demoIndex = index;
 		// NERVE - SMF
 	} else if ( feederID == FEEDER_PICKSPAWN ) {
-		trap_Cmd_ExecuteText( EXEC_NOW, va( "setspawnpt %i\n", index ) );
+		switch(index){
+			case 0:
+				trap_Cmd_ExecuteText( EXEC_NOW, va( "setspawnpt %i\n", 0 ) );
+				break;
+			case 1:
+				trap_Cmd_ExecuteText( EXEC_NOW, va( "setspawnpt %i\n", 1 ) );
+				break;
+			case 2:
+				trap_Cmd_ExecuteText( EXEC_NOW, va( "setspawnpt %i\n", 2 ) );
+				break;
+			case 3:
+				trap_Cmd_ExecuteText( EXEC_NOW, va( "setspawnpt %i\n", 3 ) );
+				break;
+			case 4:
+				trap_Cmd_ExecuteText( EXEC_NOW, va( "setspawnpt %i\n", 101 ) );
+				break;
+			default:
+				trap_Cmd_ExecuteText( EXEC_NOW, va( "setspawnpt %i\n", index ) );
+		}
+		
 	} else if ( feederID == FEEDER_SOLDIERWEAP ) {
 		int i, count;
 		for ( i = 0, count = 0; weaponTypes[i].name; i++ ) {

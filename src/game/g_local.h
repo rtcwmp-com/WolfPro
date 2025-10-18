@@ -989,6 +989,11 @@ typedef struct {
 
 	char tinfoAxis[1024];                       ///< sent as server command (limited to 1022 chars)
 	char tinfoAllies[1024];                     ///< sent as server command (limited to 1022 chars)
+	vec3_t removedSpawns[64];
+	int numRemovedSpawns;
+	qboolean spawnTargetOverride;
+	char removedEntities[32][64];
+	int numRemovedEntities;
 } level_locals_t;
 
 extern qboolean reloading;                  // loading up a savegame
@@ -1024,7 +1029,8 @@ void Cmd_FollowCycle_f( gentity_t *ent, int dir );
 int ClientNumberFromString( gentity_t *to, char *s );
 void SanitizeString(char* in, char* out);
 void SanitizeStringToLower(char* in, char* out, qboolean fToLower);
-
+void G_OverrideSpawnTarget_f(void);
+void G_RemoveSpawnPoint_f(void);
 //
 // g_items.c
 //

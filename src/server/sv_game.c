@@ -978,7 +978,7 @@ See if the current console command is claimed by the game
 ====================
 */
 qboolean SV_GameCommand( void ) {
-	if ( sv.state != SS_GAME ) {
+	if ( sv.state != SS_GAME && sv.state != SS_LOADING ) {
 		return qfalse;
 	}
 

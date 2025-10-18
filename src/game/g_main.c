@@ -1238,6 +1238,10 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 	level.animScriptData.soundIndex = G_SoundIndex;
 	level.animScriptData.playSound = G_AnimScriptSound;
 
+	char mapName[64];
+	trap_Cvar_VariableStringBuffer( "mapname", mapName, sizeof(mapName) );
+
+
 	if ( g_log.string[0] ) {
 		if ( g_logSync.integer ) {
 			trap_FS_FOpenFile( g_log.string, &level.logFile, FS_APPEND_SYNC );
@@ -1256,12 +1260,12 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 		}
         if (g_gameStatslog.integer && (g_gamestate.integer == GS_PLAYING)) { // definitely needs improving but here for testing purposes
                 char newGamestatFile[256];
-                char mapName[64];
+                
                 char buf2[64];
                 int retval;
                 qtime_t ct;
                 trap_RealTime(&ct);
-                trap_Cvar_VariableStringBuffer( "mapname", mapName, sizeof(mapName) );
+                
                 char *buf;
                 time_t unixTime = time(NULL);  // come back and make globally available
                 //char cs[MAX_STRING_CHARS];
@@ -1343,6 +1347,14 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 		for ( i = CS_MULTI_SPAWNTARGETS; i < CS_MULTI_SPAWNTARGETS + MAX_MULTI_SPAWNTARGETS; i++ ) {
 			trap_SetConfigstring( i, "" );
 		}
+	}
+
+
+	if (trap_FS_FileExists(va("autoexecsv_%s.cfg", mapName))) {
+		trap_SendConsoleCommand(EXEC_NOW, va("execnow autoexecsv_%s", mapName));
+	}
+	if (trap_FS_FileExists("autoexecsv_global.cfg")) {
+		trap_SendConsoleCommand(EXEC_NOW, "execnow autoexecsv_global");
 	}
 
 	// initialize all entities for this game
