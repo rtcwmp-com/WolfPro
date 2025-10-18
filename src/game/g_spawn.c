@@ -706,6 +706,12 @@ qboolean G_CallSpawn( gentity_t *ent ) {
 	spawn_t *s;
 	gitem_t *item;
 
+	for(int i = 0; i < level.numRemovedEntities; i++){
+		if(!Q_stricmpn(level.removedEntities[i], ent->classname, strlen(level.removedEntities[i]))){
+			return qfalse;
+		}
+	}
+
 	if ( !ent->classname ) {
 		G_Printf( "G_CallSpawn: NULL classname\n" );
 		return qfalse;

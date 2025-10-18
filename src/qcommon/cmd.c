@@ -265,6 +265,30 @@ void Cmd_Exec_f( void ) {
 	FS_FreeFile( f );
 }
 
+void Cmd_ExecNow_f( void ) {
+	char    *f;
+	char filename[MAX_QPATH];
+
+	if ( Cmd_Argc() != 2 ) {
+		Com_Printf( "execnow <filename> : execute a script file\n" );
+		return;
+	}
+
+	Q_strncpyz( filename, Cmd_Argv( 1 ), sizeof( filename ) );
+	COM_DefaultExtension( filename, sizeof( filename ), ".cfg" );
+	FS_ReadFile( filename, (void **)&f );
+	if ( !f ) {
+		Com_Printf( "couldn't exec %s\n",Cmd_Argv( 1 ) );
+		return;
+	}
+	Com_Printf( "execing %s\n",Cmd_Argv( 1 ) );
+
+	Cbuf_InsertText( f );
+	Cbuf_Execute();
+
+	FS_FreeFile( f );
+}
+
 
 /*
 ===============
@@ -742,5 +766,6 @@ void Cmd_Init( void ) {
 	Cmd_AddCommand( "vstr",Cmd_Vstr_f );
 	Cmd_AddCommand( "echo",Cmd_Echo_f );
 	Cmd_AddCommand( "wait", Cmd_Wait_f );
+	Cmd_AddCommand( "execnow",Cmd_ExecNow_f );
 }
 

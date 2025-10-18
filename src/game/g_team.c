@@ -847,6 +847,147 @@ int FindClosestObjectiveIndex( vec3_t source ) {
 }
 // -NERVE - SMF
 
+#define MAX_TEAM_SPAWN_POINTS   32
+typedef struct spawnCluster_s {
+	gentity_t *clusterList[MAX_TEAM_SPAWN_POINTS];
+	int clusterSize;
+} spawnCluster_t;
+
+typedef struct spawnClusterMgr_s {
+	spawnCluster_t clusters[MAX_TEAM_SPAWN_POINTS];
+	int lastCluster;
+	int closestClusterToAllies;
+	int closestClusterToAxis;
+	int furthestClusterFromAllies;
+	int furthestClusterFromAxis;
+} spawnClusterMgr_t;
+
+qboolean find_spawnclusters(spawnClusterMgr_t *mgr, gentity_t **spawns, int numspawns, float radius){
+	int unassigned[MAX_TEAM_SPAWN_POINTS];
+	spawnCluster_t *clusters = mgr->clusters;
+	
+	memset(mgr, 0, sizeof(spawnClusterMgr_t));
+	
+
+	//start with the first one
+	clusters[0].clusterList[0] = spawns[0];
+	clusters[0].clusterSize++;
+	for(int i = 1; i < numspawns; i++){
+		unassigned[i] = i;
+	}
+	
+	for (int i = 1; i < numspawns; i++) { //operate on one spawn at a time
+		for(int clusterNum = 0; clusterNum < MAX_TEAM_SPAWN_POINTS && clusters[clusterNum].clusterSize != 0 && unassigned[i]; clusterNum++){
+			for(int clusterListIndex = 0; clusterListIndex < clusters[clusterNum].clusterSize && unassigned[i] && clusters[clusterNum].clusterSize != 0; clusterListIndex++){
+				//if the spawn is already assigned, skip 
+				if (!unassigned[i]) continue;
+
+				//how far is the spawn from existing spawns in the cluster
+				vec_t len = Distance(spawns[i]->s.origin, clusters[clusterNum].clusterList[clusterListIndex]->s.origin);
+				//G_Printf("Spawn[%d] length: (%02f)\n", i, len);
+
+				//if the spawn is close to one, add it to the cluster
+				if (len > 0 && len < radius && unassigned[i]) {
+					clusters[clusterNum].clusterList[clusters[clusterNum].clusterSize++] = spawns[i];
+					unassigned[i] = 0;
+				}
+			}
+
+		}
+		//if its not assigned yet, it needs to go in another cluster
+		if (!unassigned[i]) continue;
+		for (int u = 1; u < numspawns; u++) {
+			//find the first unassigned 
+			if (unassigned[u]) {
+				mgr->lastCluster++;
+				spawnCluster_t* nextCluster = &clusters[mgr->lastCluster];
+
+				//add to the next free cluster
+				nextCluster->clusterList[nextCluster->clusterSize] = spawns[u];
+				nextCluster->clusterSize++;
+				unassigned[u] = 0;
+				break;
+			}
+		}
+	}
+
+	//check for closer clusters
+	for (int i = 0; i < MAX_TEAM_SPAWN_POINTS; i++) {
+		if (clusters[i].clusterSize > 0) {
+			for (int s = 0; s < clusters[i].clusterSize; s++) {
+				for (int c = 0; c < MAX_TEAM_SPAWN_POINTS; c++) {
+					for (int st = 0; st < clusters[c].clusterSize && c != i; st++) {
+						if (clusters[i].clusterSize == 0 || clusters[c].clusterSize == 0) continue;
+						vec_t len = Distance(clusters[i].clusterList[s]->s.origin, clusters[c].clusterList[st]->s.origin);
+						if (len < radius) {
+							//G_Printf("Cluster %d Spawn %d is closer to Cluster %d Spawn %d\n", i, s, c, st);
+							//get rid of any size 1
+							if (clusters[i].clusterSize == 1) {
+								clusters[c].clusterList[clusters[c].clusterSize] = clusters[i].clusterList[s];
+								clusters[c].clusterSize++;
+								clusters[i].clusterSize--;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	float prevClosestClusterToAllies = 999999999.0f;
+	float prevClosestClusterToAxis = 999999999.0f;
+	float prevFurthestClusterFromAllies = -1.0f;
+	float prevFurthestClusterFromAxis = -1.0f;
+	for (int i = 0; i < MAX_TEAM_SPAWN_POINTS; i++) {
+		if (clusters[i].clusterSize > 0) {
+			// G_Printf("cluster[%d] size: %d\n", i, clusters[i].clusterSize);
+			for (int s = 0; s < clusters[i].clusterSize; s++) {
+				vec_t len = {};
+				len = Distance(level.spawntargets[1], clusters[i].clusterList[s]->s.origin);
+				if (len < prevClosestClusterToAllies) {
+					prevClosestClusterToAllies = len;
+					mgr->closestClusterToAllies = i;
+				}
+				if (len > prevFurthestClusterFromAllies) {
+					prevFurthestClusterFromAllies = len;
+					mgr->furthestClusterFromAllies = i;
+				}
+				
+				len = Distance(level.spawntargets[0], clusters[i].clusterList[s]->s.origin);
+				if (len < prevClosestClusterToAxis) {
+					prevClosestClusterToAxis = len;
+					mgr->closestClusterToAxis = i;
+				}
+				if (len > prevFurthestClusterFromAxis) {
+					prevFurthestClusterFromAxis = len;
+					mgr->furthestClusterFromAxis = i;
+				}
+			}
+
+			 for (int c = 0; c < clusters[i].clusterSize; c++) {
+			 	G_DPrintf("Cluster Spawn[%d] (%02f, %02f, %02f)\n", i, clusters[i].clusterList[c]->s.origin[0], clusters[i].clusterList[c]->s.origin[1], clusters[i].clusterList[c]->s.origin[2]);
+			 }
+		}
+	}
+	 G_DPrintf("Cluster %d is closest to Allies\n", mgr->closestClusterToAllies);
+	 G_DPrintf("Cluster %d is closest to Axis\n", mgr->closestClusterToAxis);
+	 G_DPrintf("Cluster %d is furthest from Allies\n", mgr->furthestClusterFromAllies);
+	 G_DPrintf("Cluster %d is furthest from Axis\n", mgr->furthestClusterFromAxis);
+	return qtrue;
+}
+
+
+qboolean SpotIsRemoved(gentity_t *spot){
+	for(int i = 0; i < level.numRemovedSpawns; i++){
+		vec3_t spawn;
+		VectorCopy(level.removedSpawns[i], spawn);
+		if(VectorCompare(spot->s.origin, spawn)){
+			return qtrue;
+		}
+	}
+	return qfalse;
+}
+
 /*
 ================
 SelectRandomDeathmatchSpawnPoint
@@ -854,7 +995,7 @@ SelectRandomDeathmatchSpawnPoint
 go to a random point that doesn't telefrag
 ================
 */
-#define MAX_TEAM_SPAWN_POINTS   32
+
 gentity_t *SelectRandomTeamSpawnPoint( int teamstate, team_t team, int spawnObjective ) {
 	gentity_t   *spot;
 	int count;
@@ -917,6 +1058,9 @@ gentity_t *SelectRandomTeamSpawnPoint( int teamstate, team_t team, int spawnObje
 		if ( SpotWouldTelefrag( spot ) ) {
 			continue;
 		}
+		if(SpotIsRemoved(spot)){
+			continue;
+		}
 // JPW NERVE
 		if ( g_gametype.integer >= GT_WOLF ) {
 			// Arnout - modified to allow intial spawnpoints to be disabled at gamestart
@@ -933,6 +1077,9 @@ gentity_t *SelectRandomTeamSpawnPoint( int teamstate, team_t team, int spawnObje
 		}
 	}
 
+	spawnClusterMgr_t clusterMgr = {};
+	find_spawnclusters(&clusterMgr, spots, count, 200.0f);
+
 	if ( !count ) { // no spots that won't telefrag
 		return G_Find( NULL, FOFS( classname ), classname );
 	}
@@ -944,41 +1091,75 @@ gentity_t *SelectRandomTeamSpawnPoint( int teamstate, team_t team, int spawnObje
 	} else {
 		// If no spawnObjective, select target as farthest point from first team spawnpoint
 		// else replace this with the target coords pulled from the UI target selection
-		if ( spawnObjective ) {
-			i = spawnObjective - 1;
+		int manualSpawn = 0;
+		if (spawnObjective == 0) {
+			manualSpawn = 0;
+		} else if (spawnObjective == 1) {
+			manualSpawn = 1;
+		} else if (spawnObjective == 2) {
+			manualSpawn = 2;
+		} else if (spawnObjective > 2 && spawnObjective < 100) {
+			manualSpawn = 3;
 		} else {
-			j = 0;
-			for ( j = 0; j < count; j++ ) {
-				if ( spots[j]->spawnflags & 1 ) { // only use spawnpoint if it's a permanent one
-					// NERVE - SMF - make defenders spawn all the way back by default
-					if ( defendingTeam < 0 ) {
-						i = FindFarthestObjectiveIndex( spots[j]->s.origin );
-					} else if ( defender ) {
-						i = FindClosestObjectiveIndex( spots[j]->s.origin );
-					} else {
-						i = FindFarthestObjectiveIndex( spots[j]->s.origin );
-					}
+			manualSpawn = 4;
+		}
 
-					j = count;
+		int useCluster = 0;
+		switch(manualSpawn){
+		case 0:
+			if (defendingTeam < 0) {
+				if (team == TEAM_RED) {
+					useCluster = clusterMgr.furthestClusterFromAllies;
+				} else {
+					useCluster = clusterMgr.furthestClusterFromAxis;
+				}
+			} else if (defender) {
+				if (team == TEAM_RED) {
+					useCluster = clusterMgr.closestClusterToAxis;
+				} else {
+					useCluster = clusterMgr.closestClusterToAllies;
+				}
+			} else {
+				if (team == TEAM_RED) {
+					useCluster = clusterMgr.closestClusterToAllies;
+				} else {
+					useCluster = clusterMgr.closestClusterToAxis;
 				}
 			}
-		}
-		VectorCopy( level.spawntargets[i],farthest );
-//		G_Printf("using spawntarget %d (%f %f %f)\n",i,farthest[0],farthest[1],farthest[2]);
-
-		// now that we've got farthest vector, figure closest spawnpoint to it
-		VectorSubtract( farthest,spots[0]->s.origin,target );
-		shortest = VectorLength( target );
-		closest = 0;
-		for ( i = 0; i < count; i++ ) {
-			VectorSubtract( farthest,spots[i]->s.origin,target );
-			tmp = VectorLength( target );
-			if ( ( spots[i]->spawnflags & 2 ) && ( tmp < shortest ) ) {
-				shortest = tmp;
-				closest = i;
+			break;
+		case 1:
+			useCluster = clusterMgr.closestClusterToAxis;	
+			break;
+		case 2:
+			useCluster = clusterMgr.closestClusterToAllies;
+			break;
+		case 3:
+			if(defender){
+				if (team == TEAM_RED) {
+					useCluster = clusterMgr.furthestClusterFromAxis;
+				} else {
+					useCluster = clusterMgr.closestClusterToAllies;
+				}
+			} else {
+				if (team == TEAM_RED) {
+					useCluster = clusterMgr.furthestClusterFromAllies;
+				} else {
+					useCluster = clusterMgr.closestClusterToAllies;
+				}
 			}
+			break;
+		case 4:
+			if (team == TEAM_RED) {
+				useCluster = clusterMgr.furthestClusterFromAllies;
+			} else {
+				useCluster = clusterMgr.furthestClusterFromAxis;
+			}
+			break;
+		default:
+			useCluster = 0;
 		}
-		return spots[closest];
+
+		return clusterMgr.clusters[useCluster].clusterList[0];
 	}
 // jpw
 }
@@ -1290,6 +1471,9 @@ key "description" is short text key for objective name that
 will appear in objective selection in limbo UI.
 */
 static int numobjectives = 0; // TTimo
+#define OBJ_AXIS 0
+#define OBJ_ALLIES 1
+#define OBJ_OTHER 2
 
 void objective_Register( gentity_t *self ) {
 
@@ -1300,11 +1484,24 @@ void objective_Register( gentity_t *self ) {
 	if ( numobjectives == MAX_MULTI_SPAWNTARGETS ) {
 		G_Error( "SP_team_WOLF_objective: exceeded MAX_MULTI_SPAWNTARGETS (%d)\n",MAX_MULTI_SPAWNTARGETS );
 	} else { // Set config strings
+		int spawnTarget = 0;
+		if(!Q_stricmpn("axis", self->message, 4)){
+			spawnTarget = OBJ_AXIS;
+		} else if(!Q_stricmpn("allies", self->message, 6) || !Q_stricmpn("allied", self->message, 6)){
+			spawnTarget = OBJ_ALLIES;
+		} else {
+			spawnTarget = OBJ_OTHER;
+		}
 		cs_obj += numobjectives;
+
+
 		trap_GetConfigstring( cs_obj, cs, sizeof( cs ) );
 		Info_SetValueForKey( cs, "spawn_targ", self->message );
 		trap_SetConfigstring( cs_obj, cs );
-		VectorCopy( self->s.origin, level.spawntargets[numobjectives] );
+		if (!level.spawnTargetOverride) {
+			VectorCopy(self->s.origin, level.spawntargets[spawnTarget]);
+		}
+		//G_Printf("Spawn[%d]: (%02f, %02f, %02f) %s\n", spawnTarget, level.spawntargets[spawnTarget][0], level.spawntargets[spawnTarget][1], level.spawntargets[spawnTarget][2], self->message );
 	}
 
 	numobjectives++;
