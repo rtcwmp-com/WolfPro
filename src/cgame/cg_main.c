@@ -384,6 +384,7 @@ typedef struct {
 	char        *cvarName;
 	char        *defaultString;
 	int cvarFlags;
+	int modificationCount;
 } cvarTable_t;
 
 cvarTable_t cvarTable[] = {
@@ -741,9 +742,20 @@ CG_UpdateCvars
 void CG_UpdateCvars( void ) {
 	int i;
 	cvarTable_t *cv;
+	qbool setFlags = qfalse;
 
 	for ( i = 0, cv = cvarTable ; i < cvarTableSize ; i++, cv++ ) {
 		trap_Cvar_Update( cv->vmCvar );
+	
+		if (cv->modificationCount != cv->vmCvar->modificationCount) {
+			cv->modificationCount = cv->vmCvar->modificationCount;
+
+			if (cv->vmCvar == &cg_autoAction || cv->vmCvar == &cg_autoReload || cv->vmCvar == &cg_antilag ||
+				cv->vmCvar == &cg_autoactivate || cv->vmCvar == &cg_predictItems || cv->vmCvar == &cg_hitsounds || 
+				cv->vmCvar == &cg_hitsoundBodyStyle || cv->vmCvar == &cg_hitsoundHeadStyle) {
+				setFlags = qtrue;
+			}
+		}
 	}
 
 	// if force model changed
@@ -780,8 +792,10 @@ void CG_UpdateCvars( void ) {
 		registeredPlayersModificationCount = cg_registeredPlayers.modificationCount;
 		CG_ForceModelChange();
 	}
-
-	CG_setClientFlags();
+	if(setFlags){
+		CG_setClientFlags();
+	}
+	
 }
 
 

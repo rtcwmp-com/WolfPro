@@ -942,8 +942,7 @@ qboolean find_spawnclusters(spawnClusterMgr_t *mgr, gentity_t **spawns, int nums
 		if (clusters[i].clusterSize > 0) {
 			// G_Printf("cluster[%d] size: %d\n", i, clusters[i].clusterSize);
 			for (int s = 0; s < clusters[i].clusterSize; s++) {
-				vec_t len = {};
-				len = Distance(level.spawntargets[1], clusters[i].clusterList[s]->s.origin);
+				vec_t len = Distance(level.spawntargets[1], clusters[i].clusterList[s]->s.origin);
 				if (len < prevClosestClusterToAllies) {
 					prevClosestClusterToAllies = len;
 					mgr->closestClusterToAllies = i;
