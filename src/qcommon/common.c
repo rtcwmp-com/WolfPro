@@ -2302,7 +2302,12 @@ Com_ReadCDKey
 */
 #define CDKEY_SALT			"]=q.0xFF^"
 
-void Com_ReadCDKey( const char *filename ) {
+/*
+=================
+Com_ReadCDKey
+=================
+*/
+int Com_ReadCDKey( const char *filename ) {
 	fileHandle_t f;
 	char buffer[33];
 	char fbuffer[MAX_OSPATH];
@@ -2311,8 +2316,9 @@ void Com_ReadCDKey( const char *filename ) {
 
 	FS_SV_FOpenFileRead( fbuffer, &f );
 	if ( !f ) {
-		Q_strncpyz( cl_cdkey, "                ", 17 );
-		return;
+		//Com_WriteNewKey(filename);
+		//Q_strncpyz( cl_cdkey, "                ", 17 );
+		return 0;
 	}
 
 	Com_Memset( buffer, 0, sizeof( buffer ) );
@@ -2321,7 +2327,7 @@ void Com_ReadCDKey( const char *filename ) {
 	FS_FCloseFile( f );
 
 	if ( CL_CDKeyValidate( buffer, NULL ) ) {
-		Q_strncpyz( cl_cdkey, buffer, 17 );
+		Q_strncpyz(cl_cdkey, buffer, 17);
 	} else {
 		Q_strncpyz( cl_cdkey, "                ", 17 );
 	}
@@ -2329,6 +2335,7 @@ void Com_ReadCDKey( const char *filename ) {
 	#ifndef DEDICATED
         Cvar_Set("cl_guid", Com_MD5(buffer, CDKEY_LEN, CDKEY_SALT, sizeof(CDKEY_SALT) - 1, 0));
     #endif
+    return 1;
 }
 
 /*
@@ -3262,3 +3269,36 @@ const char* Com_FormatBytes(uint64_t numBytes)
 	return va("%.3f %s", vf, units[unit]);
 }
 
+
+/*
+=================
+RTCWPro
+Com_WriteNewKey  ( temporary as this will change in the future)
+=================
+*/
+void Com_WriteNewKey(const char* filename) {
+	fileHandle_t f;
+	char buffer[16] = { '\0' };
+	char fbuffer[MAX_OSPATH];
+    static char charset[] = "abcdefghijklmnopqrstuvwxyz123456789";
+	srand(time(NULL));
+
+    for (int n = 0; n < 16; n++) {
+		int val = rand() % (int) (sizeof(charset) -1);
+		buffer[n] = charset[val];
+    }
+
+	sprintf(fbuffer, "%s/rtcwkey", filename);
+
+    f = FS_SV_FOpenFileWrite(fbuffer);
+
+	if (!f) {
+		Com_Printf( "Couldn't write %s.\n", filename );
+		return;
+	}
+
+    //FS_Printf(f, "%s", buffer);
+	FS_Write(buffer, 16, f);
+	FS_FCloseFile(f);
+
+}
