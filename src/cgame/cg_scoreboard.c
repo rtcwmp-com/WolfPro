@@ -319,7 +319,7 @@ int WM_DrawObjectives( int x, int y, int width, float fade ) {
 			tens = seconds / 10;
 			seconds -= tens * 10;
 
-			s = va( "%s 0:%d", CG_TranslateString( "Reinforce time:" ), CG_CalculateReinfTime() );
+			s = va( "%s %-2d", CG_TranslateString( "Reinforce time:" ), CG_CalculateReinfTime() );
 			CG_DrawSmallString( x + 425,y,s,fade );
 		}
 
