@@ -2050,7 +2050,7 @@ void CG_CheckOrderPending();
 const char *CG_GameTypeString();
 
 void CG_Fade( int r, int g, int b, int a, float time );
-
+int CG_CalculateReinfTime(void);
 
 
 

@@ -1336,7 +1336,7 @@ void R_DecomposeSort( int64_t sort, int *entityNum, shader_t **shader,
 }
 
 int64_t R_ComposeSort( shader_t *shader, int entityNum, int fogNum, int dlightMap ){
-	assert(shader->stages[0]);
+	//Q_assert(shader->stages[0]); //it's possible for stage 0 to not be active when the shader is created
 	uint32_t psoIndex = shader->stages[0] ? RHI_GetIndexFromHandle(shader->stages[0]->pipeline[0].h) : 0;
 
 	return (int64_t)( 0

@@ -711,7 +711,30 @@ void IN_StartupMouse( void ) {
 	}
 	else if (in_mouse->integer > 1)
 	{
-		IN_InitRawMouse();
+		if(!IN_InitRawMouse()){
+			Com_Printf("Raw input: unable to register raw input\n");
+			HMODULE kernel32 = LoadLibrary("kernel32.dll");
+			if (kernel32)
+			{
+				_GLE = (pGetLastError)GetProcAddress(kernel32, "GetLastError");
+				if (_GLE)
+				{
+					int errorCode = (*_GLE)();
+					Com_Printf("Raw input: error code is %i\n", errorCode);
+				}
+				else {
+					Com_Printf("Raw input: function GetLastError could not be registered\n");
+					return;
+				}
+			}
+			else {
+				Com_Printf("Raw input: unable to load kernel32.dll\n");
+				return;
+			}
+			IN_ShutdownRawMouse();
+			Com_Printf("Falling back to Win32 mouse support...\n");
+			Cvar_Set("in_mouse", "1");
+		}
 	}
 
 	//IN_InitWin32Mouse();

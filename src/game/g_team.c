@@ -987,6 +987,44 @@ qboolean SpotIsRemoved(gentity_t *spot){
 	return qfalse;
 }
 
+gentity_t *GetClosestOverrideSpawn(spawnClusterMgr_t *mgr, int manualSpawn, team_t team){
+	spawnCluster_t *clusters = mgr->clusters;
+	vec3_t *overrideList;
+	int numOverrides;
+	if(team == TEAM_RED){
+		overrideList = level.axisOverrideSpawns[manualSpawn];
+		numOverrides = level.numAxisOverrideSpawns[manualSpawn];
+	}else{
+		overrideList = level.alliesOverrideSpawns[manualSpawn];
+		numOverrides = level.numAlliesOverrideSpawns[manualSpawn];
+	}
+
+	if(numOverrides == 0){
+		G_Printf(S_COLOR_YELLOW "No spawn overrides defined.\n");
+		return clusters[0].clusterList[0];
+	}
+
+	vec_t closest = 999999999.0f;
+	vec_t len;
+	gentity_t *closestSpawn;
+
+	for(int o = 0; o < numOverrides; o++){
+		for(int i = 0; i <= mgr->lastCluster; i++){
+			for(int c = 0; c < clusters[i].clusterSize; c++){
+				len = Distance(clusters[i].clusterList[c]->s.origin, overrideList[o]);
+				if(len < closest){
+					closest = len;
+					closestSpawn = clusters[i].clusterList[c];
+				}
+			} 
+		}
+		if(closest < 500.0f){
+			return closestSpawn;
+		}
+	}
+	return closestSpawn;
+}
+
 /*
 ================
 SelectRandomDeathmatchSpawnPoint
@@ -1103,62 +1141,7 @@ gentity_t *SelectRandomTeamSpawnPoint( int teamstate, team_t team, int spawnObje
 			manualSpawn = 4;
 		}
 
-		int useCluster = 0;
-		switch(manualSpawn){
-		case 0:
-			if (defendingTeam < 0) {
-				if (team == TEAM_RED) {
-					useCluster = clusterMgr.furthestClusterFromAllies;
-				} else {
-					useCluster = clusterMgr.furthestClusterFromAxis;
-				}
-			} else if (defender) {
-				if (team == TEAM_RED) {
-					useCluster = clusterMgr.closestClusterToAxis;
-				} else {
-					useCluster = clusterMgr.closestClusterToAllies;
-				}
-			} else {
-				if (team == TEAM_RED) {
-					useCluster = clusterMgr.closestClusterToAllies;
-				} else {
-					useCluster = clusterMgr.closestClusterToAxis;
-				}
-			}
-			break;
-		case 1:
-			useCluster = clusterMgr.closestClusterToAxis;	
-			break;
-		case 2:
-			useCluster = clusterMgr.closestClusterToAllies;
-			break;
-		case 3:
-			if(defender){
-				if (team == TEAM_RED) {
-					useCluster = clusterMgr.furthestClusterFromAxis;
-				} else {
-					useCluster = clusterMgr.closestClusterToAllies;
-				}
-			} else {
-				if (team == TEAM_RED) {
-					useCluster = clusterMgr.furthestClusterFromAllies;
-				} else {
-					useCluster = clusterMgr.closestClusterToAllies;
-				}
-			}
-			break;
-		case 4:
-			if (team == TEAM_RED) {
-				useCluster = clusterMgr.furthestClusterFromAllies;
-			} else {
-				useCluster = clusterMgr.furthestClusterFromAxis;
-			}
-			break;
-		default:
-			useCluster = 0;
-		}
-
-		return clusterMgr.clusters[useCluster].clusterList[0];
+		return GetClosestOverrideSpawn(&clusterMgr, manualSpawn, team);
 	}
 // jpw
 }
@@ -1315,7 +1298,7 @@ void TeamplayInfoMessage( team_t team) {
 		player = g_entities + level.sortedClients[i];
 
 		//if (player->inuse && (player->client->sess.sessionTeam == team || player->client->sess.shoutcaster) && !(player->r.svFlags & SVF_BOT) && player->client->pers.connected == CON_CONNECTED)
-		if (player->inuse && (player->client->sess.sessionTeam == team) && !(player->r.svFlags & SVF_BOT) && player->client->pers.connected == CON_CONNECTED)
+		if (player->inuse && (player->client->sess.sessionTeam == team || player->client->sess.sessionTeam == TEAM_SPECTATOR) && !(player->r.svFlags & SVF_BOT) && player->client->pers.connected == CON_CONNECTED)
 		{
 			trap_SendServerCommand(player - g_entities, tinfo);
 		}

@@ -2818,15 +2818,12 @@ static void CG_DrawLimboMessage( void ) {
 		CG_DrawSmallStringColor( INFOTEXT_STARTX, 86, str, color );
 	}
 
+	int reinfTime = CG_CalculateReinfTime();
 	// JPW NERVE
 	if ( cg.snap->ps.persistant[PERS_RESPAWNS_LEFT] == 0 ) {
 		str = CG_TranslateString( "No more reinforcements this round." );
-	} else if ( cgs.clientinfo[cg.snap->ps.clientNum].team == TEAM_RED ) {
-		str = va( CG_TranslateString( "Reinforcements deploy in %d seconds." ),
-				  (int)( 1 + (float)( cg_redlimbotime.integer - ( cg.time % cg_redlimbotime.integer ) ) * 0.001f ) );
 	} else {
-		str = va( CG_TranslateString( "Reinforcements deploy in %d seconds." ),
-				  (int)( 1 + (float)( cg_bluelimbotime.integer - ( cg.time % cg_bluelimbotime.integer ) ) * 0.001f ) );
+		str = va( "Reinforcements deploy in %-2d second%s.", reinfTime, reinfTime > 1 ? "s": "" );
 	}
 
 	CG_DrawSmallStringColor( INFOTEXT_STARTX, 104, str, color );
