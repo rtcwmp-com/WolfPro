@@ -737,6 +737,42 @@ void G_PrintSpawnTargets_f(void){
 	}
 }
 
+void G_OverrideSpawnPoint_f(team_t team){
+	if (trap_Argc() < 4) {
+		Com_Printf("Usage: spawnpt<allies|axis> <setspawnpt#> <x y z>\n");
+		return;
+	}
+
+	char argvBuf[64];
+	trap_Argv(1, argvBuf, sizeof(argvBuf));
+	int index = atoi(argvBuf);
+
+	vec3_t *override;
+	if(team == TEAM_RED){
+		override = level.axisOverrideSpawns[index][level.numAxisOverrideSpawns[index]];
+	}else{
+		override = level.alliesOverrideSpawns[index][level.numAlliesOverrideSpawns[index]];
+	}
+
+	
+
+	vec3_t loc = {};
+	trap_Argv(2, argvBuf, sizeof(argvBuf));
+	loc[0] = strtof(argvBuf, NULL);
+	trap_Argv(3, argvBuf, sizeof(argvBuf));
+	loc[1] = strtof(argvBuf, NULL);
+	trap_Argv(4, argvBuf, sizeof(argvBuf));
+	loc[2] = strtof(argvBuf, NULL);
+
+	VectorCopy(loc, *override);
+	if(team == TEAM_RED){
+		level.numAxisOverrideSpawns[index]++;
+	}else{
+		level.numAlliesOverrideSpawns[index]++;
+	}
+	
+}
+
 
 char    *ConcatArgs( int start );
 
@@ -829,6 +865,14 @@ qboolean    ConsoleCommand( void ) {
 	}
 	if (Q_stricmp(cmd, "removeentity") == 0) {
 		G_RemoveEntity_f();
+		return qtrue;
+	}
+	if (Q_stricmp(cmd, "spawnptaxis") == 0) {
+		G_OverrideSpawnPoint_f(TEAM_RED);
+		return qtrue;
+	}
+	if (Q_stricmp(cmd, "spawnptallies") == 0) {
+		G_OverrideSpawnPoint_f(TEAM_BLUE);
 		return qtrue;
 	}
 
