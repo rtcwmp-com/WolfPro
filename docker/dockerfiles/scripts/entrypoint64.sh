@@ -85,10 +85,10 @@ for mapscript in "${GAME_BASE}/wolfpro/maps/"*.script; do
     rm -rf "${mapscript}"
 done
 
-# for mapscript in "${SETTINGS_BASE}/mapscripts/"*.script; do
-#     [ -f "${mapscript}" ] || break
-#     cp "${mapscript}" "${GAME_BASE}/wolfpro/maps/"
-# done
+for mapscript in "${SETTINGS_BASE}/mapscripts/"*.script; do
+    [ -f "${mapscript}" ] || break
+    cp "${mapscript}" "${GAME_BASE}/wolfpro/maps/"
+done
 
 # Only configs live within the config directory so we don't need to be careful
 # about just recreating this directory.
