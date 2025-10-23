@@ -1128,7 +1128,28 @@ gentity_t *SelectRandomTeamSpawnPoint( int teamstate, team_t team, int spawnObje
 	} else {
 		// If no spawnObjective, select target as farthest point from first team spawnpoint
 		// else replace this with the target coords pulled from the UI target selection
-		int manualSpawn = 0;
+		int manualSpawn = spawnObjective;
+		if(manualSpawn > 110){
+			manualSpawn = 0;
+		}
+		if(team == TEAM_RED){
+			if(level.numAxisOverrideSpawns[manualSpawn]){
+				//if we have an override for the specific spawnpt use it
+				return GetClosestOverrideSpawn(&clusterMgr, manualSpawn, team);
+			}else if(level.numAxisOverrideSpawns[0]){
+				//if we dont have the specific one but we do have an auto override use it
+				return GetClosestOverrideSpawn(&clusterMgr, 0, team);
+			}
+		}else if(team == TEAM_BLUE){
+			if(level.numAlliesOverrideSpawns[manualSpawn]){
+				return GetClosestOverrideSpawn(&clusterMgr, manualSpawn, team);
+			}else if(level.numAlliesOverrideSpawns[0]){
+				return GetClosestOverrideSpawn(&clusterMgr, 0, team);
+			}
+		}
+
+		//behavior when no override exists
+
 		if (spawnObjective == 0) {
 			manualSpawn = 0;
 		} else if (spawnObjective == 1) {
@@ -1140,8 +1161,64 @@ gentity_t *SelectRandomTeamSpawnPoint( int teamstate, team_t team, int spawnObje
 		} else {
 			manualSpawn = 4;
 		}
+		
+		int useCluster = 0;
+		switch(manualSpawn){
+		case 0:
+			if (defendingTeam < 0) {
+				if (team == TEAM_RED) {
+					useCluster = clusterMgr.furthestClusterFromAllies;
+				} else {
+					useCluster = clusterMgr.furthestClusterFromAxis;
+				}
+			} else if (defender) {
+				if (team == TEAM_RED) {
+					useCluster = clusterMgr.closestClusterToAxis;
+				} else {
+					useCluster = clusterMgr.closestClusterToAllies;
+				}
+			} else {
+				if (team == TEAM_RED) {
+					useCluster = clusterMgr.closestClusterToAllies;
+				} else {
+					useCluster = clusterMgr.closestClusterToAxis;
+				}
+			}
+			break;
+		case 1:
+			useCluster = clusterMgr.closestClusterToAxis;	
+			break;
+		case 2:
+			useCluster = clusterMgr.closestClusterToAllies;
+			break;
+		case 3:
+			if(defender){
+				if (team == TEAM_RED) {
+					useCluster = clusterMgr.furthestClusterFromAxis;
+				} else {
+					useCluster = clusterMgr.closestClusterToAllies;
+				}
+			} else {
+				if (team == TEAM_RED) {
+					useCluster = clusterMgr.furthestClusterFromAllies;
+				} else {
+					useCluster = clusterMgr.closestClusterToAllies;
+				}
+			}
+			break;
+		case 4:
+			if (team == TEAM_RED) {
+				useCluster = clusterMgr.furthestClusterFromAllies;
+			} else {
+				useCluster = clusterMgr.furthestClusterFromAxis;
+			}
+			break;
+		default:
+			useCluster = 0;
+		}
 
-		return GetClosestOverrideSpawn(&clusterMgr, manualSpawn, team);
+		return clusterMgr.clusters[useCluster].clusterList[0];
+		
 	}
 // jpw
 }
