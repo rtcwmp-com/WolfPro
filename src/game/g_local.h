@@ -994,10 +994,10 @@ typedef struct {
 	qboolean spawnTargetOverride;
 	char removedEntities[32][64];
 	int numRemovedEntities;
-	vec3_t axisOverrideSpawns[5][32];
-	vec3_t alliesOverrideSpawns[5][32];
-	int numAxisOverrideSpawns[5];
-	int numAlliesOverrideSpawns[5];
+	vec3_t axisOverrideSpawns[111][5];
+	vec3_t alliesOverrideSpawns[111][5];
+	int numAxisOverrideSpawns[111];
+	int numAlliesOverrideSpawns[111];
 } level_locals_t;
 
 extern qboolean reloading;                  // loading up a savegame
