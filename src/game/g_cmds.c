@@ -1505,7 +1505,9 @@ void Cmd_CallVote_f( gentity_t *ent ) {
 		Com_sprintf( level.voteDisplayString, sizeof( level.voteDisplayString ), "%s", level.voteString );
 	}
 
-	trap_SendServerCommand( -1, va( "print \"[lof]%s [lon]called a vote.\n\"", ent->client->pers.username ) );
+	trap_SendServerCommand( -1, va( "usernameprint \"[lof]%s [lon]called a vote.\n\"", ent->client->pers.username ) );
+	trap_SendServerCommand( -1, va( "netnameprint \"[lof]%s [lon]called a vote.\n\"", ent->client->pers.netname ) );
+	trap_SendServerCommand(-1, "playsound sound/match/klaxon2.wav");
 
 	// start the voting, the caller autoamtically votes yes
 	level.voteTime = level.time;
@@ -1608,9 +1610,11 @@ void Cmd_Vote_f( gentity_t *ent ) {
 	if ( msg[0] == 'y' || msg[1] == 'Y' || msg[1] == '1' ) {
 		level.voteYes++;
 		trap_SetConfigstring( CS_VOTE_YES, va( "%i", level.voteYes ) );
+		trap_SendServerCommand(-1, "playsound sound/match/vote-yes.wav");
 	} else {
 		level.voteNo++;
 		trap_SetConfigstring( CS_VOTE_NO, va( "%i", level.voteNo ) );
+		trap_SendServerCommand(-1, "playsound sound/match/vote-no.wav");
 	}
 
 	// a majority will be determined in G_CheckVote, which will also account

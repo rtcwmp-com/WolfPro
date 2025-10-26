@@ -2771,7 +2771,7 @@ static void Com_FrameSleep( qbool demoPlayback )
 		sleepUS = 1000 * SV_FrameSleepMS();
 	} else {
 		preciseCap = qtrue;
-		sleepUS = 1000000 / com_maxfps->integer;
+		sleepUS = 1000000 / (com_maxfps->integer > 0? com_maxfps->integer : 999);
 #ifndef DEDICATED
 		if ( Sys_IsMinimized() ) {
 			sleepUS = 20 * 1000;
@@ -2788,7 +2788,7 @@ static void Com_FrameSleep( qbool demoPlayback )
 		targetTimeUS = Sys_Microseconds() + sleepUS;
 	else
 		targetTimeUS += sleepUS;
-	com_nextTargetTimeUS = targetTimeUS + 1000000 / com_maxfps->integer;
+	com_nextTargetTimeUS = targetTimeUS + 1000000 / (com_maxfps->integer > 0 ? com_maxfps->integer : 999);
 
 	// sleep if needed
 	if ( com_dedicated->integer ) {

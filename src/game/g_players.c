@@ -169,6 +169,7 @@ void pCmd_pauseHandle(gentity_t *ent, qboolean dPause) {
 		teamInfo[team].timeouts--;
 		level.paused = team + 128;
 		G_spawnPrintf(DP_PAUSEINFO, level.time + 15000, NULL);
+		trap_SendServerCommand(-1, "playsound sound/match/klaxon1.wav");
 
 		AP(va("chat \"^zconsole: ^7%s has ^3Paused ^7the match!\n\"", tName));
 		AP(va("cp \"[%s^7] %d Timeouts Remaining\n\"3", aTeams[team], teamInfo[team].timeouts));
@@ -182,12 +183,12 @@ void pCmd_pauseHandle(gentity_t *ent, qboolean dPause) {
 		return;	
 	}
 	else {
-		//AAPS("sound/match/prepare.wav");
 		level.paused = PAUSE_UNPAUSING;
 		G_spawnPrintf(DP_UNPAUSING, level.time + 10, NULL);
 		AP(va("chat \"^zconsole: ^7%s has ^3Unpaused ^7a match!\n\"", tName));
 		AP(va("usernameprint \"^z>> ^7%s ^zUnpaused the match.\n\"", ent->client->pers.username));
 		AP(va("netnameprint \"^z>> ^7%s ^zUnpaused the match.\n\"", ent->client->pers.netname));
+		trap_SendServerCommand(-1, "playannouncer sound/match/prepare.wav");
 		// lock the teams after unpausing
 		teamInfo[TEAM_RED].team_lock = qtrue;
 		teamInfo[TEAM_BLUE].team_lock = qtrue;

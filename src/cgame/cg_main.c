@@ -379,6 +379,8 @@ vmCvar_t cg_teamOverlayX;
 vmCvar_t cg_teamOverlayY;
 vmCvar_t cg_teamOverlayMaxLocationWidth;
 
+vmCvar_t cg_announcer;
+
 typedef struct {
 	vmCvar_t    *vmCvar;
 	char        *cvarName;
@@ -644,7 +646,9 @@ cvarTable_t cvarTable[] = {
 	// team overlay
 	{ &cg_teamOverlayX, "cg_teamOverlayX", "640", CVAR_ARCHIVE },
 	{ &cg_teamOverlayY, "cg_teamOverlayY", "0", CVAR_ARCHIVE },
-	{ &cg_teamOverlayMaxLocationWidth, "cg_teamOverlayMaxLocationWidth", "20", CVAR_ARCHIVE }
+	{ &cg_teamOverlayMaxLocationWidth, "cg_teamOverlayMaxLocationWidth", "20", CVAR_ARCHIVE }, 
+
+	{ &cg_announcer, "cg_announcer", "1", CVAR_ARCHIVE }
 };
 int cvarTableSize = sizeof( cvarTable ) / sizeof( cvarTable[0] );
 

@@ -1114,12 +1114,14 @@ gentity_t *SelectRandomTeamSpawnPoint( int teamstate, team_t team, int spawnObje
 		}
 	}
 
-	spawnClusterMgr_t clusterMgr = {};
-	find_spawnclusters(&clusterMgr, spots, count, 200.0f);
 
 	if ( !count ) { // no spots that won't telefrag
 		return G_Find( NULL, FOFS( classname ), classname );
 	}
+
+	spawnClusterMgr_t clusterMgr = {};
+	find_spawnclusters(&clusterMgr, spots, count, 200.0f);
+
 
 // JPW NERVE
 	if ( ( g_gametype.integer < GT_WOLF ) || ( !level.numspawntargets ) || initialSpawn ) { // no spawn targets or not wolf MP, do it the old way

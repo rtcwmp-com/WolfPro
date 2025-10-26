@@ -1907,6 +1907,8 @@ extern vmCvar_t cg_teamOverlayX;
 extern vmCvar_t cg_teamOverlayY;
 extern vmCvar_t cg_teamOverlayMaxLocationWidth;
 
+extern vmCvar_t cg_announcer;
+
 //
 // cg_main.c
 //
