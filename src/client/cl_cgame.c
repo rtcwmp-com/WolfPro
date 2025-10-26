@@ -883,20 +883,18 @@ intptr_t CL_CgameSystemCalls(intptr_t *args ) {
 		return 0;
 
 	case CG_CIN_PLAYCINEMATIC:
-		return CIN_PlayCinematic( VMA( 1 ), args[2], args[3], args[4], args[5], args[6] );
+		return -1;
 
 	case CG_CIN_STOPCINEMATIC:
-		return CIN_StopCinematic( args[1] );
+		return FMV_EOF;
 
 	case CG_CIN_RUNCINEMATIC:
-		return CIN_RunCinematic( args[1] );
+		return FMV_EOF;
 
 	case CG_CIN_DRAWCINEMATIC:
-		CIN_DrawCinematic( args[1] );
 		return 0;
 
 	case CG_CIN_SETEXTENTS:
-		CIN_SetExtents( args[1], args[2], args[3], args[4], args[5] );
 		return 0;
 
 	case CG_R_REMAP_SHADER:
