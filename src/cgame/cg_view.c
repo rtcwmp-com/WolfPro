@@ -918,14 +918,16 @@ static int CG_CalcFov( void ) {
 	} else if ( !cg.zoomedBinoc ) {
 		// NERVE - SMF - fix for zoomed in/out movement bug
 		if ( cg.zoomval ) {
-			if ( cg.snap->ps.weapon == WP_SNOOPERSCOPE ) {
-				cg.zoomSensitivity = 0.3f * ( cg.zoomval / 90.f );  // NERVE - SMF - changed to get less sensitive as you zoom in;
+			if (cg_zoomedSensLock.integer) {
+				cg.zoomSensitivity = cg_zoomedSens.value;
+			} else {
+				if (cg.snap->ps.weapon == WP_SNOOPERSCOPE) {
+					cg.zoomSensitivity = cg_zoomedSens.value * (cg.zoomval / 90.f);
+				}
+				else {
+					cg.zoomSensitivity = cg_zoomedSens.value * (cg.zoomval / 90.f);
+				}
 			}
-//				cg.zoomSensitivity = 0.2;
-			else {
-				cg.zoomSensitivity = 0.6 * ( cg.zoomval / 90.f );   // NERVE - SMF - changed to get less sensitive as you zoom in
-			}
-//				cg.zoomSensitivity = 0.1;
 		} else {
 			cg.zoomSensitivity = 1;
 		}
@@ -1015,49 +1017,129 @@ static void CG_DamageBlendBlob( void ) {
 
 }
 
-/*
-===============
-CG_DrawScreenFade
-===============
-*/
-static void CG_DrawScreenFade( void ) {
-/* moved over to cg_draw.c
-	static int lastTime;
-	int elapsed, time;
-	refEntity_t		ent;
 
-	if (cgs.fadeStartTime + cgs.fadeDuration < cg.time) {
-		cgs.fadeAlphaCurrent = cgs.fadeAlpha;
-	} else if (cgs.fadeAlphaCurrent != cgs.fadeAlpha) {
-		elapsed = (time = trap_Milliseconds()) - lastTime;	// we need to use trap_Milliseconds() here since the cg.time gets modified upon reloading
-		lastTime = time;
-		if (elapsed < 500 && elapsed > 0) {
-			if (cgs.fadeAlphaCurrent > cgs.fadeAlpha) {
-				cgs.fadeAlphaCurrent -= ((float)elapsed/(float)cgs.fadeDuration);
-				if (cgs.fadeAlphaCurrent < cgs.fadeAlpha)
-					cgs.fadeAlphaCurrent = cgs.fadeAlpha;
-			} else {
-				cgs.fadeAlphaCurrent += ((float)elapsed/(float)cgs.fadeDuration);
-				if (cgs.fadeAlphaCurrent > cgs.fadeAlpha)
-					cgs.fadeAlphaCurrent = cgs.fadeAlpha;
+static int CG_CalcZoomedFov(void) {
+	static float lastfov = 90;      // for transitions back from zoomed in modes
+	float x;
+	float fov_x, fov_y;
+	float zoomFov;
+	float f;
+	float value;
+
+	if (cg.predictedPlayerState.stats[STAT_HEALTH] <= 0 && !(cgs.gametype >= GT_WOLF && cg.snap->ps.pm_flags & PMF_FOLLOW)) {
+		cg.zoomedFOV = qfalse;
+		cg.zoomedTime = 0;
+		cg.zoomedVal = 0;
+		// Reset any other views..
+	}
+	else {
+		cg.zoomed = qfalse;
+		cg.zoomedBinoc = qfalse;
+		cg.zoomedScope = qfalse;
+		cg.zoomTime = 0;
+		cg.zoomval = 0;
+	}
+
+	if (cg.predictedPlayerState.pm_type == PM_INTERMISSION) {
+		// if in intermission, use a fixed value
+		fov_x = 90;
+	}
+	else {
+		// user selectable
+		if (cgs.dmflags & DF_FIXED_FOV) {
+			// dmflag to prevent wide fov for all clients
+			fov_x = 90;
+		}
+		else {
+			fov_x = cg_fov.value;
+			if (cgs.gametype == GT_SINGLE_PLAYER) {
+				if (fov_x < 1) {
+					fov_x = 1;	// OSPx - Limited from 120 to 90
+				}
+				else if (fov_x > 120) {
+					fov_x = 120;
+				}
+			}
+			else {
+				if (fov_x < 90) {
+					fov_x = 90;	 // OSPx - Limited from 120 to 90
+				}
+				else if (fov_x > 120) {
+					fov_x = 120;
+				}
+			}
+		}
+
+		// account for zooms
+		if (cg.zoomedVal) {
+			zoomFov = cg.zoomedVal;   // (SA) use user scrolled amount
+
+			if (zoomFov < 1) {
+				zoomFov = 1;	// OSPx - Limited from 120 to 90
+			}
+			else if (zoomFov > 120) {
+				zoomFov = 120;
+			}
+		}
+		else {
+			zoomFov = lastfov;
+		}
+
+		// zooming in
+		if (cg.zoomedFOV) {
+			cg.zoomedBinoc = qfalse;
+			f = (cg.time - cg.zoomedTime) / (float)ZOOM_TIME;
+			if (f > 1.0) {
+				fov_x = cg.zoomedVal;
+			}
+			else {
+				fov_x = fov_x + f * (cg.zoomedVal - fov_x);
+			}
+			lastfov = fov_x;
+		}
+		else { // zooming out
+			f = (cg.time - cg.zoomedTime) / (float)ZOOM_TIME;
+			if (f > 1.0) {
+				fov_x = fov_x;
+			}
+			else {
+				fov_x = zoomFov + f * (fov_x - zoomFov);
 			}
 		}
 	}
-	// now draw the fade
-	if (cgs.fadeAlphaCurrent > 0.0) {
-		memset( &ent, 0, sizeof( ent ) );
-		ent.reType = RT_SPRITE;
-		ent.renderfx = RF_FIRST_PERSON;
 
-		VectorMA( cg.refdef.vieworg, 8, cg.refdef.viewaxis[0], ent.origin );
-		ent.radius = 80;	// occupy entire screen
-		ent.customShader = cgs.media.viewFadeBlack;
-		ent.shaderRGBA[3] = (int)(255.0 * cgs.fadeAlphaCurrent);
+	x = cg.refdef.width / tan(fov_x / 360 * M_PI);
+	fov_y = atan2(cg.refdef.height, x);
+	fov_y = fov_y * 360 / M_PI;
+	// set it
+	cg.refdef.fov_x = fov_x;
+	cg.refdef.fov_y = fov_y;
 
-		trap_R_AddRefEntityToScene( &ent );
+	// RTCWPro
+	/*if (cg_zoomedSens.value > 2.0f)
+		value = 2.0f;
+	else */if (cg_zoomedSens.value < 0.0f)
+		value = 0.1f;
+	else
+		value = cg_zoomedSens.value;
+	// RTCWPro
+
+
+//	if (cg.snap->ps.pm_type == PM_FREEZE || (cg.snap->ps.pm_type == PM_DEAD && (cg.snap->ps.pm_flags & PMF_LIMBO)) || cg.snap->ps.pm_flags & PMF_TIME_LOCKPLAYER) {
+if (cg.snap->ps.pm_type == PM_FREEZE) {
+		// No movement for pauses
+		cg.zoomSensitivity = 0;
 	}
-*/
+	else if (!cg.zoomedFOV) {
+		cg.zoomSensitivity = 1;
+	}
+	else {
+		cg.zoomSensitivity = value;
+	}
+
+	return qfalse;
 }
+
 
 /*
 ===============
@@ -1218,8 +1300,10 @@ static int CG_CalcViewValues( void ) {
 		cg.refdef.rdflags |= RDF_NOWORLDMODEL | RDF_HYPERSPACE;
 	}
 
-	// field of view
-	return CG_CalcFov();
+	if (cg.zoomedFOV && cg.zoomval == 0)
+		return CG_CalcZoomedFov();
+	else
+		return CG_CalcFov();
 }
 
 
@@ -1381,6 +1465,7 @@ void CG_DrawSkyBoxPortal( void ) {
 				fov_x = 160;
 			}
 		}
+		
 
 		// account for zooms
 		if ( cg.zoomval ) {
@@ -1402,6 +1487,15 @@ void CG_DrawSkyBoxPortal( void ) {
 				fov_x = zoomFov;
 			} else {
 				fov_x = fov_x + f * ( zoomFov - fov_x );
+			}
+			lastfov = fov_x;
+		} else if (cg.zoomedFOV) {
+			f = (cg.time - cg.zoomedTime) / (float)ZOOM_TIME;
+			if (f > 1.0) {
+				fov_x = cg.zoomedVal;
+			}
+			else {
+				fov_x = fov_x + f * (cg.zoomedVal - fov_x);
 			}
 			lastfov = fov_x;
 		} else if ( cg.zoomval ) {    // zoomed by sniper/snooper
@@ -1736,11 +1830,6 @@ void CG_DrawActiveFrame( int serverTime, stereoFrame_t stereoView, qboolean demo
 		cg.oldTime = cg.time;
 		CG_AddLagometerFrameInfo();
 	}
-
-	DEBUGTIME
-
-	// Ridah, fade the screen
-	CG_DrawScreenFade();
 
 	DEBUGTIME
 

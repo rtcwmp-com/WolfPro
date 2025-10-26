@@ -265,6 +265,9 @@ void CG_Respawn( void ) {
 	cg.zoomTime = 0;
 	cg.zoomval = 0;
 
+	cg.zoomedFOV = qfalse;
+	cg.zoomedTime = 0;
+
 	// clear pmext
 	memset( &cg.pmext, 0, sizeof( cg.pmext ) );
 

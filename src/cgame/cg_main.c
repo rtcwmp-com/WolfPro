@@ -380,6 +380,9 @@ vmCvar_t cg_teamOverlayY;
 vmCvar_t cg_teamOverlayMaxLocationWidth;
 
 vmCvar_t cg_announcer;
+vmCvar_t cg_zoomedFOV;
+vmCvar_t cg_zoomedSens;
+vmCvar_t cg_zoomedSensLock;
 
 typedef struct {
 	vmCvar_t    *vmCvar;
@@ -647,6 +650,10 @@ cvarTable_t cvarTable[] = {
 	{ &cg_teamOverlayX, "cg_teamOverlayX", "640", CVAR_ARCHIVE },
 	{ &cg_teamOverlayY, "cg_teamOverlayY", "0", CVAR_ARCHIVE },
 	{ &cg_teamOverlayMaxLocationWidth, "cg_teamOverlayMaxLocationWidth", "20", CVAR_ARCHIVE }, 
+
+	{ &cg_zoomedFOV, "cg_zoomedFOV", "90", CVAR_ARCHIVE },
+	{ &cg_zoomedSensLock, "cg_zoomedSensLock", "0", CVAR_ARCHIVE },
+	{ &cg_zoomedSens, "cg_zoomedSens", ".3", CVAR_ARCHIVE },
 
 	{ &cg_announcer, "cg_announcer", "1", CVAR_ARCHIVE }
 };
