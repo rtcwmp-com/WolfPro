@@ -2735,16 +2735,22 @@ static void FS_AddGameDirectory( const char *path, const char *dir ) {
 	if ( numfiles > MAX_PAKFILES ) {
 		numfiles = MAX_PAKFILES;
 	}
+	int j = 0;
 	for ( i = 0 ; i < numfiles ; i++ ) {
-		sorted[i] = pakfiles[i];
+		if(Q_strncmp( pakfiles[i],"mp_pak6",7 )){
+			sorted[j] = pakfiles[i];
 // JPW NERVE KLUDGE: sorry, temp mod mp_* to _p_* so "mp_pak*" gets alphabetically sorted before "pak*"
 
-		if ( !Q_strncmp( sorted[i],"mp_",3 ) ) {
-			memcpy( sorted[i],"zz",2 );
+			if ( !Q_strncmp( sorted[j],"mp_",3 ) ) {
+				memcpy( sorted[j],"zz",2 );
+			}
+			j++;
 		}
+		
 
 // jpw
 	}
+	numfiles = j;
 
 	qsort( sorted, numfiles, sizeof(sorted[0]), paksort );
 
