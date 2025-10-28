@@ -585,7 +585,7 @@ cvarTable_t cvarTable[] = {
 
 	{ &cg_autoReload, "cg_autoReload", "1", CVAR_ARCHIVE },
 
-	{ &cg_antilag, "g_antilag", "0", 0 },
+	{ &cg_antilag, "cg_antilag", "1", CVAR_ARCHIVE },
 
 	{ &cg_bloodDamageBlend, "cg_bloodDamageBlend", "1.0", CVAR_ARCHIVE },
 	{ &cg_bloodFlash, "cg_bloodFlash", "1.0", CVAR_ARCHIVE },
