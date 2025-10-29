@@ -1650,5 +1650,8 @@ void ClientEndFrame( gentity_t *ent ) {
 	}
 	// dhm
 
+	// store the client's position for backward reconciliation later
+	G_StoreHistory(ent);
+
 	
 }
