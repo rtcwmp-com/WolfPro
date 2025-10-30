@@ -2467,8 +2467,11 @@ void CG_ClearParticles( void );
 void CG_LoadExtensions(void) {
 
 	cgExt_t rtcwPro_ext;
+	char buf[32];
 
-	int hasTrap_GetValue = trap_Cvar_VariableIntegerValue("//trap_GetValue");
+	trap_Cvar_VariableStringBuffer( "//trap_GetValue", buf, sizeof( buf ) );
+	
+	int hasTrap_GetValue = Q_atoi(buf);
 
 	if (hasTrap_GetValue == 0) {
 		// Engine extensions are not supported on the client
