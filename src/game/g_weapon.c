@@ -327,6 +327,8 @@ void Weapon_Syringe( gentity_t *ent ) {
 
 				ClientSpawn( traceEnt, qtrue );
 
+				G_ResetHistory(traceEnt);
+
 				memcpy( traceEnt->client->ps.ammo,ammo,sizeof( int ) * MAX_WEAPONS );
 				memcpy( traceEnt->client->ps.ammoclip,ammoclip,sizeof( int ) * MAX_WEAPONS );
 				memcpy( traceEnt->client->ps.weapons,weapons,sizeof( int ) * ( MAX_WEAPONS / ( sizeof( int ) * 8 ) ) );

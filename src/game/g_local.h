@@ -33,7 +33,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "q_shared.h"
 #include "bg_public.h"
 #include "g_public.h"
-#include "g_unlagged.h"
 
 //==================================================================
 
@@ -1857,6 +1856,18 @@ char* LookupEventType(int eventyType);
 void G_PrintConfigs(gentity_t* ent);
 qboolean G_isValidConfig(gentity_t* ent, const char* configname);
 qboolean G_ConfigSet(const char* configName);
+
+
+// g_unlagged.c
+void G_ResetHistory(gentity_t* ent);
+void G_StoreHistory(gentity_t* ent);
+void G_TimeShiftAllClients(int time, gentity_t* skip);
+void G_UnTimeShiftAllClients(gentity_t* skip);
+void G_DoTimeShiftFor(gentity_t* ent);
+void G_UndoTimeShiftFor(gentity_t* ent);
+void G_UnTimeShiftClient(gentity_t* client);
+void G_TimeShiftClient(gentity_t* ent, int time, qboolean debug, gentity_t* debugger);
+void G_PredictPlayerMove(gentity_t* ent, float frametime);
 
 // Macros
 //
