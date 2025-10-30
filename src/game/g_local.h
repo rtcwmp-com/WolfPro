@@ -762,6 +762,7 @@ struct gclient_s {
 	pmoveExt_t pmext;
 
 	unlagged_t unlag;
+	int lastRevivePushTime;
 };
 
 
