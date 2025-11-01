@@ -876,6 +876,11 @@ qboolean    ConsoleCommand( void ) {
 		return qtrue;
 	}
 
+	if (Q_stricmp(cmd, "ref") == 0) {
+		return G_refCommandCheck();
+	}
+
+
 	if ( g_dedicated.integer ) {
 		if ( Q_stricmp( cmd, "say" ) == 0 ) {
 			trap_SendServerCommand( -1, va( "print \"server:[lof] %s\"", ConcatArgs( 1 ) ) );

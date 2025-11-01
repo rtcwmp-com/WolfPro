@@ -1870,6 +1870,9 @@ void G_UnTimeShiftClient(gentity_t* client);
 void G_TimeShiftClient(gentity_t* ent, int time, qboolean debug, gentity_t* debugger);
 void G_PredictPlayerMove(gentity_t* ent, float frametime);
 
+// g_referee.c
+qboolean G_refCommandCheck();
+
 // Macros
 //
 #define AP( x ) trap_SendServerCommand( -1, x )                 // Print to all
