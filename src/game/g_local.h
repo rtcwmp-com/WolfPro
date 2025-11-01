@@ -33,7 +33,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "q_shared.h"
 #include "bg_public.h"
 #include "g_public.h"
-#include "g_unlagged.h"
 
 //==================================================================
 
@@ -554,7 +553,7 @@ typedef struct {
 	char guid[GUID_LEN];		// Guid
 	int start_time;                 // player starts/begins game
 	int end_time;                   // player ends/leaves game
-
+	char ip[17]; 
 } clientSession_t;
 
 //
@@ -763,6 +762,7 @@ struct gclient_s {
 	pmoveExt_t pmext;
 
 	unlagged_t unlag;
+	int lastRevivePushTime;
 };
 
 
@@ -1266,6 +1266,7 @@ void QDECL G_DPrintf( const char *fmt, ... );
 void QDECL G_Error( const char *fmt, ... );
 void SortedActivePlayers(void);
 void HandleEmptyTeams(void);
+void G_EntPrintf(gentity_t* ent, const char *fmt, ...);
 
 //
 // g_client.c
@@ -1857,6 +1858,21 @@ char* LookupEventType(int eventyType);
 void G_PrintConfigs(gentity_t* ent);
 qboolean G_isValidConfig(gentity_t* ent, const char* configname);
 qboolean G_ConfigSet(const char* configName);
+
+
+// g_unlagged.c
+void G_ResetHistory(gentity_t* ent);
+void G_StoreHistory(gentity_t* ent);
+void G_TimeShiftAllClients(int time, gentity_t* skip);
+void G_UnTimeShiftAllClients(gentity_t* skip);
+void G_DoTimeShiftFor(gentity_t* ent);
+void G_UndoTimeShiftFor(gentity_t* ent);
+void G_UnTimeShiftClient(gentity_t* client);
+void G_TimeShiftClient(gentity_t* ent, int time, qboolean debug, gentity_t* debugger);
+void G_PredictPlayerMove(gentity_t* ent, float frametime);
+
+// g_referee.c
+qboolean G_refCommandCheck(void);
 
 // Macros
 //

@@ -1016,6 +1016,10 @@ typedef struct {
 
 	vec4_t xhairColor;
 	vec4_t xhairColorAlt;
+	qboolean zoomedFOV;
+	int zoomedTime;
+	float zoomedVal;
+	float zoomedSens;
 } cg_t;
 
 #define NUM_FUNNEL_SPRITES  21
@@ -1906,6 +1910,11 @@ extern vmCvar_t cl_guid;
 extern vmCvar_t cg_teamOverlayX;
 extern vmCvar_t cg_teamOverlayY;
 extern vmCvar_t cg_teamOverlayMaxLocationWidth;
+
+extern vmCvar_t cg_announcer;
+extern vmCvar_t cg_zoomedFOV;
+extern vmCvar_t cg_zoomedSens;
+extern vmCvar_t cg_zoomedSensLock;
 
 //
 // cg_main.c

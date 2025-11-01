@@ -558,6 +558,57 @@ static void CG_TimerShare_f (void) {
 
 }
 
+/*
+====================
+OSPx - Zoom FOV
+CG_zoomViewSet_f
+
+Toggles zoom effect (based upon cg_zoomFOV value - can be in or out)
+====================
+*/
+void CG_zoomViewSet_f(void) {
+	float value;
+
+	if (cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR ||
+		cg.snap->ps.pm_flags & PMF_FOLLOW)
+		return;
+
+	if (cg_zoomedFOV.value > 120)
+		value = 120;
+	else if (cg_zoomedFOV.value < 90)
+		value = 90;
+	else
+		value = cg_zoomedFOV.value;
+
+	if (!cg.zoomedFOV) {
+		cg.zoomedVal = value;
+		cg.zoomedTime = cg.time;
+		cg.zoomedFOV = qtrue;
+	}
+}
+
+/*
+====================
+OSPx - Zoom FOV
+CG_zoomViewRevert_f
+
+Reverts back to default (when player releases the key)
+====================
+*/
+void CG_zoomViewRevert_f(void) {
+	cg.zoomedVal = cg_fov.value;
+	cg.zoomedTime = cg.time;
+	cg.zoomedFOV = qfalse;
+	// Need to reset this..
+	cg.zoomed = qfalse;
+	cg.zoomedBinoc = qfalse;
+	cg.zoomedScope = qfalse;
+	cg.zoomTime = 0;
+	//cg.zoomval = 0; // don't reset sniper zoom while scoped
+}
+
+
+
 typedef struct {
 	char    *cmd;
 	void ( *function )( void );
@@ -620,6 +671,8 @@ static consoleCommand_t commands[] = {
 
 	{ "+vstr", CG_vstrDown_f },
 	{ "-vstr", CG_vstrUp_f },
+	{ "+zoomView", CG_zoomViewSet_f },
+	{ "-zoomView", CG_zoomViewRevert_f },
 
 	{ "timerShare", CG_TimerShare_f }
 };

@@ -2889,6 +2889,7 @@ static qboolean CG_DrawFollow( void ) {
 CG_DrawWarmup
 =================
 */
+static int nextSec = 10;
 static void CG_DrawWarmup( void ) {
 	int w;
 	int sec;
@@ -2968,12 +2969,29 @@ static void CG_DrawWarmup( void ) {
 
 			return;
 		}
-
+		nextSec = 10;
 		return;
 	}
 
 	sec = ( sec - cg.time ) / 1000;
+	if(sec < 11 && sec <= nextSec && nextSec == 10){
+		nextSec = 5;
+		if(cg_announcer.integer){
+			trap_S_StartLocalSound(CG_CustomSound(cg.clientNum, "sound/match/prepare.wav"), CHAN_LOCAL_SOUND);
+		}
+	}
+	if(sec < 5 && sec <= nextSec){
+		if (sec < nextSec) {
+			nextSec--;
+			if(cg_announcer.integer){
+				trap_S_StartLocalSound(CG_CustomSound(cg.clientNum, va("sound/match/cn_%d.wav", sec + 1)), CHAN_LOCAL_SOUND);
+			}
+			
+		}
+		
+	}
 	if ( sec < 0 ) {
+		nextSec = 10;
 		sec = 0;
 	}
 
@@ -3921,7 +3939,7 @@ static void CG_PausePrint( void ) {
 	else if (cgs.match_paused == PAUSE_RESUMING) {
 		s = va("%s", CG_TranslateString("^3Get Psyched!"));
 		if (cgs.pause_elapsed < 10) {
-			s2 = va("%s", CG_TranslateString(va("Resuming Match in ^3%d", 10 - cgs.pause_elapsed)));
+			s2 = va("%s", CG_TranslateString(va("Resuming Match in ^3%d", 9 - cgs.pause_elapsed)));
 		}
 
 		color[3] = fabs(sin(cg.time * 0.002)) * cg_hudAlpha.value;

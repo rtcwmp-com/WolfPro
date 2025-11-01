@@ -139,6 +139,7 @@ void G_delayPrint(gentity_t *dpent) {
 			if (cSeconds > 1000) {
 				think_next = level.time + 1000;
 				fFree      = qfalse;
+				trap_SendServerCommand(-1, va("playannouncer sound/match/cn_%d.wav", cSeconds / 1000));
 			}
 			else {
 				level.paused = PAUSE_NONE;
@@ -146,6 +147,7 @@ void G_delayPrint(gentity_t *dpent) {
 				//AAPS("sound/match/fight.wav");
 				trap_SetConfigstring(CS_PAUSED, "0");
 				trap_SetConfigstring(CS_LEVEL_START_TIME, va("%i", level.startTime + level.timeDelta));
+				trap_SendServerCommand(-1, "playannouncer sound/match/fight.wav");
 			}
 		}
 		break;

@@ -2639,7 +2639,7 @@ void CG_AddPlayerWeapon( refEntity_t *parent, playerState_t *ps, centity_t *cent
 
 	// RtcwPro cg_muzzleflash
 	// cg_muzzleFlash 2 will allow muzzle flash for movie making
-	if (cg_muzzleFlash.integer < 2 && (isPlayer || !cg_muzzleFlash.integer)) {
+	if (cg_muzzleFlash.integer < 2 && (isPlayer || !cg_muzzleFlash.integer || cg.zoomedFOV)) {
 
 		flash.hModel = 0;
 	}

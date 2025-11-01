@@ -379,6 +379,11 @@ vmCvar_t cg_teamOverlayX;
 vmCvar_t cg_teamOverlayY;
 vmCvar_t cg_teamOverlayMaxLocationWidth;
 
+vmCvar_t cg_announcer;
+vmCvar_t cg_zoomedFOV;
+vmCvar_t cg_zoomedSens;
+vmCvar_t cg_zoomedSensLock;
+
 typedef struct {
 	vmCvar_t    *vmCvar;
 	char        *cvarName;
@@ -580,7 +585,7 @@ cvarTable_t cvarTable[] = {
 
 	{ &cg_autoReload, "cg_autoReload", "1", CVAR_ARCHIVE },
 
-	{ &cg_antilag, "g_antilag", "0", 0 },
+	{ &cg_antilag, "cg_antilag", "1", CVAR_ARCHIVE },
 
 	{ &cg_bloodDamageBlend, "cg_bloodDamageBlend", "1.0", CVAR_ARCHIVE },
 	{ &cg_bloodFlash, "cg_bloodFlash", "1.0", CVAR_ARCHIVE },
@@ -644,7 +649,13 @@ cvarTable_t cvarTable[] = {
 	// team overlay
 	{ &cg_teamOverlayX, "cg_teamOverlayX", "640", CVAR_ARCHIVE },
 	{ &cg_teamOverlayY, "cg_teamOverlayY", "0", CVAR_ARCHIVE },
-	{ &cg_teamOverlayMaxLocationWidth, "cg_teamOverlayMaxLocationWidth", "20", CVAR_ARCHIVE }
+	{ &cg_teamOverlayMaxLocationWidth, "cg_teamOverlayMaxLocationWidth", "20", CVAR_ARCHIVE }, 
+
+	{ &cg_zoomedFOV, "cg_zoomedFOV", "90", CVAR_ARCHIVE },
+	{ &cg_zoomedSensLock, "cg_zoomedSensLock", "0", CVAR_ARCHIVE },
+	{ &cg_zoomedSens, "cg_zoomedSens", ".3", CVAR_ARCHIVE },
+
+	{ &cg_announcer, "cg_announcer", "1", CVAR_ARCHIVE }
 };
 int cvarTableSize = sizeof( cvarTable ) / sizeof( cvarTable[0] );
 
@@ -2456,8 +2467,11 @@ void CG_ClearParticles( void );
 void CG_LoadExtensions(void) {
 
 	cgExt_t rtcwPro_ext;
+	char buf[32];
 
-	int hasTrap_GetValue = trap_Cvar_VariableIntegerValue("//trap_GetValue");
+	trap_Cvar_VariableStringBuffer( "//trap_GetValue", buf, sizeof( buf ) );
+	
+	int hasTrap_GetValue = Q_atoi(buf);
 
 	if (hasTrap_GetValue == 0) {
 		// Engine extensions are not supported on the client

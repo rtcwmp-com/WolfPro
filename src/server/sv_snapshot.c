@@ -659,7 +659,7 @@ void SV_SendMessageToClient( msg_t *msg, client_t *client ) {
 
 	// record information about the message
 	client->frames[client->netchan.outgoingSequence & PACKET_MASK].messageSize = msg->cursize;
-	client->frames[client->netchan.outgoingSequence & PACKET_MASK].messageSent = svs.time;
+	client->frames[client->netchan.outgoingSequence & PACKET_MASK].messageSent = Sys_Milliseconds();
 	client->frames[client->netchan.outgoingSequence & PACKET_MASK].messageAcked = -1;
 
 	// send the datagram
@@ -671,7 +671,9 @@ void SV_SendMessageToClient( msg_t *msg, client_t *client ) {
 	// TTimo - show_bug.cgi?id=491
 	// added sv_lanForceRate check
 	if ( client->netchan.remoteAddress.type == NA_LOOPBACK || ( sv_lanForceRate->integer && Sys_IsLANAddress( client->netchan.remoteAddress ) ) ) {
-		client->nextSnapshotTime = svs.time - 1;
+		// we do NOT currently have snapshots every frame because of SV_Frame's NET_Sleep call
+		// but we can avoid piling up snapshots in the same milli-second before sleeping roughly 1000/sv_fps milli-seconds...
+		client->nextSnapshotTime = svs.time + 1;
 		return;
 	}
 

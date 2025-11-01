@@ -247,6 +247,9 @@ void CG_ParseWolfinfo( void ) {
 
 		CG_Printf("[skipnotify]^1FIGHT!\n");
 		CPriP(CG_TranslateString("^1FIGHT!\n"));
+		if(cg_announcer.integer){
+			trap_S_StartLocalSound(CG_CustomSound( cg.clientNum, "sound/match/fight.wav"), CHAN_LOCAL_SOUND);
+		}
 	}
 
 	if ( !cgs.localServer ) {
@@ -748,6 +751,8 @@ static void CG_MapRestart( void ) {
 	cg.zoomedBinoc = cg.zoomedScope = qfalse;
 	cg.zoomTime = 0;
 	cg.zoomval = 0;
+	cg.zoomedFOV = qfalse;
+	cg.zoomedTime = 0;
 
 	// reset fog to world fog (if present)
 	trap_R_SetFog( FOG_CMD_SWITCHFOG, FOG_MAP,20,0,0,0,0 );
@@ -818,6 +823,10 @@ static void CG_MapRestart( void ) {
 	if ( cg.warmup == 0 && cgs.gametype == GT_TOURNAMENT ) {
 		trap_S_StartLocalSound( cgs.media.countFightSound, CHAN_ANNOUNCER );
 		CG_CenterPrint( "FIGHT!", 120, GIANTCHAR_WIDTH * 2 );
+		if(cg_announcer.integer){
+			trap_S_StartLocalSound(CG_CustomSound( cg.clientNum, "sound/match/fight.wav"), CHAN_LOCAL_SOUND);
+		}
+		
 	}
 
 	trap_Cvar_Set( "cg_thirdPerson", "0" );
@@ -2003,6 +2012,18 @@ static void CG_ServerCommand( void ) {
 		}else{
 			return;
 		}
+	}
+
+	if(!strcmp(cmd, "playsound")){
+		trap_S_StartLocalSound(CG_CustomSound( cg.clientNum, CG_Argv( 1 ) ), CHAN_LOCAL_SOUND);
+		return;
+	}
+
+	if(!strcmp(cmd, "playannouncer")){
+		if(cg_announcer.integer){
+			trap_S_StartLocalSound(CG_CustomSound( cg.clientNum, CG_Argv( 1 ) ), CHAN_LOCAL_SOUND);
+		}
+		return;
 	}
 
 

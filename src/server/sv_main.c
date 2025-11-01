@@ -851,6 +851,7 @@ void SV_CalcPings( void ) {
 
 		total = 0;
 		count = 0;
+		int max = 0;
 		for ( j = 0 ; j < PACKET_BACKUP ; j++ ) {
 			if ( cl->frames[j].messageAcked <= 0 ) {
 				continue;
@@ -858,13 +859,21 @@ void SV_CalcPings( void ) {
 			delta = cl->frames[j].messageAcked - cl->frames[j].messageSent;
 			count++;
 			total += delta;
+			if(delta > max){
+				max = delta;
+			}
 		}
+
 		if ( !count ) {
 			cl->ping = 999;
 		} else {
-			cl->ping = total / count;
+			cl->ping = max;
+			cl->ping -= 1000/sv_fps->integer;
 			if ( cl->ping > 999 ) {
 				cl->ping = 999;
+			}
+			if(cl->ping < 0){
+				cl->ping = 0;
 			}
 		}
 

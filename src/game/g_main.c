@@ -497,6 +497,20 @@ void QDECL G_Error( const char *fmt, ... ) {
 	trap_Error( text );
 }
 
+void G_EntPrintf(gentity_t* ent, const char *fmt, ...) {
+	va_list argptr;
+	char text[1024];
+
+	va_start(argptr, fmt);
+	Q_vsnprintf(text, sizeof(text), fmt, argptr);
+	va_end(argptr);
+
+	if (ent == NULL) {
+		trap_Printf(text);
+	}
+	else { CP(va("print \"%s\n\"", text)); }
+}
+
 
 #define CH_KNIFE_DIST       48  // from g_weapon.c
 #define CH_LADDER_DIST      100
@@ -2635,6 +2649,18 @@ void CheckVote( void ) {
 	if ( level.voteExecuteTime && level.voteExecuteTime < level.time ) {
 		level.voteExecuteTime = 0;
 		trap_SendConsoleCommand( EXEC_APPEND, va( "%s\n", level.voteString ) );
+
+		if(Q_stristr("config", level.voteString)){
+			if (g_tournament.integer == 1 && g_gamestate.integer == GS_WARMUP_COUNTDOWN) {
+				level.lastRestartTime = level.time;
+				trap_SendConsoleCommand(EXEC_APPEND, va("map_restart 0 %i\n", GS_WARMUP));
+			} else {
+				if (g_gamestate.integer == GS_PLAYING && g_gameStatslog.integer) {
+					G_writeGameEarlyExit();  // properly close current stats output
+				}
+				trap_SendConsoleCommand(EXEC_APPEND, va("map_restart 0 %i\n", GS_WARMUP));
+			}
+		}
 	}
 	if ( !level.voteTime ) {
 		return;

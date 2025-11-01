@@ -1396,8 +1396,11 @@ void ClientUserinfoChanged( int clientNum ) {
 
 	// check for local client
 	s = Info_ValueForKey( userinfo, "ip" );
-	if ( s && !strcmp( s, "localhost" ) ) {
-		client->pers.localClient = qtrue;
+	if ( s ) {
+		if(!strcmp( s, "localhost" )){
+			client->pers.localClient = qtrue;
+		}
+		Q_strncpyz(client->sess.ip, s, sizeof(client->sess.ip));
 	}
 
 	s = Info_ValueForKey(userinfo, "cg_uinfo");
@@ -1624,9 +1627,27 @@ void ClientUserinfoChanged( int clientNum ) {
 
 	trap_SetConfigstring( CS_PLAYERS + clientNum, s );
 
-	// this is not the userinfo actually, it's the config string
+
+	if (!(ent->r.svFlags & SVF_BOT)) {
+		char *team;
+
+		team = (client->sess.sessionTeam == TEAM_RED) ? "Axis" :
+			((client->sess.sessionTeam == TEAM_BLUE) ? "Allied" : "Spectator");
+
+		// Print essentials and skip the garbage
+		s = va("name\\%s\\team\\%s\\IP\\%s\\guid\\%s",
+			client->pers.netname, team, client->sess.ip, client->sess.guid);
+	}
+	// Account for bots..
+	else {
+		char *team;
+
+		team = (client->sess.sessionTeam == TEAM_RED) ? "Axis" :
+			((client->sess.sessionTeam == TEAM_BLUE) ? "Allied" : "Spectator");
+
+		s = va("Bot: name\\%s\\team\\%s", client->pers.netname, team);
+	}
 	G_LogPrintf( "ClientUserinfoChanged: %i %s\n", clientNum, s );
-	G_DPrintf( "ClientUserinfoChanged: %i :: %s\n", clientNum, s );
 }
 
 
@@ -1956,6 +1977,8 @@ void ClientSpawn( gentity_t *ent, qboolean revived ) {
 	flags ^= EF_TELEPORT_BIT;
 
 	// clear everything but the persistant data
+
+	G_ResetHistory(ent);
 
 	saved = client->pers;
 	savedSess = client->sess;

@@ -1422,6 +1422,13 @@ void WolfRevivePushEnt( gentity_t *self, gentity_t *other ) {
 		}
 	}
 
+	// apply push effect only every 50ms to match sv_fps 20 behavior
+	// scaling the speed to match higher framerates results in smaller push overall as friction has more effect on lower speeds
+	if ((self->client && self->client->lastRevivePushTime + 50 > level.time) 
+		|| (other->client && other->client->lastRevivePushTime + 50 > level.time))	{
+		return;
+	}
+
 	VectorSubtract( self->r.currentOrigin, other->r.currentOrigin, dir );
 	dir[2] = 0;
 	VectorNormalizeFast( dir );
@@ -1431,6 +1438,7 @@ void WolfRevivePushEnt( gentity_t *self, gentity_t *other ) {
 	if ( self->client ) {
 		VectorAdd( self->s.pos.trDelta, push, self->s.pos.trDelta );
 		VectorAdd( self->client->ps.velocity, push, self->client->ps.velocity );
+		self->client->lastRevivePushTime = level.time - (level.time % 50);
 	}
 
 	VectorScale( dir, -WR_PUSHAMOUNT, push );
@@ -1440,6 +1448,7 @@ void WolfRevivePushEnt( gentity_t *self, gentity_t *other ) {
 	//VectorAdd( other->client->ps.velocity, push, other->client->ps.velocity );
 	if ( other->client ) {
 		VectorAdd( other->client->ps.velocity, push, other->client->ps.velocity );
+		other->client->lastRevivePushTime = level.time - (level.time % 50);
 	}
 }
 
@@ -1649,6 +1658,9 @@ void ClientEndFrame( gentity_t *ent ) {
 		ent->count2 = 0;
 	}
 	// dhm
+
+	// store the client's position for backward reconciliation later
+	G_StoreHistory(ent);
 
 	
 }
