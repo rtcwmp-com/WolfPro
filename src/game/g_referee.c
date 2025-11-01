@@ -45,7 +45,7 @@ void G_refPlayerPut_cmd(int team_id) {
 
 
 
-qboolean G_refCommandCheck() {
+qboolean G_refCommandCheck(void) {
     char cmd[MAX_TOKEN_CHARS];
     trap_Argv(1, cmd, sizeof(cmd));
     if (!Q_stricmp(cmd, "putallies")) {

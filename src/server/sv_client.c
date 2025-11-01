@@ -298,6 +298,16 @@ void SV_DirectConnect( netadr_t from ) {
 		}
 	}
 
+	// don't let "ip" overflow userinfo string
+	char *ip = NET_IsLocalAddress(from) ? "localhost" : (char*)NET_AdrToString(from);
+	if ((strlen(ip) + strlen(userinfo) + 4) >= MAX_INFO_STRING) {
+		NET_OutOfBandPrint(NS_SERVER, from,
+			"print\nUserinfo string length exceeded.  "
+			"Try removing setu cvars from your config.\n");
+		return;
+	}
+	Info_SetValueForKey(userinfo, "ip", ip);
+
 	// see if the challenge is valid (LAN clients don't need to challenge)
 	if ( !NET_IsLocalAddress( from ) ) {
 		int ping;

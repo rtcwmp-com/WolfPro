@@ -553,7 +553,7 @@ typedef struct {
 	char guid[GUID_LEN];		// Guid
 	int start_time;                 // player starts/begins game
 	int end_time;                   // player ends/leaves game
-
+	char ip[17]; 
 } clientSession_t;
 
 //
@@ -1872,7 +1872,7 @@ void G_TimeShiftClient(gentity_t* ent, int time, qboolean debug, gentity_t* debu
 void G_PredictPlayerMove(gentity_t* ent, float frametime);
 
 // g_referee.c
-qboolean G_refCommandCheck();
+qboolean G_refCommandCheck(void);
 
 // Macros
 //
