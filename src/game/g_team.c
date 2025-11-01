@@ -424,7 +424,7 @@ void Team_ReturnFlagSound( gentity_t *ent, int team ) {
 
 void Team_ReturnFlag( int team ) {
 	Team_ReturnFlagSound( Team_ResetFlag( team ), team );
-	PrintMsg( NULL, qfalse, "The %s flag has returned!\n", TeamName( team ) );
+	G_matchPrintInfo(va("The %s flag has returned!\n", (team == TEAM_RED ? "Axis" : "Allied")), qfalse);
 }
 
 void Team_FreeEntity( gentity_t *ent ) {
@@ -456,12 +456,16 @@ void Team_DroppedFlagThink( gentity_t *ent ) {
 		Team_ReturnFlagSound( Team_ResetFlag( TEAM_RED ), TEAM_RED );
 		if ( gm ) {
 			trap_SendServerCommand( -1, "cp \"Axis have returned the objective!\" 2" );
+			AP("prioritypopin \"^5Axis have returned the objective!\n\"");
+			G_matchPrintInfo("^5Axis have returned the objective!",qfalse);
 			G_Script_ScriptEvent( gm, "trigger", "axis_object_returned" );
 		}
 	} else if ( ent->item->giTag == PW_BLUEFLAG )     {
 		Team_ReturnFlagSound( Team_ResetFlag( TEAM_BLUE ), TEAM_BLUE );
 		if ( gm ) {
 			trap_SendServerCommand( -1, "cp \"Allies have returned the objective!\" 2" );
+			AP("prioritypopin \"^5Allies have returned the objective!\n\"");
+			G_matchPrintInfo("^5Allies have returned the objective!",qfalse);
 			G_Script_ScriptEvent( gm, "trigger", "allied_object_returned" );
 		}
 	}
@@ -650,6 +654,8 @@ int Team_TouchEnemyFlag( gentity_t *ent, gentity_t *other, int team ) {
 			te->s.eventParm = G_SoundIndex( "sound/multiplayer/axis/g-objective_taken.wav" );
 			trap_SendServerCommand( -1, va( "cp \"Axis have stolen %s!\n\" 2", ent->message ) );
 			AP(va("prioritypopin \"^1Axis have stolen %s!\n\"", ent->message));
+			if (ent->message != NULL)
+				G_matchPrintInfo(va("^5Axis have stolen %s!", ent->message), qfalse);
 			if ( gm ) {
 				G_Script_ScriptEvent( gm, "trigger", "allied_object_stolen" );
 			}
@@ -659,6 +665,8 @@ int Team_TouchEnemyFlag( gentity_t *ent, gentity_t *other, int team ) {
 			te->s.eventParm = G_SoundIndex( "sound/multiplayer/allies/a-objective_taken.wav" );
 			trap_SendServerCommand( -1, va( "cp \"Allies have stolen %s!\n\" 2", ent->message ) );
 			AP(va("prioritypopin \"^1Allies have stolen %s!\n\"", ent->message));
+			if (ent->message != NULL)
+				G_matchPrintInfo(va("^5Allies have stolen %s!", ent->message), qfalse);
 			if ( gm ) {
 				G_Script_ScriptEvent( gm, "trigger", "axis_object_stolen" );
 			}

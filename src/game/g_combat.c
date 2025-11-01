@@ -425,15 +425,23 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 			item = BG_FindItem( "Objective" );
 		}
 
+		if (self->message != NULL)
+			G_matchPrintInfo(va("^5Allies have lost %s!", self->message), qfalse);
+
 		self->client->ps.powerups[PW_REDFLAG] = 0;
+		self->s.powerups = 0;
 	}
 	if ( self->client->ps.powerups[PW_BLUEFLAG] ) {
 		item = BG_FindItem( "Blue Flag" );
 		if ( !item ) {
 			item = BG_FindItem( "Objective" );
 		}
+		
+		if (self->message != NULL)
+			G_matchPrintInfo(va("^5Axis have lost %s!", self->message), qfalse);
 
 		self->client->ps.powerups[PW_BLUEFLAG] = 0;
+		self->s.powerups = 0;
 	}
 
 	if ( item ) {
