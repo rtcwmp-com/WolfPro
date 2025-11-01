@@ -384,6 +384,11 @@ vmCvar_t cg_zoomedFOV;
 vmCvar_t cg_zoomedSens;
 vmCvar_t cg_zoomedSensLock;
 
+// draw speed
+vmCvar_t cg_drawSpeed;
+vmCvar_t cg_speedX;
+vmCvar_t cg_speedY;
+
 typedef struct {
 	vmCvar_t    *vmCvar;
 	char        *cvarName;
@@ -655,7 +660,12 @@ cvarTable_t cvarTable[] = {
 	{ &cg_zoomedSensLock, "cg_zoomedSensLock", "0", CVAR_ARCHIVE },
 	{ &cg_zoomedSens, "cg_zoomedSens", ".3", CVAR_ARCHIVE },
 
-	{ &cg_announcer, "cg_announcer", "1", CVAR_ARCHIVE }
+	{ &cg_announcer, "cg_announcer", "1", CVAR_ARCHIVE },
+
+	// draw speed
+	{ &cg_drawSpeed, "cg_drawSpeed", "0", CVAR_ARCHIVE },
+	{ &cg_speedX, "cg_speedX", "315", CVAR_ARCHIVE },
+	{ &cg_speedY, "cg_speedY", "340", CVAR_ARCHIVE },
 };
 int cvarTableSize = sizeof( cvarTable ) / sizeof( cvarTable[0] );
 

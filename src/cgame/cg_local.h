@@ -1020,6 +1020,11 @@ typedef struct {
 	int zoomedTime;
 	float zoomedVal;
 	float zoomedSens;
+
+	qboolean resetmaxspeed;
+	float topSpeed;
+	float oldSpeed;
+
 } cg_t;
 
 #define NUM_FUNNEL_SPRITES  21
@@ -1916,6 +1921,11 @@ extern vmCvar_t cg_zoomedFOV;
 extern vmCvar_t cg_zoomedSens;
 extern vmCvar_t cg_zoomedSensLock;
 
+// draw speed
+extern vmCvar_t cg_drawSpeed;
+extern vmCvar_t cg_speedX;
+extern vmCvar_t cg_speedY;
+
 //
 // cg_main.c
 //
@@ -2061,6 +2071,14 @@ const char *CG_GameTypeString();
 void CG_Fade( int r, int g, int b, int a, float time );
 int CG_CalculateReinfTime(void);
 
+// Text
+int CG_Text_Width_Ext( const char *text, float scale, int limit, fontInfo_t* font );
+int CG_Text_Height_Ext( const char *text, float scale, int limit, fontInfo_t* font );
+void CG_Text_Paint_Ext( float x, float y, float scalex, float scaley, vec4_t color, const char *text, float adjust, int limit, int style, fontInfo_t* font );
+// Hud names
+void CG_Text_Paint_ext2(float x, float y, float scale, vec4_t color, const char *text, float adjust, int limit, int style);
+int CG_Text_Width_ext2(const char *text, float scale, int limit);
+int CG_Text_Height_ext2(const char *text, float scale, int limit);
 
 
 //

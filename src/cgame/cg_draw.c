@@ -1037,6 +1037,93 @@ static float CG_DrawEnemyTimer(float y) {
 }
 
 /*
+===================
+RTCWPro - draw speed
+with extra features
+Source: PubJ
+
+CG_DrawTJSpeed
+===================
+*/
+void CG_DrawTJSpeed(void) {
+	char         status[128];
+	float        sizex, sizey, x, y;
+	int          w;
+	static vec_t speed;
+	vec4_t       color;
+	static vec_t topSpeed;
+
+	if (cg.resetmaxspeed)
+	{
+		cg.topSpeed = 0;
+		topSpeed = 0;
+		cg.resetmaxspeed = qfalse;
+	}
+
+	if (!cg_drawSpeed.integer)
+	{
+		return;
+	}
+
+	speed = sqrt(cg.predictedPlayerState.velocity[0] * cg.predictedPlayerState.velocity[0] + cg.predictedPlayerState.velocity[1] * cg.predictedPlayerState.velocity[1]);
+
+	// pp velocity is sometimes NaN, so check it
+	if (speed != speed)
+	{
+		speed = 0;
+	}
+
+	if (speed > topSpeed)
+	{
+		topSpeed = speed;
+	}
+
+	sizex = sizey = 0.25f;
+
+	x = cg_speedX.value;
+	y = cg_speedY.value;
+
+	switch (cg_drawSpeed.integer)
+	{
+	case 1:
+		Com_sprintf(status, sizeof(status), va("%.0f", speed));
+		break;
+	case 2:
+		Com_sprintf(status, sizeof(status), va("%.0f %.0f", speed, topSpeed));
+		break;
+	case 3:
+		Com_sprintf(status, sizeof(status), va("%.0f", speed));
+		break;
+	case 4:
+		Com_sprintf(status, sizeof(status), va("%.0f %.0f", speed, topSpeed));
+		break;
+	default:
+		Com_sprintf(status, sizeof(status), va("%.0f", speed));
+		break;
+	}
+
+	w = CG_Text_Width_Ext(status, sizex, sizey, &cgDC.Assets.textFont) / 2;
+	BG_ParseColorCvar("white", color, cg_hudAlpha.value);
+
+	if (cg_drawSpeed.integer > 2 && speed > cg.oldSpeed + 0.001f * 100)
+	{
+		BG_ParseColorCvar("green", color, cg_hudAlpha.value);
+		CG_Text_Paint_Ext(x - w, y, sizex, sizey, color, status, 0, 0, ITEM_TEXTSTYLE_SHADOWED, &cgDC.Assets.textFont);
+	}
+	else if (cg_drawSpeed.integer > 2 && speed < cg.oldSpeed - 0.001f * 100)
+	{
+		BG_ParseColorCvar("red", color, cg_hudAlpha.value);
+		CG_Text_Paint_Ext(x - w, y, sizex, sizey, color, status, 0, 0, ITEM_TEXTSTYLE_SHADOWED, &cgDC.Assets.textFont);
+	}
+	else
+	{
+		CG_Text_Paint_Ext(x - w, y, sizex, sizey, color, status, 0, 0, ITEM_TEXTSTYLE_SHADOWED, &cgDC.Assets.textFont);
+	}
+
+	cg.oldSpeed = speed;
+}
+
+/*
 ========================
 Respawn Timer
 ========================
@@ -4122,6 +4209,11 @@ static void CG_Draw2D( void ) {
 
 		CG_DrawLimboMessage();
 		// -NERVE - SMF
+
+		if (cg_drawSpeed.integer)
+		{
+			CG_DrawTJSpeed();
+		}
 	}
 
 	// Ridah, draw flash blends now
@@ -4245,3 +4337,305 @@ void CG_DrawActive( stereoFrame_t stereoView ) {
 }
 
 
+/*
+=====================
+CG_Text_PaintChar_Ext
+
+Ported from ET
+=====================
+*/
+void CG_Text_PaintChar_Ext(float x, float y, float w, float h, float scalex, float scaley, float s, float t, float s2, float t2, qhandle_t hShader) {
+	w *= scalex;
+	h *= scaley;
+	CG_AdjustFrom640( &x, &y, &w, &h );
+	trap_R_DrawStretchPic( x, y, w, h, s, t, s2, t2, hShader );
+}
+
+/*
+=====================
+CG_Text_Paint_ext2
+
+Ported from S4NDMoD
+=====================
+*/
+void CG_Text_Paint_ext2(float x, float y, float scale, vec4_t color, const char *text, float adjust, int limit, int style) {
+  int len, count;
+	vec4_t newColor;
+	glyphInfo_t *glyph;
+	float useScale;
+	fontInfo_t *font = &cgDC.Assets.textFont;
+
+	font = &cgDC.Assets.bigFont;
+
+	useScale = scale * font->glyphScale;
+
+	color[3] *= cg_hudAlpha.value;	// (SA) adjust for cg_hudalpha
+
+  if (text) {
+		const char *s = text;
+		trap_R_SetColor( color );
+		memcpy(&newColor[0], &color[0], sizeof(vec4_t));
+    len = strlen(text);
+		if (limit > 0 && len > limit) {
+			len = limit;
+		}
+		count = 0;
+		while (s && *s && count < len) {
+			glyph = &font->glyphs[(int)*s];
+      //int yadj = Assets.textFont.glyphs[text[i]].bottom + Assets.textFont.glyphs[text[i]].top;
+      //float yadj = scale * (Assets.textFont.glyphs[text[i]].imageHeight - Assets.textFont.glyphs[text[i]].height);
+			if ( Q_IsColorString( s ) ) {
+				memcpy( newColor, g_color_table[ColorIndex(*(s+1))], sizeof( newColor ) );
+				newColor[3] = color[3];
+				trap_R_SetColor( newColor );
+				s += 2;
+				continue;
+			} else {
+				float yadj = useScale * glyph->top;
+				if (style == ITEM_TEXTSTYLE_SHADOWED || style == ITEM_TEXTSTYLE_SHADOWEDMORE) {
+					int ofs = style == ITEM_TEXTSTYLE_SHADOWED ? 1 : 2;
+					colorBlack[3] = newColor[3];
+					trap_R_SetColor( colorBlack );
+					CG_Text_PaintChar(x + ofs, y - yadj + ofs,
+														glyph->imageWidth,
+														glyph->imageHeight,
+														useScale,
+														glyph->s,
+														glyph->t,
+														glyph->s2,
+														glyph->t2,
+														glyph->glyph);
+					colorBlack[3] = 1.0;
+					trap_R_SetColor( newColor );
+				}
+				CG_Text_PaintChar(x, y - yadj,
+													glyph->imageWidth,
+													glyph->imageHeight,
+													useScale,
+													glyph->s,
+													glyph->t,
+													glyph->s2,
+													glyph->t2,
+													glyph->glyph);
+				// CG_DrawPic(x, y - yadj, scale * cgDC.Assets.textFont.glyphs[text[i]].imageWidth, scale * cgDC.Assets.textFont.glyphs[text[i]].imageHeight, cgDC.Assets.textFont.glyphs[text[i]].glyph);
+				x += (glyph->xSkip * useScale) + adjust;
+				s++;
+				count++;
+			}
+    }
+	  trap_R_SetColor( NULL );
+  }
+}
+
+/*
+=====================
+CG_Text_Width_ext2
+
+Ported from S4NDMoD
+=====================
+*/
+int CG_Text_Width_ext2(const char *text, float scale, int limit) {
+  int count,len;
+	float out;
+	glyphInfo_t *glyph;
+	float useScale;
+	const char *s = text;
+	fontInfo_t* font = &cgDC.Assets.bigFont;
+
+	useScale = scale * font->glyphScale;
+  out = 0;
+  if (text) {
+    len = strlen(text);
+		if (limit > 0 && len > limit) {
+			len = limit;
+		}
+		count = 0;
+		while (s && *s && count < len) {
+			if ( Q_IsColorString(s) ) {
+				s += 2;
+				continue;
+			} else {
+				glyph = &font->glyphs[(int)*s];
+				out += glyph->xSkip;
+				s++;
+				count++;
+			}
+    }
+  }
+  return out * useScale;
+}
+
+/*
+=====================
+CG_Text_Height_ext2
+
+Ported from S4NDMoD
+=====================
+*/
+int CG_Text_Height_ext2(const char *text, float scale, int limit) {
+  int len, count;
+	float max;
+	glyphInfo_t *glyph;
+	float useScale;
+	const char *s = text;
+	fontInfo_t *font = &cgDC.Assets.textFont;
+
+	font = &cgDC.Assets.bigFont;
+
+	useScale = scale * font->glyphScale;
+  max = 0;
+  if (text) {
+    len = strlen(text);
+		if (limit > 0 && len > limit) {
+			len = limit;
+		}
+		count = 0;
+		while (s && *s && count < len) {
+			if ( Q_IsColorString(s) ) {
+				s += 2;
+				continue;
+			} else {
+				glyph = &font->glyphs[(int)*s];
+	      if (max < glyph->height) {
+		      max = glyph->height;
+			  }
+				s++;
+				count++;
+			}
+    }
+  }
+  return max * useScale;
+}
+
+/*
+=====================
+CG_Text_Paint_Ext
+
+Ported from ET
+=====================
+*/
+
+void CG_Text_Paint_Ext( float x, float y, float scalex, float scaley, vec4_t color, const char *text, float adjust, int limit, int style, fontInfo_t* font ) {
+	int len, count;
+	vec4_t newColor;
+	glyphInfo_t *glyph;
+
+	scalex *= font->glyphScale;
+	scaley *= font->glyphScale;
+
+	if (text) {
+		const char *s = text;
+		trap_R_SetColor( color );
+		memcpy(&newColor[0], &color[0], sizeof(vec4_t));
+		len = strlen(text);
+		if (limit > 0 && len > limit) {
+			len = limit;
+		}
+		count = 0;
+		while (s && *s && count < len) {
+			glyph = &font->glyphs[(unsigned char)*s];
+			if ( Q_IsColorString( s ) ) {
+				if( *(s+1) == COLOR_NULL ) {
+					memcpy( newColor, color, sizeof(newColor) );
+				} else {
+					memcpy( newColor, g_color_table[ColorIndex(*(s+1))], sizeof( newColor ) );
+					newColor[3] = color[3];
+				}
+				trap_R_SetColor( newColor );
+				s += 2;
+				continue;
+			} else {
+				float yadj = scaley * glyph->top;
+				if (style == ITEM_TEXTSTYLE_SHADOWED || style == ITEM_TEXTSTYLE_SHADOWEDMORE) {
+					int ofs = style == ITEM_TEXTSTYLE_SHADOWED ? 1 : 2;
+					colorBlack[3] = newColor[3];
+					trap_R_SetColor( colorBlack );
+					CG_Text_PaintChar_Ext(x + (glyph->pitch * scalex) + ofs, y - yadj + ofs, glyph->imageWidth, glyph->imageHeight, scalex, scaley, glyph->s, glyph->t, glyph->s2, glyph->t2, glyph->glyph);
+					colorBlack[3] = 1.0;
+					trap_R_SetColor( newColor );
+				}
+				CG_Text_PaintChar_Ext(x + (glyph->pitch * scalex), y - yadj, glyph->imageWidth, glyph->imageHeight, scalex, scaley, glyph->s, glyph->t, glyph->s2, glyph->t2, glyph->glyph);
+				x += (glyph->xSkip * scalex) + adjust;
+				s++;
+				count++;
+			}
+		}
+		trap_R_SetColor( NULL );
+	}
+}
+
+/*
+=====================
+CG_Text_Height_Ext
+
+Ported from ET
+=====================
+*/
+int CG_Text_Height_Ext( const char *text, float scale, int limit, fontInfo_t* font ) {
+ int len, count;
+	float max;
+	glyphInfo_t *glyph;
+	float useScale;
+	const char *s = text;
+
+	useScale = scale * font->glyphScale;
+	max = 0;
+	if (text) {
+		len = strlen(text);
+		if (limit > 0 && len > limit) {
+			len = limit;
+		}
+		count = 0;
+		while (s && *s && count < len) {
+			if ( Q_IsColorString(s) ) {
+				s += 2;
+				continue;
+			} else {
+				glyph = &font->glyphs[(unsigned char)*s];
+	      if (max < glyph->height) {
+		      max = glyph->height;
+			  }
+				s++;
+				count++;
+			}
+		}
+	}
+	return max * useScale;
+}
+
+/*
+=====================
+CG_Text_Width_Ext
+
+Ported from ET
+=====================
+*/
+
+int CG_Text_Width_Ext( const char *text, float scale, int limit, fontInfo_t* font ) {
+	int count, len;
+	glyphInfo_t *glyph;
+	const char *s = text;
+	float out, useScale = scale * font->glyphScale;
+
+	out = 0;
+	if( text ) {
+		len = strlen( text );
+		if (limit > 0 && len > limit) {
+			len = limit;
+		}
+		count = 0;
+		while (s && *s && count < len) {
+			if ( Q_IsColorString(s) ) {
+				s += 2;
+				continue;
+			} else {
+				glyph = &font->glyphs[(unsigned char)*s];
+				out += glyph->xSkip;
+				s++;
+				count++;
+			}
+		}
+	}
+
+	return out * useScale;
+}
