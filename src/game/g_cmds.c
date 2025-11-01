@@ -1304,35 +1304,6 @@ static void Cmd_VoiceTaunt_f( gentity_t *ent ) {
 // -NERVE - SMF
 #endif
 
-static char *gc_orders[] = {
-	"hold your position",
-	"hold this position",
-	"come here",
-	"cover me",
-	"guard location",
-	"search and destroy",
-	"report"
-};
-
-void Cmd_GameCommand_f( gentity_t *ent ) {
-	int player;
-	int order;
-	char str[MAX_TOKEN_CHARS];
-
-	trap_Argv( 1, str, sizeof( str ) );
-	player = atoi( str );
-	trap_Argv( 2, str, sizeof( str ) );
-	order = atoi( str );
-
-	if ( player < 0 || player >= MAX_CLIENTS ) {
-		return;
-	}
-	if ( order < 0 || order > sizeof( gc_orders ) / sizeof( char * ) ) {
-		return;
-	}
-	G_Say( ent, &g_entities[player], SAY_TELL, gc_orders[order] );
-	G_Say( ent, ent, SAY_TELL, gc_orders[order] );
-}
 
 /*
 ==================
@@ -2353,16 +2324,7 @@ void ClientCommand( int clientNum ) {
 		Cmd_CallVote_f( ent );
 	} else if ( Q_stricmp( cmd, "vote" ) == 0 )  {
 		Cmd_Vote_f( ent );
-	} else if ( Q_stricmp( cmd, "gc" ) == 0 )  {
-		Cmd_GameCommand_f( ent );
-	}
-//	else if (Q_stricmp (cmd, "startCamera") == 0)
-//		Cmd_StartCamera_f( ent );
-//	else if (Q_stricmp (cmd, "stopCamera") == 0)
-//		Cmd_StopCamera_f( ent );
-//	else if (Q_stricmp (cmd, "setCameraOrigin") == 0)
-//		Cmd_SetCameraOrigin_f( ent );
-	else if ( Q_stricmp( cmd, "setviewpos" ) == 0 ) {
+	}else if ( Q_stricmp( cmd, "setviewpos" ) == 0 ) {
 		Cmd_SetViewpos_f( ent );
 	} else if ( Q_stricmp( cmd, "entitycount" ) == 0 )  {
 		Cmd_EntityCount_f( ent );
