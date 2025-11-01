@@ -1326,6 +1326,28 @@ static const char *gameNames[] = {
 	"Wolf Checkpoint"
 };
 
+qboolean G_Config_v(gentity_t* ent) {
+	char arg1[MAX_STRING_TOKENS];
+	char arg2[MAX_STRING_TOKENS];
+	trap_Argv(1, arg1, sizeof(arg1));
+	trap_Argv(2, arg2, sizeof(arg2));
+	int argc = trap_Argc();
+	if (argc != 3) {
+		G_EntPrintf(ent, "Usage: ^3config <config name>");
+		G_PrintConfigs(ent);
+		return qfalse;
+	}
+
+	if (!G_isValidConfig(ent, arg2)) {
+		return qfalse;
+	}
+
+	Com_sprintf( level.voteString, sizeof( level.voteString ), "config %s ", arg2 );
+	Com_sprintf( level.voteDisplayString, sizeof( level.voteDisplayString ), "%s", level.voteString );
+
+	return qtrue;
+}
+
 
 /*
 ==================
@@ -1366,50 +1388,29 @@ void Cmd_CallVote_f( gentity_t *ent ) {
 		return;
 	}
 
+	char s[MAX_STRING_CHARS];
+
+
 	if ( !Q_stricmp( arg1, "map_restart" ) ) {
-		mask = VOTEFLAGS_RESTART;
-	} else if ( !Q_stricmp( arg1, "nextmap" ) ) {
-		mask = VOTEFLAGS_NEXTMAP;
-	} else if ( !Q_stricmp( arg1, "map" ) ) {
-		mask = VOTEFLAGS_MAP;
+		// NERVE - SMF - do a warmup when we restart maps
+		if ( strlen( arg2 ) ) {
+			Com_sprintf( level.voteString, sizeof( level.voteString ), "%s \"%s\"", arg1, arg2 );
+		} else {
+			Com_sprintf( level.voteString, sizeof( level.voteString ), "%s", arg1, arg2 );
+		}
+		Com_sprintf( level.voteDisplayString, sizeof( level.voteDisplayString ), "%s", level.voteString );
+	}  else if ( !Q_stricmp( arg1, "map" ) ) {
+		// special case for map changes, we want to reset the nextmap setting
+		// this allows a player to change maps, but not upset the map rotation
+		trap_Cvar_VariableStringBuffer( "nextmap", s, sizeof( s ) );
+		if ( *s ) {
+			Com_sprintf( level.voteString, sizeof( level.voteString ), "%s %s; set nextmap \"%s\"", arg1, arg2, s );
+		} else {
+			Com_sprintf( level.voteString, sizeof( level.voteString ), "%s %s", arg1, arg2 );
+		}
+		Com_sprintf( level.voteString, sizeof( level.voteString ), "vstr nextmap" );
+		Com_sprintf( level.voteDisplayString, sizeof( level.voteDisplayString ), "%s", level.voteString );
 	} else if ( !Q_stricmp( arg1, "g_gametype" ) ) {
-		mask = VOTEFLAGS_TYPE;
-	} else if ( !Q_stricmp( arg1, "kick" ) ) {
-		mask = VOTEFLAGS_KICK;
-	} else if ( !Q_stricmp( arg1, "clientkick" ) ) {
-		mask = VOTEFLAGS_KICK;
-	} else if ( !Q_stricmp( arg1, "start_match" ) ) {        // NERVE - SMF
-		mask = VOTEFLAGS_STARTMATCH;
-	} else if ( !Q_stricmp( arg1, "reset_match" ) ) {        // NERVE - SMF
-		mask = VOTEFLAGS_RESETMATCH;
-	} else if ( !Q_stricmp( arg1, "swap_teams" ) ) {     // NERVE - SMF
-		mask = VOTEFLAGS_SWAP;
-// JPW NERVE
-#ifndef PRE_RELEASE_DEMO
-	} else if ( !Q_stricmp( arg1, testid1 ) ) {
-	} else if ( !Q_stricmp( arg1, testid2 ) ) {
-	} else if ( !Q_stricmp( arg1, testid3 ) ) {
-#endif
-// jpw
-	} else {
-		trap_SendServerCommand( ent - g_entities, "print \"Invalid vote string.\n\"" );
-		trap_SendServerCommand( ent - g_entities, "print \"Vote commands are: map_restart, nextmap, start_match, swap_teams, reset_match, map <mapname>, g_gametype <n>, kick <player>, clientkick <clientnum>\n\"" );
-		return;
-	}
-
-	if ( !( g_voteFlags.integer & mask ) ) {
-		trap_SendServerCommand( ent - g_entities, va( "print \"Voting for %s disabled on this server\n\"", arg1 ) );
-		return;
-	}
-
-	// if there is still a vote to be executed
-	if ( level.voteExecuteTime ) {
-		level.voteExecuteTime = 0;
-		trap_SendConsoleCommand( EXEC_APPEND, va( "%s\n", level.voteString ) );
-	}
-
-	// special case for g_gametype, check for bad values
-	if ( !Q_stricmp( arg1, "g_gametype" ) ) {
 		i = atoi( arg2 );
 		if ( i < GT_WOLF || i >= GT_MAX_GAME_TYPE ) {
 			trap_SendServerCommand( ent - g_entities, "print \"Invalid gametype.\n\"" );
@@ -1418,39 +1419,7 @@ void Cmd_CallVote_f( gentity_t *ent ) {
 
 		Com_sprintf( level.voteString, sizeof( level.voteString ), "%s %d", arg1, i );
 		Com_sprintf( level.voteDisplayString, sizeof( level.voteDisplayString ), "%s %s", arg1, gameNames[i] );
-	} else if ( !Q_stricmp( arg1, "map_restart" ) ) {
-		// NERVE - SMF - do a warmup when we restart maps
-		if ( strlen( arg2 ) ) {
-			Com_sprintf( level.voteString, sizeof( level.voteString ), "%s \"%s\"", arg1, arg2 );
-		} else {
-			Com_sprintf( level.voteString, sizeof( level.voteString ), "%s", arg1, arg2 );
-		}
-
-		Com_sprintf( level.voteDisplayString, sizeof( level.voteDisplayString ), "%s", level.voteString );
-	} else if ( !Q_stricmp( arg1, "map" ) ) {
-		// special case for map changes, we want to reset the nextmap setting
-		// this allows a player to change maps, but not upset the map rotation
-		char s[MAX_STRING_CHARS];
-
-		trap_Cvar_VariableStringBuffer( "nextmap", s, sizeof( s ) );
-		if ( *s ) {
-			Com_sprintf( level.voteString, sizeof( level.voteString ), "%s %s; set nextmap \"%s\"", arg1, arg2, s );
-		} else {
-			Com_sprintf( level.voteString, sizeof( level.voteString ), "%s %s", arg1, arg2 );
-		}
-		Com_sprintf( level.voteDisplayString, sizeof( level.voteDisplayString ), "%s", level.voteString );
-	} else if ( !Q_stricmp( arg1, "nextmap" ) ) {
-		char s[MAX_STRING_CHARS];
-
-		trap_Cvar_VariableStringBuffer( "nextmap", s, sizeof( s ) );
-		if ( !*s ) {
-			trap_SendServerCommand( ent - g_entities, "print \"nextmap not set.\n\"" );
-			return;
-		}
-		Com_sprintf( level.voteString, sizeof( level.voteString ), "vstr nextmap" );
-		Com_sprintf( level.voteDisplayString, sizeof( level.voteDisplayString ), "%s", level.voteString );
-// JPW NERVE
-	} else if ( !Q_stricmp( arg1,"kick" ) ) {
+	} else if ( !Q_stricmp( arg1, "kick" ) || !Q_stricmp( arg1, "clientkick" ) ) {
 		int i,kicknum = MAX_CLIENTS;
 		for ( i = 0; i < MAX_CLIENTS; i++ ) {
 			if ( level.clients[i].pers.connected != CON_CONNECTED ) {
@@ -1470,10 +1439,32 @@ void Cmd_CallVote_f( gentity_t *ent ) {
 			trap_SendServerCommand( ent - g_entities, "print \"Client not on server.\n\"" );
 			return;
 		}
-// jpw
-	} else {
+	} else if ( !Q_stricmp( arg1, "start_match" ) || !Q_stricmp( arg1, "reset_match" ) || !Q_stricmp( arg1, "swap_teams" ) || !Q_stricmp( arg1, "nextmap" ) ) {        // NERVE - SMF
+
+		if ( !Q_stricmp( arg1, "nextmap" ) ) {
+			trap_Cvar_VariableStringBuffer( "nextmap", s, sizeof( s ) );
+			if ( !*s ) {
+				trap_SendServerCommand( ent - g_entities, "print \"nextmap not set.\n\"" );
+				return;
+			}
+		}
+
 		Com_sprintf( level.voteString, sizeof( level.voteString ), "%s \"%s\"", arg1, arg2 );
 		Com_sprintf( level.voteDisplayString, sizeof( level.voteDisplayString ), "%s", level.voteString );
+	} else if(!Q_stricmp( arg1, "config" )){
+		if(!G_Config_v(ent)){
+			return;
+		}
+ 	} else {
+		trap_SendServerCommand( ent - g_entities, "print \"Invalid vote string.\n\"" );
+		trap_SendServerCommand( ent - g_entities, "print \"Vote commands are: map_restart, nextmap, config, start_match, swap_teams, reset_match, map <mapname>, g_gametype <n>, kick <player>, clientkick <clientnum>\n\"" );
+		return;
+	}
+
+	// if there is still a vote to be executed
+	if ( level.voteExecuteTime ) {
+		level.voteExecuteTime = 0;
+		trap_SendConsoleCommand( EXEC_APPEND, va( "%s\n", level.voteString ) );
 	}
 
 	trap_SendServerCommand( -1, va( "usernameprint \"[lof]%s [lon]called a vote.\n\"", ent->client->pers.username ) );
@@ -1505,59 +1496,6 @@ void Cmd_Vote_f( gentity_t *ent ) {
 	char msg[64];
 	int num;
 
-	// DHM - Nerve :: Complaints supercede voting (and share command)
-	if ( ent->client->pers.complaintEndTime > level.time && g_gamestate.integer == GS_PLAYING) {
-
-		// exit out for comp settings
-		if (g_tournament.integer == 1 || g_complaintlimit.integer == 0)
-		{
-			trap_SendServerCommand(ent - g_entities, "complaint -2");
-			return;
-		}
-		
-		gclient_t *cl = g_entities[ ent->client->pers.complaintClient ].client;
-		if ( !cl ) {
-			return;
-		}
-		if ( cl->pers.connected != CON_CONNECTED ) {
-			return;
-		}
-		if ( cl->pers.localClient ) {
-			trap_SendServerCommand( ent - g_entities, "complaint -3" );
-			return;
-		}
-
-		// Reset this ent's complainEndTime so they can't send multiple complaints
-		ent->client->pers.complaintEndTime = -1;
-		ent->client->pers.complaintClient = -1;
-
-		trap_Argv( 1, msg, sizeof( msg ) );
-
-		if ( msg[0] == 'y' || msg[1] == 'Y' || msg[1] == '1' ) {
-			// Increase their complaint counter
-			cl->pers.complaints++;
-
-			num = g_complaintlimit.integer - cl->pers.complaints;
-
-			if ( num <= 0 && !cl->pers.localClient ) {
-				trap_DropClient( cl - level.clients, "kicked after too many complaints." );
-				trap_SendServerCommand( ent - g_entities, "complaint -1" );
-				return;
-			}
-
-			trap_SendServerCommand( cl->ps.clientNum, va( "print \"^1Warning^7: Complaint filed against you. [lof](%d [lon]until kicked[lof])\n\"", num ) );
-			trap_SendServerCommand( ent - g_entities, "complaint -1" );
-		} else {
-			trap_SendServerCommand( ent - g_entities, "complaint -2" );
-		}
-
-		return;
-	}
-	// dhm
-
-	// Reset this ent's complainEndTime so they can't send multiple complaints
-	ent->client->pers.complaintEndTime = -1;
-	ent->client->pers.complaintClient = -1;
 
 	if ( !level.voteTime ) {
 		trap_SendServerCommand( ent - g_entities, "print \"No vote in progress.\n\"" );

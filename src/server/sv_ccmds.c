@@ -990,6 +990,7 @@ void SV_SetCvarRestrictions(void) {
 		//SV_ReloadRest(qtrue);
 		Com_Printf("Game config file is not found..skipping.\n");
 	}
+	Cbuf_AddText( va("map_restart 0 %d\n", GS_WARMUP) );
 }
 
 

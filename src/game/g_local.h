@@ -1266,6 +1266,7 @@ void QDECL G_DPrintf( const char *fmt, ... );
 void QDECL G_Error( const char *fmt, ... );
 void SortedActivePlayers(void);
 void HandleEmptyTeams(void);
+void G_EntPrintf(gentity_t* ent, const char *fmt, ...);
 
 //
 // g_client.c

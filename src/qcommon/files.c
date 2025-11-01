@@ -2042,6 +2042,13 @@ static int FS_AddFileToList( char *name, char *list[MAX_FOUND_FILES], int nfiles
 	return nfiles;
 }
 
+qboolean FS_IsRestrictedFiletype(const char *extension) {
+	if (!extension) {
+		return qtrue;
+	}
+	return !(Q_stricmp(extension, ".cfg") != 0 || Q_stricmp(extension, ".config") != 0);
+}
+
 /*
 ===============
 FS_ListFilteredFiles
@@ -2145,8 +2152,8 @@ char **FS_ListFilteredFiles( const char *path, const char *extension, char *filt
 			char    **sysFiles;
 			char    *name;
 
-			// don't scan directories for files if we are pure or restricted
-			if ( fs_restrict->integer || fs_numServerPaks ) {
+			// don't scan directories for files if we are restricted. allow config files in pure mode
+			if ( fs_restrict->integer || (fs_numServerPaks && FS_IsRestrictedFiletype(extension))) {
 				continue;
 			} else {
 				netpath = FS_BuildOSPath( search->dir->path, search->dir->gamedir, path );

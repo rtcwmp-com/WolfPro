@@ -535,24 +535,25 @@ NERVE - SMF - starts match if in tournament mode
 ============
 */
 void Svcmd_StartMatch_f() {
-	if ( !g_noTeamSwitching.integer ) {
-		trap_SendServerCommand( -1, va( "print \"g_noTeamSwitching not activated.\n\"" ) );
+	int i;
+	gclient_t *cl;
+
+	if (g_gamestate.integer == GS_PLAYING) {
+		G_EntPrintf(NULL, "Match already in progress!");
 		return;
 	}
 
-	if ( level.numPlayingClients <= 1 ) {
-		trap_SendServerCommand( -1, va( "print \"Not enough playing clients to start match.\n\"" ) );
-		return;
+	// Ready them all and lock the teams
+	for (i = 0; i < level.numConnectedClients; i++) {
+		cl = level.clients + level.sortedClients[i];
+		if (cl->sess.sessionTeam != TEAM_SPECTATOR) {
+			cl->pers.ready = qtrue;
+		}
 	}
 
-	if ( g_gamestate.integer == GS_PLAYING ) {
-		trap_SendServerCommand( -1, va( "print \"Match is already in progress.\n\"" ) );
-		return;
-	}
-
-	if ( g_gamestate.integer == GS_WAITING_FOR_PLAYERS ) {
-		trap_SendConsoleCommand( EXEC_APPEND, va( "map_restart 0 %i\n", GS_WARMUP ) );
-	}
+	// Can we start?
+	level.ref_allready = qtrue;
+	G_readyStart(); 
 }
 
 /*

@@ -29,57 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "g_local.h"
 #include "../../MAIN/ui_mp/menudef.h" // For vote options
 
-/*
-// *** RTCWPro - custom config ***
-int G_Config_v(gentity_t* ent, unsigned int dwVoteIndex, char* arg, char* arg2, qboolean fRefereeCmd) {
 
-	// Vote request (vote is being initiated)
-	if (arg) {
-
-		if (vote_allow_comp.integer <= 0 && ent && !ent->client->sess.referee) {
-			G_voteDisableMessage(ent, arg);
-			return G_INVALID;
-		}
-		else if (trap_Argc() > 3) {
-			G_refPrintf(ent, "Usage: ^3%s %s%s\n", ((fRefereeCmd) ? "\\ref" : "\\callvote"), arg, aVoteInfo[dwVoteIndex].pszVoteHelp);
-			return G_INVALID;
-		}
-		else if (G_voteDescription(ent, fRefereeCmd, dwVoteIndex)) {
-			G_PrintConfigs(ent);
-			return G_INVALID;
-		}
-		else if (arg2 == NULL || strlen(arg2) < 1) {
-			G_PrintConfigs(ent);
-			return G_INVALID;
-		}
-
-		if (!G_isValidConfig(ent, arg2)) {
-			return G_INVALID;
-		}
-
-		Com_sprintf(level.voteInfo.vote_value, VOTE_MAXSTRING, "%s", arg2);
-	}
-	// Vote action (vote has passed)
-	else {
-
-		// Load in comp settings for current gametype
-		if (G_ConfigSet(level.voteInfo.vote_value)) {
-			AP(va("cpm \"%s Settings Loaded!\n\"", level.voteInfo.vote_value));
-		}
-
-		if (g_tournament.integer == 1 && g_gamestate.integer == GS_WARMUP_COUNTDOWN) {
-			level.lastRestartTime = level.time;
-			trap_SendConsoleCommand(EXEC_APPEND, va("map_restart 0 %i\n", GS_WARMUP));
-		}
-		else {
-			if (g_gamestate.integer == GS_PLAYING && g_gameStatslog.integer) {
-				G_writeGameEarlyExit();  // properly close current stats output
-			}
-			trap_SendConsoleCommand(EXEC_APPEND, va("map_restart 0 %i\n", GS_WARMUP));
-		}
-	}
-	return( G_OK );
-}*/
 
 // *** G_PrintConfigs ***
 void G_PrintConfigs(gentity_t* ent) {
@@ -99,10 +49,9 @@ void G_PrintConfigs(gentity_t* ent) {
 		Q_strncpyz(filename, Q_StrReplace(configPointer, ".config", ""), sizeof(filename));
 
 		if (!Q_stricmp(filename, gameConfig)) {
-			//G_refPrintf(ent, "^7Config: ^3%s ^7[active]", filename);
-		}
-		else {
-			//G_refPrintf(ent, "^7Config: ^3%s", filename);
+			G_EntPrintf(ent, "^7Config: ^3%s ^7[active]", filename);
+		} else {
+			G_EntPrintf(ent, "^7Config: ^3%s", filename);
 		}
 	}
 	G_Printf("Config list done.\n");
@@ -116,12 +65,12 @@ qboolean G_isValidConfig(gentity_t* ent, const char* configname) {
 		Q_strncpyz(filename, configname, sizeof(filename));
 	}
 	else {
-		//G_refPrintf(ent, "^7No config set.");
+		G_EntPrintf(ent, "^7No config set.");
 		return qfalse;
 	}
 
 	if (!trap_FS_FileExists(va("configs/%s.config", filename))) {
-		//G_refPrintf(ent, "^3Warning: No config with filename '%s' found\n", filename);
+		G_EntPrintf(ent, "^3Warning: No config with filename '%s' found\n", filename);
 		return qfalse;
 	}
 	return qtrue;
