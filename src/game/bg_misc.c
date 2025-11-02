@@ -4308,7 +4308,7 @@ const colorTable_t OSP_Colortable[] =
 	{ "mdgrey", &colorMdGrey, {'9'} },
 	{ "dkgrey", &colorDkGrey, {'y'} },
 	{ "black", &colorBlack, {'0'} },
-	{ NULL, NULL }
+	{ NULL, NULL, {'0'} }
 };
 
 // Weapon full names + headshot capability

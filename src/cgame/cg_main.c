@@ -413,6 +413,12 @@ vmCvar_t cg_notifyTextHeight;
 vmCvar_t cg_notifyTextLines;
 vmCvar_t cg_notifyPlayerOnly;
 
+vmCvar_t cg_teamObituaryColors;
+vmCvar_t cg_teamObituaryColorSame;
+vmCvar_t cg_teamObituaryColorSameTK;
+vmCvar_t cg_teamObituaryColorEnemy;
+vmCvar_t cg_teamObituaryColorEnemyTK;
+
 
 typedef struct {
 	vmCvar_t    *vmCvar;
@@ -721,6 +727,13 @@ cvarTable_t cvarTable[] = {
 	{ &cg_notifyTextHeight, "cg_notifyTextHeight", "8", CVAR_ARCHIVE },
 	{ &cg_notifyTextLines, "cg_notifyTextLines", "5", CVAR_ARCHIVE },
 	{ &cg_notifyPlayerOnly, "cg_notifyPlayerOnly", "0", CVAR_ARCHIVE },
+
+	// custom kill feed colors
+	{ &cg_teamObituaryColors, "cg_teamObituaryColors", "0", CVAR_ARCHIVE },
+	{ &cg_teamObituaryColorSame, "cg_teamObituaryColorSame", "green", CVAR_ARCHIVE },
+	{ &cg_teamObituaryColorSameTK, "cg_teamObituaryColorSameTK", "mdgreen", CVAR_ARCHIVE },
+	{ &cg_teamObituaryColorEnemy, "cg_teamObituaryColorEnemy", "red", CVAR_ARCHIVE },
+	{ &cg_teamObituaryColorEnemyTK, "cg_teamObituaryColorEnemyTK", "mdred", CVAR_ARCHIVE }, 
 	
 };
 int cvarTableSize = sizeof( cvarTable ) / sizeof( cvarTable[0] );

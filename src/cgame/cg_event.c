@@ -82,6 +82,73 @@ const char  *CG_PlaceString( int rank ) {
 	return str;
 }
 
+char* CG_ColorObituaryEntName(clientInfo_t *ci, char *name, qboolean teamKill)
+{
+	clientInfo_t* self = &cgs.clientinfo[cg.clientNum];
+
+	char cleanName[MAX_NETNAME];
+	Q_strncpyz( cleanName, name, sizeof( cleanName ) );
+	Q_CleanStr( cleanName );
+
+	char colorCode = '7';
+
+	if (self->team != TEAM_SPECTATOR)
+	{
+		int i = 0;
+		while (OSP_Colortable[i].colorname != NULL)
+		{
+			if (ci->team != self->team)
+			{
+				if (teamKill)
+				{
+					if (Q_stricmp(cg_teamObituaryColorEnemyTK.string, OSP_Colortable[i].colorname) == 0)
+					{
+						colorCode = *OSP_Colortable[i].colorCode;
+						break;
+					}
+				}
+				else
+				{
+					if (Q_stricmp(cg_teamObituaryColorEnemy.string, OSP_Colortable[i].colorname) == 0)
+					{
+						colorCode = *OSP_Colortable[i].colorCode;
+						break;
+					}
+				}
+			}
+			else
+			{
+				if (teamKill)
+				{
+					if (Q_stricmp(cg_teamObituaryColorSameTK.string, OSP_Colortable[i].colorname) == 0)
+					{
+						colorCode = *OSP_Colortable[i].colorCode;
+						break;
+					}
+				}
+				else
+				{
+					if (Q_stricmp(cg_teamObituaryColorSame.string, OSP_Colortable[i].colorname) == 0)
+					{
+						colorCode = *OSP_Colortable[i].colorCode;
+						break;
+					}
+				}
+			}
+			i++;
+		}
+	}
+	else
+	{
+		if (ci->team == TEAM_BLUE)
+			colorCode = '4'; // blue
+		else
+			colorCode = '1'; // red
+	}
+	return va("^%c%s", colorCode, cleanName);
+}
+
+
 /*
 =============
 CG_Obituary
@@ -94,8 +161,8 @@ static void CG_Obituary( entityState_t *ent ) {
 	char        *message2;
 	const char  *targetInfo;
 	const char  *attackerInfo;
-	char targetName[32];
-	char attackerName[32];
+	char targetName[MAX_NETNAME+4];
+	char attackerName[MAX_NETNAME+4];
 	clientInfo_t    *ci, *ca; // JPW NERVE ca = attacker
 
 	target = ent->otherEntityNum;
@@ -123,6 +190,11 @@ static void CG_Obituary( entityState_t *ent ) {
 		Q_strncpyz( targetName, Info_ValueForKey( targetInfo, "un" ), sizeof( targetName ) - 2 );
 	}else{
 		Q_strncpyz( targetName, Info_ValueForKey( targetInfo, "n" ), sizeof( targetName ) - 2 );
+	}
+
+	if (cg_teamObituaryColors.integer)
+	{
+		Q_strncpyz(targetName, CG_ColorObituaryEntName(ci, targetName, ci->team == ca->team), sizeof(targetName));
 	}
 	
 	strcat( targetName, S_COLOR_WHITE );
@@ -230,6 +302,12 @@ static void CG_Obituary( entityState_t *ent ) {
 		}else{
 			Q_strncpyz( attackerName, Info_ValueForKey( attackerInfo, "n" ), sizeof( attackerName ) - 2 );	
 		}
+
+		if (cg_teamObituaryColors.integer)
+		{
+			Q_strncpyz(attackerName, CG_ColorObituaryEntName(ca, attackerName, ci->team == ca->team), sizeof(attackerName));
+		}
+
 		strcat( attackerName, S_COLOR_WHITE );
 		// check for kill messages about the current clientNum
 		if ( target == cg.snap->ps.clientNum ) {

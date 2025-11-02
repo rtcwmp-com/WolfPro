@@ -88,6 +88,8 @@ If you have questions concerning this license or the applicable additional terms
 #define NOTIFY_WIDTH        80
 #define NOTIFY_HEIGHT       5
 
+#define MAX_NETNAME		36
+
 // very large characters
 #define GIANT_WIDTH         32
 #define GIANT_HEIGHT        48
@@ -1956,6 +1958,13 @@ extern vmCvar_t cg_notifyTextWidth;
 extern vmCvar_t cg_notifyTextHeight;
 extern vmCvar_t cg_notifyTextLines;
 extern vmCvar_t cg_notifyPlayerOnly;
+
+extern vmCvar_t cg_showLimboMessage;			// show/hide limbo message while dead
+extern vmCvar_t cg_teamObituaryColors;			// custom colors in kill feed
+extern vmCvar_t cg_teamObituaryColorSame;		// same team color
+extern vmCvar_t cg_teamObituaryColorSameTK;		// same team TK color
+extern vmCvar_t cg_teamObituaryColorEnemy;		// enemy team color
+extern vmCvar_t cg_teamObituaryColorEnemyTK;	// enemy team TK color
 
 //
 // cg_main.c
