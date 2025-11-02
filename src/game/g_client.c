@@ -1499,14 +1499,12 @@ void ClientUserinfoChanged( int clientNum ) {
 			trap_SendServerCommand( -1, va( "usernameprint \"[lof]%s" S_COLOR_WHITE " [lon]renamed to[lof] %s\n\"", oldusername,
 											client->pers.username ) );
 		
-		if (level.intermissiontime) {
+			if (level.intermissiontime) {
 				Q_strncpyz(client->pers.username, oldusername, sizeof(client->pers.username));
 				Info_SetValueForKey(userinfo, "username", oldusername);
 				trap_SetUserinfo(clientNum, userinfo);
 				CPx(client->ps.clientNum, "print \"^1Denied! ^7You cannot rename during intermission^1!\n\"");
 				return;
-			} else {
-				AP(va("print \"[lof]%s" S_COLOR_WHITE " [lon]renamed to[lof] %s\n\"", oldusername, client->pers.username));
 			}
 
             if (g_gameStatslog.integer && (g_gamestate.integer == GS_PLAYING)) {
