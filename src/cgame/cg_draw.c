@@ -1037,6 +1037,93 @@ static float CG_DrawEnemyTimer(float y) {
 }
 
 /*
+===================
+RTCWPro - draw speed
+with extra features
+Source: PubJ
+
+CG_DrawTJSpeed
+===================
+*/
+void CG_DrawTJSpeed(void) {
+	char         status[128];
+	float        sizex, sizey, x, y;
+	int          w;
+	static vec_t speed;
+	vec4_t       color;
+	static vec_t topSpeed;
+
+	if (cg.resetmaxspeed)
+	{
+		cg.topSpeed = 0;
+		topSpeed = 0;
+		cg.resetmaxspeed = qfalse;
+	}
+
+	if (!cg_drawSpeed.integer)
+	{
+		return;
+	}
+
+	speed = sqrt(cg.predictedPlayerState.velocity[0] * cg.predictedPlayerState.velocity[0] + cg.predictedPlayerState.velocity[1] * cg.predictedPlayerState.velocity[1]);
+
+	// pp velocity is sometimes NaN, so check it
+	if (speed != speed)
+	{
+		speed = 0;
+	}
+
+	if (speed > topSpeed)
+	{
+		topSpeed = speed;
+	}
+
+	sizex = sizey = 0.25f;
+
+	x = cg_speedX.value;
+	y = cg_speedY.value;
+
+	switch (cg_drawSpeed.integer)
+	{
+	case 1:
+		Com_sprintf(status, sizeof(status), va("%.0f", speed));
+		break;
+	case 2:
+		Com_sprintf(status, sizeof(status), va("%.0f %.0f", speed, topSpeed));
+		break;
+	case 3:
+		Com_sprintf(status, sizeof(status), va("%.0f", speed));
+		break;
+	case 4:
+		Com_sprintf(status, sizeof(status), va("%.0f %.0f", speed, topSpeed));
+		break;
+	default:
+		Com_sprintf(status, sizeof(status), va("%.0f", speed));
+		break;
+	}
+
+	w = CG_Text_Width_Ext(status, sizex, sizey, &cgDC.Assets.textFont) / 2;
+	BG_ParseColorCvar("white", color, cg_hudAlpha.value);
+
+	if (cg_drawSpeed.integer > 2 && speed > cg.oldSpeed + 0.001f * 100)
+	{
+		BG_ParseColorCvar("green", color, cg_hudAlpha.value);
+		CG_Text_Paint_Ext(x - w, y, sizex, sizey, color, status, 0, 0, ITEM_TEXTSTYLE_SHADOWED, &cgDC.Assets.textFont);
+	}
+	else if (cg_drawSpeed.integer > 2 && speed < cg.oldSpeed - 0.001f * 100)
+	{
+		BG_ParseColorCvar("red", color, cg_hudAlpha.value);
+		CG_Text_Paint_Ext(x - w, y, sizex, sizey, color, status, 0, 0, ITEM_TEXTSTYLE_SHADOWED, &cgDC.Assets.textFont);
+	}
+	else
+	{
+		CG_Text_Paint_Ext(x - w, y, sizex, sizey, color, status, 0, 0, ITEM_TEXTSTYLE_SHADOWED, &cgDC.Assets.textFont);
+	}
+
+	cg.oldSpeed = speed;
+}
+
+/*
 ========================
 Respawn Timer
 ========================
@@ -1229,9 +1316,11 @@ static void CG_DrawTeamInfo( void ) {
 	vec4_t hcolor;
 	int chatHeight;
 	float alphapercent;
+	float chatAlpha = (float)cg_chatAlpha.value;
 
-#define CHATLOC_Y 385 // bottom end
-#define CHATLOC_X 0
+	int x = cg_chatX.integer;
+	int y = cg_chatY.integer;
+
 
 	if ( cg_teamChatHeight.integer < TEAMCHAT_HEIGHT ) {
 		chatHeight = cg_teamChatHeight.integer;
@@ -1271,35 +1360,40 @@ static void CG_DrawTeamInfo( void ) {
 				hcolor[0] = 1;
 				hcolor[1] = 0;
 				hcolor[2] = 0;
-//			hcolor[3] = 0.33;
 			} else if ( cg.snap->ps.persistant[PERS_TEAM] == TEAM_BLUE ) {
 				hcolor[0] = 0;
 				hcolor[1] = 0;
 				hcolor[2] = 1;
-//			hcolor[3] = 0.33;
 			} else {
 				hcolor[0] = 0;
 				hcolor[1] = 1;
 				hcolor[2] = 0;
-//			hcolor[3] = 0.33;
 			}
 
-			hcolor[3] = 0.33f * alphapercent;
+			if (chatAlpha > 1.0f) {
+				chatAlpha = 1.0f;
+			}
+			else if (chatAlpha < 0.f) {
+				chatAlpha = 0.f;
+			}
+
+			if (!Q_stricmp(cg_chatBackgroundColor.string, ""))
+				hcolor[3] = chatAlpha * alphapercent;
+			else // Abuse this..
+				BG_setCrosshair(cg_chatBackgroundColor.string, hcolor, chatAlpha * alphapercent, "cg_chatBackgroundColor");
 
 			trap_R_SetColor( hcolor );
-			CG_DrawPic( CHATLOC_X, CHATLOC_Y - ( cgs.teamChatPos - i ) * TINYCHAR_HEIGHT, 640, TINYCHAR_HEIGHT, cgs.media.teamStatusBar );
+			CG_DrawPic( x, y - ( cgs.teamChatPos - i ) * TINYCHAR_HEIGHT, 640, TINYCHAR_HEIGHT, cgs.media.teamStatusBar );
 
 			hcolor[0] = hcolor[1] = hcolor[2] = 1.0;
 			hcolor[3] = alphapercent;
 			trap_R_SetColor( hcolor );
 
-			CG_DrawStringExt( CHATLOC_X + TINYCHAR_WIDTH,
-							  CHATLOC_Y - ( cgs.teamChatPos - i ) * TINYCHAR_HEIGHT,
+			CG_DrawStringExt( x + TINYCHAR_WIDTH,
+							  y - ( cgs.teamChatPos - i ) * TINYCHAR_HEIGHT,
 							  cgs.teamChatMsgs[i % chatHeight], hcolor, qfalse, qfalse,
 							  TINYCHAR_WIDTH, TINYCHAR_HEIGHT, 0 );
-//			CG_DrawSmallString( CHATLOC_X + SMALLCHAR_WIDTH,
-//				CHATLOC_Y - (cgs.teamChatPos - i)*SMALLCHAR_HEIGHT,
-//				cgs.teamChatMsgs[i % TEAMCHAT_HEIGHT], 1.0F );
+
 		}
 // jpw
 	}
@@ -1357,8 +1451,6 @@ static void CG_DrawPickupItem( void ) {
 CG_DrawNotify
 =================
 */
-#define NOTIFYLOC_Y 42 // bottom end
-#define NOTIFYLOC_X 0
 
 static void CG_DrawNotify( void ) {
 	int w;
@@ -1368,6 +1460,12 @@ static void CG_DrawNotify( void ) {
 	float alphapercent;
 	char var[MAX_TOKEN_CHARS];
 	float notifytime = 1.0f;
+	int x = cg_notifyTextX.integer;
+	int y = cg_notifyTextY.integer;
+
+	qboolean shadow = cg_notifyTextShadow.integer;
+	int width = cg_notifyTextWidth.integer;
+	int height = cg_notifyTextHeight.integer;
 
 	trap_Cvar_VariableStringBuffer( "con_notifytime", var, sizeof( var ) );
 	notifytime = atof( var ) * 1000;
@@ -1391,8 +1489,8 @@ static void CG_DrawNotify( void ) {
 				w = len;
 			}
 		}
-		w *= TINYCHAR_WIDTH;
-		w += TINYCHAR_WIDTH * 2;
+		w *= width;
+		w += width * 2;
 
 		if ( maxCharsBeforeOverlay <= 0 ) {
 			maxCharsBeforeOverlay = 80;
@@ -1414,10 +1512,10 @@ static void CG_DrawNotify( void ) {
 			hcolor[3] = alphapercent;
 			trap_R_SetColor( hcolor );
 
-			CG_DrawStringExt( NOTIFYLOC_X + TINYCHAR_WIDTH,
-							  NOTIFYLOC_Y - ( cgs.notifyPos - i ) * TINYCHAR_HEIGHT,
-							  cgs.notifyMsgs[i % chatHeight], hcolor, qfalse, qfalse,
-							  TINYCHAR_WIDTH, TINYCHAR_HEIGHT, maxCharsBeforeOverlay );
+			CG_DrawStringExt( x + width,
+							  y - ( cgs.notifyPos - i ) * height,
+							  cgs.notifyMsgs[i % chatHeight], hcolor, qfalse, shadow,
+							  width, height, maxCharsBeforeOverlay );
 		}
 	}
 }
@@ -1505,9 +1603,14 @@ static void CG_DrawDisconnect( void ) {
 	}
 
 	// also add text in center of screen
-	s = CG_TranslateString( "Connection Interrupted" ); // bk 010215 - FIXME
+	if(cg_drawCI.integer){
+		s = CG_TranslateString( "CI" ); 
+	}
+	
 	w = CG_DrawStrlen( s ) * BIGCHAR_WIDTH;
-	CG_DrawBigString( 320 - w / 2, 100, s, 1.0F );
+
+	if (cg_lagometer.integer)
+		CG_DrawBigString(cg_lagometerX.integer + 10, cg_lagometerY.integer, s, 1.0F );
 
 	// blink the icon
 	if ( ( cg.time >> 9 ) & 1 ) {
@@ -1517,12 +1620,16 @@ static void CG_DrawDisconnect( void ) {
 	x = 640 - 72;
 	y = 480 - 52;
 
-	CG_DrawPic( x, y, 48, 48, trap_R_RegisterShader( "gfx/2d/net.tga" ) );
+	if(cg_drawCI.integer){
+		CG_DrawPic( x, y, 48, 48, trap_R_RegisterShader( "gfx/2d/net.tga" ) );
+	}
 }
 
 
 #define MAX_LAGOMETER_PING  900
 #define MAX_LAGOMETER_RANGE 300
+#define MAX_SPEEDMETER_SPEED 1024
+#define MAX_SPEEDMETER_RANGE 128
 
 /*
 ==============
@@ -1530,7 +1637,7 @@ CG_DrawLagometer
 ==============
 */
 static void CG_DrawLagometer( void ) {
-	int a, x, y, i;
+	int a = 0, x = cg_lagometerX.integer, y = cg_lagometerY.integer, i = 0;
 	float v;
 	float ax, ay, aw, ah, mid, range;
 	int color;
@@ -1545,9 +1652,6 @@ static void CG_DrawLagometer( void ) {
 	//
 	// draw the graph
 	//
-	x = 640 - 55;
-	y = 480 - 140;
-
 	trap_R_SetColor( NULL );
 	CG_DrawPic( x, y, 48, 48, cgs.media.lagometerShader );
 
@@ -1562,6 +1666,46 @@ static void CG_DrawLagometer( void ) {
 	mid = ay + range;
 
 	vscale = range / MAX_LAGOMETER_RANGE;
+
+	// rtcwpro - speed
+	a = 0;
+	if (cg_lagometer.integer > 1) { 
+		static vec_t speed, speedHistory[MAX_SPEEDMETER_RANGE];
+		float vscale2, range2, v2;
+		vec4_t color2;
+		int j = 0;
+
+		BG_ParseColorCvar("ltgrey", color2, 0.8);
+
+		speed = VectorLength(cg.predictedPlayerState.velocity);
+
+		if (speed != speed) {
+			speed = 0;
+		}
+
+		range2 = ah;
+		vscale2 = range2 / (cg_lagometer.integer * MAX_SPEEDMETER_SPEED);
+
+		for (j = MAX_SPEEDMETER_RANGE - 1; j > 0; j--) {
+			speedHistory[j] = speedHistory[j - 1];
+		}
+
+		speedHistory[0] = speed;
+
+		for (a = 0; a < aw; a++) {
+			v2 = speedHistory[a];
+
+			if (v2 > 0) {
+				trap_R_SetColor(color2);
+
+				v2 = v2 * vscale2;
+				v2 = (v2 > range2) ? range2 : v2;
+
+				trap_R_DrawStretchPic(ax + aw - a, ay + ah - v2, 1, v2, 0, 0, 0, 0, cgs.media.whiteShader);
+			}
+		}
+	}
+	// end
 
 	// draw the frame interpoalte / extrapolate graph
 	for ( a = 0 ; a < aw ; a++ ) {
@@ -3818,7 +3962,10 @@ NERVE - SMF
 =================
 */
 static void CG_DrawCompass( void ) {
-	float basex = 290, basey = 420;
+	// RTCWPro
+	float basex = cg_compassX.integer; //290 
+	float basey = cg_compassY.integer; //420;
+	// RTCWPro
 	float basew = 60, baseh = 60;
 	snapshot_t  *snap;
 	vec4_t hcolor;
@@ -4122,6 +4269,11 @@ static void CG_Draw2D( void ) {
 
 		CG_DrawLimboMessage();
 		// -NERVE - SMF
+
+		if (cg_drawSpeed.integer)
+		{
+			CG_DrawTJSpeed();
+		}
 	}
 
 	// Ridah, draw flash blends now
@@ -4245,3 +4397,305 @@ void CG_DrawActive( stereoFrame_t stereoView ) {
 }
 
 
+/*
+=====================
+CG_Text_PaintChar_Ext
+
+Ported from ET
+=====================
+*/
+void CG_Text_PaintChar_Ext(float x, float y, float w, float h, float scalex, float scaley, float s, float t, float s2, float t2, qhandle_t hShader) {
+	w *= scalex;
+	h *= scaley;
+	CG_AdjustFrom640( &x, &y, &w, &h );
+	trap_R_DrawStretchPic( x, y, w, h, s, t, s2, t2, hShader );
+}
+
+/*
+=====================
+CG_Text_Paint_ext2
+
+Ported from S4NDMoD
+=====================
+*/
+void CG_Text_Paint_ext2(float x, float y, float scale, vec4_t color, const char *text, float adjust, int limit, int style) {
+  int len, count;
+	vec4_t newColor;
+	glyphInfo_t *glyph;
+	float useScale;
+	fontInfo_t *font = &cgDC.Assets.textFont;
+
+	font = &cgDC.Assets.bigFont;
+
+	useScale = scale * font->glyphScale;
+
+	color[3] *= cg_hudAlpha.value;	// (SA) adjust for cg_hudalpha
+
+  if (text) {
+		const char *s = text;
+		trap_R_SetColor( color );
+		memcpy(&newColor[0], &color[0], sizeof(vec4_t));
+    len = strlen(text);
+		if (limit > 0 && len > limit) {
+			len = limit;
+		}
+		count = 0;
+		while (s && *s && count < len) {
+			glyph = &font->glyphs[(int)*s];
+      //int yadj = Assets.textFont.glyphs[text[i]].bottom + Assets.textFont.glyphs[text[i]].top;
+      //float yadj = scale * (Assets.textFont.glyphs[text[i]].imageHeight - Assets.textFont.glyphs[text[i]].height);
+			if ( Q_IsColorString( s ) ) {
+				memcpy( newColor, g_color_table[ColorIndex(*(s+1))], sizeof( newColor ) );
+				newColor[3] = color[3];
+				trap_R_SetColor( newColor );
+				s += 2;
+				continue;
+			} else {
+				float yadj = useScale * glyph->top;
+				if (style == ITEM_TEXTSTYLE_SHADOWED || style == ITEM_TEXTSTYLE_SHADOWEDMORE) {
+					int ofs = style == ITEM_TEXTSTYLE_SHADOWED ? 1 : 2;
+					colorBlack[3] = newColor[3];
+					trap_R_SetColor( colorBlack );
+					CG_Text_PaintChar(x + ofs, y - yadj + ofs,
+														glyph->imageWidth,
+														glyph->imageHeight,
+														useScale,
+														glyph->s,
+														glyph->t,
+														glyph->s2,
+														glyph->t2,
+														glyph->glyph);
+					colorBlack[3] = 1.0;
+					trap_R_SetColor( newColor );
+				}
+				CG_Text_PaintChar(x, y - yadj,
+													glyph->imageWidth,
+													glyph->imageHeight,
+													useScale,
+													glyph->s,
+													glyph->t,
+													glyph->s2,
+													glyph->t2,
+													glyph->glyph);
+				// CG_DrawPic(x, y - yadj, scale * cgDC.Assets.textFont.glyphs[text[i]].imageWidth, scale * cgDC.Assets.textFont.glyphs[text[i]].imageHeight, cgDC.Assets.textFont.glyphs[text[i]].glyph);
+				x += (glyph->xSkip * useScale) + adjust;
+				s++;
+				count++;
+			}
+    }
+	  trap_R_SetColor( NULL );
+  }
+}
+
+/*
+=====================
+CG_Text_Width_ext2
+
+Ported from S4NDMoD
+=====================
+*/
+int CG_Text_Width_ext2(const char *text, float scale, int limit) {
+  int count,len;
+	float out;
+	glyphInfo_t *glyph;
+	float useScale;
+	const char *s = text;
+	fontInfo_t* font = &cgDC.Assets.bigFont;
+
+	useScale = scale * font->glyphScale;
+  out = 0;
+  if (text) {
+    len = strlen(text);
+		if (limit > 0 && len > limit) {
+			len = limit;
+		}
+		count = 0;
+		while (s && *s && count < len) {
+			if ( Q_IsColorString(s) ) {
+				s += 2;
+				continue;
+			} else {
+				glyph = &font->glyphs[(int)*s];
+				out += glyph->xSkip;
+				s++;
+				count++;
+			}
+    }
+  }
+  return out * useScale;
+}
+
+/*
+=====================
+CG_Text_Height_ext2
+
+Ported from S4NDMoD
+=====================
+*/
+int CG_Text_Height_ext2(const char *text, float scale, int limit) {
+  int len, count;
+	float max;
+	glyphInfo_t *glyph;
+	float useScale;
+	const char *s = text;
+	fontInfo_t *font = &cgDC.Assets.textFont;
+
+	font = &cgDC.Assets.bigFont;
+
+	useScale = scale * font->glyphScale;
+  max = 0;
+  if (text) {
+    len = strlen(text);
+		if (limit > 0 && len > limit) {
+			len = limit;
+		}
+		count = 0;
+		while (s && *s && count < len) {
+			if ( Q_IsColorString(s) ) {
+				s += 2;
+				continue;
+			} else {
+				glyph = &font->glyphs[(int)*s];
+	      if (max < glyph->height) {
+		      max = glyph->height;
+			  }
+				s++;
+				count++;
+			}
+    }
+  }
+  return max * useScale;
+}
+
+/*
+=====================
+CG_Text_Paint_Ext
+
+Ported from ET
+=====================
+*/
+
+void CG_Text_Paint_Ext( float x, float y, float scalex, float scaley, vec4_t color, const char *text, float adjust, int limit, int style, fontInfo_t* font ) {
+	int len, count;
+	vec4_t newColor;
+	glyphInfo_t *glyph;
+
+	scalex *= font->glyphScale;
+	scaley *= font->glyphScale;
+
+	if (text) {
+		const char *s = text;
+		trap_R_SetColor( color );
+		memcpy(&newColor[0], &color[0], sizeof(vec4_t));
+		len = strlen(text);
+		if (limit > 0 && len > limit) {
+			len = limit;
+		}
+		count = 0;
+		while (s && *s && count < len) {
+			glyph = &font->glyphs[(unsigned char)*s];
+			if ( Q_IsColorString( s ) ) {
+				if( *(s+1) == COLOR_NULL ) {
+					memcpy( newColor, color, sizeof(newColor) );
+				} else {
+					memcpy( newColor, g_color_table[ColorIndex(*(s+1))], sizeof( newColor ) );
+					newColor[3] = color[3];
+				}
+				trap_R_SetColor( newColor );
+				s += 2;
+				continue;
+			} else {
+				float yadj = scaley * glyph->top;
+				if (style == ITEM_TEXTSTYLE_SHADOWED || style == ITEM_TEXTSTYLE_SHADOWEDMORE) {
+					int ofs = style == ITEM_TEXTSTYLE_SHADOWED ? 1 : 2;
+					colorBlack[3] = newColor[3];
+					trap_R_SetColor( colorBlack );
+					CG_Text_PaintChar_Ext(x + (glyph->pitch * scalex) + ofs, y - yadj + ofs, glyph->imageWidth, glyph->imageHeight, scalex, scaley, glyph->s, glyph->t, glyph->s2, glyph->t2, glyph->glyph);
+					colorBlack[3] = 1.0;
+					trap_R_SetColor( newColor );
+				}
+				CG_Text_PaintChar_Ext(x + (glyph->pitch * scalex), y - yadj, glyph->imageWidth, glyph->imageHeight, scalex, scaley, glyph->s, glyph->t, glyph->s2, glyph->t2, glyph->glyph);
+				x += (glyph->xSkip * scalex) + adjust;
+				s++;
+				count++;
+			}
+		}
+		trap_R_SetColor( NULL );
+	}
+}
+
+/*
+=====================
+CG_Text_Height_Ext
+
+Ported from ET
+=====================
+*/
+int CG_Text_Height_Ext( const char *text, float scale, int limit, fontInfo_t* font ) {
+ int len, count;
+	float max;
+	glyphInfo_t *glyph;
+	float useScale;
+	const char *s = text;
+
+	useScale = scale * font->glyphScale;
+	max = 0;
+	if (text) {
+		len = strlen(text);
+		if (limit > 0 && len > limit) {
+			len = limit;
+		}
+		count = 0;
+		while (s && *s && count < len) {
+			if ( Q_IsColorString(s) ) {
+				s += 2;
+				continue;
+			} else {
+				glyph = &font->glyphs[(unsigned char)*s];
+	      if (max < glyph->height) {
+		      max = glyph->height;
+			  }
+				s++;
+				count++;
+			}
+		}
+	}
+	return max * useScale;
+}
+
+/*
+=====================
+CG_Text_Width_Ext
+
+Ported from ET
+=====================
+*/
+
+int CG_Text_Width_Ext( const char *text, float scale, int limit, fontInfo_t* font ) {
+	int count, len;
+	glyphInfo_t *glyph;
+	const char *s = text;
+	float out, useScale = scale * font->glyphScale;
+
+	out = 0;
+	if( text ) {
+		len = strlen( text );
+		if (limit > 0 && len > limit) {
+			len = limit;
+		}
+		count = 0;
+		while (s && *s && count < len) {
+			if ( Q_IsColorString(s) ) {
+				s += 2;
+				continue;
+			} else {
+				glyph = &font->glyphs[(unsigned char)*s];
+				out += glyph->xSkip;
+				s++;
+				count++;
+			}
+		}
+	}
+
+	return out * useScale;
+}

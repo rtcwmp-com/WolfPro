@@ -608,6 +608,11 @@ void CG_zoomViewRevert_f(void) {
 }
 
 
+static void CG_ResetMaxSpeed_f(void)
+{
+	cg.resetmaxspeed = qtrue;
+}
+
 
 typedef struct {
 	char    *cmd;
@@ -674,7 +679,9 @@ static consoleCommand_t commands[] = {
 	{ "+zoomView", CG_zoomViewSet_f },
 	{ "-zoomView", CG_zoomViewRevert_f },
 
-	{ "timerShare", CG_TimerShare_f }
+	{ "timerShare", CG_TimerShare_f },
+	
+	{ "resetmaxspeed", CG_ResetMaxSpeed_f },
 };
 
 

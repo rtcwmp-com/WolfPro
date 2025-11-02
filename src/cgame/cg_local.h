@@ -84,8 +84,11 @@ If you have questions concerning this license or the applicable additional terms
 #define TEAMCHAT_WIDTH      80
 #define TEAMCHAT_HEIGHT     8
 
+#define MAX_NOTIFY_HEIGHT   32
 #define NOTIFY_WIDTH        80
 #define NOTIFY_HEIGHT       5
+
+#define MAX_NETNAME		36
 
 // very large characters
 #define GIANT_WIDTH         32
@@ -1020,6 +1023,11 @@ typedef struct {
 	int zoomedTime;
 	float zoomedVal;
 	float zoomedSens;
+
+	qboolean resetmaxspeed;
+	float topSpeed;
+	float oldSpeed;
+
 } cg_t;
 
 #define NUM_FUNNEL_SPRITES  21
@@ -1518,6 +1526,10 @@ typedef struct {
 	sfxHandle_t alliesWin;
 	sfxHandle_t axisWin;
 
+	// chats
+	sfxHandle_t normalChat;
+	sfxHandle_t teamChat;
+
 } cgMedia_t;
 
 typedef enum {
@@ -1635,8 +1647,8 @@ typedef struct {
 	int teamLastChatPos;
 
 	// New notify mechanism for obits
-	char notifyMsgs[NOTIFY_HEIGHT][NOTIFY_WIDTH * 3 + 1];
-	int notifyMsgTimes[NOTIFY_HEIGHT];
+	char notifyMsgs[MAX_NOTIFY_HEIGHT][NOTIFY_WIDTH * 3 + 1];
+	int notifyMsgTimes[MAX_NOTIFY_HEIGHT];
 	int notifyPos;
 	int notifyLastPos;
 
@@ -1916,6 +1928,44 @@ extern vmCvar_t cg_zoomedFOV;
 extern vmCvar_t cg_zoomedSens;
 extern vmCvar_t cg_zoomedSensLock;
 
+// draw speed
+extern vmCvar_t cg_drawSpeed;
+extern vmCvar_t cg_speedX;
+extern vmCvar_t cg_speedY;
+
+extern vmCvar_t cg_drawWeaponIconFlash;
+
+extern vmCvar_t cg_chatX;
+extern vmCvar_t cg_chatY;
+extern vmCvar_t cg_teamOverlayX;
+extern vmCvar_t cg_teamOverlayY;
+extern vmCvar_t cg_compassX;
+extern vmCvar_t cg_compassY;
+extern vmCvar_t cg_lagometerX;
+extern vmCvar_t cg_lagometerY;
+
+extern vmCvar_t cg_drawCI;
+
+extern vmCvar_t cg_chatAlpha;
+extern vmCvar_t cg_chatBackgroundColor;
+extern vmCvar_t cg_chatBeep;
+extern vmCvar_t cg_noChat;
+
+extern vmCvar_t cg_notifyTextX;
+extern vmCvar_t cg_notifyTextY;
+extern vmCvar_t cg_notifyTextShadow;
+extern vmCvar_t cg_notifyTextWidth;
+extern vmCvar_t cg_notifyTextHeight;
+extern vmCvar_t cg_notifyTextLines;
+extern vmCvar_t cg_notifyPlayerOnly;
+
+extern vmCvar_t cg_showLimboMessage;			// show/hide limbo message while dead
+extern vmCvar_t cg_teamObituaryColors;			// custom colors in kill feed
+extern vmCvar_t cg_teamObituaryColorSame;		// same team color
+extern vmCvar_t cg_teamObituaryColorSameTK;		// same team TK color
+extern vmCvar_t cg_teamObituaryColorEnemy;		// enemy team color
+extern vmCvar_t cg_teamObituaryColorEnemyTK;	// enemy team TK color
+
 //
 // cg_main.c
 //
@@ -2061,6 +2111,14 @@ const char *CG_GameTypeString();
 void CG_Fade( int r, int g, int b, int a, float time );
 int CG_CalculateReinfTime(void);
 
+// Text
+int CG_Text_Width_Ext( const char *text, float scale, int limit, fontInfo_t* font );
+int CG_Text_Height_Ext( const char *text, float scale, int limit, fontInfo_t* font );
+void CG_Text_Paint_Ext( float x, float y, float scalex, float scaley, vec4_t color, const char *text, float adjust, int limit, int style, fontInfo_t* font );
+// Hud names
+void CG_Text_Paint_ext2(float x, float y, float scale, vec4_t color, const char *text, float adjust, int limit, int style);
+int CG_Text_Width_ext2(const char *text, float scale, int limit);
+int CG_Text_Height_ext2(const char *text, float scale, int limit);
 
 
 //

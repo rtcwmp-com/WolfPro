@@ -600,7 +600,24 @@ void CG_AddToNotify( const char *str ) {
 	trap_Cvar_VariableStringBuffer( "con_notifytime", var, sizeof( var ) );
 	notifytime = atof( var ) * 1000;
 
-	chatHeight = NOTIFY_HEIGHT;
+	trap_Cvar_VariableStringBuffer("cg_notifyTextLines", var, sizeof(var));
+	chatHeight = atoi( var );
+	if (chatHeight > MAX_NOTIFY_HEIGHT) {
+		chatHeight = MAX_NOTIFY_HEIGHT;
+	}
+
+	if (cg.demoPlayback) {
+		trap_Cvar_VariableStringBuffer("cg_notifyPlayerOnly", var, sizeof(var));
+		int notifyPlayerOnly = atoi(var);
+		if (notifyPlayerOnly) {
+			char* playerName = Info_ValueForKey(CG_ConfigString(CS_PLAYERS + cg.snap->ps.clientNum), "n");
+			if (strlen(playerName)) {
+				if (strstr(str, playerName) == NULL) {
+					return;
+				}
+			}
+		}
+	}
 
 	if ( chatHeight <= 0 || notifytime <= 0 ) {
 		// team chat disabled, dump into normal chat
@@ -2050,7 +2067,16 @@ static void CG_ServerCommand( void ) {
 		trap_S_StartLocalSound( cgs.media.talkSound, CHAN_LOCAL_SOUND );
 		Q_strncpyz( text, s, MAX_SAY_TEXT );
 		CG_RemoveChatEscapeChar( text );
-		CG_AddToTeamChat( text ); // JPW NERVE
+		if (!cg_noChat.integer)
+		{
+			CG_AddToTeamChat(text); // JPW NERVE
+
+			if (cg_chatBeep.integer == 1)
+			{
+				trap_S_StartLocalSound(cgs.media.normalChat, CHAN_LOCAL_SOUND);
+			}
+
+		}
 		CG_Printf( "[skipnotify]%s\n", text ); // JPW NERVE
 
 		// NERVE - SMF - we also want this to display in limbo chat
@@ -2081,7 +2107,15 @@ static void CG_ServerCommand( void ) {
 		trap_S_StartLocalSound( cgs.media.talkSound, CHAN_LOCAL_SOUND );
 		Q_strncpyz( text, s, MAX_SAY_TEXT );
 		CG_RemoveChatEscapeChar( text );
-		CG_AddToTeamChat( text );
+		if (!cg_noChat.integer)
+		{
+			CG_AddToTeamChat(text);
+
+			if (cg_chatBeep.integer == 1 || cg_chatBeep.integer == 2)
+			{
+				trap_S_StartLocalSound(cgs.media.teamChat, CHAN_LOCAL_SOUND);
+			}
+		}
 		CG_Printf( "[skipnotify]%s\n", text ); // JPW NERVE
 
 		// NERVE - SMF - we also want this to display in limbo chat

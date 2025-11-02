@@ -30,6 +30,9 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "client.h"
 
+cvar_t* con_type;
+cvar_t* con_color[4];
+cvar_t* con_height;
 
 int g_console_field_width = 78;
 
@@ -55,6 +58,7 @@ typedef struct {
 
 	float displayFrac;      // aproaches finalFrac at scr_conspeed
 	float finalFrac;        // 0.0 to 1.0 lines of console to display
+	float userFrac;			// RTCWPro - con height
 
 	int vislines;           // in scanlines
 
@@ -364,6 +368,13 @@ void Con_Init( void ) {
 	con_debug = Cvar_Get( "con_debug", "0", CVAR_ARCHIVE ); //----(SA)	added
 	con_restricted = Cvar_Get( "con_restricted", "0", CVAR_INIT );      // DHM - Nerve
 	con_scale = Cvar_Get( "con_scale", "1.0", CVAR_ARCHIVE );
+	con_type = Cvar_Get("con_type", "0", CVAR_ARCHIVE);
+	con_color[0] = Cvar_Get("con_colorRed", "0.5", CVAR_ARCHIVE);
+	con_color[1] = Cvar_Get("con_colorGreen", "0.5", CVAR_ARCHIVE);
+	con_color[2] = Cvar_Get("con_colorBlue", "0.5", CVAR_ARCHIVE);
+	con_color[3] = Cvar_Get("con_colorAlpha", "1", CVAR_ARCHIVE);
+	con_height = Cvar_Get("con_height", "0.5", CVAR_ARCHIVE);
+	con.userFrac = con_height->value;
 
 	Field_Clear( &g_consoleField );
 	g_consoleField.widthInChars = g_console_field_width;
@@ -671,6 +682,7 @@ void Con_DrawSolidConsole( float frac ) {
 	int lines;
 	int currentColor;
 	vec4_t color;
+	vec4_t consoleColor;
 	
 
 	lines = cls.glconfig.vidHeight * frac;
@@ -689,8 +701,18 @@ void Con_DrawSolidConsole( float frac ) {
 	if ( y < 1 ) {
 		y = 0;
 	} else {
-		SCR_DrawPic( 0, 0, SCREEN_WIDTH, y, cls.consoleShader );
-
+		if (con_type->integer)
+		{
+			consoleColor[0] = con_color[0]->value;
+			consoleColor[1] = con_color[1]->value;
+			consoleColor[2] = con_color[2]->value;
+			consoleColor[3] = con_color[3]->value;
+			SCR_FillRect(0, 0, SCREEN_WIDTH, y, consoleColor);
+		}
+		else
+		{
+			SCR_DrawPic(0, 0, SCREEN_WIDTH, y, cls.consoleShader);
+		}
 		// NERVE - SMF - merged from WolfSP
 		if ( frac >= 0.5f ) {
 			color[0] = color[1] = color[2] = frac * 2.0f;
@@ -828,7 +850,7 @@ Scroll it up or down
 void Con_RunConsole( void ) {
 	// decide on the destination height of the console
 	if ( cls.keyCatchers & KEYCATCH_CONSOLE ) {
-		con.finalFrac = 0.5;        // half screen
+		con.finalFrac = con.userFrac;	// RTCWPro - con height
 	} else {
 		con.finalFrac = 0;              // none visible
 
@@ -885,4 +907,29 @@ void Con_Close( void ) {
 	cls.keyCatchers &= ~KEYCATCH_CONSOLE;
 	con.finalFrac = 0;              // none visible
 	con.displayFrac = 0;
+}
+
+
+/*
+==================
+RTCWPro - con height
+Con_SetFrac
+==================
+*/
+void Con_SetFrac(const float conFrac)
+{
+	// clamp the cvar value
+	// don't let the console be hidden
+	if (conFrac < .1f)
+	{
+		con.userFrac = .1f;
+	}
+	else if (conFrac > 1.0f)
+	{
+		con.userFrac = 1.0f;
+	}
+	else
+	{
+		con.userFrac = conFrac;
+	}
 }

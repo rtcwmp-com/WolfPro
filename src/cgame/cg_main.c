@@ -384,6 +384,42 @@ vmCvar_t cg_zoomedFOV;
 vmCvar_t cg_zoomedSens;
 vmCvar_t cg_zoomedSensLock;
 
+// draw speed
+vmCvar_t cg_drawSpeed;
+vmCvar_t cg_speedX;
+vmCvar_t cg_speedY;
+
+vmCvar_t cg_drawWeaponIconFlash;
+
+vmCvar_t cg_chatX;
+vmCvar_t cg_chatY;
+vmCvar_t cg_compassX;
+vmCvar_t cg_compassY;
+vmCvar_t cg_lagometerX;
+vmCvar_t cg_lagometerY;
+
+vmCvar_t cg_drawCI;
+
+vmCvar_t cg_chatAlpha;
+vmCvar_t cg_chatBackgroundColor;
+vmCvar_t cg_chatBeep;
+vmCvar_t cg_noChat;
+
+vmCvar_t cg_notifyTextX;
+vmCvar_t cg_notifyTextY;
+vmCvar_t cg_notifyTextShadow;
+vmCvar_t cg_notifyTextWidth;
+vmCvar_t cg_notifyTextHeight;
+vmCvar_t cg_notifyTextLines;
+vmCvar_t cg_notifyPlayerOnly;
+
+vmCvar_t cg_teamObituaryColors;
+vmCvar_t cg_teamObituaryColorSame;
+vmCvar_t cg_teamObituaryColorSameTK;
+vmCvar_t cg_teamObituaryColorEnemy;
+vmCvar_t cg_teamObituaryColorEnemyTK;
+
+
 typedef struct {
 	vmCvar_t    *vmCvar;
 	char        *cvarName;
@@ -655,7 +691,50 @@ cvarTable_t cvarTable[] = {
 	{ &cg_zoomedSensLock, "cg_zoomedSensLock", "0", CVAR_ARCHIVE },
 	{ &cg_zoomedSens, "cg_zoomedSens", ".3", CVAR_ARCHIVE },
 
-	{ &cg_announcer, "cg_announcer", "1", CVAR_ARCHIVE }
+	{ &cg_announcer, "cg_announcer", "1", CVAR_ARCHIVE },
+
+	// draw speed
+	{ &cg_drawSpeed, "cg_drawSpeed", "0", CVAR_ARCHIVE },
+	{ &cg_speedX, "cg_speedX", "315", CVAR_ARCHIVE },
+	{ &cg_speedY, "cg_speedY", "340", CVAR_ARCHIVE },
+
+	{ &cg_drawWeaponIconFlash, "cg_drawWeaponIconFlash", "0", CVAR_ARCHIVE },
+
+	// chat
+	{ &cg_chatX, "cg_chatX", "0", CVAR_ARCHIVE },
+	{ &cg_chatY, "cg_chatY", "385", CVAR_ARCHIVE },
+
+	// compass
+	{ &cg_compassX, "cg_compassX", "290", CVAR_ARCHIVE },
+	{ &cg_compassY, "cg_compassY", "420", CVAR_ARCHIVE },
+
+	// lagometer
+	{ &cg_lagometerX, "cg_lagometerX", "585", CVAR_ARCHIVE },
+	{ &cg_lagometerY, "cg_lagometerY", "340", CVAR_ARCHIVE },
+
+	{ &cg_drawCI, "cg_drawCI", "1", CVAR_ARCHIVE },
+
+	{ &cg_chatAlpha, "cg_chatAlpha", "0.33", CVAR_ARCHIVE },
+	{ &cg_chatBackgroundColor, "cg_chatBackgroundColor", "", CVAR_ARCHIVE },
+	{ &cg_chatBeep, "cg_chatBeep", "0", CVAR_ARCHIVE },
+	{ &cg_noChat, "cg_noChat", "0", CVAR_ARCHIVE },
+
+	// notify text
+	{ &cg_notifyTextX, "cg_notifyTextX", "0", CVAR_ARCHIVE },
+	{ &cg_notifyTextY, "cg_notifyTextY", "42", CVAR_ARCHIVE }, // 5 lines * 8 height + 2 offset
+	{ &cg_notifyTextShadow, "cg_notifyTextShadow", "0", CVAR_ARCHIVE },
+	{ &cg_notifyTextWidth, "cg_notifyTextWidth", "8", CVAR_ARCHIVE },
+	{ &cg_notifyTextHeight, "cg_notifyTextHeight", "8", CVAR_ARCHIVE },
+	{ &cg_notifyTextLines, "cg_notifyTextLines", "5", CVAR_ARCHIVE },
+	{ &cg_notifyPlayerOnly, "cg_notifyPlayerOnly", "0", CVAR_ARCHIVE },
+
+	// custom kill feed colors
+	{ &cg_teamObituaryColors, "cg_teamObituaryColors", "0", CVAR_ARCHIVE },
+	{ &cg_teamObituaryColorSame, "cg_teamObituaryColorSame", "green", CVAR_ARCHIVE },
+	{ &cg_teamObituaryColorSameTK, "cg_teamObituaryColorSameTK", "mdgreen", CVAR_ARCHIVE },
+	{ &cg_teamObituaryColorEnemy, "cg_teamObituaryColorEnemy", "red", CVAR_ARCHIVE },
+	{ &cg_teamObituaryColorEnemyTK, "cg_teamObituaryColorEnemyTK", "mdred", CVAR_ARCHIVE }, 
+	
 };
 int cvarTableSize = sizeof( cvarTable ) / sizeof( cvarTable[0] );
 
@@ -1255,6 +1334,12 @@ static void CG_RegisterSounds( void ) {
 
 	cgs.media.alliesWin = trap_S_RegisterSound("sound/match/winallies_pro.wav");
 	cgs.media.axisWin = trap_S_RegisterSound("sound/match/winaxis_pro.wav");
+
+	// chats
+	cgs.media.normalChat = trap_S_RegisterSound("sound/match/normalChat.wav");
+	cgs.media.teamChat = trap_S_RegisterSound("sound/match/teamChat.wav");
+
+	
 }
 
 

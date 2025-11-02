@@ -453,6 +453,8 @@ extern cvar_t  *cl_language;
 
 extern cvar_t* cl_demoPlayer;
 
+extern cvar_t* con_height;
+
 //=================================================
 
 //
@@ -609,6 +611,7 @@ void Con_PageDown( void );
 void Con_Top( void );
 void Con_Bottom( void );
 void Con_Close( void );
+void Con_SetFrac(const float conFrac);	// RTCWPro con height
 
 
 //
