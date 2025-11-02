@@ -389,6 +389,8 @@ vmCvar_t cg_drawSpeed;
 vmCvar_t cg_speedX;
 vmCvar_t cg_speedY;
 
+vmCvar_t cg_drawWeaponIconFlash;
+
 typedef struct {
 	vmCvar_t    *vmCvar;
 	char        *cvarName;
@@ -666,6 +668,8 @@ cvarTable_t cvarTable[] = {
 	{ &cg_drawSpeed, "cg_drawSpeed", "0", CVAR_ARCHIVE },
 	{ &cg_speedX, "cg_speedX", "315", CVAR_ARCHIVE },
 	{ &cg_speedY, "cg_speedY", "340", CVAR_ARCHIVE },
+
+	{ &cg_drawWeaponIconFlash, "cg_drawWeaponIconFlash", "0", CVAR_ARCHIVE },
 };
 int cvarTableSize = sizeof( cvarTable ) / sizeof( cvarTable[0] );
 

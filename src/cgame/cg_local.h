@@ -1926,6 +1926,8 @@ extern vmCvar_t cg_drawSpeed;
 extern vmCvar_t cg_speedX;
 extern vmCvar_t cg_speedY;
 
+extern vmCvar_t cg_drawWeaponIconFlash;
+
 //
 // cg_main.c
 //

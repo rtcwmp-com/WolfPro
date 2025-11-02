@@ -189,10 +189,32 @@ static void CG_DrawPlayerWeaponIcon( rectDef_t *rect, qboolean drawHighlighted, 
 		return;
 	}
 
-	if ( drawHighlighted ) {
-		icon = cg_weapons[ realweap ].weaponIcon[1];
+	if (cg_drawWeaponIconFlash.integer) {
+		if (cg.snap->ps.weaponstate == WEAPON_RELOADING) {
+			VectorCopy(colorYellow, hcolor);
+			icon = cg_weapons[realweap].weaponIcon[1];
+		}
+		else if (cg.snap->ps.weaponstate == WEAPON_FIRING)   {
+			VectorCopy(colorRed, hcolor);
+			icon = cg_weapons[realweap].weaponIcon[1];
+		}
+		else if (cg.snap->ps.weaponstate == WEAPON_READY)    {
+			VectorCopy(colorYellow, hcolor);
+			icon = cg_weapons[realweap].weaponIcon[0];
+		}
+		else {
+			VectorCopy(colorWhite, hcolor);
+			icon = cg_weapons[realweap].weaponIcon[1];
+		}
+		hcolor[3] = 4.0f;
 	} else {
-		icon = cg_weapons[ realweap ].weaponIcon[0];
+
+		if ( drawHighlighted ) {
+			icon = cg_weapons[ realweap ].weaponIcon[1];
+		} else {
+			icon = cg_weapons[ realweap ].weaponIcon[0];
+		}
+
 	}
 
 
