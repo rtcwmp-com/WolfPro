@@ -1451,8 +1451,6 @@ static void CG_DrawPickupItem( void ) {
 CG_DrawNotify
 =================
 */
-#define NOTIFYLOC_Y 42 // bottom end
-#define NOTIFYLOC_X 0
 
 static void CG_DrawNotify( void ) {
 	int w;
@@ -1462,6 +1460,12 @@ static void CG_DrawNotify( void ) {
 	float alphapercent;
 	char var[MAX_TOKEN_CHARS];
 	float notifytime = 1.0f;
+	int x = cg_notifyTextX.integer;
+	int y = cg_notifyTextY.integer;
+
+	qboolean shadow = cg_notifyTextShadow.integer;
+	int width = cg_notifyTextWidth.integer;
+	int height = cg_notifyTextHeight.integer;
 
 	trap_Cvar_VariableStringBuffer( "con_notifytime", var, sizeof( var ) );
 	notifytime = atof( var ) * 1000;
@@ -1485,8 +1489,8 @@ static void CG_DrawNotify( void ) {
 				w = len;
 			}
 		}
-		w *= TINYCHAR_WIDTH;
-		w += TINYCHAR_WIDTH * 2;
+		w *= width;
+		w += width * 2;
 
 		if ( maxCharsBeforeOverlay <= 0 ) {
 			maxCharsBeforeOverlay = 80;
@@ -1508,10 +1512,10 @@ static void CG_DrawNotify( void ) {
 			hcolor[3] = alphapercent;
 			trap_R_SetColor( hcolor );
 
-			CG_DrawStringExt( NOTIFYLOC_X + TINYCHAR_WIDTH,
-							  NOTIFYLOC_Y - ( cgs.notifyPos - i ) * TINYCHAR_HEIGHT,
-							  cgs.notifyMsgs[i % chatHeight], hcolor, qfalse, qfalse,
-							  TINYCHAR_WIDTH, TINYCHAR_HEIGHT, maxCharsBeforeOverlay );
+			CG_DrawStringExt( x + width,
+							  y - ( cgs.notifyPos - i ) * height,
+							  cgs.notifyMsgs[i % chatHeight], hcolor, qfalse, shadow,
+							  width, height, maxCharsBeforeOverlay );
 		}
 	}
 }

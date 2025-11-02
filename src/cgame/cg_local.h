@@ -84,6 +84,7 @@ If you have questions concerning this license or the applicable additional terms
 #define TEAMCHAT_WIDTH      80
 #define TEAMCHAT_HEIGHT     8
 
+#define MAX_NOTIFY_HEIGHT   32
 #define NOTIFY_WIDTH        80
 #define NOTIFY_HEIGHT       5
 
@@ -1644,8 +1645,8 @@ typedef struct {
 	int teamLastChatPos;
 
 	// New notify mechanism for obits
-	char notifyMsgs[NOTIFY_HEIGHT][NOTIFY_WIDTH * 3 + 1];
-	int notifyMsgTimes[NOTIFY_HEIGHT];
+	char notifyMsgs[MAX_NOTIFY_HEIGHT][NOTIFY_WIDTH * 3 + 1];
+	int notifyMsgTimes[MAX_NOTIFY_HEIGHT];
 	int notifyPos;
 	int notifyLastPos;
 
@@ -1947,6 +1948,14 @@ extern vmCvar_t cg_chatAlpha;
 extern vmCvar_t cg_chatBackgroundColor;
 extern vmCvar_t cg_chatBeep;
 extern vmCvar_t cg_noChat;
+
+extern vmCvar_t cg_notifyTextX;
+extern vmCvar_t cg_notifyTextY;
+extern vmCvar_t cg_notifyTextShadow;
+extern vmCvar_t cg_notifyTextWidth;
+extern vmCvar_t cg_notifyTextHeight;
+extern vmCvar_t cg_notifyTextLines;
+extern vmCvar_t cg_notifyPlayerOnly;
 
 //
 // cg_main.c

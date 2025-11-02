@@ -600,7 +600,24 @@ void CG_AddToNotify( const char *str ) {
 	trap_Cvar_VariableStringBuffer( "con_notifytime", var, sizeof( var ) );
 	notifytime = atof( var ) * 1000;
 
-	chatHeight = NOTIFY_HEIGHT;
+	trap_Cvar_VariableStringBuffer("cg_notifyTextLines", var, sizeof(var));
+	chatHeight = atoi( var );
+	if (chatHeight > MAX_NOTIFY_HEIGHT) {
+		chatHeight = MAX_NOTIFY_HEIGHT;
+	}
+
+	if (cg.demoPlayback) {
+		trap_Cvar_VariableStringBuffer("cg_notifyPlayerOnly", var, sizeof(var));
+		int notifyPlayerOnly = atoi(var);
+		if (notifyPlayerOnly) {
+			char* playerName = Info_ValueForKey(CG_ConfigString(CS_PLAYERS + cg.snap->ps.clientNum), "n");
+			if (strlen(playerName)) {
+				if (strstr(str, playerName) == NULL) {
+					return;
+				}
+			}
+		}
+	}
 
 	if ( chatHeight <= 0 || notifytime <= 0 ) {
 		// team chat disabled, dump into normal chat

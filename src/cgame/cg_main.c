@@ -405,6 +405,14 @@ vmCvar_t cg_chatBackgroundColor;
 vmCvar_t cg_chatBeep;
 vmCvar_t cg_noChat;
 
+vmCvar_t cg_notifyTextX;
+vmCvar_t cg_notifyTextY;
+vmCvar_t cg_notifyTextShadow;
+vmCvar_t cg_notifyTextWidth;
+vmCvar_t cg_notifyTextHeight;
+vmCvar_t cg_notifyTextLines;
+vmCvar_t cg_notifyPlayerOnly;
+
 
 typedef struct {
 	vmCvar_t    *vmCvar;
@@ -704,6 +712,15 @@ cvarTable_t cvarTable[] = {
 	{ &cg_chatBackgroundColor, "cg_chatBackgroundColor", "", CVAR_ARCHIVE },
 	{ &cg_chatBeep, "cg_chatBeep", "0", CVAR_ARCHIVE },
 	{ &cg_noChat, "cg_noChat", "0", CVAR_ARCHIVE },
+
+	// notify text
+	{ &cg_notifyTextX, "cg_notifyTextX", "0", CVAR_ARCHIVE },
+	{ &cg_notifyTextY, "cg_notifyTextY", "42", CVAR_ARCHIVE }, // 5 lines * 8 height + 2 offset
+	{ &cg_notifyTextShadow, "cg_notifyTextShadow", "0", CVAR_ARCHIVE },
+	{ &cg_notifyTextWidth, "cg_notifyTextWidth", "8", CVAR_ARCHIVE },
+	{ &cg_notifyTextHeight, "cg_notifyTextHeight", "8", CVAR_ARCHIVE },
+	{ &cg_notifyTextLines, "cg_notifyTextLines", "5", CVAR_ARCHIVE },
+	{ &cg_notifyPlayerOnly, "cg_notifyPlayerOnly", "0", CVAR_ARCHIVE },
 	
 };
 int cvarTableSize = sizeof( cvarTable ) / sizeof( cvarTable[0] );
