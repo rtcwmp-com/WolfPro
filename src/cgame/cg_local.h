@@ -1523,6 +1523,10 @@ typedef struct {
 	sfxHandle_t alliesWin;
 	sfxHandle_t axisWin;
 
+	// chats
+	sfxHandle_t normalChat;
+	sfxHandle_t teamChat;
+
 } cgMedia_t;
 
 typedef enum {
@@ -1927,6 +1931,22 @@ extern vmCvar_t cg_speedX;
 extern vmCvar_t cg_speedY;
 
 extern vmCvar_t cg_drawWeaponIconFlash;
+
+extern vmCvar_t cg_chatX;
+extern vmCvar_t cg_chatY;
+extern vmCvar_t cg_teamOverlayX;
+extern vmCvar_t cg_teamOverlayY;
+extern vmCvar_t cg_compassX;
+extern vmCvar_t cg_compassY;
+extern vmCvar_t cg_lagometerX;
+extern vmCvar_t cg_lagometerY;
+
+extern vmCvar_t cg_drawCI;
+
+extern vmCvar_t cg_chatAlpha;
+extern vmCvar_t cg_chatBackgroundColor;
+extern vmCvar_t cg_chatBeep;
+extern vmCvar_t cg_noChat;
 
 //
 // cg_main.c

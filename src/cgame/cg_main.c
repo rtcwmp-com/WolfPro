@@ -391,6 +391,21 @@ vmCvar_t cg_speedY;
 
 vmCvar_t cg_drawWeaponIconFlash;
 
+vmCvar_t cg_chatX;
+vmCvar_t cg_chatY;
+vmCvar_t cg_compassX;
+vmCvar_t cg_compassY;
+vmCvar_t cg_lagometerX;
+vmCvar_t cg_lagometerY;
+
+vmCvar_t cg_drawCI;
+
+vmCvar_t cg_chatAlpha;
+vmCvar_t cg_chatBackgroundColor;
+vmCvar_t cg_chatBeep;
+vmCvar_t cg_noChat;
+
+
 typedef struct {
 	vmCvar_t    *vmCvar;
 	char        *cvarName;
@@ -670,6 +685,26 @@ cvarTable_t cvarTable[] = {
 	{ &cg_speedY, "cg_speedY", "340", CVAR_ARCHIVE },
 
 	{ &cg_drawWeaponIconFlash, "cg_drawWeaponIconFlash", "0", CVAR_ARCHIVE },
+
+	// chat
+	{ &cg_chatX, "cg_chatX", "0", CVAR_ARCHIVE },
+	{ &cg_chatY, "cg_chatY", "385", CVAR_ARCHIVE },
+
+	// compass
+	{ &cg_compassX, "cg_compassX", "290", CVAR_ARCHIVE },
+	{ &cg_compassY, "cg_compassY", "420", CVAR_ARCHIVE },
+
+	// lagometer
+	{ &cg_lagometerX, "cg_lagometerX", "585", CVAR_ARCHIVE },
+	{ &cg_lagometerY, "cg_lagometerY", "340", CVAR_ARCHIVE },
+
+	{ &cg_drawCI, "cg_drawCI", "1", CVAR_ARCHIVE },
+
+	{ &cg_chatAlpha, "cg_chatAlpha", "0.33", CVAR_ARCHIVE },
+	{ &cg_chatBackgroundColor, "cg_chatBackgroundColor", "", CVAR_ARCHIVE },
+	{ &cg_chatBeep, "cg_chatBeep", "0", CVAR_ARCHIVE },
+	{ &cg_noChat, "cg_noChat", "0", CVAR_ARCHIVE },
+	
 };
 int cvarTableSize = sizeof( cvarTable ) / sizeof( cvarTable[0] );
 
@@ -1269,6 +1304,12 @@ static void CG_RegisterSounds( void ) {
 
 	cgs.media.alliesWin = trap_S_RegisterSound("sound/match/winallies_pro.wav");
 	cgs.media.axisWin = trap_S_RegisterSound("sound/match/winaxis_pro.wav");
+
+	// chats
+	cgs.media.normalChat = trap_S_RegisterSound("sound/match/normalChat.wav");
+	cgs.media.teamChat = trap_S_RegisterSound("sound/match/teamChat.wav");
+
+	
 }
 
 

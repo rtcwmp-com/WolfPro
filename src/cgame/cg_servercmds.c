@@ -2050,7 +2050,16 @@ static void CG_ServerCommand( void ) {
 		trap_S_StartLocalSound( cgs.media.talkSound, CHAN_LOCAL_SOUND );
 		Q_strncpyz( text, s, MAX_SAY_TEXT );
 		CG_RemoveChatEscapeChar( text );
-		CG_AddToTeamChat( text ); // JPW NERVE
+		if (!cg_noChat.integer)
+		{
+			CG_AddToTeamChat(text); // JPW NERVE
+
+			if (cg_chatBeep.integer == 1)
+			{
+				trap_S_StartLocalSound(cgs.media.normalChat, CHAN_LOCAL_SOUND);
+			}
+
+		}
 		CG_Printf( "[skipnotify]%s\n", text ); // JPW NERVE
 
 		// NERVE - SMF - we also want this to display in limbo chat
@@ -2081,7 +2090,15 @@ static void CG_ServerCommand( void ) {
 		trap_S_StartLocalSound( cgs.media.talkSound, CHAN_LOCAL_SOUND );
 		Q_strncpyz( text, s, MAX_SAY_TEXT );
 		CG_RemoveChatEscapeChar( text );
-		CG_AddToTeamChat( text );
+		if (!cg_noChat.integer)
+		{
+			CG_AddToTeamChat(text);
+
+			if (cg_chatBeep.integer == 1 || cg_chatBeep.integer == 2)
+			{
+				trap_S_StartLocalSound(cgs.media.teamChat, CHAN_LOCAL_SOUND);
+			}
+		}
 		CG_Printf( "[skipnotify]%s\n", text ); // JPW NERVE
 
 		// NERVE - SMF - we also want this to display in limbo chat

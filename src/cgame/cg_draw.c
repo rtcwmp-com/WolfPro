@@ -1316,9 +1316,11 @@ static void CG_DrawTeamInfo( void ) {
 	vec4_t hcolor;
 	int chatHeight;
 	float alphapercent;
+	float chatAlpha = (float)cg_chatAlpha.value;
 
-#define CHATLOC_Y 385 // bottom end
-#define CHATLOC_X 0
+	int x = cg_chatX.integer;
+	int y = cg_chatY.integer;
+
 
 	if ( cg_teamChatHeight.integer < TEAMCHAT_HEIGHT ) {
 		chatHeight = cg_teamChatHeight.integer;
@@ -1358,35 +1360,40 @@ static void CG_DrawTeamInfo( void ) {
 				hcolor[0] = 1;
 				hcolor[1] = 0;
 				hcolor[2] = 0;
-//			hcolor[3] = 0.33;
 			} else if ( cg.snap->ps.persistant[PERS_TEAM] == TEAM_BLUE ) {
 				hcolor[0] = 0;
 				hcolor[1] = 0;
 				hcolor[2] = 1;
-//			hcolor[3] = 0.33;
 			} else {
 				hcolor[0] = 0;
 				hcolor[1] = 1;
 				hcolor[2] = 0;
-//			hcolor[3] = 0.33;
 			}
 
-			hcolor[3] = 0.33f * alphapercent;
+			if (chatAlpha > 1.0f) {
+				chatAlpha = 1.0f;
+			}
+			else if (chatAlpha < 0.f) {
+				chatAlpha = 0.f;
+			}
+
+			if (!Q_stricmp(cg_chatBackgroundColor.string, ""))
+				hcolor[3] = chatAlpha * alphapercent;
+			else // Abuse this..
+				BG_setCrosshair(cg_chatBackgroundColor.string, hcolor, chatAlpha * alphapercent, "cg_chatBackgroundColor");
 
 			trap_R_SetColor( hcolor );
-			CG_DrawPic( CHATLOC_X, CHATLOC_Y - ( cgs.teamChatPos - i ) * TINYCHAR_HEIGHT, 640, TINYCHAR_HEIGHT, cgs.media.teamStatusBar );
+			CG_DrawPic( x, y - ( cgs.teamChatPos - i ) * TINYCHAR_HEIGHT, 640, TINYCHAR_HEIGHT, cgs.media.teamStatusBar );
 
 			hcolor[0] = hcolor[1] = hcolor[2] = 1.0;
 			hcolor[3] = alphapercent;
 			trap_R_SetColor( hcolor );
 
-			CG_DrawStringExt( CHATLOC_X + TINYCHAR_WIDTH,
-							  CHATLOC_Y - ( cgs.teamChatPos - i ) * TINYCHAR_HEIGHT,
+			CG_DrawStringExt( x + TINYCHAR_WIDTH,
+							  y - ( cgs.teamChatPos - i ) * TINYCHAR_HEIGHT,
 							  cgs.teamChatMsgs[i % chatHeight], hcolor, qfalse, qfalse,
 							  TINYCHAR_WIDTH, TINYCHAR_HEIGHT, 0 );
-//			CG_DrawSmallString( CHATLOC_X + SMALLCHAR_WIDTH,
-//				CHATLOC_Y - (cgs.teamChatPos - i)*SMALLCHAR_HEIGHT,
-//				cgs.teamChatMsgs[i % TEAMCHAT_HEIGHT], 1.0F );
+
 		}
 // jpw
 	}
@@ -1592,9 +1599,14 @@ static void CG_DrawDisconnect( void ) {
 	}
 
 	// also add text in center of screen
-	s = CG_TranslateString( "Connection Interrupted" ); // bk 010215 - FIXME
+	if(cg_drawCI.integer){
+		s = CG_TranslateString( "CI" ); 
+	}
+	
 	w = CG_DrawStrlen( s ) * BIGCHAR_WIDTH;
-	CG_DrawBigString( 320 - w / 2, 100, s, 1.0F );
+
+	if (cg_lagometer.integer)
+		CG_DrawBigString(cg_lagometerX.integer + 10, cg_lagometerY.integer, s, 1.0F );
 
 	// blink the icon
 	if ( ( cg.time >> 9 ) & 1 ) {
@@ -1604,12 +1616,16 @@ static void CG_DrawDisconnect( void ) {
 	x = 640 - 72;
 	y = 480 - 52;
 
-	CG_DrawPic( x, y, 48, 48, trap_R_RegisterShader( "gfx/2d/net.tga" ) );
+	if(cg_drawCI.integer){
+		CG_DrawPic( x, y, 48, 48, trap_R_RegisterShader( "gfx/2d/net.tga" ) );
+	}
 }
 
 
 #define MAX_LAGOMETER_PING  900
 #define MAX_LAGOMETER_RANGE 300
+#define MAX_SPEEDMETER_SPEED 1024
+#define MAX_SPEEDMETER_RANGE 128
 
 /*
 ==============
@@ -1617,7 +1633,7 @@ CG_DrawLagometer
 ==============
 */
 static void CG_DrawLagometer( void ) {
-	int a, x, y, i;
+	int a = 0, x = cg_lagometerX.integer, y = cg_lagometerY.integer, i = 0;
 	float v;
 	float ax, ay, aw, ah, mid, range;
 	int color;
@@ -1632,9 +1648,6 @@ static void CG_DrawLagometer( void ) {
 	//
 	// draw the graph
 	//
-	x = 640 - 55;
-	y = 480 - 140;
-
 	trap_R_SetColor( NULL );
 	CG_DrawPic( x, y, 48, 48, cgs.media.lagometerShader );
 
@@ -1649,6 +1662,46 @@ static void CG_DrawLagometer( void ) {
 	mid = ay + range;
 
 	vscale = range / MAX_LAGOMETER_RANGE;
+
+	// rtcwpro - speed
+	a = 0;
+	if (cg_lagometer.integer > 1) { 
+		static vec_t speed, speedHistory[MAX_SPEEDMETER_RANGE];
+		float vscale2, range2, v2;
+		vec4_t color2;
+		int j = 0;
+
+		BG_ParseColorCvar("ltgrey", color2, 0.8);
+
+		speed = VectorLength(cg.predictedPlayerState.velocity);
+
+		if (speed != speed) {
+			speed = 0;
+		}
+
+		range2 = ah;
+		vscale2 = range2 / (cg_lagometer.integer * MAX_SPEEDMETER_SPEED);
+
+		for (j = MAX_SPEEDMETER_RANGE - 1; j > 0; j--) {
+			speedHistory[j] = speedHistory[j - 1];
+		}
+
+		speedHistory[0] = speed;
+
+		for (a = 0; a < aw; a++) {
+			v2 = speedHistory[a];
+
+			if (v2 > 0) {
+				trap_R_SetColor(color2);
+
+				v2 = v2 * vscale2;
+				v2 = (v2 > range2) ? range2 : v2;
+
+				trap_R_DrawStretchPic(ax + aw - a, ay + ah - v2, 1, v2, 0, 0, 0, 0, cgs.media.whiteShader);
+			}
+		}
+	}
+	// end
 
 	// draw the frame interpoalte / extrapolate graph
 	for ( a = 0 ; a < aw ; a++ ) {
@@ -3905,7 +3958,10 @@ NERVE - SMF
 =================
 */
 static void CG_DrawCompass( void ) {
-	float basex = 290, basey = 420;
+	// RTCWPro
+	float basex = cg_compassX.integer; //290 
+	float basey = cg_compassY.integer; //420;
+	// RTCWPro
 	float basew = 60, baseh = 60;
 	snapshot_t  *snap;
 	vec4_t hcolor;
