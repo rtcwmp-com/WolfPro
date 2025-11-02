@@ -429,7 +429,7 @@ static void WM_DrawClientScore( int x, int y, score_t *score, float *color, floa
 
 	if ( ci->team != TEAM_SPECTATOR ) {
 		if ( ci->powerups & ( ( 1 << PW_REDFLAG ) | ( 1 << PW_BLUEFLAG ) ) ) {
-			CG_DrawPic( tempx - 4, y - 4, 24, 24, trap_R_RegisterShader( "models/multiplayer/treasure/treasure" ) );
+			CG_DrawPic( tempx - 4, y - 4, 24, 24, cgs.media.exclamationIcon );
 			offset += 16;
 			tempx += 16;
 			maxchars -= 2;

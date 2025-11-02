@@ -1569,6 +1569,8 @@ static void CG_RegisterGraphics( void ) {
 //	cgs.media.regenShader = trap_R_RegisterShader("powerups/regen" );
 //	cgs.media.hastePuffShader = trap_R_RegisterShader("hasteSmokePuff" );
 
+	trap_R_RegisterShader( "models/multiplayer/treasure/treasure" );
+
 	// DHM - Nerve :: Allow flags again, will change later to more appropriate models
 	if ( cgs.gametype == GT_CTF || cgs.gametype >= GT_WOLF || cg_buildScript.integer ) {
 		//cgs.media.redFlagModel = trap_R_RegisterModel( "models/flags/r_flag.md3" );

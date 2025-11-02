@@ -1,3 +1,13 @@
+models/multiplayer/treasure/treasure
+{
+	nopicmip
+	{
+		map models/multiplayer/treasure/treasure.tga
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		rgbGen vertex
+	}
+}
+
 
 textures/alpha/bel_orn_m01
 {
