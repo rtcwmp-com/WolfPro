@@ -687,6 +687,9 @@ static float CG_DrawTeamOverlay( float y ) {
 			}
 		}
 	}
+	if(cg.hudeditor){
+		plyrs = 6;
+	}
 
 	if ( !plyrs ) {
 		return y;
@@ -764,8 +767,13 @@ static float CG_DrawTeamOverlay( float y ) {
 	hcolor[3] = cg_hudAlpha.value;
 	CG_DrawRect( x - 1, y, w + 2, h + 2, 1, hcolor );
 
-
+	int drawnPlayers = 0;
+	int orignumSortedTeamPlayers = numSortedTeamPlayers;
+	if(cg.hudeditor && orignumSortedTeamPlayers < 6){
+		numSortedTeamPlayers = 6;
+	}
 	for ( i = 0; i < numSortedTeamPlayers; i++ ) {
+		
 		ci = cgs.clientinfo + sortedTeamPlayers[i];
 		if ( ci->infoValid && ci->team == cg.snap->ps.persistant[PERS_TEAM] ) {
 
@@ -843,14 +851,11 @@ static float CG_DrawTeamOverlay( float y ) {
 
 			if (!Q_stricmp(st, lt) || playerIsSpawning)
 			{
-				CG_DrawStringExt(xx, y - 1, va("%s", isRevivable), damagecolor, qtrue, qfalse, BIGCHAR_WIDTH, BIGCHAR_HEIGHT, 1);
-				CG_DrawStringExt(xx + BIGCHAR_WIDTH, y, va("%s", st), damagecolor, qtrue, qfalse, TINYCHAR_WIDTH, TINYCHAR_HEIGHT, 5); // always draw class name and * yellow
+				CG_DrawStringExt(xx, y, va("%s%s", isRevivable, st), damagecolor, qtrue, qfalse, TINYCHAR_WIDTH, TINYCHAR_HEIGHT, 5); // always draw class name and * yellow
 			}
 			else
 			{
-				//CG_DrawPic(xx + 16, y - 1, 9, 9, trap_R_RegisterShaderNoMip("icons/icon_arrow.tga"));
-				CG_DrawStringExt(xx, y - 1, va("%s", isRevivable), damagecolor, qtrue, qfalse, BIGCHAR_WIDTH, BIGCHAR_HEIGHT, 1);
-				CG_DrawStringExt(xx + BIGCHAR_WIDTH, y, va("%s%s%s", st, ">", lt), damagecolor, qtrue, qfalse, TINYCHAR_WIDTH, TINYCHAR_HEIGHT, 5); // always draw class name and * yellow
+				CG_DrawStringExt(xx, y, va("%s%s%s%s", isRevivable, st, ">", lt), damagecolor, qtrue, qfalse, TINYCHAR_WIDTH, TINYCHAR_HEIGHT, 5); // always draw class name and * yellow
 			}
 
 
@@ -894,6 +899,13 @@ static float CG_DrawTeamOverlay( float y ) {
 							  TINYCHAR_WIDTH, TINYCHAR_HEIGHT, 3 );
 
 			y += TINYCHAR_HEIGHT;
+			if(cg.hudeditor && orignumSortedTeamPlayers < 6){
+				i = 0;
+				drawnPlayers++;
+				if(drawnPlayers == 6){
+					break;
+				}
+			}
 		}
 	}
 
@@ -1143,7 +1155,7 @@ static float CG_DrawProRespawnTimer(float y) {
 		return y;
 	}
 
-	if (cgs.gamestate != GS_PLAYING) {
+	if (!cg.hudeditor && cgs.gamestate != GS_PLAYING) {
 		return y;
 	}
 
@@ -1202,11 +1214,11 @@ static float CG_DrawProEnemyTimer(float y) {
 	if (cg_spawnTimer_set.integer == -1)
 		return y;
 
-	if (cgs.gamestate == GS_WARMUP || cgs.gamestate == GS_WAITING_FOR_PLAYERS) {
+	if (!cg.hudeditor && (cgs.gamestate == GS_WARMUP || cgs.gamestate == GS_WAITING_FOR_PLAYERS)) {
 		return y;
 	}
 
-	if (cg_spawnTimer_set.integer != -1 && cgs.gamestate == GS_PLAYING) {
+	if (cg_spawnTimer_set.integer != -1 && cgs.gamestate == GS_PLAYING || cg.hudeditor) {
 		if (cgs.clientinfo[cg.clientNum].team != TEAM_SPECTATOR || (cg.snap->ps.pm_flags & PMF_FOLLOW)) {
 			//int period = cg_spawnTimer_period.integer > 0 ? cg_spawnTimer_period.integer :
 			int period = (cgs.clientinfo[cg.snap->ps.clientNum].team == TEAM_RED ? cg_bluelimbotime.integer / 1000 : cg_redlimbotime.integer / 1000);
@@ -1643,7 +1655,7 @@ static void CG_DrawLagometer( void ) {
 	int color;
 	float vscale;
 
-	if ( !cg_lagometer.integer || cgs.localServer ) {
+	if (!cg.hudeditor && (!cg_lagometer.integer || cgs.localServer) ) {
 //	if(0) {
 		CG_DrawDisconnect();
 		return;
@@ -3516,7 +3528,7 @@ static void CG_DrawObjectiveInfo( void ) {
 		return;
 	}
 
-	color = CG_FadeColor( cg.oidPrintTime, 250 );
+	color = CG_FadeColor( cg.oidPrintTime, 1000 );
 	if ( !color ) {
 		cg.oidPrintTime = 0;
 		return;
@@ -4168,6 +4180,22 @@ static void CG_DrawPopinString(void) {
 	trap_R_SetColor(NULL);
 }
 
+void CG_GenerateHudEvents(void){
+	if ( (cg.time % 1000) <= 8 ) {
+		CG_AddToTeamChat("username: ^5this is a chat message");
+		CG_AddToNotify( "This is a ^1notify^7 message");
+		CG_CenterPrint( "This is a ^1center print^7 message", SCREEN_HEIGHT - ( SCREEN_HEIGHT * 0.25 ), SMALLCHAR_WIDTH );
+		CG_PopinPrint("This is a ^1priority^7 message", SMALLCHAR_HEIGHT, qtrue);
+		CG_ObjectivePrint("This is an ^1objective^7 message\n", SMALLCHAR_WIDTH);
+		cg.itemPickup           = IT_HEALTH;
+		cg.itemPickupTime       = cg.time;
+		cg.itemPickupBlendTime  = cg.time;
+		if (cg_drawFrags.integer && cg_fragsY.integer) {
+				CG_PriorityCenterPrint("You killed ^4Example Player", cg_fragsY.integer * 0.75, cg_fragsWidth.integer * 0.6, 1);
+		}
+	}
+}
+
 /*
 =================
 CG_Draw2D
@@ -4278,6 +4306,9 @@ static void CG_Draw2D( void ) {
 
 	// Ridah, draw flash blends now
 	CG_DrawFlashBlend();
+	if(cg.hudeditor){
+		CG_GenerateHudEvents();
+	}
 }
 
 // NERVE - SMF

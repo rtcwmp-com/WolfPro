@@ -419,6 +419,8 @@ vmCvar_t cg_teamObituaryColorSameTK;
 vmCvar_t cg_teamObituaryColorEnemy;
 vmCvar_t cg_teamObituaryColorEnemyTK;
 
+vmCvar_t cg_fragsY;
+vmCvar_t cg_fragsWidth;
 
 typedef struct {
 	vmCvar_t    *vmCvar;
@@ -734,6 +736,9 @@ cvarTable_t cvarTable[] = {
 	{ &cg_teamObituaryColorSameTK, "cg_teamObituaryColorSameTK", "mdgreen", CVAR_ARCHIVE },
 	{ &cg_teamObituaryColorEnemy, "cg_teamObituaryColorEnemy", "red", CVAR_ARCHIVE },
 	{ &cg_teamObituaryColorEnemyTK, "cg_teamObituaryColorEnemyTK", "mdred", CVAR_ARCHIVE }, 
+
+	{ &cg_fragsY, "cg_fragsY", "0", CVAR_ARCHIVE },
+	{ &cg_fragsWidth, "cg_fragsWidth", "16", CVAR_ARCHIVE },
 	
 };
 int cvarTableSize = sizeof( cvarTable ) / sizeof( cvarTable[0] );

@@ -1028,6 +1028,8 @@ typedef struct {
 	float topSpeed;
 	float oldSpeed;
 
+	qboolean hudeditor;
+
 } cg_t;
 
 #define NUM_FUNNEL_SPRITES  21
@@ -1966,6 +1968,9 @@ extern vmCvar_t cg_teamObituaryColorSameTK;		// same team TK color
 extern vmCvar_t cg_teamObituaryColorEnemy;		// enemy team color
 extern vmCvar_t cg_teamObituaryColorEnemyTK;	// enemy team TK color
 
+extern vmCvar_t cg_fragsY;
+extern vmCvar_t cg_fragsWidth;
+
 //
 // cg_main.c
 //
@@ -2419,6 +2424,7 @@ void CG_AddToNotify( const char *str );
 void CG_ParseReinforcementTimes(const char *pszReinfSeedString);
 void CG_ParseReady(const char* pState);
 void CG_ParsePause( const char *pTime );
+void CG_AddToTeamChat( const char *str );
 
 //
 // cg_playerstate.c
