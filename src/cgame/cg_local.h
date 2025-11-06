@@ -2125,6 +2125,8 @@ void CG_Text_Paint_ext2(float x, float y, float scale, vec4_t color, const char 
 int CG_Text_Width_ext2(const char *text, float scale, int limit);
 int CG_Text_Height_ext2(const char *text, float scale, int limit);
 
+void Com_ParseHexColor( float* c, const char* text, qbool hasAlpha );
+
 
 //
 // cg_player.c

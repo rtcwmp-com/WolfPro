@@ -27,38 +27,20 @@ static const float TIMELINE_RADIUS = 8.0f;
 static const float delta = 3.0f;
 static const float TIMELINE_HEIGHT = 8.0f * 2.0f + 3.0f * 2;
 
-float prev_times[64];
-int prev_time_index;
-
-
-void CG_ImGUI_Update(void) {
-	if (cgs.igContext == NULL) {
-		return;
-	}
-	igSetCurrentContext((ImGuiContext*)cgs.igContext);
-	igSetAllocatorFunctions((ImGuiMemAllocFunc)cgs.igAlloc, (ImGuiMemFreeFunc)cgs.igFree, cgs.igUserData);
-
-    static qbool windowActive = qfalse;
-	ToggleBooleanWithShortcut(&windowActive, ImGuiKey_C, ImGUI_ShortcutOptions_Global);
-	trap_CL_AddGuiMenu(ImGUI_MainMenu_Info, "CGame info", "", &windowActive, qtrue);
+static void ImGUIDemoWindow(void){
+	static qbool demoWindowActive = qfalse;
+	ToggleBooleanWithShortcut(&demoWindowActive, ImGuiKey_C, ImGUI_ShortcutOptions_Global);
+	trap_CL_AddGuiMenu(ImGUI_MainMenu_Info, "ImGUI Demo", "", &demoWindowActive, qtrue);
    
-	if(windowActive){
-		
-		if(igBegin("CGame info", (bool*)&windowActive, 0)){
-			igText("hello from CGame");
-			prev_times[prev_time_index++] = cg.time % 50;
-			prev_time_index %= ARRAY_LEN(prev_times);
-			//igShowDemoWindow(&windowActive);
-			igPlotLines_FloatPtr("cg.time", prev_times, ARRAY_LEN(prev_times), prev_time_index, "", 0.0f, 50.0f, (ImVec2){300.0f, 100.0f}, sizeof(float));
-			for(int i = 0; i < ARRAY_LEN(cg_entities); i++){
-				if(cg_entities[i].currentState.eType == ET_MISSILE){
-					igText("%d", cg_entities[i].currentState.pos.trTime);
-				}
-			}
+	if(demoWindowActive){
+		if(igBegin("ImGUI Demo", (bool*)&demoWindowActive, 0)){
+			igShowDemoWindow(&demoWindowActive);
         }
         igEnd();
     }
+}
 
+static void DemoPlaybackTimeline(void){
 	static qbool demoTimelineActive = qfalse;
 	if (cg.demoPlayback) {
 		demoTimelineActive = qtrue;
@@ -139,25 +121,140 @@ void CG_ImGUI_Update(void) {
 			}
 			igSameLine(0.0f, 16.0f);
 
-			if(igButton("Prev Frag", (ImVec2){0.0f, 0.0f})){
-				CG_NDP_GoToNextFrag(qfalse);
-			}
-			igSameLine(0.0f, 16.0f);
-			static qbool paused = qfalse;
-			if(!paused){
-				if(igButton("Pause", (ImVec2){0.0f, 0.0f})){
-					trap_Cvar_Set("timescale", "0");
-					paused = qtrue;
+if (igButton("Prev Frag", (ImVec2) { 0.0f, 0.0f })) {
+	CG_NDP_GoToNextFrag(qfalse);
+}
+igSameLine(0.0f, 16.0f);
+static qbool paused = qfalse;
+if (!paused) {
+	if (igButton("Pause", (ImVec2) { 0.0f, 0.0f })) {
+		trap_Cvar_Set("timescale", "0");
+		paused = qtrue;
+	}
+}
+else {
+	if (igButton("Play", (ImVec2) { 0.0f, 0.0f })) {
+		trap_Cvar_Set("timescale", "1");
+		paused = qfalse;
+	}
+}
+		}
+		igEnd();
+	}
+}
+
+typedef enum cvarType_e {
+	CVT_BOOL,
+	CVT_INT,
+	CVT_FLOAT,
+	CVT_STRING,
+	CVT_COLOR
+} cvarType;
+
+typedef struct cvarGui_s {
+	char name[MAX_CVAR_VALUE_STRING];
+	vmCvar_t* cvar;
+	cvarType type;
+	int minIntValue;
+	int maxIntValue;
+	float minFloatValue;
+	float maxFloatValue;
+} cvarGui_t;
+
+
+cvarGui_t hudCvars[] = {
+	{"cg_customCrosshair", &cg_customCrosshair, CVT_BOOL, 0, 1, 0.0f, 0.0f },
+	{"cg_customCrosshairHeight", &cg_customCrosshairHeight, CVT_FLOAT, 0, 0, 0.0f, 50.0f },
+	{"cg_customCrosshairThickness", &cg_customCrosshairThickness, CVT_FLOAT, 0, 0, 0.0f, 50.0f },
+	{"cg_customCrosshairThicknessAlt", &cg_customCrosshairThicknessAlt, CVT_FLOAT, 0, 0, 0.0f, 50.0f },
+	{"cg_customCrosshairWidth", &cg_customCrosshairWidth, CVT_FLOAT, 0, 0, 0.0f, 50.0f },
+	{"cg_customCrosshairXOffset", &cg_customCrosshairXOffset, CVT_FLOAT, 0, 0, 0.0f, 50.0f },
+	{"cg_customCrosshairYOffset", &cg_customCrosshairYOffset, CVT_FLOAT, 0, 0, 0.0f, 50.0f },
+	{"cg_customCrosshairXGap", &cg_customCrosshairXGap, CVT_FLOAT, 0, 0, 0.0f, 50.0f },
+	{"cg_customCrosshairYGap", &cg_customCrosshairYGap, CVT_FLOAT, 0, 0, 0.0f, 50.0f },
+	{"cg_customCrosshairColor", &cg_customCrosshairColor, CVT_COLOR, 0, 0, 0.0f, 50.0f },
+	{"cg_customCrosshairColorAlt", &cg_customCrosshairColorAlt, CVT_COLOR, 0, 0, 0.0f, 50.0f },
+	{"cg_customCrosshairVMirror", &cg_customCrosshairVMirror, CVT_BOOL, 0, 0, 0.0f, 50.0f },
+
+
+};
+
+static void HudEditor(void){
+	static qbool hudEditorActive = qfalse;
+	if (cg.hudeditor) {
+		hudEditorActive = qtrue;
+	}
+
+	ToggleBooleanWithShortcut(&hudEditorActive, ImGuiKey_H, ImGUI_ShortcutOptions_Global);
+	trap_CL_AddGuiMenu(ImGUI_MainMenu_Info, "HUD Editor", "", &hudEditorActive, cg.hudeditor);
+
+	if (hudEditorActive) {
+		if (igBegin("HUD Editor", (bool*)&hudEditorActive, 0)) {
+			
+			ImGuiTextFilter filter = {};
+			igText("Filter:");
+			igSameLine(0.0f, 0.0f);
+			ImGuiTextFilter_Draw(&filter, "##filter", 0.0f);
+			if(igBeginTable("CVars",2,ImGuiTableFlags_RowBg,(ImVec2){0,0},0.0f)){
+				igTableSetupColumn("Name", 0, 0, 0);
+				igTableSetupColumn("Value", 0, 0, 0);
+				igTableHeadersRow();
+
+				for(int i = 0; i < ARRAY_LEN(hudCvars); i++){
+					if(ImGuiTextFilter_PassFilter(&filter, hudCvars[i].name, NULL)){
+						igTableNextRow(0, 0.0f);
+						igTableSetColumnIndex(0);
+						igText(hudCvars[i].name);
+						igTableSetColumnIndex(1);
+						switch(hudCvars[i].type){
+							case CVT_BOOL:
+								igCheckbox(va("##%s", hudCvars[i].name), &hudCvars[i].cvar->integer);
+								break;
+							case CVT_INT:
+								igSliderInt(va("##%s", hudCvars[i].name), &hudCvars[i].cvar->integer, hudCvars[i].minIntValue, hudCvars[i].maxIntValue, "%d", ImGuiSliderFlags_None);
+								break;
+							case CVT_FLOAT:
+								igSliderFloat(va("##%s", hudCvars[i].name), &hudCvars[i].cvar->value, hudCvars[i].minFloatValue, hudCvars[i].maxFloatValue, "%.02f", ImGuiSliderFlags_None);
+								break;
+							case CVT_STRING:
+								igInputText(va("##%s", hudCvars[i].name), hudCvars[i].cvar->string, sizeof(hudCvars[i].cvar->string), 0, NULL, NULL);
+								break;
+							case CVT_COLOR:
+								{
+									vec4_t color;
+									Com_ParseHexColor(color, hudCvars[i].cvar->string, qtrue);
+									igColorEdit4(va("##%s", hudCvars[i].name), color, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+									snprintf(hudCvars[i].cvar->string, sizeof(hudCvars[i].cvar->string), "%02X%02X%02X%02X", (int)(color[0] * 255.0f), (int)(color[1] * 255.0f), (int)(color[2] * 255.0f), (int)(color[3] * 255.0f));
+									break;
+								}
+							default:
+								break;
+						}
+					}
 				}
-			}else{
-				if(igButton("Play", (ImVec2){0.0f, 0.0f})){
-					trap_Cvar_Set("timescale", "1");
-					paused = qfalse;
-				}
+				igEndTable();
 			}
-        }
-        igEnd();
-    }
+		
+		}
+		igEnd();
+	}
+	
+
+}
+
+
+void CG_ImGUI_Update(void) {
+	if (cgs.igContext == NULL) {
+		return;
+	}
+	igSetCurrentContext((ImGuiContext*)cgs.igContext);
+	igSetAllocatorFunctions((ImGuiMemAllocFunc)cgs.igAlloc, (ImGuiMemFreeFunc)cgs.igFree, cgs.igUserData);
+
+
+	ImGUIDemoWindow();
+	DemoPlaybackTimeline();
+	HudEditor();
+
 }
 
 static ImVec2 minBgRect, maxBgRect;
