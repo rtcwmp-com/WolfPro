@@ -138,10 +138,12 @@ If you have questions concerning this license or the applicable additional terms
 #if defined (_WIN32_WINNT)
 #if _WIN32_WINNT < 0x0501
 #undef _WIN32_WINNT
-#define _WIN32_WINNT 0x0501
+//windows 10
+#define _WIN32_WINNT 0x0602
 #endif
 #else
-#define _WIN32_WINNT 0x0501
+//windows 10
+#define _WIN32_WINNT 0x0602
 #endif
 
 #if defined( _MSC_VER ) && _MSC_VER >= 1400 // MSVC++ 8.0 at least
