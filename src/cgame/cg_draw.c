@@ -4181,7 +4181,8 @@ static void CG_DrawPopinString(void) {
 }
 
 void CG_GenerateHudEvents(void){
-	if ( (cg.time % 1000) <= 8 ) {
+	if (cg.time > cg.prevHudGenTime + 1000 ) {
+		cg.prevHudGenTime = cg.time;
 		CG_AddToTeamChat("username: ^5this is a chat message");
 		CG_AddToNotify( "This is a ^1notify^7 message");
 		CG_CenterPrint( "This is a ^1center print^7 message", SCREEN_HEIGHT - ( SCREEN_HEIGHT * 0.25 ), SMALLCHAR_WIDTH );

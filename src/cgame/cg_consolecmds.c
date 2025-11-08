@@ -617,6 +617,7 @@ static void CG_EditHud_f(void){
 	if(!cg.hudeditor){
 		trap_Cvar_Set("cg_spawnTimer_period", "30"); // just set a default value - cg_draw will use cg_red/bluelimbotime
 		trap_Cvar_Set("cg_spawnTimer_set", va("%i", (cg.time - cgs.levelStartTime)));
+		cg.prevHudGenTime = cg.time;
 	}
 	cg.hudeditor = !cg.hudeditor;
 	

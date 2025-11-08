@@ -1029,6 +1029,7 @@ typedef struct {
 	float oldSpeed;
 
 	qboolean hudeditor;
+	int prevHudGenTime;
 
 } cg_t;
 
