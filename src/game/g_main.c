@@ -1188,6 +1188,62 @@ void G_SpawnScriptCamera( void ) {
 
 }
 
+
+void LoadMapList(void)
+{
+	char maps[MAX_ARENAS_TEXT] = {'\0'};
+	char noext[MAX_QPATH] = {'\0'};
+	int i;
+
+	level.mapcount = trap_FS_GetFileList("maps", ".bsp", maps, sizeof(maps));
+	char* mapName = maps;
+	int removeMaps = 0;
+
+    for (int i = 0; i < level.mapcount; i++) {
+		COM_StripExtension(mapName, noext);
+		//Remove SP
+		if ((!Q_stricmp(noext, "assault")) ||
+			(!Q_stricmp(noext, "baseout")) ||
+			(!Q_stricmp(noext, "boss1")) ||
+			(!Q_stricmp(noext, "boss2")) ||
+			(!Q_stricmp(noext, "castle")) ||
+			(!Q_stricmp(noext, "chateau")) ||
+			(!Q_stricmp(noext, "church")) ||
+			(!Q_stricmp(noext, "crypt1")) ||
+			(!Q_stricmp(noext, "crypt2")) ||
+			(!Q_stricmp(noext, "cutscene1")) ||
+			(!Q_stricmp(noext, "cutscene6")) ||
+			(!Q_stricmp(noext, "cutscene9")) ||
+			(!Q_stricmp(noext, "cutscene11")) ||
+			(!Q_stricmp(noext, "cutscene14")) ||
+			(!Q_stricmp(noext, "cutscene19")) ||
+			(!Q_stricmp(noext, "dam")) ||
+			(!Q_stricmp(noext, "dark")) ||
+			(!Q_stricmp(noext, "dig")) ||
+			(!Q_stricmp(noext, "end")) ||
+			(!Q_stricmp(noext, "escape1")) ||
+			(!Q_stricmp(noext, "escape2")) ||
+			(!Q_stricmp(noext, "factory")) ||
+			(!Q_stricmp(noext, "forest")) ||
+			(!Q_stricmp(noext, "norway")) ||
+			(!Q_stricmp(noext, "rocket")) ||
+			(!Q_stricmp(noext, "sfm")) ||
+			(!Q_stricmp(noext, "swf")) ||
+			(!Q_stricmp(noext, "trainyard")) ||
+			(!Q_stricmp(noext, "tram")) ||
+			(!Q_stricmp(noext, "village1")) ||
+			(!Q_stricmp(noext, "village2")) ||
+			(!Q_stricmp(noext, "xlabs")))
+		{
+			removeMaps++;
+		} else {
+			Q_strncpyz(level.maplist[i - removeMaps],noext, sizeof(level.maplist[i - removeMaps]));
+		}
+		mapName += strlen(mapName) + 1;
+	}
+	level.mapcount -= removeMaps;
+}
+
 /*
 ============
 G_InitGame
@@ -1442,6 +1498,8 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 		teamInfo[TEAM_BLUE].timeouts = match_timeoutcount.integer;
 		teamInfo[TEAM_BLUE].team_lock = qtrue;
 	}
+
+	LoadMapList();
 }
 
 
