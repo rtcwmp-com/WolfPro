@@ -1383,7 +1383,13 @@ void Cmd_CallVote_f( gentity_t *ent ) {
 	trap_Argv( 1, arg1, sizeof( arg1 ) );
 	trap_Argv( 2, arg2, sizeof( arg2 ) );
 
-	if ( strchr( arg1, ';' ) || strchr( arg2, ';' ) ) {
+	// quake3 engine callvote bug fix from Luigi Auriemma and/or /dev/humancontroller
+	// http://bugzilla.icculus.org/show_bug.cgi?id=3593
+	// also see http://aluigi.freeforums.org/quake3-engine-callvote-bug-t686-30.html
+	if (strchr(arg1, ';') || strchr(arg2, ';') ||
+	    strchr(arg1, '\r') || strchr(arg2, '\r') ||
+	    strchr(arg1, '\n') || strchr(arg2, '\n'))
+	{
 		trap_SendServerCommand( ent - g_entities, "print \"Invalid vote string.\n\"" );
 		return;
 	}
@@ -1400,15 +1406,14 @@ void Cmd_CallVote_f( gentity_t *ent ) {
 		}
 		Com_sprintf( level.voteDisplayString, sizeof( level.voteDisplayString ), "%s", level.voteString );
 	}  else if ( !Q_stricmp( arg1, "map" ) ) {
-		// special case for map changes, we want to reset the nextmap setting
-		// this allows a player to change maps, but not upset the map rotation
-		trap_Cvar_VariableStringBuffer( "nextmap", s, sizeof( s ) );
-		if ( *s ) {
-			Com_sprintf( level.voteString, sizeof( level.voteString ), "%s %s; set nextmap \"%s\"", arg1, arg2, s );
-		} else {
-			Com_sprintf( level.voteString, sizeof( level.voteString ), "%s %s", arg1, arg2 );
+		// nihi: check for matching maps
+		int mapMatch = G_FindMatchingMaps(ent, arg2);
+
+		if (mapMatch < 0){
+			return;
 		}
-		Com_sprintf( level.voteString, sizeof( level.voteString ), "vstr nextmap" );
+		Com_sprintf( level.voteString, sizeof( level.voteString ), "%s %s", arg1, level.maplist[mapMatch] );
+
 		Com_sprintf( level.voteDisplayString, sizeof( level.voteDisplayString ), "%s", level.voteString );
 	} else if ( !Q_stricmp( arg1, "g_gametype" ) ) {
 		i = atoi( arg2 );
@@ -2166,6 +2171,118 @@ void Cmd_SetSpawnPoint_f( gentity_t *clent ) {
 // -NERVE - SMF
 
 /*
+============
+RTCWPro - display list of 
+maps on the server
+Source: PubJ (nihi)
+
+Cmd_DisplayMaps_f
+============
+*/
+void Cmd_DisplayMaps_f(gentity_t* ent)
+{
+	int i, mapcount;
+	const int moreCount = 100;
+	qboolean more = qfalse;
+	char mapMatch[256];
+	int exactMatch;
+
+	if (!ent->moreCalled)
+	{
+		ent->moreCalls = 0;
+	}
+
+	trap_Argv(1, mapMatch, sizeof(mapMatch));
+
+	CP(va("print \"^7Total maps: ^3%d\n\"", level.mapcount));
+	CP("print \"^3------------------------------------------------------------------------\n\"");
+
+	if (strlen(mapMatch))
+	{
+		exactMatch = G_FindMatchingMaps(ent, mapMatch);
+
+		if (exactMatch)
+		{
+			Q_strncpyz(mapMatch, level.maplist[exactMatch], sizeof(mapMatch));
+			CP(va("print \"^3One match found:\n"));
+			CP(va("print \"^7  %s\n\"", level.maplist[exactMatch]));
+			CP("print \"^3------------------------------------------------------------------------\n\"");
+			return;
+		}
+		else
+		{
+			CP("print \"^3------------------------------------------------------------------------\n\"");
+			return;
+		}
+	}
+	else
+	{
+		for (mapcount = 1, i = (ent->moreCalls * moreCount); i < level.mapcount; mapcount += 3)
+		{
+			if ((i + 3) <= level.mapcount)
+			{
+				CP(va("print \"^7%-24s^7%-24s^7%-23s\n\"", level.maplist + (level.mapcount - i - mapcount),
+					level.maplist + (level.mapcount - i - mapcount - 1), level.maplist + (level.mapcount - i - mapcount - 2)));
+			}
+			else
+			{
+				CP(va("print \"^7%s \"", level.maplist + (level.mapcount - i - mapcount)));
+			}
+
+			if (mapcount >= moreCount && (i + 3) != level.mapcount)
+			{
+				more = qtrue;
+				break;
+			}
+			else if ((i + mapcount >= level.mapcount))
+			{
+				more = qfalse;
+				break;
+			}
+		}
+
+		if (more)
+		{
+			int remaining = level.mapcount - i - mapcount - 1;
+			CP("print \"^3------------------------------------------------------------------------\n\"");
+			CP(va("print \"^7Use ^3/more ^7to list the next %d maps\n\"", remaining >= moreCount ? moreCount : remaining));
+			ent->more = Cmd_DisplayMaps_f;
+			return;
+		}
+		else
+		{
+			ent->more = 0;
+			ent->moreCalls = 0;
+			CP("print \"^3------------------------------------------------------------------------\n\"");
+			CP("print \"^7There are no more maps to list\n\"");
+		}
+	}
+}
+
+/*
+============
+RTCWPro
+Source: rtcwPub
+
+Cmd_More_f
+============
+*/
+void Cmd_More_f(gentity_t* ent)
+{
+	if (ent->more) {
+		if (!ent->moreCalls)
+			ent->moreCalls = 1;
+
+		ent->moreCalled = qtrue;
+		ent->more(ent);
+		ent->moreCalls++;
+		ent->moreCalled = qfalse;
+	}
+}
+
+
+
+/*
 =================
 ClientCommand
 =================
@@ -2283,6 +2400,10 @@ void ClientCommand( int clientNum ) {
 		 }
 
 		 return;
+	} else if ( Q_stricmp( cmd, "maps" ) == 0 )  {
+		Cmd_DisplayMaps_f( ent );
+	} else if (Q_stricmp(cmd, "more") == 0) {
+		Cmd_More_f(ent);
 	} else {
 		trap_SendServerCommand( clientNum, va( "print \"unknown cmd[lof] %s\n\"", cmd ) );
 	}
@@ -2376,3 +2497,5 @@ int ClientNumberFromString( gentity_t *to, char *s ) {
 	CPx( to - g_entities, va( "print \"User [lof]%s [lon]is not on the server\n\"", s ) );
 	return( -1 );
 }
+
+

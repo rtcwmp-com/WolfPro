@@ -80,6 +80,9 @@ If you have questions concerning this license or the applicable additional terms
 
 #define JSONGAMESTATVERSION "0.1.5"
 
+#define MAX_NUM_MAPS 500
+#define MAX_MAP_NAMELEN 50
+
 // movers are things like doors, plats, buttons, etc
 typedef enum {
 	MOVER_POS1,
@@ -407,6 +410,11 @@ struct gentity_s {
 
 	// RTCWPro - allowteams - ET port
 	int allowteams;
+
+	// Nobo - More  (from rtcwPub)
+	void		(*more)(gentity_t *ent);
+	int			moreCalls;
+	qboolean	moreCalled;
 };
 
 // Ridah
@@ -998,6 +1006,9 @@ typedef struct {
 	vec3_t alliesOverrideSpawns[111][5];
 	int numAxisOverrideSpawns[111];
 	int numAlliesOverrideSpawns[111];
+
+	char maplist[MAX_NUM_MAPS][MAX_MAP_NAMELEN];
+	int mapcount;
 } level_locals_t;
 
 extern qboolean reloading;                  // loading up a savegame
@@ -1105,6 +1116,7 @@ qboolean infront( gentity_t *self, gentity_t *other );
 void G_ProcessTagConnect( gentity_t *ent );
 
 qboolean G_AllowTeamsAllowed(gentity_t* ent, gentity_t* activator); // RTCWPro - allowteams ET - port
+int G_FindMatchingMaps(gentity_t* ent, char* mapName);
 
 //
 // g_combat.c
