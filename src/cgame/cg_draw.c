@@ -1486,7 +1486,11 @@ static void CG_DrawNotify( void ) {
 		notifytime = 100.0f;
 	}
 
-	chatHeight = NOTIFY_HEIGHT;
+	trap_Cvar_VariableStringBuffer("cg_notifyTextLines", var, sizeof(var));
+	chatHeight = atoi(var);
+	if (chatHeight > MAX_NOTIFY_HEIGHT) {
+		chatHeight = MAX_NOTIFY_HEIGHT;
+	}
 
 	if ( cgs.notifyLastPos != cgs.notifyPos ) {
 		if ( cg.time - cgs.notifyMsgTimes[cgs.notifyLastPos % chatHeight] > notifytime ) {
@@ -2296,8 +2300,6 @@ static void CG_DrawCrosshair( void ) {
 
 		CG_ColorForHealth( hcolor );
 		trap_R_SetColor( hcolor );
-	} else {
-		trap_R_SetColor(cg.xhairColor);
 	}
 
 	if( cg_customCrosshair.integer ){
@@ -2318,6 +2320,11 @@ static void CG_DrawCrosshair( void ) {
 
 	hShader = cgs.media.crosshairShader[ cg_drawCrosshair.integer % NUM_CROSSHAIRS ];
 
+	if(!cg_crosshairHealth.integer) {
+		BG_setCrosshair(cg_crosshairColor.string, cg.xhairColor, cg_crosshairAlpha.value, "cg_crosshairColor");
+		trap_R_SetColor(cg.xhairColor);
+	}
+
 	// NERVE - SMF - modified, fixes crosshair offset in shifted/scaled 3d views
 	if ( cg.limboMenu ) { // JPW NERVE
 		trap_R_DrawStretchPic( x /*+ cg.refdef.x*/ + 0.5 * ( cg.refdef.width - w ),
@@ -2337,6 +2344,7 @@ static void CG_DrawCrosshair( void ) {
 
 		// RtcwPro
 		if (!cg_crosshairHealth.integer) {
+			BG_setCrosshair(cg_crosshairColorAlt.string, cg.xhairColorAlt, cg_crosshairAlphaAlt.value, "cg_crosshairColorAlt");
 			trap_R_SetColor(cg.xhairColorAlt);
 		}
 

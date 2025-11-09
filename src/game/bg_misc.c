@@ -4238,6 +4238,13 @@ void BG_ParseColorCvar(char* cvarString, float* color, float alpha) {
 			color[2] = ((float)(gethex(*(s + 4)) * 16 + gethex(*(s + 5)))) / 255.00;
 			return;
 		}
+	}else{
+		if (Q_IsHexColorString(s)) {
+			color[0] = ((float)(gethex(*(s)) * 16 + gethex(*(s + 1)))) / 255.00;
+			color[1] = ((float)(gethex(*(s + 2)) * 16 + gethex(*(s + 3)))) / 255.00;
+			color[2] = ((float)(gethex(*(s + 4)) * 16 + gethex(*(s + 5)))) / 255.00;
+			return;
+		}
 	}
 
 	// colortable
@@ -4468,6 +4475,12 @@ void BG_setCrosshair(char *colString, float *col, float alpha, char *cvarName) {
 		}
 	}
 	else {
+		if (Q_IsHexColorString(s)) {
+			col[0] = ((float)(gethex(*(s)) * 16 + gethex(*(s + 1)))) / 255.00;
+			col[1] = ((float)(gethex(*(s + 2)) * 16 + gethex(*(s + 3)))) / 255.00;
+			col[2] = ((float)(gethex(*(s + 4)) * 16 + gethex(*(s + 5)))) / 255.00;
+			return;
+		}
 		int i = 0;
 		while (OSP_Colortable[i].colorname != NULL) {
 			if (Q_stricmp(s, OSP_Colortable[i].colorname) == 0) {

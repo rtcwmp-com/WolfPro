@@ -868,21 +868,6 @@ void CG_UpdateCvars( void ) {
 		autoReloadModificationCount = cg_autoReload.modificationCount;
 	}
 
-	if (cg_crosshairColorModificationCount != cg_crosshairColor.modificationCount ||
-		cg_crosshairAlphaModificationCount != cg_crosshairAlpha.modificationCount)
-	{
-		cg_crosshairColorModificationCount = cg_crosshairColor.modificationCount;
-		cg_crosshairAlphaModificationCount = cg_crosshairAlpha.modificationCount;
-		BG_setCrosshair(cg_crosshairColor.string, cg.xhairColor, cg_crosshairAlpha.value, "cg_crosshairColor");
-	}
-	if (cg_crosshairColorAltModificationCount != cg_crosshairColorAlt.modificationCount ||
-		cg_crosshairAlphaAltModificationCount != cg_crosshairAlphaAlt.modificationCount)
-	{
-		cg_crosshairColorAltModificationCount = cg_crosshairColor.modificationCount;
-		cg_crosshairAlphaAltModificationCount = cg_crosshairAlpha.modificationCount;
-		BG_setCrosshair(cg_crosshairColorAlt.string, cg.xhairColorAlt, cg_crosshairAlphaAlt.value, "cg_crosshairColorAlt");
-	}
-
 	if(registeredPlayersModificationCount != cg_registeredPlayers.modificationCount){
 		registeredPlayersModificationCount = cg_registeredPlayers.modificationCount;
 		CG_ForceModelChange();
