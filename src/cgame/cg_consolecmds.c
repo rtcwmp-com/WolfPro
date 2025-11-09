@@ -484,7 +484,7 @@ static void CG_TimerSet_f(void) {
 		return;
 	}
 
-	if (cgs.gamestate != GS_PLAYING)
+	if (!cg.hudeditor && cgs.gamestate != GS_PLAYING)
 	{
 		CG_Printf("You may only use this command during the match.\n");
 		return;
@@ -613,6 +613,16 @@ static void CG_ResetMaxSpeed_f(void)
 	cg.resetmaxspeed = qtrue;
 }
 
+static void CG_EditHud_f(void){
+	if(!cg.hudeditor){
+		trap_Cvar_Set("cg_spawnTimer_period", "30"); // just set a default value - cg_draw will use cg_red/bluelimbotime
+		trap_Cvar_Set("cg_spawnTimer_set", va("%i", (cg.time - cgs.levelStartTime)));
+		cg.prevHudGenTime = cg.time;
+	}
+	cg.hudeditor = !cg.hudeditor;
+	
+}
+
 
 typedef struct {
 	char    *cmd;
@@ -682,6 +692,7 @@ static consoleCommand_t commands[] = {
 	{ "timerShare", CG_TimerShare_f },
 	
 	{ "resetmaxspeed", CG_ResetMaxSpeed_f },
+	{ "edithud", CG_EditHud_f },
 };
 
 

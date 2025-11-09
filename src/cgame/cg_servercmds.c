@@ -515,7 +515,7 @@ CG_AddToTeamChat
 
 =======================
 */
-static void CG_AddToTeamChat( const char *str ) {
+void CG_AddToTeamChat( const char *str ) {
 	int len;
 	char *p, *ls;
 	int lastcolor;

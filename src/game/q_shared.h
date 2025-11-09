@@ -138,10 +138,12 @@ If you have questions concerning this license or the applicable additional terms
 #if defined (_WIN32_WINNT)
 #if _WIN32_WINNT < 0x0501
 #undef _WIN32_WINNT
-#define _WIN32_WINNT 0x0501
+//windows 10
+#define _WIN32_WINNT 0x0602
 #endif
 #else
-#define _WIN32_WINNT 0x0501
+//windows 10
+#define _WIN32_WINNT 0x0602
 #endif
 
 #if defined( _MSC_VER ) && _MSC_VER >= 1400 // MSVC++ 8.0 at least
@@ -811,6 +813,7 @@ float RadiusFromBounds( const vec3_t mins, const vec3_t maxs );
 void ClearBounds( vec3_t mins, vec3_t maxs );
 void AddPointToBounds( const vec3_t v, vec3_t mins, vec3_t maxs );
 int VectorCompare( const vec3_t v1, const vec3_t v2 );
+int Vector4Compare( const vec4_t v1, const vec4_t v2 );
 vec_t VectorLength( const vec3_t v );
 vec_t VectorLengthSquared( const vec3_t v );
 vec_t Distance( const vec3_t p1, const vec3_t p2 );

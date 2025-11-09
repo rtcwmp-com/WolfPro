@@ -933,7 +933,7 @@ void SV_SetCvarRestrictions(void) {
 	char* path;
 	int i = 0, j = 0;
 
-	Cvar_Rest_Reset();
+	//Cvar_Rest_Reset();
 	Com_Printf("-----Initializing Restrictions-----\n");
 	if (!(path = Cvar_VariableString("fs_game")) || !*path)
 		path = BASEGAME;

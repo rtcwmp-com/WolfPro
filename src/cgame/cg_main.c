@@ -419,6 +419,8 @@ vmCvar_t cg_teamObituaryColorSameTK;
 vmCvar_t cg_teamObituaryColorEnemy;
 vmCvar_t cg_teamObituaryColorEnemyTK;
 
+vmCvar_t cg_fragsY;
+vmCvar_t cg_fragsWidth;
 
 typedef struct {
 	vmCvar_t    *vmCvar;
@@ -734,6 +736,9 @@ cvarTable_t cvarTable[] = {
 	{ &cg_teamObituaryColorSameTK, "cg_teamObituaryColorSameTK", "mdgreen", CVAR_ARCHIVE },
 	{ &cg_teamObituaryColorEnemy, "cg_teamObituaryColorEnemy", "red", CVAR_ARCHIVE },
 	{ &cg_teamObituaryColorEnemyTK, "cg_teamObituaryColorEnemyTK", "mdred", CVAR_ARCHIVE }, 
+
+	{ &cg_fragsY, "cg_fragsY", "0", CVAR_ARCHIVE },
+	{ &cg_fragsWidth, "cg_fragsWidth", "16", CVAR_ARCHIVE },
 	
 };
 int cvarTableSize = sizeof( cvarTable ) / sizeof( cvarTable[0] );
@@ -861,21 +866,6 @@ void CG_UpdateCvars( void ) {
 			cg.pmext.bAutoReload = qfalse;
 		}
 		autoReloadModificationCount = cg_autoReload.modificationCount;
-	}
-
-	if (cg_crosshairColorModificationCount != cg_crosshairColor.modificationCount ||
-		cg_crosshairAlphaModificationCount != cg_crosshairAlpha.modificationCount)
-	{
-		cg_crosshairColorModificationCount = cg_crosshairColor.modificationCount;
-		cg_crosshairAlphaModificationCount = cg_crosshairAlpha.modificationCount;
-		BG_setCrosshair(cg_crosshairColor.string, cg.xhairColor, cg_crosshairAlpha.value, "cg_crosshairColor");
-	}
-	if (cg_crosshairColorAltModificationCount != cg_crosshairColorAlt.modificationCount ||
-		cg_crosshairAlphaAltModificationCount != cg_crosshairAlphaAlt.modificationCount)
-	{
-		cg_crosshairColorAltModificationCount = cg_crosshairColor.modificationCount;
-		cg_crosshairAlphaAltModificationCount = cg_crosshairAlpha.modificationCount;
-		BG_setCrosshair(cg_crosshairColorAlt.string, cg.xhairColorAlt, cg_crosshairAlphaAlt.value, "cg_crosshairColorAlt");
 	}
 
 	if(registeredPlayersModificationCount != cg_registeredPlayers.modificationCount){
@@ -1568,6 +1558,8 @@ static void CG_RegisterGraphics( void ) {
 //	cgs.media.invisShader = trap_R_RegisterShader("powerups/invisibility" );
 //	cgs.media.regenShader = trap_R_RegisterShader("powerups/regen" );
 //	cgs.media.hastePuffShader = trap_R_RegisterShader("hasteSmokePuff" );
+
+	trap_R_RegisterShader( "models/multiplayer/treasure/treasure" );
 
 	// DHM - Nerve :: Allow flags again, will change later to more appropriate models
 	if ( cgs.gametype == GT_CTF || cgs.gametype >= GT_WOLF || cg_buildScript.integer ) {

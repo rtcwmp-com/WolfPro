@@ -90,11 +90,13 @@ If you have questions concerning this license or the applicable additional terms
 
 #define MAX_NETNAME		36
 
+#define MAX_NETNAME		36
+
 // very large characters
 #define GIANT_WIDTH         32
 #define GIANT_HEIGHT        48
 
-#define NUM_CROSSHAIRS      10
+#define NUM_CROSSHAIRS      25
 
 // Ridah, trails
 #define STYPE_STRETCH   0
@@ -1027,6 +1029,9 @@ typedef struct {
 	qboolean resetmaxspeed;
 	float topSpeed;
 	float oldSpeed;
+
+	qboolean hudeditor;
+	int prevHudGenTime;
 
 } cg_t;
 
@@ -1966,6 +1971,9 @@ extern vmCvar_t cg_teamObituaryColorSameTK;		// same team TK color
 extern vmCvar_t cg_teamObituaryColorEnemy;		// enemy team color
 extern vmCvar_t cg_teamObituaryColorEnemyTK;	// enemy team TK color
 
+extern vmCvar_t cg_fragsY;
+extern vmCvar_t cg_fragsWidth;
+
 //
 // cg_main.c
 //
@@ -2119,6 +2127,8 @@ void CG_Text_Paint_Ext( float x, float y, float scalex, float scaley, vec4_t col
 void CG_Text_Paint_ext2(float x, float y, float scale, vec4_t color, const char *text, float adjust, int limit, int style);
 int CG_Text_Width_ext2(const char *text, float scale, int limit);
 int CG_Text_Height_ext2(const char *text, float scale, int limit);
+
+void Com_ParseHexColor( float* c, const char* text, qbool hasAlpha );
 
 
 //
@@ -2419,6 +2429,7 @@ void CG_AddToNotify( const char *str );
 void CG_ParseReinforcementTimes(const char *pszReinfSeedString);
 void CG_ParseReady(const char* pState);
 void CG_ParsePause( const char *pTime );
+void CG_AddToTeamChat( const char *str );
 
 //
 // cg_playerstate.c
