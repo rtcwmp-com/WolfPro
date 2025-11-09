@@ -1330,6 +1330,12 @@ static void CG_RegisterSounds( void ) {
 	cgs.media.teamChat = trap_S_RegisterSound("sound/match/teamChat.wav");
 
 	
+
+	// chats
+	cgs.media.normalChat = trap_S_RegisterSound("sound/match/normalChat.wav");
+	cgs.media.teamChat = trap_S_RegisterSound("sound/match/teamChat.wav");
+
+	
 }
 
 

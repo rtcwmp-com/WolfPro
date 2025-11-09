@@ -85,8 +85,11 @@ If you have questions concerning this license or the applicable additional terms
 #define TEAMCHAT_HEIGHT     8
 
 #define MAX_NOTIFY_HEIGHT   32
+#define MAX_NOTIFY_HEIGHT   32
 #define NOTIFY_WIDTH        80
 #define NOTIFY_HEIGHT       5
+
+#define MAX_NETNAME		36
 
 #define MAX_NETNAME		36
 
