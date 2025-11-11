@@ -885,7 +885,7 @@ void SV_Init( void ) {
 
 	sv_showAverageBPS = Cvar_Get( "sv_showAverageBPS", "0", 0 );           // NERVE - SMF - net debugging
 
-	sv_minUserCmdInterval = Cvar_Get( "sv_minUserCmdInterval", "8", CVAR_ARCHIVE );
+	sv_minUserCmdInterval = Cvar_Get( "sv_minUserCmdInterval", "0", CVAR_ARCHIVE );
 
 	// NERVE - SMF - create user set cvars
 	Cvar_Get( "g_userTimeLimit", "0", 0 );
@@ -936,6 +936,7 @@ void SV_Init( void ) {
 #endif
 
 	sv_GameConfig = Cvar_Get("sv_GameConfig", "", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_ROM); // | CVAR_LATCH );
+	Cvar_Get ("sv_dlURL", "https://dl.rtcw.eu/maps/rtcw/", CVAR_SERVERINFO | CVAR_ARCHIVE);
 
 	// initialize bot cvars so they are listed and can be set before loading the botlib
 	SV_BotInitCvars();

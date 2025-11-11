@@ -762,7 +762,7 @@ void FS_SV_Rename( const char *from, const char *to ) {
 	}
 
 	// don't let sound stutter
-	S_ClearSoundBuffer();
+	//S_ClearSoundBuffer();
 
 	from_ospath = FS_BuildOSPath( fs_homepath->string, from, "" );
 	to_ospath = FS_BuildOSPath( fs_homepath->string, to, "" );
@@ -773,11 +773,7 @@ void FS_SV_Rename( const char *from, const char *to ) {
 		Com_Printf( "FS_SV_Rename: %s --> %s\n", from_ospath, to_ospath );
 	}
 
-	if ( rename( from_ospath, to_ospath ) ) {
-		// Failed, try copying it and deleting the original
-		FS_CopyFile( from_ospath, to_ospath );
-		FS_Remove( from_ospath );
-	}
+	rename(from_ospath, to_ospath);
 }
 
 
@@ -1985,6 +1981,50 @@ static pack_t *FS_LoadZipFile( char *zipfile, const char *basename ) {
 
 	pack->buildBuffer = buildBuffer;
 	return pack;
+}
+
+/*
+=================
+FS_FreePak
+
+Frees a pak structure and releases all associated resources
+=================
+*/
+
+static void FS_FreePak(pack_t *thepak)
+{
+	unzClose(thepak->handle);
+	Z_Free(thepak->buildBuffer);
+	Z_Free(thepak);
+}
+
+/*
+=================
+FS_GetZipChecksum
+
+Compares whether the given pak file matches a referenced checksum
+=================
+*/
+qboolean FS_CompareZipChecksum(const char *zipfile)
+{
+	pack_t *thepak;
+	int index, checksum;
+	
+	thepak = FS_LoadZipFile(zipfile, "");
+	
+	if(!thepak)
+		return qfalse;
+	
+	checksum = thepak->checksum;
+	FS_FreePak(thepak);
+	
+	for(index = 0; index < fs_numServerReferencedPaks; index++)
+	{
+		if(checksum == fs_serverReferencedPaks[index])
+			return qtrue;
+	}
+	
+	return qfalse;
 }
 
 /*
