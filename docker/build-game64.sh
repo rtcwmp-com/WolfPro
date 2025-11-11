@@ -31,7 +31,7 @@ make -f $RTCW_SRC/src/makefile build-pk3
 
 mv $RTCW_SRC/build64/wolfpro/wolfpro_bin.pk3 $RTCW_SRC/build64/wolfpro/wolfpro_bin-$(date +%Y%m%d).pk3
 
-mv $RTCW_SRC/build64/wolfpro/wolfpro_bin.pk3 $RTCW_SRC/build64/wolfpro/wolfpro_server-$(date +%Y%m%d).pk3
+mv $RTCW_SRC/build64/wolfpro/wolfpro_server.pk3 $RTCW_SRC/build64/wolfpro/wolfpro_server-$(date +%Y%m%d).pk3
 
 mv $RTCW_SRC/build64/wolfpro/wolfpro_assets.pk3 $RTCW_SRC/build64/wolfpro/wolfpro_assets-$(date +%Y%m%d).pk3
 
