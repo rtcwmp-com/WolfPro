@@ -780,6 +780,7 @@ qboolean FS_ComparePaks( char *neededpaks, int len, qboolean dlstring );
 void FS_Rename( const char *from, const char *to );
 
 char *FS_BuildOSPath( const char *base, const char *game, const char *qpath );
+qboolean FS_CompareZipChecksum(const char *zipfile);
 
 #if !defined( DEDICATED )
 extern int cl_connectedToPureServer;
@@ -1309,6 +1310,12 @@ extern int scr_recursiveUpdate;
 
 // stats_submit_curl.c
 int  submit_curlPost( char* jsonfile, char* matchid );
+
+// flags for sv_allowDownload and cl_allowDownload
+#define DLF_ENABLE 1
+#define DLF_NO_REDIRECT 2
+#define DLF_NO_UDP 4
+#define DLF_NO_DISCONNECT 8
 
 
 #endif // _QCOMMON_H_

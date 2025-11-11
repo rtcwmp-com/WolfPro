@@ -1261,6 +1261,9 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 
 	srand( randomSeed );
 
+	trap_FS_FOpenFile("wolfpro_assets.dat", &i, FS_READ);
+	trap_FS_FCloseFile(i);
+
 	G_RegisterCvars();
 
 	// Xian enforcemaxlives stuff
