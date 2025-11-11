@@ -282,6 +282,8 @@ void Weapon_MagicAmmo( gentity_t *ent ) {
 	shoot the syringe, do the old lazarus bit
 ======================
 */
+#define MAX_REVIVE_HITS 8
+
 void Weapon_Syringe( gentity_t *ent ) {
 	vec3_t end,org;
 	trace_t tr;
@@ -290,19 +292,48 @@ void Weapon_Syringe( gentity_t *ent ) {
 	int ammo[MAX_WEAPONS];              // JPW NERVE total amount of ammo
 	int ammoclip[MAX_WEAPONS];          // JPW NERVE ammo in clip
 	int weapons[MAX_WEAPONS / ( sizeof( int ) * 8 )];   // JPW NERVE 64 bits for weapons held
-	gentity_t   *traceEnt, *te;
+	gentity_t  *te;
 
 	AngleVectors( ent->client->ps.viewangles, forward, right, up );
 	CalcMuzzlePointForActivate( ent, forward, right, up, muzzleTrace );
 	VectorMA( muzzleTrace, 48, forward, end );           // CH_ACTIVATE_DIST
 	//VectorMA (muzzleTrace, -16, forward, muzzleTrace);	// DHM - Back up the start point in case medic is
 	// right on top of intended revivee.
-	trap_Trace( &tr, muzzleTrace, NULL, NULL, end, ent->s.number, MASK_SHOT );
+
+	trace_t trace;
+	int i, unlinked = 0;
+	gentity_t* traceEnt = 0;
+	gentity_t* unlinkedEntities[MAX_REVIVE_HITS];
+	qboolean sameTeam = qfalse;
+
+	// trace through all the solids until we find a teammate
+	do {
+		trap_Trace( &tr, muzzleTrace, NULL, NULL, end, ent->s.number, MASK_SHOT );
+		if ((tr.entityNum >= ENTITYNUM_MAX_NORMAL))
+			break;
+
+		traceEnt = &g_entities[ tr.entityNum ];
+
+		if(traceEnt->client){
+			sameTeam = (traceEnt->client->sess.sessionTeam == ent->client->sess.sessionTeam);
+		}
+
+		// unlink this entity, so the next trace will go past it
+		trap_UnlinkEntity( traceEnt );
+		unlinkedEntities[unlinked] = traceEnt;
+		unlinked++;
+	} while ((unlinked < MAX_REVIVE_HITS) && (!sameTeam));
+
+	
 
 	if ( tr.startsolid ) {
 		VectorMA( muzzleTrace, 8, forward, end );            // CH_ACTIVATE_DIST
 		trap_Trace( &tr, muzzleTrace, NULL, NULL, end, ent->s.number, MASK_SHOT );
 	}
+
+	// link back in any entities we unlinked
+	for (i = 0; i < unlinked; i++)
+		trap_LinkEntity( unlinkedEntities[i] );
 
 	if ( tr.fraction < 1.0 ) {
 		traceEnt = &g_entities[ tr.entityNum ];
