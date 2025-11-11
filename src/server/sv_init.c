@@ -936,7 +936,7 @@ void SV_Init( void ) {
 #endif
 
 	sv_GameConfig = Cvar_Get("sv_GameConfig", "", CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_ROM); // | CVAR_LATCH );
-	Cvar_Get ("sv_dlURL", "https://dl.rtcw.eu/maps/rtcw/", CVAR_SERVERINFO | CVAR_ARCHIVE);
+	Cvar_Get ("sv_dlURL", "https://dl.rtcw.eu/maps/rtcw", CVAR_SERVERINFO | CVAR_ARCHIVE);
 
 	// initialize bot cvars so they are listed and can be set before loading the botlib
 	SV_BotInitCvars();
