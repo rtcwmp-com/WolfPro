@@ -519,7 +519,7 @@ void CG_DrawTeamBackground( int x, int y, int w, int h, float alpha, int team ) 
 ===========================================================================================
 */
 
-#define UPPERRIGHT_X 500
+#define UPPERRIGHT_X 640
 /*
 ==================
 CG_DrawSnapshot
@@ -1270,7 +1270,7 @@ static void CG_DrawUpperRight( void ) {
 	if ( cg_drawFPS.integer ) {
 		y = CG_DrawFPS( y );
 	}
-	if ( cg_drawTimer.integer ) {
+	if ( cg_drawTimer.integer && cgs.gamestate == GS_PLAYING ) {
 		y = CG_DrawTimer( y );
 	}
 
