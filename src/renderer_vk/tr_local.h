@@ -434,8 +434,8 @@ typedef struct shader_s {
 
 	void ( *optimalStageIteratorFunc )( void );
 
-	float clampTime;                                    // time this shader is clamped to
-	float timeOffset;                                   // current time offset for this shader
+	double clampTime;                                    // time this shader is clamped to
+	double timeOffset;                                   // current time offset for this shader
 
 	int numStates;                                      // if non-zero this is a state shader
 	struct shader_s *currentShader;                     // current state if this is a state shader
@@ -495,7 +495,7 @@ typedef struct {
 	byte areamask[MAX_MAP_AREA_BYTES];
 	qboolean areamaskModified;      // qtrue if areamask changed since last scene
 
-	float floatTime;                // tr.refdef.time / 1000.0
+	double floatTime;                // tr.refdef.time / 1000.0
 
 	// text messages for deform text shaders
 	char text[MAX_RENDER_STRINGS][MAX_RENDER_STRING_LENGTH];
@@ -1431,7 +1431,7 @@ typedef struct shaderCommands_s
 	color4ub_t constantColor255[SHADER_MAX_VERTEXES];
 
 	shader_t    *shader;
-	float shaderTime;
+	double shaderTime;
 	int fogNum;
 
 	int dlightBits;         // or together of all vertexDlightBits
