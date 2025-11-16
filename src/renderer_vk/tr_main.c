@@ -988,13 +988,13 @@ qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 			// if a speed is specified
 			if ( e->e.frame ) {
 				// continuous rotate
-				d = ( tr.refdef.time / 1000.0f ) * e->e.frame;
+				d = ( (double)tr.refdef.time / 1000.0 ) * e->e.frame;
 				VectorCopy( camera->axis[1], transformed );
 				RotatePointAroundVector( camera->axis[1], camera->axis[0], transformed, d );
 				CrossProduct( camera->axis[0], camera->axis[1], camera->axis[2] );
 			} else {
 				// bobbing rotate, with skinNum being the rotation offset
-				d = sin( tr.refdef.time * 0.003f );
+				d = sin( (double)tr.refdef.time * 0.003 );
 				d = e->e.skinNum + d * 4;
 				VectorCopy( camera->axis[1], transformed );
 				RotatePointAroundVector( camera->axis[1], camera->axis[0], transformed, d );
