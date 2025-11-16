@@ -911,7 +911,7 @@ typedef struct {
 
 	// blend blobs
 	viewDamage_t viewDamage[MAX_VIEWDAMAGE];
-	float damageTime;           // last time any kind of damage was recieved
+	int damageTime;           // last time any kind of damage was recieved
 	int damageIndex;            // slot that was filled in
 	float damageX, damageY, damageValue;
 
@@ -932,7 +932,7 @@ typedef struct {
 	int headStartTime;
 
 	// view movement
-	float v_dmg_time;
+	int v_dmg_time;
 	float v_dmg_pitch;
 	float v_dmg_roll;
 
