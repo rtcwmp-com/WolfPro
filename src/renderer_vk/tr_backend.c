@@ -272,7 +272,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int firstSurfIndex, int lastS
 	int i;
 	drawSurf_t      *drawSurf;
 	int oldSort;
-	float originalTime;
+	double originalTime;
 
 
 	// save original time for entity shader offsets
@@ -405,7 +405,7 @@ void RB_RenderLitSurfList( drawSurf_t *drawSurfs, int firstSurfIndex, int lastSu
 	qboolean depthRange, oldDepthRange;
 	drawSurf_t      *drawSurf;
 	int oldSort;
-	float originalTime;
+	double originalTime;
 	int i;
 
 
@@ -537,7 +537,7 @@ void    RB_SetGL2D( void ) {
 
 	// set time for 2D shaders
 	backEnd.refdef.time = ri.Milliseconds();
-	backEnd.refdef.floatTime = backEnd.refdef.time * 0.001f;
+	backEnd.refdef.floatTime = (double)backEnd.refdef.time * 0.001;
 
 	float w = glConfig.vidWidth;
 	float h = glConfig.vidHeight;

@@ -458,8 +458,8 @@ void CG_NDP_ResetStateWhenBackInTime(void)
 	CG_SoundInit();
 	trap_SendConsoleCommand("s_stop\n");
 
-	cg.damageTime = 0.0f;
-	cg.v_dmg_time = 0.0f;
+	cg.damageTime = 0;
+	cg.v_dmg_time = 0;
 	//cg.centerPrintAnnouncerTime = 0;
 	cg.attackerTime = 0;
 	cg.cameraShakeTime = 0;

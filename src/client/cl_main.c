@@ -690,6 +690,10 @@ CL_ShutdownAll
 =====================
 */
 void CL_ShutdownAll( void ) {
+	if(clc.demorecording)
+		CL_StopRecord_f();
+
+	CL_cURL_Shutdown();
 
 	// clear sounds
 	S_DisableSounds();
@@ -1490,6 +1494,21 @@ void CL_DownloadsComplete( void ) {
 		return;
 	}
 
+	// if we downloaded with cURL
+	if(clc.cURLUsed) { 
+		clc.cURLUsed = qfalse;
+		CL_cURL_Shutdown();
+		if( clc.cURLDisconnected ) {
+			if(clc.downloadRestart) {
+				FS_Restart(clc.checksumFeed);
+				clc.downloadRestart = qfalse;
+			}
+			clc.cURLDisconnected = qfalse;
+			CL_Reconnect_f();
+			return;
+		}
+	}
+
 	// if we downloaded files we need to restart the file system
 	if ( clc.downloadRestart ) {
 		clc.downloadRestart = qfalse;
@@ -1576,6 +1595,19 @@ A download completed or failed
 void CL_NextDownload( void ) {
 	char *s;
 	char *remoteName, *localName;
+	qboolean useCURL = qfalse;
+
+	// A download has finished, check whether this matches a referenced checksum
+	if( *clc.downloadName && !autoupdateStarted ) {
+		char *zippath = FS_BuildOSPath(Cvar_VariableString("fs_homepath"), clc.downloadName, "");
+		zippath[strlen(zippath)-1] = '\0';
+
+		if(!FS_CompareZipChecksum(zippath))
+			Com_Error(ERR_DROP, "Incorrect checksum for file: %s", clc.downloadName);
+	}
+
+	*clc.downloadTempName = *clc.downloadName = 0;
+	Cvar_Set("cl_downloadName", "");
 
 	// We are looking to start a download here
 	if ( *clc.downloadList ) {
@@ -1602,8 +1634,48 @@ void CL_NextDownload( void ) {
 			s = localName + strlen( localName ); // point at the nul byte
 
 		}
-		CL_BeginDownload( localName, remoteName );
 
+		if(!(cl_allowDownload->integer & DLF_NO_REDIRECT)) {
+			if(clc.sv_allowDownload & DLF_NO_REDIRECT) {
+				Com_Printf("WARNING: server does not "
+					"allow download redirection "
+					"(sv_allowDownload is %d)\n",
+					clc.sv_allowDownload);
+			}
+			else if(!*clc.sv_dlURL) {
+				Com_Printf("WARNING: server allows "
+					"download redirection, but does not "
+					"have sv_dlURL set\n");
+			}
+			else if(!CL_cURL_Init()) {
+				Com_Printf("WARNING: could not load "
+					"cURL library\n");
+			}
+			else {
+				CL_cURL_BeginDownload(localName, va("%s/%s",
+					clc.sv_dlURL, remoteName));
+				useCURL = qtrue;
+			}
+		}
+		else if(!(clc.sv_allowDownload & DLF_NO_REDIRECT)) {
+			Com_Printf("WARNING: server allows download "
+				"redirection, but it disabled by client "
+				"configuration (cl_allowDownload is %d)\n",
+				cl_allowDownload->integer);
+		}
+
+		if(!useCURL) {
+			if((cl_allowDownload->integer & DLF_NO_UDP)) {
+				Com_Error(ERR_DROP, "UDP Downloads are "
+					"disabled on your client. "
+					"(cl_allowDownload is %d)",
+					cl_allowDownload->integer);
+				return;	
+			}
+			else {
+				CL_BeginDownload( localName, remoteName );
+			}
+		}
 		clc.downloadRestart = qtrue;
 
 		// move over the rest
@@ -2248,6 +2320,23 @@ void CL_Frame( int msec ) {
 
 	if ( !com_cl_running->integer ) {
 		return;
+	}
+
+	if(clc.downloadCURLM) {
+		CL_cURL_PerformDownload();
+		// we can't process frames normally when in disconnected
+		// download mode since the ui vm expects clc.state to be
+		// CA_CONNECTED
+		if(clc.cURLDisconnected) {
+			cls.realFrametime = msec;
+			cls.frametime = msec;
+			cls.realtime += cls.frametime;
+			SCR_UpdateScreen();
+			S_Update();
+			Con_RunConsole();
+			cls.framecount++;
+			return;
+		}
 	}
 
 	if ( cls.cddialog ) {

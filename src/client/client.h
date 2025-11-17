@@ -38,6 +38,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "snd_public.h"
 #include "../cgame/cg_public.h"
 #include "../game/bg_public.h"
+#include "cl_curl.h"
 
 #define RETRANSMIT_TIMEOUT  3000    // time between connection packet retransmits
 
@@ -241,6 +242,15 @@ typedef struct {
 	int timeDemoFrames;             // counter of rendered frames
 	int timeDemoStart;              // cls.realtime before first frame
 	int timeDemoBaseTime;           // each frame will be at this time + frameNum * 50
+
+	qboolean	cURLEnabled;
+	qboolean	cURLUsed;
+	qboolean	cURLDisconnected;
+	char		downloadURL[MAX_OSPATH];
+	CURL		*downloadCURL;
+	CURLM		*downloadCURLM;
+	int		sv_allowDownload;
+	char		sv_dlURL[MAX_CVAR_VALUE_STRING];
 
 	// big stuff at end of structure so most offsets are 15 bits or less
 	netchan_t netchan;

@@ -24,8 +24,8 @@ binaries-linux64:
 
 build-pk3:
 	cd ../build/wolfpro && cp *.so ../../build64/wolfpro
-	cd ../build64/wolfpro && zip -r wolfpro_bin.pk3 *.dll *.so
-
+	cd ../build64/wolfpro && zip -r wolfpro_bin.pk3 cgame*.dll cgame*.so  ui*.dll ui*.so
+	cd ../build64/wolfpro && zip -r wolfpro_server.pk3 qagame*.dll qagame*.so
 
 clean:
 	rm -rf ../build
