@@ -507,7 +507,8 @@ void limbo( gentity_t *ent, qboolean makeCorpse ) {
 
 		for ( i = 0 ; i < level.maxclients ; i++ ) {
 			if ( level.clients[i].ps.pm_flags & PMF_LIMBO
-				 && level.clients[i].sess.spectatorClient == ent->s.number ) {
+				 && level.clients[i].sess.spectatorClient == ent->s.number
+				 &&  level.clients[i].sess.sessionTeam == ent->client->sess.sessionTeam) {
 				Cmd_FollowCycle_f( &g_entities[i], 1 );
 			}
 		}
