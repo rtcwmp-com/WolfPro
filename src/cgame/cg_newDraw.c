@@ -906,8 +906,7 @@ static void CG_DrawPlayerHealth( rectDef_t *rect, float scale, vec4_t color, qha
 */
     // WolfPro: The above results in spectators seeing 0 health for players they are following.
     //       If that is desired then we may want to create a cvar to turn this feature 'on/off'
-		value = ps->stats[STAT_HEALTH];
-	}
+	value = ps->stats[STAT_HEALTH];
 
 	// DHM - Nerve :: Don't show negative health
 	if ( value < 0 ) {
