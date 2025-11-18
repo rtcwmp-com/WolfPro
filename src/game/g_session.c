@@ -64,7 +64,7 @@ void G_WriteClientSessionData( gclient_t *client ) {
 		G_WriteWeaponStatsData(client);
 	}
 
-	const char  *s = va( "%i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i",       // DHM - Nerve
+	const char  *s = va( "%i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i",       // DHM - Nerve
 			client->sess.sessionTeam,
 			client->sess.spectatorTime,
 			client->sess.spectatorState,
@@ -81,6 +81,8 @@ void G_WriteClientSessionData( gclient_t *client ) {
 			client->sess.latchPlayerItem,   // DHM - Nerve
 			client->sess.latchPlayerSkin,    // DHM - Nerve
 			client->sess.stats.rounds,
+			client->sess.specInvited,
+			client->sess.specLocked,
 			client->sess.stats.deaths,
 			client->sess.stats.kills,
 			client->sess.stats.damage_given,
@@ -127,7 +129,7 @@ void G_ReadSessionData( gclient_t *client ) {
 	var = va( "session%i", client - level.clients );
 	trap_Cvar_VariableStringBuffer( var, s, sizeof( s ) );
 
-	sscanf( s, "%i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i",       // DHM - Nerve
+	sscanf( s, "%i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i",       // DHM - Nerve
 			(int *)&client->sess.sessionTeam,
 			&client->sess.spectatorTime,
 			(int *)&client->sess.spectatorState,
@@ -144,6 +146,8 @@ void G_ReadSessionData( gclient_t *client ) {
 			&client->sess.latchPlayerItem,  // DHM - Nerve
 			&client->sess.latchPlayerSkin,   // DHM - Nerve
 			&client->sess.stats.rounds,
+			&client->sess.specInvited,
+			&client->sess.specLocked,
 			&client->sess.stats.deaths,
 			&client->sess.stats.kills,
 			&client->sess.stats.damage_given,
@@ -241,6 +245,8 @@ void G_InitSessionData( gclient_t *client, char *userinfo ) {
 
 	sess->spectatorState = SPECTATOR_FREE;
 	sess->spectatorTime = level.time;
+	sess->specInvited = 0;
+	sess->specLocked = 0;
 
 	// DHM - Nerve
 	sess->latchPlayerType = sess->playerType = 0;
@@ -255,6 +261,9 @@ void G_InitSessionData( gclient_t *client, char *userinfo ) {
 }
 
 
+#define GETVAL( x ) if ( ( tmp = strchr( tmp, ' ' ) ) == NULL ) {return; \
+						   } x = atoi( ++tmp );
+						   
 /*
 ==================
 G_InitWorldSession
@@ -274,7 +283,7 @@ void G_InitWorldSession( void ) {
 		level.newSession = qtrue;
 		level.resetStats = qtrue;
 		G_Printf( "Gametype changed, clearing session data.\n" );
-	}else{
+	} else {
 		char* tmp = s;
 		if ((tmp = strchr(va("%s", tmp), ' ')) != NULL) {
 			tmp++;
@@ -283,6 +292,23 @@ void G_InitWorldSession( void ) {
 				level.resetStats = qtrue;
 				G_Printf("Map changed, clearing player stats.\n");
 			}
+		}
+		
+		// WolfPro - Speclock
+		qboolean swTest = (g_altStopwatchMode.integer != 0 || g_currentRound.integer == 1);
+
+		// Get team lock stuff
+		GETVAL(gt);
+		teamInfo[TEAM_RED].spec_lock = (gt & TEAM_RED) ? qtrue : qfalse;
+		teamInfo[TEAM_BLUE].spec_lock = (gt & TEAM_BLUE) ? qtrue : qfalse;
+		
+		// have to make sure spec locks follow the right teams
+		if (g_gametype.integer == GT_WOLF_STOPWATCH && g_gamestate.integer != GS_PLAYING && swTest) {
+			G_swapTeamLocks();
+		}
+
+		if (g_swapteams.integer) {
+			G_swapTeamLocks();
 		}
 	}
 }
@@ -296,7 +322,10 @@ G_WriteSessionData
 void G_WriteSessionData( void ) {
 	int i;
 
-	trap_Cvar_Set( "session", va( "%i", g_gametype.integer ) );
+	trap_Cvar_Set( "session",
+		va( "%i %i", g_gametype.integer,
+			( teamInfo[TEAM_RED].spec_lock * TEAM_RED | teamInfo[TEAM_BLUE].spec_lock * TEAM_BLUE )
+		));
 
 	for (i = 0; !level.resetStats && i < level.numConnectedClients; i++) {
 		if ((g_gamestate.integer == GS_WARMUP_COUNTDOWN &&

@@ -341,6 +341,7 @@ vmCvar_t cg_uinfo;
 vmCvar_t cg_hitsounds;
 vmCvar_t cg_hitsoundBodyStyle;
 vmCvar_t cg_hitsoundHeadStyle;
+vmCvar_t int_ui_blackout;
 
 // RT and ERT
 vmCvar_t cg_drawReinforcementTime;
@@ -646,6 +647,7 @@ cvarTable_t cvarTable[] = {
 	{ &cg_priorityTextY, "cg_priorityTextY", "350", CVAR_ARCHIVE },
 
 	{ &cg_uinfo, "cg_uinfo", "0", CVAR_ROM | CVAR_USERINFO },
+	{ &int_ui_blackout, "ui_blackout", "0", CVAR_ROM },
 
 	{ &cg_hitsounds, "cg_hitsounds", "0", CVAR_ARCHIVE},
 	{ &cg_hitsoundBodyStyle, "cg_hitsoundBodyStyle", "1", CVAR_ARCHIVE },

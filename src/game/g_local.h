@@ -33,6 +33,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "q_shared.h"
 #include "bg_public.h"
 #include "g_public.h"
+#include "../../MAIN/ui_mp/menudef.h"
 
 //==================================================================
 
@@ -555,6 +556,7 @@ typedef struct {
 	int latchPlayerWeapon;          // DHM - Nerve :: for GT_WOLF not archived
 	int latchPlayerItem;            // DHM - Nerve :: for GT_WOLF not archived
 	int latchPlayerSkin;            // DHM - Nerve :: for GT_WOLF not archived
+	int referee, status, shoutcaster;
 	int spec_invite, specInvited, specLocked;
 	playerStats_t stats;
 	char* lastChatText;
@@ -1301,8 +1303,13 @@ void G_RunClient( gentity_t *ent );
 // g_team.c
 //
 qboolean OnSameTeam( gentity_t *ent1, gentity_t *ent2 );
+qboolean G_allowFollow( gentity_t *ent, int nTeam );
 
 
+int G_blockoutTeam( gentity_t *ent, int nTeam );
+qboolean G_desiredFollow( gentity_t *ent, int nTeam );
+void G_updateSpecLock( int nTeam, qboolean fLock );
+void G_removeSpecInvite( int team );
 //
 // g_mem.c
 //
@@ -1885,6 +1892,7 @@ void G_PredictPlayerMove(gentity_t* ent, float frametime);
 
 // g_referee.c
 qboolean G_refCommandCheck(void);
+void G_refSpeclockTeams_cmd( gentity_t *ent, qboolean fLock );
 
 // Macros
 //
