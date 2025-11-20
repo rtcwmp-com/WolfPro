@@ -1350,6 +1350,9 @@ void SpectatorClientEndFrame( gentity_t *ent ) {
 	} else {
 		ent->client->ps.pm_flags &= ~PMF_SCOREBOARD;
 	}
+	// Wolfpro - Speclock
+	ent->client->ps.powerups[PW_BLACKOUT] = ( G_blockoutTeam( ent, TEAM_RED ) * TEAM_RED ) |
+											( G_blockoutTeam( ent, TEAM_BLUE ) * TEAM_BLUE );
 }
 
 
@@ -1538,6 +1541,9 @@ while a slow client may have multiple ClientEndFrame between ClientThink.
 void ClientEndFrame( gentity_t *ent ) {
 	int i;
 
+	// used for informing of speclocked teams.
+	// Zero out here and set only for certain specs
+	ent->client->ps.powerups[PW_BLACKOUT] = 0;
 	if ( ( ent->client->sess.sessionTeam == TEAM_SPECTATOR ) || ( ent->client->ps.pm_flags & PMF_LIMBO ) ) { // JPW NERVE
 		SpectatorClientEndFrame( ent );
 		return;

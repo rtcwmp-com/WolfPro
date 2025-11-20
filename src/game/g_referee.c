@@ -43,6 +43,29 @@ void G_refPlayerPut_cmd(int team_id) {
 
 }
 
+// Changes team spectator lock status
+void G_refSpeclockTeams_cmd(gentity_t *ent, qboolean fLock) {
+	char *status;
+
+	// Ensure proper locking
+	G_updateSpecLock(TEAM_RED, (TeamCount(-1, TEAM_RED)) ? fLock : qfalse);
+	G_updateSpecLock(TEAM_BLUE, (TeamCount(-1, TEAM_BLUE)) ? fLock : qfalse);
+
+	status = va("Referee has ^3SPECTATOR %sLOCKED^7 teams", ((fLock) ? "" : "UN"));
+
+	//G_printFull(status, ent);
+
+	// Update viewers as necessary
+//	G_pollMultiPlayers();
+
+	/*if (fLock) {
+		level.server_settings |= CV_SVS_LOCKSPECS;
+	}
+	else {
+		level.server_settings &= ~CV_SVS_LOCKSPECS;
+	}
+	trap_SetConfigstring(CS_SERVERTOGGLES, va("%d", level.server_settings));*/
+}
 
 
 qboolean G_refCommandCheck(void) {
@@ -54,6 +77,10 @@ qboolean G_refCommandCheck(void) {
 		G_refPlayerPut_cmd(TEAM_RED);
 	} else if (!Q_stricmp(cmd, "putspec")) {
 		G_refPlayerPut_cmd(TEAM_SPECTATOR);
+	} else if (!Q_stricmp(cmd, "speclock")) {
+		G_refSpeclockTeams_cmd(NULL, qtrue);
+	} else if (!Q_stricmp(cmd, "specunlock")) {
+		G_refSpeclockTeams_cmd(NULL, qfalse);
 	} else { return(qfalse); }
 
 	return(qtrue);

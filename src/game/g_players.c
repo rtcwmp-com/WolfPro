@@ -2,6 +2,167 @@
 
 /*
 ===================
+Invite player to spectate
+
+NOTE: Referee can still be invited..so in case logout occurs..
+===================
+*/
+void cmd_specInvite( gentity_t *ent ) {
+	int	target;
+	gentity_t	*player;
+	char arg[MAX_TOKEN_CHARS];
+	int team=ent->client->sess.sessionTeam;
+
+	if ( team == TEAM_RED || team == TEAM_BLUE ) {
+		if ( !teamInfo[team].spec_lock ) {
+			CP( "print \"Your team isn't locked from spectators!\n\"" );
+			return;
+		}
+
+		trap_Argv( 1, arg, sizeof( arg ) );
+		if ( ( target = ClientNumberFromString( ent, arg ) ) == -1 ) {
+			return;
+		}
+
+		player = g_entities + target;
+
+		// Can't invite self
+		if ( player->client == ent->client ) {
+			CP( "print \"You can't specinvite yourself!\n\"" );
+			return;
+		}
+
+		// Can't invite an active player.
+		if ( player->client->sess.sessionTeam != TEAM_SPECTATOR ) {
+			CP( "print \"You can't specinvite a non-spectator!\n\"" );
+			return;
+		}
+
+		// If player it not viewing anyone, force them..
+		if (!player->client->sess.specInvited &&
+			!(player->client->sess.spectatorClient == SPECTATOR_FOLLOW)) {
+			player->client->sess.spectatorClient = ent->client->ps.clientNum;
+			player->client->sess.spectatorState = SPECTATOR_FOLLOW;
+		}
+
+		player->client->sess.specInvited |= team;
+
+		// Notify sender/recipient
+		CP( va( "print \"%s^7 has been sent a spectator invitation.\n\"", player->client->pers.netname ) );
+		CPx(player-g_entities, va("cp \"%s ^7invited you to spec the %s team.\n\"2",
+			ent->client->pers.netname, aTeams[team]));
+
+	} else {CP( "print \"Spectators can't specinvite players!\n\"" );}
+}
+
+/*
+===================
+unInvite player from spectating
+===================
+*/
+void cmd_specUnInvite( gentity_t *ent ) {
+	int	target;
+	gentity_t	*player;
+	char arg[MAX_TOKEN_CHARS];
+	int team=ent->client->sess.sessionTeam;
+
+	if ( team == TEAM_RED || team == TEAM_BLUE ) {
+		if ( !teamInfo[team].spec_lock ) {
+			CP( "print \"Your team isn't locked from spectators!\n\"" );
+			return;
+		}
+
+		trap_Argv( 1, arg, sizeof( arg ) );
+		if ( ( target = ClientNumberFromString( ent, arg ) ) == -1 ) {
+			return;
+		}
+
+		player = g_entities + target;
+
+		// Can't uninvite self
+		if ( player->client == ent->client ) {
+			CP( "print \"You can't specuninvite yourself!\n\"" );
+			return;
+		}
+
+		// Can't uninvite an active player.
+		if ( player->client->sess.sessionTeam != TEAM_SPECTATOR ) {
+			CP( "print \"You can't specuninvite a non-spectator!\n\"" );
+			return;
+		}
+
+		// Can't uninvite a already speclocked player
+		if (player->client->sess.specInvited < team) {
+			CP(va("print \"%s ^7already can't spectate your team!\n\"", ent->client->pers.netname));
+			return;
+		}
+
+		player->client->sess.specInvited &= ~team;
+		G_updateSpecLock(team, qtrue);
+
+		// Notify sender/recipient
+		CP( va( "print \"%s^7 can't any longer spectate your team.\n\"", player->client->pers.netname ) );
+		CPx(player->client->ps.clientNum, va("print \"%s ^7has revoked your ability to spectate the %s team.\n\"",
+			ent->client->pers.netname, aTeams[team]));
+
+	} else {CP( "print \"Spectators can't specuninvite players!\n\"" );}
+}
+
+/*
+===================
+Revoke ability from all players to spectate
+===================
+*/
+void cmd_uninviteAll( gentity_t *ent) {
+	int team = ent->client->sess.sessionTeam;
+
+	if ( team == TEAM_RED || team == TEAM_BLUE ) {
+		if ( !teamInfo[team].spec_lock ) {
+			CP( "print \"Your team isn't locked from spectators!\n\"" );
+			return;
+		}
+
+		// Remove all specs
+		G_removeSpecInvite(team);
+
+		// Notify that team only that specs lost privilage
+		//TP(team, "chat",  va("^3TEAM NOTICE: ^7%s ^7has revoked ALL spec's invites for your team.", ent->client->pers.netname));
+		// Inform specs..
+		//TP(TEAM_SPECTATOR, "print", va("%s ^7revoked ALL spec invites from %s team", ent->client->pers.netname, aTeams[team]));
+
+	} else {CP( "print \"Spectators can't specuninviteall!\n\"" );}
+
+}
+
+/*
+===================
+Spec lock/unlock team
+===================
+*/
+void cmd_speclock( gentity_t *ent, qboolean lock ) {
+	int team = ent->client->sess.sessionTeam;
+
+	if (team_nocontrols.integer ) {
+		CP("print \"Team commands are disabled!\n\"");
+		return;
+	}
+
+	if ( team == TEAM_RED || team == TEAM_BLUE ) {
+		if ( (lock && teamInfo[team].spec_lock) || (!lock && !teamInfo[team].spec_lock) ) {
+			CP( va("print \"Your team is already %s spectators!\n\"",
+				(!lock ? "unlocked for" : "locked from" ) ));
+			return;
+		}
+
+		G_updateSpecLock( team, lock );
+		AP(va("cp \"%s is now SPEC%s\"2", aTeams[team], (lock ? "LOCKED" : "UNLOCKED" ) ));
+
+	} else {CP( va("print \"Spectators can't use spec%s command!\n\"", (lock ? "lock" : "unlock" )) );}
+
+}
+
+/*
+===================
 READY / NOTREADY
 
 Sets a player's "ready" status.
@@ -226,6 +387,11 @@ if(!Q_stricmp(cmd, "readyteam"))			{ pCmd_teamReady(ent, qtrue);	return qtrue;}
 			!Q_stricmp(cmd, "notready"))			{ G_ready_cmd( ent, qfalse ); return qtrue;}
 	else if(!Q_stricmp(cmd, "pause"))				{ pCmd_pauseHandle( ent, qtrue); return qtrue;}
 	else if(!Q_stricmp(cmd, "unpause"))				{ pCmd_pauseHandle( ent, qfalse); return qtrue;}
+	else if(!Q_stricmp(cmd, "speclock"))			{ cmd_speclock(ent, qtrue);	return qtrue;}
+	else if(!Q_stricmp(cmd, "specunlock"))			{ cmd_speclock(ent, qfalse);return qtrue;}
+	else if(!Q_stricmp(cmd, "specinvite"))			{ cmd_specInvite(ent);		return qtrue;}
+	else if(!Q_stricmp(cmd, "specuninvite"))		{ cmd_specUnInvite(ent);	return qtrue;}
+	else if(!Q_stricmp(cmd, "specuninviteall"))		{ cmd_uninviteAll(ent);		return qtrue;}
 	else if(!Q_stricmp(cmd, "wstats"))				{ G_statsPrint( ent, 1 );	return qtrue;}
 	else if(!Q_stricmp(cmd, "cstats"))				{ G_clientStatsPrint( ent, 1, qtrue );	return qtrue;}
 	else if(!Q_stricmp(cmd, "stats"))				{ G_clientStatsPrint( ent, 1, qfalse );	return qtrue;}

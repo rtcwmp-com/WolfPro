@@ -131,6 +131,8 @@ extern vmCvar_t ui_limboOptions;
 extern vmCvar_t ui_isSpectator;
 // -NERVE - SMF
 
+// Speclock
+extern vmCvar_t ui_blackout;
 //
 // ui_qmenu.c
 //

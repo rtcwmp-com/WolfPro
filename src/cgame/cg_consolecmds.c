@@ -302,6 +302,11 @@ static void CG_OpenLimbo_f( void ) {
 	int currentTeam;
 	char buf[32];
 
+	// No limbo menu in demos
+	if (cg.demoPlayback) {
+		return;
+	}
+
 	// set correct team, also set current team to detect if its changed
 	if ( cg.snap ) {
 		currentTeam = cg.snap->ps.persistant[PERS_TEAM] - 1;
@@ -793,6 +798,12 @@ void CG_InitConsoleCommands( void ) {
 	trap_AddCommand( "swap_teams" );
 	// -NERVE - SMF
 	
+	// Speclock
+	trap_AddCommand( "speclock" );		// Locks team from specs
+	trap_AddCommand( "specunlock" );	// Opens team for specs
+	trap_AddCommand( "specinvite" );		// Invites player to spec team
+	trap_AddCommand( "specuninvite" );		// Takes players ability to spec the team
+	trap_AddCommand( "specuninviteall" );	// Removes all spectators from that team
 	// Ready
 	trap_AddCommand("readyteam");
 	trap_AddCommand("ready");

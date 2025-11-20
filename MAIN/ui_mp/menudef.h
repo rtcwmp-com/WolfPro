@@ -393,4 +393,8 @@ If you have questions concerning this license or the applicable additional terms
 #define UI_FONT_BIG             2
 #define UI_FONT_SMALL           3
 #define UI_FONT_HANDWRITING     4
+// referee level
+#define RL_NONE                 0
+#define RL_REFEREE              1
+#define RL_RCON                 2
 // -NERVE - SMF

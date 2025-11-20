@@ -1902,6 +1902,9 @@ extern vmCvar_t cg_hitsounds;
 extern vmCvar_t cg_hitsoundBodyStyle;
 extern vmCvar_t cg_hitsoundHeadStyle;
 
+// Speclock
+extern vmCvar_t int_ui_blackout;
+
 // RT and ERT
 extern vmCvar_t cg_drawReinforcementTime;
 extern vmCvar_t cg_drawEnemyTimer;

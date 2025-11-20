@@ -1039,6 +1039,11 @@ void _UI_Refresh( int realtime ) {
 
 
 	UI_UpdateCvars();
+	
+	// WolfPro - blackout if speclocked
+	if ( ui_blackout.integer > 0 ) {
+		UI_FillRect( -10, -10, 650, 490, colorBlack );
+	}
 
 	if ( Menu_Count() > 0 ) {
 		// paint all the menus
@@ -7304,6 +7309,8 @@ vmCvar_t ui_userAxisRespawnTime;
 vmCvar_t ui_glCustom;    // JPW NERVE missing from q3ta
 // -NERVE - SMF
 
+// Speclock
+vmCvar_t ui_blackout;
 cvarTable_t cvarTable[] = {
 
 	{ &ui_glCustom, "ui_glCustom", "4", CVAR_ARCHIVE }, // JPW NERVE missing from q3ta
@@ -7430,6 +7437,8 @@ cvarTable_t cvarTable[] = {
 	{ &ui_isSpectator, "ui_isSpectator", "1", 0 },
 	// -NERVE - SMF
 
+	// Speclock
+	{ &ui_blackout, "ui_blackout", "0", CVAR_ROM },
 	{ &ui_hudAlpha, "cg_hudAlpha", "1.0", CVAR_ARCHIVE }
 };
 

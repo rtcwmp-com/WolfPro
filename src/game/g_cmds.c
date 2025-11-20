@@ -589,10 +589,22 @@ void SetTeam( gentity_t *ent, char *s ) {
 	client->pers.teamState.state = TEAM_BEGIN;
 	if ( oldTeam != TEAM_SPECTATOR ) {
 		if ( !( ent->client->ps.pm_flags & PMF_LIMBO ) ) {
+			int i;
 			// Kill him (makes sure he loses flags, etc)
 			ent->flags &= ~FL_GODMODE;
 			ent->client->ps.stats[STAT_HEALTH] = ent->health = 0;
 			player_die( ent, ent, ent, 100000, MOD_SWITCHTEAM );
+			// WolfPro - Remove any spectators if speclock is on
+			for (i = 0; i < level.maxclients; i++) {
+				if (level.clients[i].sess.sessionTeam == TEAM_SPECTATOR
+					&& level.clients[i].sess.spectatorState == SPECTATOR_FOLLOW
+					&& level.clients[i].sess.spectatorClient == clientNum &&
+					teamInfo[team].spec_lock &&
+					ent->client->sess.specInvited != team)
+				{
+					StopFollowing(&g_entities[i]);
+				}
+			}
 		}
 	}
 	// they go to the end of the line for tournements
@@ -605,6 +617,7 @@ void SetTeam( gentity_t *ent, char *s ) {
 		G_readyResetOnPlayerLeave(oldTeam);
 	}
 
+	client->sess.specLocked = 0;
 	client->sess.sessionTeam = team;
 	client->sess.spectatorState = specState;
 	client->sess.spectatorClient = specClient;
@@ -770,9 +783,44 @@ void Cmd_Follow_f( gentity_t *ent ) {
 		return;
 	}
 
+	// WolfPro - Et port..
+	if (ent->client->ps.pm_flags & PMF_LIMBO && ent->client->sess.sessionTeam != TEAM_SPECTATOR)
+	{
+		CP("print \"Can't issue a follow command while in limbo.\n\"");
+		CP("print \"Hit FIRE to switch between teammates.\n\"");
+		return;
+	}
+	
 	trap_Argv( 1, arg, sizeof( arg ) );
 	i = ClientNumberFromString( ent, arg );
 	if ( i == -1 ) {
+		// WolfPro - speclock
+		if ( !Q_stricmp( arg, "allies" ) ) {
+			i = TEAM_BLUE;
+		} else if ( !Q_stricmp( arg, "axis" ) ) {
+			i = TEAM_RED;
+		} else { return; }
+
+		if ( !TeamCount( ent - g_entities, i ) ) {
+			CP( va( "print \"The %s team %s empty!  Follow command ignored.\n\"", aTeams[i],
+					( ( ent->client->sess.sessionTeam != i ) ? "is" : "would be" ) ) );
+			return;
+		}
+
+		// Allow for simple toggle
+		if ( ent->client->sess.specLocked != i ) {
+			if ( teamInfo[i].spec_lock && !( ent->client->sess.specInvited & i ) ) {
+				CP( va( "print \"Sorry, the %s team is locked from spectators.\n\"", aTeams[i] ) );
+			} else {
+				ent->client->sess.specLocked = i;
+				CP( va( "print \"Spectator follow is now locked on the %s team.\n\"", aTeams[i] ) );
+				Cmd_FollowCycle_f( ent, 1 );
+			}
+		} else {
+			ent->client->sess.specLocked = 0;
+			CP( va( "print \"%s team spectating is now disabled.\n\"", aTeams[i] ) );
+		}
+
 		return;
 	}
 
@@ -797,6 +845,11 @@ void Cmd_Follow_f( gentity_t *ent ) {
 		ent->client->sess.losses++;
 	}
 
+	// WolfPro - can't follow a player on a speclocked team, unless allowed
+	if ( !G_allowFollow( ent, level.clients[i].sess.sessionTeam ) ) {
+		CP( va( "print \"Sorry, the %s team is locked from spectators.\n\"", aTeams[level.clients[i].sess.sessionTeam] ) );
+		return;
+	}
 	// first set them to spectator
 	if ( ent->client->sess.sessionTeam != TEAM_SPECTATOR ) {
 		SetTeam( ent, "spectator" );
@@ -857,7 +910,9 @@ void Cmd_FollowCycle_f( gentity_t *ent, int dir ) {
 			if ( level.clients[clientnum].ps.pm_flags & PMF_LIMBO ) {
 				continue;
 			}
-			if ( level.clients[clientnum].sess.sessionTeam != ent->client->sess.sessionTeam ) {
+			if (level.clients[clientnum].sess.sessionTeam != ent->client->sess.sessionTeam &&
+				ent->client->sess.sessionTeam != TEAM_SPECTATOR)
+			{
 				continue;
 			}
 		}
@@ -867,6 +922,10 @@ void Cmd_FollowCycle_f( gentity_t *ent, int dir ) {
 			if ( level.clients[clientnum].ps.pm_flags & PMF_LIMBO ) {
 				continue;
 			}
+		}
+		// WolfPro
+		if ( !G_desiredFollow( ent, level.clients[clientnum].sess.sessionTeam ) ) {
+			continue;
 		}
 
 		// this is good, we can use it
@@ -2341,7 +2400,7 @@ void ClientCommand( int clientNum ) {
 		return;
 	}
 
-	// L0 - Player commands
+	// Player commands
 	if(playerCmds(ent, cmd)) return;
 
 	// ignore all other commands when at intermission
