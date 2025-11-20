@@ -263,7 +263,7 @@ void G_InitSessionData( gclient_t *client, char *userinfo ) {
 
 #define GETVAL( x ) if ( ( tmp = strchr( tmp, ' ' ) ) == NULL ) {return; \
 						   } x = atoi( ++tmp );
-						   
+					   
 /*
 ==================
 G_InitWorldSession
@@ -285,15 +285,7 @@ void G_InitWorldSession( void ) {
 		G_Printf( "Gametype changed, clearing session data.\n" );
 	} else {
 		char* tmp = s;
-		if ((tmp = strchr(va("%s", tmp), ' ')) != NULL) {
-			tmp++;
-			trap_GetServerinfo(s, sizeof(s));
-			if (Q_stricmp(tmp, Info_ValueForKey(s, "mapname"))) {
-				level.resetStats = qtrue;
-				G_Printf("Map changed, clearing player stats.\n");
-			}
-		}
-		
+
 		// WolfPro - Speclock
 		qboolean swTest = (g_altStopwatchMode.integer != 0 || g_currentRound.integer == 1);
 
@@ -309,6 +301,15 @@ void G_InitWorldSession( void ) {
 
 		if (g_swapteams.integer) {
 			G_swapTeamLocks();
+		}
+
+		if ((tmp = strchr(va("%s", tmp), ' ')) != NULL) {
+			tmp++;
+			trap_GetServerinfo(s, sizeof(s));
+			if (Q_stricmp(tmp, Info_ValueForKey(s, "mapname"))) {
+				level.resetStats = qtrue;
+				G_Printf("Map changed, clearing player stats.\n");
+			}
 		}
 	}
 }

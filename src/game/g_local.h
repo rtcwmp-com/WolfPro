@@ -1308,6 +1308,7 @@ qboolean G_allowFollow( gentity_t *ent, int nTeam );
 
 int G_blockoutTeam( gentity_t *ent, int nTeam );
 qboolean G_desiredFollow( gentity_t *ent, int nTeam );
+void G_swapTeamLocks( void );
 void G_updateSpecLock( int nTeam, qboolean fLock );
 void G_removeSpecInvite( int team );
 //
