@@ -64,7 +64,7 @@ void G_WriteClientSessionData( gclient_t *client ) {
 		G_WriteWeaponStatsData(client);
 	}
 
-	const char  *s = va( "%i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i",       // DHM - Nerve
+	const char  *s = va( "%i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i",       // DHM - Nerve
 			client->sess.sessionTeam,
 			client->sess.spectatorTime,
 			client->sess.spectatorState,
@@ -106,7 +106,15 @@ void G_WriteClientSessionData( gclient_t *client ) {
 			client->sess.stats.obj_taken,
 			client->sess.stats.obj_checkpoint,
 			client->sess.stats.obj_killcarrier,
-			client->sess.stats.obj_protectflag
+			client->sess.stats.obj_protectflag,
+			client->sess.stats.time_played,
+            client->sess.stats.time_axis,
+            client->sess.stats.time_allies,
+            client->sess.stats.time_crouched,
+            client->sess.stats.time_leaning,
+            client->sess.stats.time_objheld,
+            client->sess.stats.distance_travelled_spawn,
+            client->sess.stats.distance_travelled
 			);
 
 	const char  *var = va( "session%i", client - level.clients );
@@ -129,7 +137,7 @@ void G_ReadSessionData( gclient_t *client ) {
 	var = va( "session%i", client - level.clients );
 	trap_Cvar_VariableStringBuffer( var, s, sizeof( s ) );
 
-	sscanf( s, "%i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i",       // DHM - Nerve
+	sscanf( s, "%i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i %i",       // DHM - Nerve
 			(int *)&client->sess.sessionTeam,
 			&client->sess.spectatorTime,
 			(int *)&client->sess.spectatorState,
@@ -171,7 +179,15 @@ void G_ReadSessionData( gclient_t *client ) {
 			&client->sess.stats.obj_taken,
 			&client->sess.stats.obj_checkpoint,
 			&client->sess.stats.obj_killcarrier,
-			&client->sess.stats.obj_protectflag
+			&client->sess.stats.obj_protectflag,
+			&client->sess.stats.time_played,
+            &client->sess.stats.time_axis,
+            &client->sess.stats.time_allies,
+            &client->sess.stats.time_crouched,
+            &client->sess.stats.time_leaning,
+            &client->sess.stats.time_objheld,
+            &client->sess.stats.distance_travelled_spawn,
+            &client->sess.stats.distance_travelled
 			);
 
 	*s = 0;
