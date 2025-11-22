@@ -1538,8 +1538,60 @@ A fast client will have multiple ClientThink for each ClientEndFrame,
 while a slow client may have multiple ClientEndFrame between ClientThink.
 ==============
 */
+
+static void CalculatePlayerStats(gentity_t *ent){
+	if (g_gamestate.integer == GS_PLAYING && level.paused == PAUSE_NONE)
+		{
+			// count player time
+			if (!(ent->client->ps.persistant[PERS_RESPAWNS_LEFT] == 0 && (ent->client->ps.pm_flags & PMF_LIMBO)))
+			{
+				if (ent->client->sess.sessionTeam == TEAM_RED)
+				{
+					ent->client->sess.stats.time_axis += level.frameTime;
+				}
+				else if (ent->client->sess.sessionTeam == TEAM_BLUE)
+				{
+					ent->client->sess.stats.time_allies += level.frameTime;
+				}
+			}
+
+			// don't count skulled player time
+			if (!(ent->client->sess.sessionTeam == TEAM_SPECTATOR || (ent->client->ps.pm_flags & PMF_LIMBO) || ent->client->ps.stats[STAT_HEALTH] <= 0))
+			{
+				// ensure time played is always smaller or equal than time spent in teams
+				// work around for unreset data of slow connecters
+				if (ent->client->sess.stats.time_played > (ent->client->sess.stats.time_axis + ent->client->sess.stats.time_allies))
+				{
+					ent->client->sess.stats.time_played = 0;
+				}
+				ent->client->sess.stats.time_played += level.frameTime;
+
+				if(ent->client->ps.pm_flags & PMF_DUCKED){
+					ent->client->sess.stats.time_crouched += level.frameTime;
+				}
+				if(ent->client->ps.leanf){
+					ent->client->sess.stats.time_leaning += level.frameTime;
+				}
+
+				if(ent->client->ps.powerups[PW_REDFLAG] || ent->client->ps.powerups[PW_BLUEFLAG]){
+					ent->client->sess.stats.time_objheld += level.frameTime;
+				}
+
+				float distance = VectorDistance(ent->client->sess.prevOrigin, ent->client->ps.origin);
+				if(ent->client->ps.powerups[PW_INVULNERABLE]){
+					ent->client->sess.stats.distance_travelled_spawn += (int)distance;
+				}
+				ent->client->sess.stats.distance_travelled += (int)distance;
+
+			}
+
+
+		}
+}
 void ClientEndFrame( gentity_t *ent ) {
 	int i;
+
+	CalculatePlayerStats(ent);
 
 	// used for informing of speclocked teams.
 	// Zero out here and set only for certain specs
