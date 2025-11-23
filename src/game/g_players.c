@@ -1,5 +1,144 @@
 #include "g_local.h"
 
+// ************** PLAYERS
+//
+// Show client info
+void pCmd_players(gentity_t *ent, qboolean fParam) {
+	int i, idnum, max_rate, cnt = 0, tteam;
+	int user_rate, user_snaps;
+	gclient_t *cl;
+	gentity_t *cl_ent;
+	char n1[MAX_NETNAME], ready[16], ref[16], rate[256];
+	char *s, *tc, *coach, userinfo[MAX_INFO_STRING];
+
+
+	if (g_gamestate.integer == GS_PLAYING) {
+		if (ent) {
+			CP("print \"\n^3 ID^1 : ^3Player                    Nudge  Rate  MaxPkts  Snaps\n\"");
+			CP("print \"^1-----------------------------------------------------------^7\n\"");
+		}
+		else {
+			G_Printf(" ID : Player                    Nudge  Rate  MaxPkts  Snaps\n");
+			G_Printf("-----------------------------------------------------------\n");
+		}
+	}
+	else {
+		if (ent) {
+			CP("print \"\n^3Status^1   : ^3ID^1 : ^3Player                    Nudge  Rate  MaxPkts  Snaps\n\"");
+			CP("print \"^1---------------------------------------------------------------------^7\n\"");
+		}
+		else {
+			G_Printf("Status   : ID : Player                    Nudge  Rate  MaxPkts  Snaps\n");
+			G_Printf("---------------------------------------------------------------------\n");
+		}
+	}
+
+	max_rate = trap_Cvar_VariableIntegerValue("sv_maxrate");
+
+	for (i = 0; i < level.numConnectedClients; i++) {
+		idnum = level.sortedClients[i];
+		cl = &level.clients[idnum];
+		cl_ent = g_entities + idnum;
+
+		SanitizeString(cl->pers.netname, n1);
+		Q_CleanStr(n1);
+		n1[26] = 0;
+		ref[0] = 0;
+		ready[0] = 0;
+
+		// Rate info
+		if (cl_ent->r.svFlags & SVF_BOT) {
+			strcpy(rate, va("%s%s%s%s", "[BOT]", " -----", "       --", "     --"));
+		}
+		else if (cl->pers.connected == CON_CONNECTING) {
+			strcpy(rate, va("%s", "^3>>> CONNECTING <<<"));
+		}
+		else {
+			trap_GetUserinfo(idnum, userinfo, sizeof(userinfo));
+			s = Info_ValueForKey(userinfo, "rate");
+			user_rate = (max_rate > 0 && atoi(s) > max_rate) ? max_rate : atoi(s);
+			s = Info_ValueForKey(userinfo, "snaps");
+			user_snaps = atoi(s);
+
+			strcpy(rate, va("%5d%6d%9d%7d", cl->pers.clientTimeNudge, user_rate, cl->pers.clientMaxPackets, user_snaps));
+		}
+
+		if (g_gamestate.integer != GS_PLAYING) {
+			if (cl->sess.sessionTeam == TEAM_SPECTATOR || cl->pers.connected == CON_CONNECTING) {
+				strcpy(ready, ((ent) ? "^5--------^1 :" : "-------- :"));
+			}
+			else if (cl->pers.ready || (g_entities[idnum].r.svFlags & SVF_BOT)) {
+				strcpy(ready, ((ent) ? "^3(READY)^1  :" : "(READY)  :"));
+			}
+			else {
+				strcpy(ready, ((ent) ? "NOTREADY^1 :" : "NOTREADY :"));
+			}
+		}
+
+		if (cl->sess.shoutcaster) {
+			strcpy(ref, "SCS");
+		}
+
+		if (cl->sess.referee) {
+			strcpy(ref, "REF");
+		}
+
+		/* this stuff crashed the command???
+		if ((cl->sess.admin || cl->sess.referee) && !cl->sess.incognito) {
+			strcpy(ref, sortTag(ent));
+		}
+
+		if (cl->sess.coach_team) {
+			tteam = cl->sess.coach_team;
+			coach = (ent) ? "^3C" : "C";
+		}
+		else {*/
+			tteam = cl->sess.sessionTeam;
+			coach = " ";
+		//}
+
+		tc = (ent) ? "^7 " : " ";
+		if (g_gametype.integer >= GT_WOLF) {
+			if (tteam == TEAM_RED) {
+				tc = (ent) ? "^1X^7" : "X";
+			}
+			if (tteam == TEAM_BLUE) {
+				tc = (ent) ? "^4L^7" : "L";
+			}
+		}
+
+		if (ent) {
+			CP(va("print \"%s%s%2d%s^1:%s %-26s^7%s  ^3%s\n\"", ready, tc, idnum, coach, ((ref[0]) ? "^3" : "^7"), n1, rate, ref));
+		}
+		else { G_Printf("%s%s%2d%s: %-26s%s  %s\n", ready, tc, idnum, coach, n1, rate, ref); }
+
+		cnt++;
+	}
+
+	if (ent) {
+		CP(va("print \"\n^3%2d^7 total players\n\n\"", cnt));
+	}
+	else { G_Printf("\n%2d total players\n\n", cnt); }
+
+	// Team speclock info
+	if (g_gametype.integer >= GT_WOLF) {
+		for (i = TEAM_RED; i <= TEAM_BLUE; i++) {
+			if (teamInfo[i].spec_lock) {
+				if (ent) {
+					CPx(ent->client->ps.clientNum, va("print \"** %s team is speclocked.\n\"", aTeams[i]));
+				}
+				else { G_Printf("** %s team is speclocked.\n", aTeams[i]); }
+			}
+
+			if (teamInfo[i].team_lock) {
+				if (ent) {
+					CPx(ent->client->ps.clientNum, va("print \"** %s team is locked.\n\"", aTeams[i]));
+				}
+				else { G_Printf("** %s team is locked.\n", aTeams[i]); }
+			}
+		}
+	}
+}
 /*
 ===================
 Invite player to spectate
@@ -388,6 +527,7 @@ if(!Q_stricmp(cmd, "readyteam"))			{ pCmd_teamReady(ent, qtrue);	return qtrue;}
 	else if(!Q_stricmp(cmd, "pause"))				{ pCmd_pauseHandle( ent, qtrue); return qtrue;}
 	else if(!Q_stricmp(cmd, "unpause"))				{ pCmd_pauseHandle( ent, qfalse); return qtrue;}
 	else if(!Q_stricmp(cmd, "speclock"))			{ cmd_speclock(ent, qtrue);	return qtrue;}
+	else if(!Q_stricmp(cmd, "players"))			    { pCmd_players(ent, qfalse);	return qtrue;}
 	else if(!Q_stricmp(cmd, "specunlock"))			{ cmd_speclock(ent, qfalse);return qtrue;}
 	else if(!Q_stricmp(cmd, "specinvite"))			{ cmd_specInvite(ent);		return qtrue;}
 	else if(!Q_stricmp(cmd, "specuninvite"))		{ cmd_specUnInvite(ent);	return qtrue;}

@@ -617,6 +617,8 @@ typedef struct {
 
 	unsigned int autoaction;            // End-of-match auto-requests
 	unsigned int clientFlags;           // Client settings that need server involvement
+	unsigned int clientMaxPackets;      // Client com_maxpacket settings
+	unsigned int clientTimeNudge;       // Client cl_timenudge settings
 
 	int deathYaw;
 } clientPersistant_t;

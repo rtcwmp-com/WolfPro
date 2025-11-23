@@ -339,6 +339,8 @@ vmCvar_t cg_priorityTextY;
 vmCvar_t cg_uinfo;
 
 vmCvar_t cg_hitsounds;
+vmCvar_t int_cl_maxpackets;
+vmCvar_t int_cl_timenudge;
 vmCvar_t cg_hitsoundBodyStyle;
 vmCvar_t cg_hitsoundHeadStyle;
 vmCvar_t int_ui_blackout;
@@ -650,6 +652,8 @@ cvarTable_t cvarTable[] = {
 	{ &int_ui_blackout, "ui_blackout", "0", CVAR_ROM },
 
 	{ &cg_hitsounds, "cg_hitsounds", "0", CVAR_ARCHIVE},
+	{ &int_cl_maxpackets, "cl_maxpackets", "125", CVAR_ARCHIVE },
+	{ &int_cl_timenudge, "cl_timenudge", "0", CVAR_ARCHIVE|CVAR_LATCH },
 	{ &cg_hitsoundBodyStyle, "cg_hitsoundBodyStyle", "1", CVAR_ARCHIVE },
 	{ &cg_hitsoundHeadStyle, "cg_hitsoundHeadStyle", "1", CVAR_ARCHIVE }, 
 
@@ -803,13 +807,13 @@ void CG_setClientFlags(void) {
 	}
 
 	cg.pmext.bAutoReload = (cg_autoReload.integer > 0);
-	trap_Cvar_Set("cg_uinfo", va("%d %d %d %d %d %s",
+	trap_Cvar_Set("cg_uinfo", va("%d %d %d %d %d %d %d %s",
 		
 
-		// // Timenudge
-		// int_cl_timenudge.integer,
-		// // MaxPackets
-		// int_cl_maxpackets.integer,
+		// Timenudge
+		int_cl_timenudge.integer,
+		// MaxPackets
+		int_cl_maxpackets.integer,
 		
 		// // GUID
 		// str_cl_guid.string,
@@ -848,6 +852,7 @@ void CG_UpdateCvars( void ) {
 			cv->modificationCount = cv->vmCvar->modificationCount;
 
 			if (cv->vmCvar == &cg_autoAction || cv->vmCvar == &cg_autoReload || cv->vmCvar == &cg_antilag ||
+				cv->vmCvar == &int_cl_timenudge || cv->vmCvar == &int_cl_maxpackets ||
 				cv->vmCvar == &cg_autoactivate || cv->vmCvar == &cg_predictItems || cv->vmCvar == &cg_hitsounds || 
 				cv->vmCvar == &cg_hitsoundBodyStyle || cv->vmCvar == &cg_hitsoundHeadStyle) {
 				setFlags = qtrue;
