@@ -4,6 +4,7 @@
 #include <io.h>
 #else
 #include <unistd.h>
+#include <sys/time.h>
 #endif 
 
 #include <time.h>
@@ -125,6 +126,14 @@ void BuildPlayerStats(gclient_t *client, qboolean clientDisconnected)
             level.disconnectStats[dc].obj_checkpoint = cl->sess.stats.obj_checkpoint;
             level.disconnectStats[dc].obj_killcarrier = cl->sess.stats.obj_killcarrier;
             level.disconnectStats[dc].obj_protectflag = cl->sess.stats.obj_protectflag;
+            level.disconnectStats[dc].time_played = cl->sess.stats.time_played;
+            level.disconnectStats[dc].time_axis = cl->sess.stats.time_axis;
+            level.disconnectStats[dc].time_allies = cl->sess.stats.time_allies;
+            level.disconnectStats[dc].time_crouched = cl->sess.stats.time_crouched;
+            level.disconnectStats[dc].time_leaning = cl->sess.stats.time_leaning;
+            level.disconnectStats[dc].time_objheld = cl->sess.stats.time_objheld;
+            level.disconnectStats[dc].distance_travelled_spawn = cl->sess.stats.distance_travelled_spawn;
+            level.disconnectStats[dc].distance_travelled = cl->sess.stats.distance_travelled;
 
             for (m = WS_KNIFE; m < WS_MAX; m++)
             {
@@ -196,6 +205,14 @@ void BuildPlayerStats(gclient_t *client, qboolean clientDisconnected)
             level.playerStats[i].obj_checkpoint = cl->sess.stats.obj_checkpoint;
             level.playerStats[i].obj_killcarrier = cl->sess.stats.obj_killcarrier;
             level.playerStats[i].obj_protectflag = cl->sess.stats.obj_protectflag;
+            level.playerStats[i].time_played = cl->sess.stats.time_played;
+            level.playerStats[i].time_axis = cl->sess.stats.time_axis;
+            level.playerStats[i].time_allies = cl->sess.stats.time_allies;
+            level.playerStats[i].time_crouched = cl->sess.stats.time_crouched;
+            level.playerStats[i].time_leaning = cl->sess.stats.time_leaning;
+            level.playerStats[i].time_objheld = cl->sess.stats.time_objheld;
+            level.playerStats[i].distance_travelled_spawn = cl->sess.stats.distance_travelled_spawn;
+            level.playerStats[i].distance_travelled = cl->sess.stats.distance_travelled;
 
             for (m = WS_KNIFE; m < WS_MAX; m++)
             {
@@ -388,9 +405,48 @@ int getPstats(json_t *jsonData, char *id, gclient_t *client) {
     pitem = json_object_get(pcat, "obj_protectflag");
     if (json_is_integer(pitem)) {
         client->sess.stats.obj_protectflag = json_integer_value(pitem);
-
-
     }
+
+    pitem = json_object_get(pcat, "time_played");
+    if (json_is_integer(pitem)) {
+        client->sess.stats.time_played = json_integer_value(pitem);
+    }
+
+    pitem = json_object_get(pcat, "time_axis");
+    if (json_is_integer(pitem)) {
+        client->sess.stats.time_axis = json_integer_value(pitem);
+    }
+
+    pitem = json_object_get(pcat, "time_allies");
+    if (json_is_integer(pitem)) {
+        client->sess.stats.time_allies = json_integer_value(pitem);
+    }
+
+    pitem = json_object_get(pcat, "time_crouched");
+    if (json_is_integer(pitem)) {
+        client->sess.stats.time_crouched = json_integer_value(pitem);
+    }
+
+    pitem = json_object_get(pcat, "time_leaning");
+    if (json_is_integer(pitem)) {
+        client->sess.stats.time_leaning = json_integer_value(pitem);
+    }
+
+    pitem = json_object_get(pcat, "time_objheld");
+    if (json_is_integer(pitem)) {
+        client->sess.stats.time_objheld = json_integer_value(pitem);
+    }
+
+    pitem = json_object_get(pcat, "distance_travelled_spawn");
+    if (json_is_number(pitem)) {
+        client->sess.stats.distance_travelled_spawn = json_integer_value(pitem);
+    }
+
+    pitem = json_object_get(pcat, "distance_travelled");
+    if (json_is_number(pitem)) {
+        client->sess.stats.distance_travelled = json_integer_value(pitem);
+    }
+
     return 1;
 }
 
@@ -558,6 +614,14 @@ int G_read_round_jstats_reconnect(gclient_t* client)
             client->sess.stats.obj_checkpoint = level.disconnectStats[i].obj_checkpoint;
             client->sess.stats.obj_killcarrier = level.disconnectStats[i].obj_killcarrier;
             client->sess.stats.obj_protectflag = level.disconnectStats[i].obj_protectflag;
+            client->sess.stats.time_played = level.disconnectStats[i].time_played;
+            client->sess.stats.time_axis = level.disconnectStats[i].time_axis;
+            client->sess.stats.time_allies = level.disconnectStats[i].time_allies;
+            client->sess.stats.time_crouched = level.disconnectStats[i].time_crouched;
+            client->sess.stats.time_leaning = level.disconnectStats[i].time_leaning;
+            client->sess.stats.time_objheld = level.disconnectStats[i].time_objheld;
+            client->sess.stats.distance_travelled_spawn = level.disconnectStats[i].distance_travelled_spawn;
+            client->sess.stats.distance_travelled = level.disconnectStats[i].distance_travelled;
 
             for (int m = WS_KNIFE; m < WS_MAX; m++)
             {
@@ -860,6 +924,14 @@ void G_jstatsByPlayers(qboolean wstats, qboolean clientDisconnected, gclient_t *
             json_object_set_new(jcat, "obj_checkpoint", json_integer(level.playerStats[j].obj_checkpoint));
             json_object_set_new(jcat, "obj_killcarrier", json_integer(level.playerStats[j].obj_killcarrier));
             json_object_set_new(jcat, "obj_protectflag", json_integer(level.playerStats[j].obj_protectflag));
+            json_object_set_new(jcat, "time_played", json_integer(level.playerStats[j].time_played));
+            json_object_set_new(jcat, "time_axis", json_integer(level.playerStats[j].time_axis));
+            json_object_set_new(jcat, "time_allies", json_integer(level.playerStats[j].time_allies));
+            json_object_set_new(jcat, "time_crouched", json_integer(level.playerStats[j].time_crouched));
+            json_object_set_new(jcat, "time_leaning", json_integer(level.playerStats[j].time_leaning));
+            json_object_set_new(jcat, "time_objheld", json_integer(level.playerStats[j].time_objheld));
+            json_object_set_new(jcat, "distance_travelled_spawn", json_integer(level.playerStats[j].distance_travelled_spawn));
+            json_object_set_new(jcat, "distance_travelled", json_integer(level.playerStats[j].distance_travelled));
 
 
             weapArray = json_array();
@@ -1016,6 +1088,14 @@ void G_jstatsByTeam(qboolean wstats) {
             json_object_set_new(jcat, "obj_checkpoint", json_integer(cl->sess.stats.obj_checkpoint));
             json_object_set_new(jcat, "obj_killcarrier", json_integer(cl->sess.stats.obj_killcarrier));
             json_object_set_new(jcat, "obj_protectflag", json_integer(cl->sess.stats.obj_protectflag));
+            json_object_set_new(jcat, "time_played", json_integer(cl->sess.stats.time_played));
+            json_object_set_new(jcat, "time_axis", json_integer(cl->sess.stats.time_axis));
+            json_object_set_new(jcat, "time_allies", json_integer(cl->sess.stats.time_allies));
+            json_object_set_new(jcat, "time_crouched", json_integer(cl->sess.stats.time_crouched));
+            json_object_set_new(jcat, "time_leaning", json_integer(cl->sess.stats.time_leaning));
+            json_object_set_new(jcat, "time_objheld", json_integer(cl->sess.stats.time_objheld));
+            json_object_set_new(jcat, "distance_travelled_spawn", json_integer(cl->sess.stats.distance_travelled_spawn));
+            json_object_set_new(jcat, "distance_travelled", json_integer(cl->sess.stats.distance_travelled));
 
             weapArray = json_array();
 
@@ -1078,6 +1158,20 @@ void G_jstatsByTeam(qboolean wstats) {
         }
 }
 
+static double getPhysicsTime(void){
+    uint64_t currentMilliseconds;
+    #ifdef _WIN32
+    struct timespec ts;
+    timespec_get(&ts, TIME_UTC);
+    currentMilliseconds = (uint64_t)ts.tv_sec * 1000 + (ts.tv_nsec / 1000000);
+    #else
+    struct timeval tp;
+	gettimeofday( &tp, NULL );
+    currentMilliseconds = (uint64_t)tp.tv_sec * 1000 + (tp.tv_usec / 1000);
+    #endif
+    return (double)currentMilliseconds / 1000.0;
+}
+
 
 void G_writeGameLogStart(void)
 {
@@ -1096,6 +1190,7 @@ void G_writeGameLogStart(void)
         json_object_set_new(jdata, "match_id",    json_string(va("%s",buf)));
         json_object_set_new(jdata, "round_id",    json_string(va("%s",ROUNDID)));
         json_object_set_new(jdata, "unixtime",    json_string(va("%ld", unixTime)));
+        json_object_set_new(jdata, "physicstime",    json_string(va("%.03f", getPhysicsTime())));
 
         json_object_set_new(jdata, "group",    json_string("server"));
         json_object_set_new(jdata, "label",    json_string("round_start"));
@@ -1150,6 +1245,7 @@ void G_writeServerInfo(void) {
     json_object_set_new(jdata, "sv_GameConfig", json_string(va("%s", gameConfig)));
     json_object_set_new(jdata, "g_gametype",    json_string(va("%i",g_gametype.integer)));
     json_object_set_new(jdata, "unixtime",    json_string(va("%ld", unixTime)));
+    json_object_set_new(jdata, "physicstime",    json_string(va("%.03f", getPhysicsTime())));
 
     if (level.jsonStatInfo.gameStatslogFile) {
 
@@ -1242,6 +1338,7 @@ void G_writeObjectiveEvent (gentity_t* agent,int objType) {
     json_object_set_new(jdata, "match_id",    json_string(va("%s",MATCHID)));
     json_object_set_new(jdata, "round_id",    json_string(va("%s",ROUNDID)));
     json_object_set_new(jdata, "unixtime",    json_string(va("%ld", unixTime)));
+    json_object_set_new(jdata, "physicstime",    json_string(va("%.03f", getPhysicsTime())));
     json_object_set_new(jdata, "group",    json_string("player"));
     switch ( objType ) {
         case objDropped:
@@ -1314,6 +1411,7 @@ void G_writeChatEvent(gentity_t* agent, const char* chatText)
     json_object_set_new(jdata, "match_id", json_string(va("%s", MATCHID)));
     json_object_set_new(jdata, "round_id", json_string(va("%s", ROUNDID)));
     json_object_set_new(jdata, "unixtime", json_string(va("%ld", unixTime)));
+    json_object_set_new(jdata, "physicstime",    json_string(va("%.03f", getPhysicsTime())));
     json_object_set_new(jdata, "group", json_string("server"));
     json_object_set_new(jdata, "label", json_string("global_chat"));
     json_object_set_new(jdata, "agent", json_string(va("%s", agent->client->sess.guid)));
@@ -1396,6 +1494,13 @@ char* LookupEventType(int eventType)
     }
 }
 
+static int timeUntilRespawn(team_t team){
+    int deployTime = (team == TEAM_RED) ? g_redlimbotime.integer : g_bluelimbotime.integer;
+    int reinfTime = (team == TEAM_RED) ? level.redReinfOffset : level.blueReinfOffset;
+    return (1 + (deployTime - ((reinfTime + level.time - level.startTime) % deployTime)) / 1000);
+}
+
+
 
 void G_writeGeneralEvent (gentity_t* agent,gentity_t* other, char* weapon, int eventType) {
     // additional safety check
@@ -1407,18 +1512,19 @@ void G_writeGeneralEvent (gentity_t* agent,gentity_t* other, char* weapon, int e
     char* pclass;
     json_t *jdata = json_object();
     time_t unixTime = time(NULL);
-    
 
     json_object_set_new(jdata, "match_id",    json_string(va("%s",MATCHID)));
 
     json_object_set_new(jdata, "round_id",    json_string(va("%s",ROUNDID)));
     json_object_set_new(jdata, "unixtime",    json_string(va("%ld", unixTime)));
+    json_object_set_new(jdata, "physicstime",    json_string(va("%.03f", getPhysicsTime())));
 
     switch ( eventType ) {
 	    case eventSuicide:
             json_object_set_new(jdata, "group",    json_string("player"));
             json_object_set_new(jdata, "label",    json_string("suicide"));
             json_object_set_new(jdata, "agent",    json_string(va("%s",agent->client->sess.guid)));
+            json_object_set_new(jdata, "agent_timeToRespawn", json_string(va("%d", timeUntilRespawn(agent->client->sess.sessionTeam))));
             break;
 	    case eventKill:
             json_object_set_new(jdata, "group",    json_string("player"));
@@ -1430,14 +1536,12 @@ void G_writeGeneralEvent (gentity_t* agent,gentity_t* other, char* weapon, int e
             if (g_gameStatslog.integer & JSON_KILLDATA) {
                 json_object_set_new(jdata, "agent_pos",    json_string(va("%f,%f,%f",agent->client->ps.origin[0],agent->client->ps.origin[1],agent->client->ps.origin[2])));
                 json_object_set_new(jdata, "agent_angle",    json_string(va("%f",agent->client->ps.viewangles[1])));
+                json_object_set_new(jdata, "agent_timeToRespawn", json_string(va("%d", timeUntilRespawn(agent->client->sess.sessionTeam))));
                 json_object_set_new(jdata, "other_pos",    json_string(va("%f,%f,%f",other->client->ps.origin[0],other->client->ps.origin[1],other->client->ps.origin[2])));
                 json_object_set_new(jdata, "other_angle",    json_string(va("%f",other->client->ps.viewangles[1])));
-                // straight up stupid way to do this...
-                int axisAlive, alliedAlive;
-                axisAlive = G_teamAlive(TEAM_RED);
-                alliedAlive = G_teamAlive(TEAM_BLUE);
-                json_object_set_new(jdata, "allies_alive",    json_string(va("%i",alliedAlive)));
-                json_object_set_new(jdata, "axis_alive",    json_string(va("%i",axisAlive)));
+                json_object_set_new(jdata, "other_timeToRespawn", json_string(va("%d", timeUntilRespawn(other->client->sess.sessionTeam))));
+                json_object_set_new(jdata, "allies_alive",    json_string(va("%i",G_teamAlive(TEAM_RED))));
+                json_object_set_new(jdata, "axis_alive",    json_string(va("%i",G_teamAlive(TEAM_BLUE))));
 
             }
             break;
@@ -1527,6 +1631,7 @@ void G_writeDisconnectEvent (gentity_t* agent) {
     json_object_set_new(jdata, "match_id",    json_string(va("%s",MATCHID)));
     json_object_set_new(jdata, "round_id",    json_string(va("%s",ROUNDID)));
     json_object_set_new(jdata, "unixtime",    json_string(va("%ld", unixTime)));
+    json_object_set_new(jdata, "physicstime",    json_string(va("%.03f", getPhysicsTime())));
     json_object_set_new(jdata, "group",    json_string("player"));
     json_object_set_new(jdata, "label",    json_string("disconnect"));
     json_object_set_new(jdata, "agent",    json_string(va("%s",agent->client->sess.guid)));
@@ -1597,6 +1702,7 @@ void G_writeGameLogEnd(void)
     json_t *jdata = json_object();
     time_t unixTime = time(NULL);
     json_object_set_new(jdata, "unixtime",    json_string(va("%ld", unixTime)));
+    json_object_set_new(jdata, "physicstime",    json_string(va("%.03f", getPhysicsTime())));
     json_object_set_new(jdata, "match_id",    json_string(va("%s",MATCHID)));
     json_object_set_new(jdata, "round_id",    json_string(va("%s",ROUNDID)));
     json_object_set_new(jdata, "group",    json_string("server"));
@@ -1636,6 +1742,7 @@ void G_writeGameEarlyExit(void)
     json_object_set_new(jdata, "match_id",    json_string(va("%s",MATCHID)));
     json_object_set_new(jdata, "round_id",    json_string(va("%s",ROUNDID)));
     json_object_set_new(jdata, "unixtime",    json_string(va("%ld", unixTime)));
+    json_object_set_new(jdata, "physicstime",    json_string(va("%.03f", getPhysicsTime())));
     json_object_set_new(jdata, "group",    json_string("server"));
     json_object_set_new(jdata, "label",    json_string("map_restart"));
 

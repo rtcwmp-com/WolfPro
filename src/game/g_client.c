@@ -2176,6 +2176,7 @@ void ClientSpawn( gentity_t *ent, qboolean revived ) {
 	if ( ent->client->sess.sessionTeam != TEAM_SPECTATOR ) {
 		BG_PlayerStateToEntityState( &client->ps, &ent->s, qtrue );
 		VectorCopy( ent->client->ps.origin, ent->r.currentOrigin );
+		VectorCopy(ent->client->ps.origin, ent->client->sess.prevOrigin);
 		trap_LinkEntity( ent );
 	}
 

@@ -530,6 +530,14 @@ typedef struct playerStats_s {
 	int obj_protectflag;
 	int dyn_planted;
 	int dyn_defused;
+	int time_played;
+	int time_axis;
+	int time_allies;
+	int time_crouched;
+	int time_leaning;
+	int time_objheld;
+	int distance_travelled_spawn;
+	int distance_travelled;
 	weapon_stat_t aWeaponStats[WS_MAX + 1];   // Weapon stats.  +1 to avoid invalid weapon check
 } playerStats_t;
 
@@ -563,7 +571,9 @@ typedef struct {
 	char guid[GUID_LEN];		// Guid
 	int start_time;                 // player starts/begins game
 	int end_time;                   // player ends/leaves game
-	char ip[17]; 
+	char ip[22]; 
+	vec3_t prevOrigin;
+
 } clientSession_t;
 
 //
@@ -827,6 +837,14 @@ typedef struct {
 	int obj_protectflag;
 	int dyn_planted;
 	int dyn_defused;
+	int time_played;
+	int time_axis;
+	int time_allies;
+	int time_crouched;
+	int time_leaning;
+	int time_objheld;
+	int distance_travelled_spawn;
+	int distance_travelled;
 	weapon_stat_t aWeaponStats[WS_MAX + 1];   // Weapon stats.  +1 to avoid invalid weapon check
 } jsonPlayerStats_t;
 
