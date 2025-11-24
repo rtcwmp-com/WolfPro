@@ -1405,7 +1405,9 @@ void ClientUserinfoChanged( int clientNum ) {
 	}
 
 	s = Info_ValueForKey(userinfo, "cg_uinfo");
-	sscanf(s, "%i %i %i %i %i %s", 
+	sscanf(s, "%i %i %i %i %i %i %i %s", 
+			&client->pers.clientTimeNudge,
+			&client->pers.clientMaxPackets,
 			&client->pers.antilag, 
 			&client->pers.hitSoundType, 
 			&client->pers.hitSoundBodyStyle, 
