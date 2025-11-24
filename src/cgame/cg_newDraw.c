@@ -1969,10 +1969,7 @@ void CG_KeyEvent( int key, qboolean down ) {
 
 // prevent centerview exploits
 qboolean CG_CheckCenterView() {
-	if ( cg.pmext.blockCenterViewTime && cg.time < cg.pmext.blockCenterViewTime ) {
-		return qfalse;
-	}
-	return qtrue;
+	return qfalse; // WolfPro always return false
 }
 
 int CG_ClientNumFromName( const char *p ) {
