@@ -164,6 +164,7 @@ vmCvar_t g_dbgRevive;
 
 //Comp cvars
 vmCvar_t g_tournament;	// Ready-unready system
+vmCvar_t team_maxplayers;
 vmCvar_t team_nocontrols;
 vmCvar_t match_timeoutcount;
 vmCvar_t match_minplayers;
@@ -341,6 +342,7 @@ cvarTable_t gameCvarTable[] = {
 
 	//Match
 	{ &g_tournament, "g_tournament", "1", CVAR_ARCHIVE | CVAR_LATCH | CVAR_SERVERINFO, 0, qtrue },
+	{ &team_maxplayers, "team_maxplayers", "0", 0, 0, qfalse, qfalse },
 	{ &team_nocontrols, "team_nocontrols", "0", CVAR_ARCHIVE, 0, qfalse },
 	{ &match_minplayers, "match_minplayers", "2", 0, 0, qfalse, qfalse },
 	{ &match_timeoutcount, "match_timeoutcount", "3", 0, 0, qfalse, qtrue },
@@ -3116,7 +3118,7 @@ void G_RunFrame( int levelTime ) {
 
 /*
 ================
-OSPx - check for team stuff..
+WolfPro - check for team stuff..
 ================
 */
 void HandleEmptyTeams(void) {

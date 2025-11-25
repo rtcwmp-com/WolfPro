@@ -808,5 +808,7 @@ void CG_InitConsoleCommands( void ) {
 	trap_AddCommand("readyteam");
 	trap_AddCommand("ready");
 	trap_AddCommand("notready");
+	trap_AddCommand("lock");		// Locks team
+	trap_AddCommand("unlock");		// Unlocks team
 	
 }

@@ -500,7 +500,48 @@ void pCmd_pauseHandle(gentity_t *ent, qboolean dPause) {
 	return;
 }
 
+/*
+===========
+Lock/Unlock team
+===========
+*/
+qboolean canTeamBeLocked(int team)
+{
+	if (team == TEAM_RED && level.axisPlayers < 1)
+		return qfalse;
+	else if (team == TEAM_BLUE && level.alliedPlayers < 1)
+		return qfalse;
+	else
+		return qtrue;
+}
 
+// Lock/Unlock
+void cmd_handleTeamLock(gentity_t* ent, qboolean tLock) {
+	char* tag = ent->client->pers.netname;
+	char* action = (tLock ? "Lock" : "Unlock");
+	char* teamTag = "";
+	int team = ent->client->sess.sessionTeam;
+
+	if (team != TEAM_NUM_TEAMS)
+	{
+		if (team == TEAM_BLUE) teamTag = "^4Allied^7"; else teamTag = "^1Axis^7";
+
+		if (teamInfo[team].team_lock == tLock) {
+			CP(va("print \"^1Error^7: %s team is already %sed!  \n\"", teamTag, action));
+			return;
+		}
+		else {
+			if (!canTeamBeLocked(team)) {
+				CP(va("print \"^1Error^7: %s team is empty!\n\"", teamTag));
+				return;
+			}
+			AP(va("chat \"console: %s has %sed %s team!\n\"", tag, action, teamTag));
+			teamInfo[team].team_lock = tLock;
+		}
+	}
+
+	return;
+}
 /*
 ===================
 OSP's stats
@@ -544,6 +585,8 @@ if(!Q_stricmp(cmd, "readyteam"))			{ pCmd_teamReady(ent, qtrue);	return qtrue;}
 	else if(!Q_stricmp(cmd, "bottomshots"))			{ G_weaponRankings_cmd( ent, qtrue, qfalse );	return qtrue;}
 	else if(!Q_stricmp(cmd, "topshots"))			{ G_weaponRankings_cmd( ent, qtrue, qtrue );	return qtrue;}
 	else if(!Q_stricmp(cmd, "weaponstats"))			{ G_weaponStats_cmd( ent );	return qtrue;}
+	else if (!Q_stricmp(cmd,"lock"))			        { cmd_handleTeamLock(ent, qtrue); return qtrue;}
+	else if (!Q_stricmp(cmd,"unlock"))		        	{ cmd_handleTeamLock(ent, qfalse);  return qtrue;}
 	else
 		return qfalse;
 }
