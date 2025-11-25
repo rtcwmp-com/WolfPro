@@ -2253,3 +2253,40 @@ void G_swapTeams( void ) {
 
 	AP( "cp \"^1Teams have been swapped!\n\"" );
 }
+
+/*
+===========
+WolfPro - G_teamJoinCheck (et port)
+
+Checks to see if a specified team is allowing players to join.
+===========
+*/
+qboolean G_teamJoinCheck(int team_num, gentity_t* ent) {
+	int cnt = TeamCount(-1, team_num);
+
+	// Sanity check
+	if (cnt == 0 && g_gamestate.integer != GS_PLAYING && g_gamestate.integer != GS_WARMUP_COUNTDOWN) { // only reset if we aren't playing/countdown
+		G_teamReset(team_num, qtrue, qfalse);
+		teamInfo[team_num].team_lock = qfalse;
+	}
+
+	// Check for locked teams
+	if ((team_num == TEAM_RED || team_num == TEAM_BLUE)) {
+		if (ent->client->sess.sessionTeam == team_num) {
+			return(qtrue);
+		}
+
+		// Check for full teams
+		if (team_maxplayers.integer > 0 && team_maxplayers.integer <= cnt) {
+			CP(va("cp \"The %s team is full!\n\"2", aTeams[team_num]));
+			//AP(va("print \"*** ^3INFO: ^7The %s team is full.\n\"", aTeams[team_num]));
+			return(qfalse);
+		} // Check for locked teams
+		else if (teamInfo[team_num].team_lock /*&& (!(ent->client->pers.invite & team_num))*/) {
+			CP(va("cp \"The %s team is LOCKED!\n\"2", aTeams[team_num]));
+			//AP(va("print \"*** ^3INFO: ^7The %s team is locked.\n\"", aTeams[team_num]));
+			return(qfalse);
+		}
+	}
+	return(qtrue);
+}

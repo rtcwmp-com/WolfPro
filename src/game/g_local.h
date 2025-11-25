@@ -1320,18 +1320,6 @@ void ClientEndFrame( gentity_t *ent );
 void G_RunClient( gentity_t *ent );
 
 //
-// g_team.c
-//
-qboolean OnSameTeam( gentity_t *ent1, gentity_t *ent2 );
-qboolean G_allowFollow( gentity_t *ent, int nTeam );
-
-
-int G_blockoutTeam( gentity_t *ent, int nTeam );
-qboolean G_desiredFollow( gentity_t *ent, int nTeam );
-void G_swapTeamLocks( void );
-void G_updateSpecLock( int nTeam, qboolean fLock );
-void G_removeSpecInvite( int team );
-//
 // g_mem.c
 //
 void *G_Alloc( int size );
@@ -1558,6 +1546,7 @@ extern vmCvar_t g_antilag;
 
 extern vmCvar_t g_dbgRevive;
 
+extern vmCvar_t team_maxplayers;
 extern vmCvar_t g_floatPlayerPosition;
 extern vmCvar_t g_delagHitscan;
 extern vmCvar_t g_maxExtrapolatedFrames;
@@ -1836,17 +1825,6 @@ void G_ResetMarkers( gentity_t* ent );
 #define AA_STATSALL     0x01    // Client AutoAction: Dump ALL player stats
 #define AA_STATSTEAM    0x02    // Client AutoAction: Dump TEAM player stats
 
-
-typedef struct {
-	qboolean spec_lock;
-	qboolean team_lock;
-	char team_name[24];
-	int timeouts;
-} team_info;
-
-extern char *aTeams[TEAM_NUM_TEAMS];
-extern team_info teamInfo[TEAM_NUM_TEAMS];
-
 //Match cvars
 extern vmCvar_t g_tournament;
 extern vmCvar_t team_nocontrols;
@@ -1856,17 +1834,11 @@ extern vmCvar_t match_readypercent;
 extern vmCvar_t match_latejoin;
 extern vmCvar_t match_warmupDamage;
 
-qboolean G_playersReady( void );
-void G_readyReset( qboolean aForced );
-void G_readyResetOnPlayerLeave(int team);
-void G_readyStart( void );
-void G_readyTeamLock( void );
 void G_ClientSwap( gclient_t *client );
 void G_matchPrintInfo(char *msg, qboolean printTime);
-void G_teamReset(int, qboolean, qboolean);
+
 qboolean playerCmds (gentity_t *ent, char *cmd );
 void Svcmd_ResetMatch_f(qboolean fDoReset, qboolean fDoRestart);
-void G_swapTeams( void );
 
 void DecolorString( char *in, char *out);
 

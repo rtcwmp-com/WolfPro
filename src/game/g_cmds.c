@@ -518,6 +518,11 @@ void SetTeam( gentity_t *ent, char *s ) {
 			team = PickTeam( clientNum );
 		}
 
+		// WolfPro - Ensure the player can join
+		if (!G_teamJoinCheck(team, ent)) {
+			// Leave them where they were before the command was issued			
+			return;
+		}
 		// NERVE - SMF
 		if ( g_noTeamSwitching.integer && team != ent->client->sess.sessionTeam && g_gamestate.integer == GS_PLAYING ) {
 			trap_SendServerCommand( clientNum, "cp \"You cannot switch during a match, please wait until the round ends.\n\"" );
@@ -622,6 +627,10 @@ void SetTeam( gentity_t *ent, char *s ) {
 	client->sess.spectatorState = specState;
 	client->sess.spectatorClient = specClient;
 
+	// WolfPro - set sess.rounds for late joiner or player reconnecting during a pause
+	if (g_gamestate.integer == GS_PLAYING && client->sess.stats.rounds == 0 && (client->sess.sessionTeam == TEAM_BLUE || client->sess.sessionTeam == TEAM_RED)) {
+		client->sess.stats.rounds++;
+	}
 	if ( team == TEAM_RED ) {
 		trap_SendServerCommand( -1, va( "netnamecp \"[lof]%s" S_COLOR_WHITE " [lon]joined the Axis team.\n\"",
 										client->pers.netname ) );

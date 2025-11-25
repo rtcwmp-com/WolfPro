@@ -77,6 +77,18 @@ If you have questions concerning this license or the applicable additional terms
 #define CTF_GRAPPLE_SPEED                   750 // speed of grapple in flight
 #define CTF_GRAPPLE_PULL_SPEED              750 // speed player is pulled at
 
+
+typedef struct {
+	qboolean spec_lock;
+	qboolean team_lock;
+	char team_name[24];
+	int timeouts;
+} team_info;
+
+extern char* aTeams[TEAM_NUM_TEAMS];
+extern team_info teamInfo[TEAM_NUM_TEAMS];
+
+
 // Prototypes
 
 int OtherTeam( int team );
@@ -94,7 +106,27 @@ gentity_t *SelectCTFSpawnPoint( team_t team, int teamstate, vec3_t origin, vec3_
 gentity_t *Team_GetLocation( gentity_t *ent );
 qboolean Team_GetLocationMsg( gentity_t *ent, char *loc, int loclen );
 void TeamplayInfoMessage( team_t ent );
-void CheckTeamStatus( void );
-void CheckReady( void );
+int Pickup_Team(gentity_t* ent, gentity_t* other);
+qboolean OnSameTeam(gentity_t* ent1, gentity_t* ent2);
 
-int Pickup_Team( gentity_t *ent, gentity_t *other );
+// Ready system
+void CheckTeamStatus(void);
+void CheckReady(void);
+void G_readyTeamLock(void);
+qboolean G_teamJoinCheck(int team_num, gentity_t* ent);
+void G_teamReset(int, qboolean, qboolean);
+void G_swapTeams(void);
+qboolean G_playersReady(void);
+void G_readyReset(qboolean aForced);
+void G_readyResetOnPlayerLeave(int team);
+void G_readyStart(void);
+
+// Speclock
+qboolean G_allowFollow(gentity_t* ent, int nTeam);
+int G_blockoutTeam(gentity_t* ent, int nTeam);
+qboolean G_desiredFollow(gentity_t* ent, int nTeam);
+void G_swapTeamLocks(void);
+void G_updateSpecLock(int nTeam, qboolean fLock);
+void G_removeSpecInvite(int team);
+
+
