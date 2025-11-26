@@ -666,46 +666,7 @@ qboolean IsHeadShot( gentity_t *targ, qboolean isAICharacter, vec3_t dir, vec3_t
 	if ( head_shot_weapon ) {
 		head = G_Spawn();
 
-		if ( trap_GetTag( targ->s.number, "tag_head", &or ) ) {
-			G_SetOrigin( head, or.origin );
-		} else {
-			float height, dest;
-			vec3_t v, angles, forward, up, right;
-
-			G_SetOrigin( head, targ->r.currentOrigin );
-
-			if ( targ->client->ps.pm_flags & PMF_DUCKED ) { // closer fake offset for 'head' box when crouching
-				height = targ->client->ps.crouchViewHeight - 12;
-			} else {
-				height = targ->client->ps.viewheight;
-			}
-
-			// NERVE - SMF - this matches more closely with WolfMP models
-			VectorCopy( targ->client->ps.viewangles, angles );
-			if ( angles[PITCH] > 180 ) {
-				dest = ( -360 + angles[PITCH] ) * 0.75;
-			} else {
-				dest = angles[PITCH] * 0.75;
-			}
-			angles[PITCH] = dest;
-
-			AngleVectors( angles, forward, right, up );
-			VectorScale( forward, 5, v );
-			VectorMA( v, 18, up, v );
-
-			VectorAdd( v, head->r.currentOrigin, head->r.currentOrigin );
-			head->r.currentOrigin[2] += height / 2;
-			// -NERVE - SMF
-		}
-
-		VectorCopy( head->r.currentOrigin, head->s.origin );
-		VectorCopy( targ->r.currentAngles, head->s.angles );
-		VectorCopy( head->s.angles, head->s.apos.trBase );
-		VectorCopy( head->s.angles, head->s.apos.trDelta );
-		VectorSet( head->r.mins, -6, -6, -2 ); // JPW NERVE changed this z from -12 to -6 for crouching, also removed standing offset
-		VectorSet( head->r.maxs, 6, 6, 10 ); // changed this z from 0 to 6
-		head->clipmask = CONTENTS_SOLID;
-		head->r.contents = CONTENTS_SOLID;
+		G_ComputeHeadPosition(targ, head);
 
 		trap_LinkEntity( head );
 
@@ -750,13 +711,10 @@ qboolean IsHeadShot( gentity_t *targ, qboolean isAICharacter, vec3_t dir, vec3_t
 	return qfalse;
 }
 
-gentity_t* G_BuildHead( gentity_t *ent ) {
-	gentity_t* head;
+void G_ComputeHeadPosition( const gentity_t *ent, gentity_t *head ) {
 	orientation_t or;           // DHM - Nerve
 
-	head = G_Spawn();
-
-	if ( trap_GetTag( ent->s.number, "tag_head", &or ) ) {
+	if ( 0 && trap_GetTag( ent->s.number, "tag_head", &or ) ) { //@TODO
 		G_SetOrigin( head, or.origin );
 	} else {
 		float height, dest;
@@ -796,8 +754,15 @@ gentity_t* G_BuildHead( gentity_t *ent ) {
 	VectorSet( head->r.maxs, 6, 6, 10 ); // changed this z from 0 to 6
 	head->clipmask = CONTENTS_SOLID;
 	head->r.contents = CONTENTS_SOLID;
-	head->parent = ent;
 	head->s.eType = ET_TEMPHEAD;
+}
+
+gentity_t* G_BuildHead( gentity_t *ent ) {
+	gentity_t* head;
+
+	head = G_Spawn();
+
+	G_ComputeHeadPosition(ent, head);
 
 	trap_LinkEntity( head );
 

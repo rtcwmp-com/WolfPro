@@ -2945,6 +2945,19 @@ void G_RunFrame( int levelTime ) {
 			}
 		}
 
+		if(ent->headBBox && i < MAX_CLIENTS){
+			gentity_t *head = ent->headBBox;
+			VectorCopy( ent->s.origin, head->s.origin );
+			G_ComputeHeadPosition(ent, head);
+			vec3_t b1, b2;
+			VectorCopy( head->r.currentOrigin, b1 );
+			VectorCopy( head->r.currentOrigin, b2 );
+			VectorAdd( b1, head->r.mins, b1 );
+			VectorAdd( b2, head->r.maxs, b2 );
+			VectorCopy( b2, head->s.origin2 );
+			VectorCopy( b1, head->s.origin );
+		}
+
 		// RF, if this entity is attached to a parent, move it around with it, so the server thinks it's at least close to where the client will view it
 		if ( ent->tagParent ) {
 			vec3_t org;

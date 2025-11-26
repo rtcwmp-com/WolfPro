@@ -2786,7 +2786,8 @@ void CG_Player( centity_t *cent ) {
 	//
 	// add the head
 	//
-	head.hModel = ci->headModel;
+	//head.hModel = ci->headModel;
+	head.hModel = cg_weapons[WP_MP40].weaponModel[W_TP_MODEL];
 	if ( !head.hModel ) {
 		return;
 	}

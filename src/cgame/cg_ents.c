@@ -1969,6 +1969,9 @@ static void CG_ProcessEntity( centity_t *cent ) {
 	case ET_PLAYER:
 		CG_Player( cent );
 		break;
+	case ET_TEMPHEAD:
+		CG_DrawBBox(cent);
+		break;
 	case ET_ITEM:
 		CG_Item( cent );
 		break;

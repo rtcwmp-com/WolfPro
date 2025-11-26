@@ -1758,6 +1758,17 @@ char *ClientConnect( int clientNum, qboolean firstTime, qboolean isBot ) {
 	// count current clients and rank for scoreboard
 	CalculateRanks();
 
+	ent->headBBox = G_Spawn();
+	gentity_t *head = ent->headBBox;
+	head->s.eType = ET_TEMPHEAD;
+	head->r.contents = CONTENTS_DETAIL;
+	head->classname = "headbbox";
+	head->r.svFlags |= SVF_BROADCAST;
+	head->s.otherEntityNum = clientNum;
+	trap_LinkEntity(ent->headBBox);
+
+
+
 	return NULL;
 }
 

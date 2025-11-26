@@ -2139,6 +2139,8 @@ void Com_ParseHexColor( float* c, const char* text, qbool hasAlpha );
 //
 qboolean CG_EntOnFire( centity_t *cent );    // Ridah
 void CG_Player( centity_t *cent );
+void CG_DrawBBox( centity_t *cent );
+void CG_RailTrail2( clientInfo_t *ci, vec3_t start, vec3_t end );
 void CG_ResetPlayerEntity( centity_t *cent );
 void CG_AddRefEntityWithPowerups( refEntity_t *ent, int powerups, int team, entityState_t *es, const vec3_t fireRiseDir );
 void CG_NewClientInfo( int clientNum );

@@ -416,6 +416,8 @@ struct gentity_s {
 	void		(*more)(gentity_t *ent);
 	int			moreCalls;
 	qboolean	moreCalled;
+
+	gentity_t *headBBox;
 };
 
 // Ridah
@@ -1149,6 +1151,7 @@ qboolean G_RadiusDamage( vec3_t origin, gentity_t *attacker, float damage, float
 void body_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int damage, int meansOfDeath );
 void TossClientItems( gentity_t *self );
 gentity_t* G_BuildHead( gentity_t *ent );
+void G_ComputeHeadPosition( const gentity_t *ent, gentity_t *head );
 void limbo( gentity_t *ent, qboolean makeCorpse );
 
 // damage flags
