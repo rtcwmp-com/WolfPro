@@ -328,6 +328,7 @@ typedef struct {
 	qboolean cddialog;              // bring up the cd needed dialog next frame
 
 	char servername[MAX_OSPATH];            // name of server from original connect (used by reconnect)
+	char proxyname[MAX_OSPATH];		// name of proxy  from original connect (used by reconnect)
 
 	// when the server clears the hunk, all of these must be restarted
 	qboolean rendererStarted;
