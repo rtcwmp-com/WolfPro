@@ -101,6 +101,8 @@ cvar_t* cl_demoPlayer;
 
 cvar_t *cl_guid;
 
+cvar_t	*net_proxy;
+
 clientActive_t cl;
 clientConnection_t clc;
 clientStatic_t cls;
@@ -1112,6 +1114,30 @@ CL_Reconnect_f
 
 ================
 */
+
+static void CL_Reconnect( qbool whileConnectingToProxy )
+{
+	if ( !strlen( cls.servername ) || !strcmp( cls.servername, "localhost" ) ) {
+		Com_Printf( "Can't reconnect to localhost.\n" );
+		return;
+	}
+	Cbuf_AddText( va("connect %s\n", cls.servername ) );
+
+
+	// Reconnecting via the same proxy doesn't seem to work with QWFWD
+	// ("illegible server message" drop error),
+	// so we disconnect and wait a bit first to make it work.
+	// One second seems to work well enough but let's pad it a bit.
+	if ( !whileConnectingToProxy &&
+		net_proxy->string[0] != '\0' &&
+		!Q_stricmp( net_proxy->string, cls.proxyname ) ) {
+		Cbuf_AddText( va( "disconnect\nwaitms 1500\nconnect %s\n", cls.servername ) );
+	} else {
+		Cbuf_AddText( va( "connect %s\n", cls.servername ) );
+	}
+}
+
+
 void CL_Reconnect_f( void ) {
 	if ( !strlen( cls.servername ) || !strcmp( cls.servername, "localhost" ) ) {
 		Com_Printf( "Can't reconnect to localhost.\n" );
@@ -1145,9 +1171,24 @@ void CL_Connect_f( void ) {
 	// clear any previous "server full" type messages
 	clc.serverMessage[0] = 0;
 
-	server = Cmd_Argv( 1 );
+	
+	const char* const requestedAddress = Cmd_Argv(1);
+	const char* connectionAddress = requestedAddress;
 
-	if ( com_sv_running->integer && !strcmp( server, "localhost" ) ) {
+	// ye old switcheroo
+	if ( net_proxy->string[0] != '\0' && Q_stricmp( net_proxy->string, requestedAddress ) != 0 ) {
+		Cvar_Get( "prx", requestedAddress, CVAR_USERINFO );
+		Cvar_Set( "prx", requestedAddress );
+		connectionAddress = net_proxy->string;
+		Q_strncpyz( cls.proxyname, net_proxy->string, sizeof(cls.proxyname) );
+	} else {
+		// it's not really necessary but it's nice to reflect the changes
+		Cvar_Get( "prx", "", CVAR_USERINFO );
+		Cvar_Set( "prx", "" );
+		cls.proxyname[0] = '\0';
+	}
+
+	if ( com_sv_running->integer && !strcmp( requestedAddress, "localhost" ) ) {
 		// if running a local server, kill it
 		SV_Shutdown( "Server quit\n" );
 	}
@@ -1159,9 +1200,9 @@ void CL_Connect_f( void ) {
 	CL_Disconnect( qtrue );
 	Con_Close();
 
-	Q_strncpyz( cls.servername, server, sizeof( cls.servername ) );
+	Q_strncpyz( cls.servername, requestedAddress, sizeof(cls.servername) );
 
-	if ( !NET_StringToAdr( cls.servername, &clc.serverAddress ) ) {
+	if (!NET_StringToAdr( connectionAddress, &clc.serverAddress) ) {
 		Com_Printf( "Bad server address\n" );
 		cls.state = CA_DISCONNECTED;
 		return;
@@ -1169,7 +1210,7 @@ void CL_Connect_f( void ) {
 	if ( clc.serverAddress.port == 0 ) {
 		clc.serverAddress.port = BigShort( PORT_SERVER );
 	}
-	Com_Printf( "%s resolved to %i.%i.%i.%i:%i\n", cls.servername,
+	Com_Printf( "%s resolved to %i.%i.%i.%i:%i\n", connectionAddress,
 				clc.serverAddress.ip[0], clc.serverAddress.ip[1],
 				clc.serverAddress.ip[2], clc.serverAddress.ip[3],
 				BigShort( clc.serverAddress.port ) );
@@ -1194,7 +1235,7 @@ void CL_Connect_f( void ) {
 	clc.connectPacketCount = 0;
 
 	// server connection string
-	Cvar_Set( "cl_currentServerAddress", server );
+	Cvar_Set( "cl_currentServerAddress", connectionAddress );
 
 	// NERVE - SMF - reset some cvars
 	Cvar_Set( "mp_playerType", "0" );
@@ -1900,6 +1941,9 @@ void CL_PrintPacket( netadr_t from, msg_t *msg ) {
 		Q_strncpyz( clc.serverMessage, s, sizeof( clc.serverMessage ) );
 	}
 	Com_Printf( "%s", clc.serverMessage );
+	if ( !Q_stricmpn(s, "/reconnect ASAP!", 16) ) {
+		CL_Reconnect( qtrue );
+	}
 }
 
 /*
@@ -2939,6 +2983,8 @@ void CL_Init( void ) {
 	// DHM - Nerve :: Auto-update
 	cl_updateavailable = Cvar_Get( "cl_updateavailable", "0", CVAR_ROM );
 	cl_updatefiles = Cvar_Get( "cl_updatefiles", "", CVAR_ROM );
+
+	net_proxy = Cvar_Get("net_proxy", "", CVAR_TEMP);
 
 	Q_strncpyz( cls.autoupdateServerNames[0], AUTOUPDATE_SERVER1_NAME, MAX_QPATH );
 	Q_strncpyz( cls.autoupdateServerNames[1], AUTOUPDATE_SERVER2_NAME, MAX_QPATH );

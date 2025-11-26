@@ -41,6 +41,7 @@ typedef struct {
 } cmd_t;
 
 int cmd_wait;
+static int cmd_wait_stop;	// the time when the wait ends
 cmd_t cmd_text;
 byte cmd_text_buf[MAX_CMD_BUFFER];
 
@@ -62,6 +63,18 @@ void Cmd_Wait_f( void ) {
 	} else {
 		cmd_wait = 1;
 	}
+}
+
+static void Cmd_WaitMS_f( void )
+{
+	const char* const arg0 = Cmd_Argv( 0 );
+	const int duration = atoi( Cmd_Argv( 1 ) );
+	if ( Cmd_Argc() != 2 || duration <= 0 ) {
+		Com_Printf( "usage: %s milliseconds\n", arg0 );
+		return;
+	}
+
+	cmd_wait_stop = Sys_Milliseconds() + duration;
 }
 
 
@@ -183,6 +196,10 @@ void Cbuf_Execute( void ) {
 			cmd_wait--;
 			break;
 		}
+
+		if ( cmd_wait_stop > Sys_Milliseconds() )
+			break;
+		cmd_wait_stop = 0;
 
 		// find a \n or ; line break
 		text = (char *)cmd_text.data;
@@ -766,6 +783,7 @@ void Cmd_Init( void ) {
 	Cmd_AddCommand( "vstr",Cmd_Vstr_f );
 	Cmd_AddCommand( "echo",Cmd_Echo_f );
 	Cmd_AddCommand( "wait", Cmd_Wait_f );
+	Cmd_AddCommand( "waitms", Cmd_WaitMS_f );
 	Cmd_AddCommand( "execnow",Cmd_ExecNow_f );
 }
 
