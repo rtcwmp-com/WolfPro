@@ -3498,46 +3498,6 @@ static void CG_DrawFlashFire( void ) {
 	}
 }
 
-/*
-=================
-CG_DrawFlashLightning
-=================
-*/
-static void CG_DrawFlashLightning( void ) {
-	float alpha;
-	centity_t *cent;
-	qhandle_t shader;
-
-	if ( !cg.snap ) {
-		return;
-	}
-
-	if ( cg_thirdPerson.integer ) {
-		return;
-	}
-
-	cent = &cg_entities[cg.snap->ps.clientNum];
-
-	if ( !cent->pe.teslaDamagedTime || ( cent->pe.teslaDamagedTime > cg.time ) ) {
-		return;
-	}
-
-	alpha = 1.0 - (float)( cg.time - cent->pe.teslaDamagedTime ) / LIGHTNING_FLASH_TIME;
-	if ( alpha > 0 ) {
-		if ( alpha >= 1.0 ) {
-			alpha = 1.0;
-		}
-
-		if ( ( cg.time / 50 ) % ( 2 + ( cg.time % 2 ) ) == 0 ) {
-			shader = cgs.media.viewTeslaAltDamageEffectShader;
-		} else {
-			shader = cgs.media.viewTeslaDamageEffectShader;
-		}
-
-		CG_DrawPic( -10, -10, 650, 490, shader );
-	}
-}
-
 
 
 /*
@@ -3558,7 +3518,6 @@ CG_DrawFlashBlend
 =================
 */
 static void CG_DrawFlashBlend( void ) {
-	CG_DrawFlashLightning();
 	CG_DrawFlashFire();
 	CG_DrawFlashDamage();
 	CG_DrawFlashFade();

@@ -209,55 +209,6 @@ typedef struct {
 
 	float animSpeed;            // for manual adjustment
 
-	// Zombie spirit effect
-	// !!FIXME: these effects will be restarted by a *_restart command, can we save this data somehow?
-	qboolean cueZombieSpirit;               // if this is qfalse, and the zombie effect flag is set, then we need to start a new attack
-	int zombieSpiritStartTime;              // time the effect was started, so we can fade things in
-	int zombieSpiritTrailHead[MAX_ZOMBIE_SPIRITS];
-	int zombieSpiritRotationTimes[MAX_ZOMBIE_SPIRITS];
-	int zombieSpiritRadiusCycleTimes[MAX_ZOMBIE_SPIRITS];
-	int lastZombieSpirit;
-	int nextZombieSpiritSound;
-	int zombieSpiritEndTime;                // time the effect was disabled
-	vec3_t zombieSpiritPos[MAX_ZOMBIE_SPIRITS];
-	vec3_t zombieSpiritDir[MAX_ZOMBIE_SPIRITS];
-	float zombieSpiritSpeed[MAX_ZOMBIE_SPIRITS];
-	int zombieSpiritStartTimes[MAX_ZOMBIE_SPIRITS];
-
-	// Zombie death effect
-	// !!FIXME: these effects will be restarted by a *_restart command, can we save this data somehow?
-	qboolean cueZombieDeath;            // if this is qfalse, and the zombie effect flag is set, then we need to start a new attack
-	int zombieDeathStartTime;               // time the effect was started, so we can fade things in
-	int zombieDeathEndTime;             // time the effect was disabled
-	int lastZombieDeath;
-	int zombieDeathFadeStart;
-	int zombieDeathFadeEnd;
-	int zombieDeathTrailHead[MAX_ZOMBIE_DEATH_TRAILS];
-	int zombieDeathRotationTimes[MAX_ZOMBIE_DEATH_TRAILS];
-	int zombieDeathRadiusCycleTimes[MAX_ZOMBIE_DEATH_TRAILS];
-
-	// loper effects
-	int loperLastGroundChargeTime;
-	byte loperGroundChargeToggle;
-	int loperGroundValidTime;
-
-	vec3_t headLookIdeal;
-	vec3_t headLookOffset;
-	float headLookSpeed;
-	int headLookStopTime;
-	float headLookSpeedMax;
-
-	// tesla coil effects
-	vec3_t teslaEndPoints[MAX_TESLA_BOLTS];
-	int teslaEndPointTimes[MAX_TESLA_BOLTS];            // time the bolt stays valid
-	vec3_t teslaOffsetDirs[MAX_TESLA_BOLTS];            // bending direction from center or direct beam
-	float teslaOffsets[MAX_TESLA_BOLTS];                // amount to offset from center
-	int teslaOffsetTimes[MAX_TESLA_BOLTS];              // time the offset stays valid
-	int teslaEnemy[MAX_TESLA_BOLTS];
-	int teslaDamageApplyTime;
-
-	int teslaDamagedTime;                   // time we were last hit by a tesla bolt
-
 	// misc effects
 	int effectEnts[MAX_EFFECT_ENTS];
 	int numEffectEnts;
