@@ -1317,6 +1317,22 @@ int  submit_curlPost( char* jsonfile, char* matchid );
 #define DLF_NO_UDP 4
 #define DLF_NO_DISCONNECT 8
 
+int MDL_LerpTag(orientation_t* tag, const refEntity_t* refent, const char* tagNameIn, int startIndex, vmType_t vmType);
+qhandle_t MDL_RegisterModel( const char *name, vmType_t vmType );
+
+qboolean R_LoadMDC( model_t *mod, int lod, void *buffer, const char *mod_name );
+qboolean R_LoadMD3( model_t *mod, int lod, void *buffer, const char *name );
+qboolean R_LoadMDS( model_t *mod, void *buffer, const char *name );
+
+void R_LookupMD3ShaderIndex(md3Shader_t *shader);
+void R_LookupShaderIndexFromName(char *name, int *index);
+
+extern mdsFrame_t *frame;
+
+extern int cl_numModels;
+extern model_t *cl_models[2048];
+extern int sv_numModels;
+extern model_t* sv_models[2048];
 
 #endif // _QCOMMON_H_
 
