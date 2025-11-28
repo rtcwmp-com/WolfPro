@@ -107,6 +107,7 @@ void R_ModelInit( void ) {
 
 }
 
+//@TODO remove
 void R_LookupMD3ShaderIndex(md3Shader_t *shader){
 	shader_t    *sh;
 	sh = R_FindShader( shader->name, LIGHTMAP_NONE, qtrue );
@@ -117,6 +118,7 @@ void R_LookupMD3ShaderIndex(md3Shader_t *shader){
 	}
 }
 
+//@TODO handle ifndef DEDICATED here / not qagame
 void R_LookupShaderIndexFromName(char *name, int *index){
 	shader_t            *sh;
 	sh = R_FindShader( name, LIGHTMAP_NONE, qtrue );

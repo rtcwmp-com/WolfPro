@@ -568,8 +568,7 @@ void RB_SurfaceAnim( mdsSurface_t *surface ) {
 	refEntity_t *refent;
 	int             *boneList;
 	mdsHeader_t     *header;
-	vec3_t vec;
-	mdsBoneFrame_t  bones[MDS_MAX_BONES];
+	
 
 #ifdef DBG_PROFILE_BONES
 	int di = 0, dt, ldt;
@@ -582,7 +581,7 @@ void RB_SurfaceAnim( mdsSurface_t *surface ) {
 	boneList = ( int * )( (byte *)surface + surface->ofsBoneReferences );
 	header = ( mdsHeader_t * )( (byte *)surface + surface->ofsHeader );
 
-	MDL_CalcBones( header, (const refEntity_t *)refent, boneList, surface->numBoneReferences, frame, vec, bones);
+	MDL_CalcBones( header, (const refEntity_t *)refent, boneList, surface->numBoneReferences);
 
 	DBG_SHOWTIME
 
@@ -590,9 +589,9 @@ void RB_SurfaceAnim( mdsSurface_t *surface ) {
 	// calculate LOD
 	//
 	// TODO: lerp the radius and origin
-	VectorAdd( refent->origin, frame->localOrigin, vec );
+	VectorAdd( refent->origin, frame->localOrigin, bonesVec);
 	lodRadius = frame->radius;
-	lodScale = R_CalcMDSLod( refent, vec, lodRadius, header->lodBias, header->lodScale );
+	lodScale = R_CalcMDSLod( refent, bonesVec, lodRadius, header->lodBias, header->lodScale );
 
 
 //DBG_SHOWTIME

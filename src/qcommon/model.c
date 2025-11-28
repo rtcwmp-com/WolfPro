@@ -29,6 +29,8 @@ static vec4_t m1[4], m2[4];
 // static  vec4_t tmp1[4], tmp2[4]; // TTimo unused
 static vec3_t t;
 mdsFrame_t *frame;
+mdsBoneFrame_t  bones[MDS_MAX_BONES];
+vec3_t bonesVec;
 
 static int totalrv, totalrt, totalv, totalt;    //----(SA)
 
@@ -378,7 +380,7 @@ static void SLerp_Normal( vec3_t from, vec3_t to, float tt, vec3_t out ) {
 R_CalcBone
 ==============
 */
-void MDL_CalcBone( mdsHeader_t *header, const refEntity_t *refent, int boneNum, vec3_t vec, mdsBoneFrame_t *bones) {
+void MDL_CalcBone( mdsHeader_t *header, const refEntity_t *refent, int boneNum, vec3_t vec) {
 	int j;
 
 	thisBoneInfo = &boneInfo[boneNum];
@@ -530,7 +532,7 @@ void MDL_CalcBone( mdsHeader_t *header, const refEntity_t *refent, int boneNum, 
 MDL_CalcBoneLerp
 ==============
 */
-void MDL_CalcBoneLerp(mdsHeader_t *header, const refEntity_t *refent, int boneNum, mdsBoneFrame_t *bones, vec3_t vec ) {
+void MDL_CalcBoneLerp(mdsHeader_t *header, const refEntity_t *refent, int boneNum, vec3_t vec ) {
 	int j;
 
 	if ( !refent || !header || boneNum < 0 || boneNum >= MDS_MAX_BONES ) {
@@ -708,7 +710,7 @@ R_CalcBones
 ==============
 */
 
-void MDL_CalcBones(mdsHeader_t* header, const refEntity_t* refent, int* boneList, int numBones, vec3_t vec, mdsBoneFrame_t  *bones) {
+void MDL_CalcBones(mdsHeader_t* header, const refEntity_t* refent, int* boneList, int numBones) {
 
 	int i;
 	int* boneRefs;
@@ -796,10 +798,10 @@ void MDL_CalcBones(mdsHeader_t* header, const refEntity_t* refent, int* boneList
 
 			// find our parent, and make sure it has been calculated
 			if ((boneInfo[*boneRefs].parent >= 0) && (!validBones[boneInfo[*boneRefs].parent] && !newBones[boneInfo[*boneRefs].parent])) {
-				MDL_CalcBone(header, refent, boneInfo[*boneRefs].parent, vec, bones);
+				MDL_CalcBone(header, refent, boneInfo[*boneRefs].parent, bonesVec);
 			}
 
-			MDL_CalcBone(header, refent, *boneRefs, vec, bones);
+			MDL_CalcBone(header, refent, *boneRefs, bonesVec);
 
 		}
 
@@ -819,10 +821,10 @@ void MDL_CalcBones(mdsHeader_t* header, const refEntity_t* refent, int* boneList
 
 			// find our parent, and make sure it has been calculated
 			if ((boneInfo[*boneRefs].parent >= 0) && (!validBones[boneInfo[*boneRefs].parent] && !newBones[boneInfo[*boneRefs].parent])) {
-				MDL_CalcBoneLerp(header, refent, boneInfo[*boneRefs].parent, bones, vec);
+				MDL_CalcBoneLerp(header, refent, boneInfo[*boneRefs].parent, bonesVec);
 			}
 
-			MDL_CalcBoneLerp(header, refent, *boneRefs, bones, vec);
+			MDL_CalcBoneLerp(header, refent, *boneRefs, bonesVec);
 
 		}
 
@@ -894,8 +896,7 @@ int R_GetBoneTag( orientation_t *outTag, mdsHeader_t *mds, int startTagIndex, co
 	mdsBoneInfo_t *boneInfoList;
 	int boneList[ MDS_MAX_BONES ];
 	int numBones;
-	vec3_t vec; //new
-	mdsBoneFrame_t  bones[MDS_MAX_BONES];
+	
 
 	if ( startTagIndex > mds->numTags ) {
 		memset( outTag, 0, sizeof( *outTag ) );
@@ -927,7 +928,7 @@ int R_GetBoneTag( orientation_t *outTag, mdsHeader_t *mds, int startTagIndex, co
 	MDL_RecursiveBoneListAdd( pTag->boneIndex, boneList, &numBones, boneInfoList );
 
 	// calc the bones
-	MDL_CalcBones( (mdsHeader_t *)mds, refent, boneList, numBones, vec, bones);
+	MDL_CalcBones( (mdsHeader_t *)mds, refent, boneList, numBones);
 
 	// now extract the orientation for the bone that represents our tag
 
@@ -1334,7 +1335,7 @@ qboolean R_LoadMD3( model_t *mod, int lod, void *buffer, const char *mod_name ) 
 	LL( mod->md3[lod]->ofsEnd );
 
 	if ( mod->md3[lod]->numFrames < 1 ) {
-		Com_Printf( PRINT_WARNING, "R_LoadMD3: %s has no frames\n", mod_name );
+		Com_Printf( S_COLOR_YELLOW"R_LoadMD3: %s has no frames\n", mod_name );
 		return qfalse;
 	}
 

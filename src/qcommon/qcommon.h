@@ -1319,6 +1319,7 @@ int  submit_curlPost( char* jsonfile, char* matchid );
 
 int MDL_LerpTag(orientation_t* tag, const refEntity_t* refent, const char* tagNameIn, int startIndex, vmType_t vmType);
 qhandle_t MDL_RegisterModel( const char *name, vmType_t vmType );
+void MDL_CalcBones(mdsHeader_t* header, const refEntity_t* refent, int* boneList, int numBones);
 
 qboolean R_LoadMDC( model_t *mod, int lod, void *buffer, const char *mod_name );
 qboolean R_LoadMD3( model_t *mod, int lod, void *buffer, const char *name );
@@ -1328,6 +1329,8 @@ void R_LookupMD3ShaderIndex(md3Shader_t *shader);
 void R_LookupShaderIndexFromName(char *name, int *index);
 
 extern mdsFrame_t *frame;
+extern mdsBoneFrame_t  bones[MDS_MAX_BONES];
+extern vec3_t bonesVec;
 
 extern int cl_numModels;
 extern model_t *cl_models[2048];
