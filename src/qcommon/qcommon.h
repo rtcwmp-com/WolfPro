@@ -1321,12 +1321,11 @@ int MDL_LerpTag(orientation_t* tag, const refEntity_t* refent, const char* tagNa
 qhandle_t MDL_RegisterModel( const char *name, vmType_t vmType );
 void MDL_CalcBones(mdsHeader_t* header, const refEntity_t* refent, int* boneList, int numBones);
 
-qboolean R_LoadMDC( model_t *mod, int lod, void *buffer, const char *mod_name );
-qboolean R_LoadMD3( model_t *mod, int lod, void *buffer, const char *name );
-qboolean R_LoadMDS( model_t *mod, void *buffer, const char *name );
+qboolean R_LoadMDC( model_t *mod, int lod, void *buffer, const char *mod_name, vmType_t vmType );
+qboolean R_LoadMD3( model_t *mod, int lod, void *buffer, const char *name, vmType_t vmType );
+qboolean R_LoadMDS( model_t *mod, void *buffer, const char *name, vmType_t vmType);
 
-void R_LookupMD3ShaderIndex(md3Shader_t *shader);
-void R_LookupShaderIndexFromName(char *name, int *index);
+int R_LookupShaderIndexFromName(char *name, vmType_t vmType);
 
 extern mdsFrame_t *frame;
 extern mdsBoneFrame_t  bones[MDS_MAX_BONES];

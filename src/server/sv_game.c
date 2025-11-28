@@ -879,6 +879,9 @@ intptr_t SV_GameSystemCalls(intptr_t* args ) {
 
 	case G_FS_FILE_EXIST:
 		return (int)FS_FileExists( VMA(1) );
+
+	case G_REGISTER_MODEL:
+		return MDL_RegisterModel(VMA(1), VM_QAGAME);
 		
 	default:
 		Com_Error( ERR_DROP, "Bad game system trap: %i", args[0] );

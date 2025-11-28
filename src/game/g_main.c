@@ -1313,6 +1313,9 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 	level.animScriptData.soundIndex = G_SoundIndex;
 	level.animScriptData.playSound = G_AnimScriptSound;
 
+	level.alliesTorsoModel = trap_RegisterModel("models/players/multi/body.mds");
+	level.axisTorsoModel = trap_RegisterModel("models/players/multi_axis/body.mds");
+
 	char mapName[64];
 	trap_Cvar_VariableStringBuffer( "mapname", mapName, sizeof(mapName) );
 

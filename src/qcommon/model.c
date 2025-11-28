@@ -172,7 +172,7 @@ qhandle_t MDL_RegisterModel( const char *name, vmType_t vmType ) {
 		if ( buf ) {
 			ident = LittleLong( *(unsigned *)buf );
 			if ( ident == MDS_IDENT ) {
-				loaded = R_LoadMDS( mod, buf, name );
+				loaded = R_LoadMDS( mod, buf, name, vmType );
 			}
 
 			FS_FreeFile( buf );
@@ -221,9 +221,9 @@ qhandle_t MDL_RegisterModel( const char *name, vmType_t vmType ) {
 		}
 
 		if ( ident == MD3_IDENT ) {
-			loaded = R_LoadMD3( mod, lod, buf, name );
+			loaded = R_LoadMD3( mod, lod, buf, name, vmType );
 		} else {
-			loaded = R_LoadMDC( mod, lod, buf, name );
+			loaded = R_LoadMDC( mod, lod, buf, name, vmType );
 		}
 		// done.
 
@@ -1094,7 +1094,7 @@ int MDL_LerpTag( orientation_t *tag, const refEntity_t *refent, const char *tagN
 R_LoadMDC
 =================
 */
-qboolean R_LoadMDC( model_t *mod, int lod, void *buffer, const char *mod_name ) {
+qboolean R_LoadMDC( model_t *mod, int lod, void *buffer, const char *mod_name, vmType_t vmType ) {
 	int i, j;
 	mdcHeader_t         *pinmodel;
 	md3Frame_t          *frame;
@@ -1218,14 +1218,15 @@ qboolean R_LoadMDC( model_t *mod, int lod, void *buffer, const char *mod_name ) 
 			surf->name[j - 2] = 0;
 		}
 
-		#ifndef DEDICATED
 		// register the shaders
 		shader = ( md3Shader_t * )( (byte *)surf + surf->ofsShaders );
 		for ( j = 0 ; j < surf->numShaders ; j++, shader++ ) {
-			R_LookupMD3ShaderIndex(shader);
-			
-		}
+		#ifndef DEDICATED
+			shader->shaderIndex = R_LookupShaderIndexFromName(shader->name, vmType);
+		#else
+			shader->shaderIndex = 0;
 		#endif
+		}
 
 		// Ridah, optimization, only do the swapping if we really need to
 		if ( LittleShort( 1 ) != 1 ) {
@@ -1291,7 +1292,7 @@ qboolean R_LoadMDC( model_t *mod, int lod, void *buffer, const char *mod_name ) 
 R_LoadMD3
 =================
 */
-qboolean R_LoadMD3( model_t *mod, int lod, void *buffer, const char *mod_name ) {
+qboolean R_LoadMD3( model_t *mod, int lod, void *buffer, const char *mod_name, vmType_t vmType ) {
 	int i, j;
 	md3Header_t         *pinmodel;
 	md3Frame_t          *frame;
@@ -1422,13 +1423,15 @@ qboolean R_LoadMD3( model_t *mod, int lod, void *buffer, const char *mod_name ) 
 			surf->name[j - 2] = 0;
 		}
 
-		#ifndef DEDICATED
 		// register the shaders
 		shader = ( md3Shader_t * )( (byte *)surf + surf->ofsShaders );
 		for ( j = 0 ; j < surf->numShaders ; j++, shader++ ) {
-			R_LookupMD3ShaderIndex(shader);
-		}
+		#ifndef DEDICATED
+			shader->shaderIndex = R_LookupShaderIndexFromName(shader->name, vmType);
+		#else
+			shader->shaderIndex = 0;
 		#endif
+		}
 
 		// Ridah, optimization, only do the swapping if we really need to
 		if ( LittleShort( 1 ) != 1 ) {
@@ -1476,7 +1479,7 @@ qboolean R_LoadMD3( model_t *mod, int lod, void *buffer, const char *mod_name ) 
 R_LoadMDS
 =================
 */
-qboolean R_LoadMDS( model_t *mod, void *buffer, const char *mod_name ) {
+qboolean R_LoadMDS( model_t *mod, void *buffer, const char *mod_name, vmType_t vmType ) {
 	int i, j, k;
 	mdsHeader_t         *pinmodel, *mds;
 	mdsFrame_t          *mdsFrame;
@@ -1589,14 +1592,15 @@ qboolean R_LoadMDS( model_t *mod, void *buffer, const char *mod_name ) {
 		}
 
 		// register the shaders
-		#ifndef DEDICATED
 		if ( surf->shader[0] ) {
-			R_LookupShaderIndexFromName(surf->shader, &surf->shaderIndex);
-			
+		#ifndef DEDICATED
+			surf->shaderIndex = R_LookupShaderIndexFromName(surf->shader, vmType);
+		#else
+			surf->shaderIndex = 0;
+		#endif
 		} else {
 			surf->shaderIndex = 0;
 		}
-		#endif
 
 		if ( LittleLong( 1 ) != 1 ) {
 			// swap all the triangles

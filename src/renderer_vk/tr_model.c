@@ -107,25 +107,16 @@ void R_ModelInit( void ) {
 
 }
 
-//@TODO remove
-void R_LookupMD3ShaderIndex(md3Shader_t *shader){
-	shader_t    *sh;
-	sh = R_FindShader( shader->name, LIGHTMAP_NONE, qtrue );
-	if ( sh->defaultShader ) {
-		shader->shaderIndex = 0;
-	} else {
-		shader->shaderIndex = sh->index;
+int R_LookupShaderIndexFromName(char *name, vmType_t vmType){
+	if(vmType == VM_QAGAME){
+		return 0;
 	}
-}
-
-//@TODO handle ifndef DEDICATED here / not qagame
-void R_LookupShaderIndexFromName(char *name, int *index){
-	shader_t            *sh;
+	shader_t *sh;
 	sh = R_FindShader( name, LIGHTMAP_NONE, qtrue );
 	if ( sh->defaultShader ) {
-		*index = 0;
+		return 0;
 	} else {
-		*index = sh->index;
+		return sh->index;
 	}
 }
 

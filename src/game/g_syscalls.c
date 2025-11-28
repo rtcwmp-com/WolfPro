@@ -803,3 +803,7 @@ void trap_Cmd_ArgsFrom(int arg, char *buffer, int buffersize){
 int trap_submit_curlPost( char* jsonfile, char* matchid ) {
 	return syscall( G_SUBMIT_STATS_CURL, jsonfile, matchid );
 }
+
+qhandle_t trap_RegisterModel( char* name ){
+	return syscall( G_REGISTER_MODEL, name);
+}

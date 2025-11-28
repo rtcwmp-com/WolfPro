@@ -1033,6 +1033,9 @@ typedef struct {
 
 	char maplist[MAX_NUM_MAPS][MAX_MAP_NAMELEN];
 	int mapcount;
+
+	qhandle_t alliesTorsoModel;
+	qhandle_t axisTorsoModel;
 } level_locals_t;
 
 extern qboolean reloading;                  // loading up a savegame
@@ -1797,6 +1800,7 @@ void    trap_SnapVector( float *v );
 void    trap_Cmd_ArgsFrom(int arg, char *buffer, int buffersize);
 int trap_RealTime( qtime_t *qtime );
 int     trap_submit_curlPost( char* jsonfile, char* matchid );
+qhandle_t trap_RegisterModel( char* name );
 
 typedef enum
 {
